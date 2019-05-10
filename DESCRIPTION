@@ -7,7 +7,7 @@ Authors@R: c(person("Matthew L.","Fidler",
 Maintainer: Matthew L. Fidler <matthew.fidler@gmail.com>
 Description: Provides a simple mechanism to specify a symmetric lower band matrix as is
   often used for covariance matrices.  This is based on the domain specific language implement
-  in nlmixr but expanded to create matrices in R generally instead of specifying parts of matrices
+  in 'nlmixr' but expanded to create matrices in R generally instead of specifying parts of matrices
   to estimate.
 Depends: R (>= 3.4.0)
 License: GPL (>=2)
@@ -23,3 +23,5 @@ Suggests:
     rmarkdown
 RoxygenNote: 6.1.1
 VignetteBuilder: knitr
+BugReports: https://github.com/nlmixrdevelopment/lotri/issues
+URL: https://github.com/nlmixrdevelopment/lotri
