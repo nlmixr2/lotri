@@ -72,4 +72,21 @@ test_that("lotri matrix parsing", {
     expect_equal(.mat, lotri(.mat))
     ## Test for NULL
     expect_equal(NULL, lotri(NULL))
+
+    ## Parsing errors
+    expect_error(lotri(a~fix(3)))
+    expect_error(lotri(a~c(3,1,3)))
+    expect_error(lotri(a~c(3,1)))
+    expect_error(lotri({a=c(3,1)}))
+
+    expect_equal(lotri({matrix(3, dimnames=list("a","a"))}),
+                 structure(3, .Dim = c(1L, 1L), .Dimnames = list("a", "a")))
+
+    expect_equal(lotri(matrix(3, dimnames=list("a","a"))),
+                 structure(3, .Dim = c(1L, 1L), .Dimnames = list("a", "a")))
+
+    expect_error(lotri(quote(matrix(3, dimnames=list("a","a")))))
+
+    expect_error(lotri(lotri(a ~ paste(1))))
+
 })

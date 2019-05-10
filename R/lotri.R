@@ -131,6 +131,8 @@ lotri  <- function(x, ...){
                                 }  else {
                                     stop("The left handed side of the expression must match the number of items in the lower triangular matrix.");
                                 }
+                            } else {
+                                stop("Omega expression should be 'name ~ c(lower-tri)'")
                             }
                         } else {
                             stop("Omega expression should be 'name ~ c(lower-tri)'");
@@ -143,12 +145,9 @@ lotri  <- function(x, ...){
                 } else {
                     stop("Omega expression should be 'name ~ c(lower-tri)'")
                 }
-            } else if (is.pairlist(x)) {
-                lapply(x, .f, env=env);
-            } else if (is.atomic(x)){
-                stop("Something wrong with matrix parsing, likely a number is on a line without an identifier.");
             } else {
-                stop("Unknown element in matrix parsing")
+                ## is.pairlist OR is.atomic OR unknown...
+                stop("Bad matrix specification.");
             }
         }
         .sX  <- substitute(x)
@@ -158,21 +157,6 @@ lotri  <- function(x, ...){
             }
         }
         .doParse  <- TRUE
-        if (is.call(.sX)){
-            if (identical(.sX[[1]], quote(`matrix`))){
-                return(x);
-            } else if (identical(.sX[[1]], quote(`list`))){
-                omega  <- lapply(x, lotri);
-                if (is(omega, "list")){
-                    .omega <- as.matrix(Matrix::bdiag(omega));
-                    .d <- unlist(lapply(seq_along(omega), function(x){dimnames(omega[[x]])[2]}))
-                    dimnames(.omega) <- list(.d, .d);
-                    omega <- .omega;
-                }
-                .ret  <- omega
-                .doParse  <- FALSE
-            }
-        }
         if (.doParse){
             .f(.sX,.env);
             .ret <- diag(.env$eta1);

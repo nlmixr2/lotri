@@ -4,9 +4,12 @@ Version: 0.1.0.9000
 Authors@R: c(person("Matthew L.","Fidler",
              role = c("aut", "cre"), email = "matthew.fidler@gmail.com",
              comment=c(ORCID="0000-0001-8538-6691")))
-Description: Provides a mechism to specify a symmetric 
-Depends: R (>= 3.5.1)
-License: What license is it under?
+Description: Provides a simle mechism to specify a symmetric lower band matrix as is
+  often used for covariance matricies.  This is based on the domian specific language implement
+  in nlmixr but expanded to create matricies in R generally instead of specifying parts of matricies
+  to estimate.
+Depends: R (>= 3.4.0)
+License: GPL (>=2)
 Encoding: UTF-8
 LazyData: true
 Imports: 
