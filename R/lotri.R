@@ -57,6 +57,7 @@
 ##'
 ##' @author Matthew L Fidler
 ##' @seealso \code{\link[RxODE]{RxODE}}
+##' @importFrom methods is
 ##' @export
 lotri  <- function(x, ...){
     .lst  <- list(...);
