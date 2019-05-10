@@ -12,4 +12,7 @@ LazyData: true
 Imports: 
     Matrix
 Suggests: 
-    RxODE
+    RxODE,
+    testthat,
+    covr
+RoxygenNote: 6.1.1

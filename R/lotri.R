@@ -1,4 +1,4 @@
-##' Easily Parse block-diagonal matrices with lower triangular info
+##' Easily Specify block-diagonal matrices with lower triangular info
 ##'
 ##' @param x list, matrix or expression, see details
 ##'
