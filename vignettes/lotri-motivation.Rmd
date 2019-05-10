@@ -17,12 +17,12 @@ knitr::opts_chunk$set(
 ```
 
 This was made to allow people (like me) to specify lower triangular
-matricies similar to the domain specific language implemented in
+matrices similar to the domain specific language implemented in
 nlmixr.  Originally I had it included in `RxODE`, but thought it may
 have more general applicability, so I separated it into a new
 package. 
 
-For me, specifying the matricies in this way is easier than
+For me, specifying the matrices in this way is easier than
 specifying them using R's default matrix.  For instance to fully
 specify a simple 2x2 matrix, in R you specify:
 

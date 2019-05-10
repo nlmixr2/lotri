@@ -5,7 +5,7 @@
 ##' @param ... Other arguments treated as a list that will be
 ##'     concatenated then reapplied to this function.
 ##'
-##' @return named symmetric matrix useful in \link[RxODE]{RxODE} simulations (and
+##' @return named symmetric matrix useful in RxODE simulations (and
 ##'     perhaps elsewhere)
 ##'
 ##' @details
@@ -56,7 +56,6 @@
 ##' ## Overall this is a flexible way to specify symmetric block diagonal matrices.
 ##'
 ##' @author Matthew L Fidler
-##' @seealso \code{\link[RxODE]{RxODE}}
 ##' @importFrom methods is
 ##' @export
 lotri  <- function(x, ...){

@@ -5,9 +5,9 @@ Authors@R: c(person("Matthew L.","Fidler",
              role = c("aut", "cre"), email = "matthew.fidler@gmail.com",
              comment=c(ORCID="0000-0001-8538-6691")))
 Maintainer: Matthew L. Fidler <matthew.fidler@gmail.com>
-Description: Provides a simle mechism to specify a symmetric lower band matrix as is
-  often used for covariance matricies.  This is based on the domian specific language implement
-  in nlmixr but expanded to create matricies in R generally instead of specifying parts of matricies
+Description: Provides a simple mechanism to specify a symmetric lower band matrix as is
+  often used for covariance matrices.  This is based on the domain specific language implement
+  in nlmixr but expanded to create matrices in R generally instead of specifying parts of matrices
   to estimate.
 Depends: R (>= 3.4.0)
 License: GPL (>=2)
