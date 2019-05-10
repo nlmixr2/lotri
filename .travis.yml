@@ -4,5 +4,19 @@ language: R
 sudo: false
 cache: packages
 
+env:
+ global:
+   - _R_CHECK_FORCE_SUGGESTS_: FALSE
+
+r:
+  - 3.4
+  - 3.5
+  - devel
+  
+os:
+  - linux
+  - osx
+
+
 after_success:
    - Rscript -e 'covr::codecov(token="81b75c97-e8ba-4e24-a9cb-21b37cbab05f")'
