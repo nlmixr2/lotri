@@ -16,7 +16,6 @@ Imports:
     Matrix,
     methods
 Suggests: 
-    RxODE,
     testthat,
     covr,
     knitr,
