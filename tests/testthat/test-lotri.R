@@ -73,6 +73,9 @@ test_that("lotri matrix parsing", {
     ## Test for NULL
     expect_equal(NULL, lotri(NULL))
 
+    expect_equal(lotri(eta.Cl ~ 0.4^2), structure(0.16, .Dim = c(1L, 1L), .Dimnames = list("eta.Cl",
+    "eta.Cl")))
+
     ## Parsing errors
     expect_error(lotri(a~fix(3)))
     expect_error(lotri(a~c(3,1,3)))

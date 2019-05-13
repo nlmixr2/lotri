@@ -134,7 +134,16 @@ lotri  <- function(x, ...){
                                 stop("Omega expression should be 'name ~ c(lower-tri)'")
                             }
                         } else {
-                            stop("Omega expression should be 'name ~ c(lower-tri)'");
+                            .val <- try(eval(x[[3]]), silent=TRUE)
+                            if (is.numeric(.val) || is.integer(.val)){
+                                env$netas <- 1;
+                                env$eta1 <- env$eta1 + 1;
+                                env$names  <- c(env$names, as.character(x[[2]]));
+                                env$df  <- rbind(env$df,
+                                                 data.frame(i=env$eta1, j=env$eta1, x=.val));
+                            } else {
+                                stop("Omega expression should be 'name ~ c(lower-tri)'");
+                            }
                         }
                     }
                 } else if (identical(x[[1]], quote(`{`))){
