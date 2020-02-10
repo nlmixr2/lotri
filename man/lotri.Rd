@@ -13,7 +13,7 @@ lotri(x, ...)
 concatenated then reapplied to this function.}
 }
 \value{
-named symmetric matrix useful in \link[RxODE]{RxODE} simulations (and
+named symmetric matrix useful in RxODE simulations (and
     perhaps elsewhere)
 }
 \description{
@@ -64,9 +64,6 @@ lotri(list(et2 + et3 + et4 ~ c(40,
 
 ## Overall this is a flexible way to specify symmetric block diagonal matrices.
 
-}
-\seealso{
-\code{\link[RxODE]{RxODE}}
 }
 \author{
 Matthew L Fidler

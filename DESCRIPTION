@@ -1,6 +1,6 @@
 Package: lotri
 Title: A Simple Way to Specify Symmetric, Block Diagonal Matrices
-Version: 0.1.1
+Version: 0.2.1
 Authors@R: c(person("Matthew L.","Fidler",
              role = c("aut", "cre"), email = "matthew.fidler@gmail.com",
              comment=c(ORCID="0000-0001-8538-6691")))
@@ -21,7 +21,7 @@ Suggests:
     covr,
     knitr,
     rmarkdown
-RoxygenNote: 6.1.1
+RoxygenNote: 7.0.2
 VignetteBuilder: knitr
 BugReports: https://github.com/nlmixrdevelopment/lotri/issues
 URL: https://github.com/nlmixrdevelopment/lotri

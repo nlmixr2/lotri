@@ -6,13 +6,13 @@ matrices.  Its as if you have won the (badly spelled) lotri (or lottery).
 
 This was made to allow people (like me) to specify lower triangular
 matrices similar to the domain specific language implemented in
-nlmixr.  Originally I had it included in `RxODE`, but thought it may
+`nlmixr`.  Originally I had it included in `RxODE`, but thought it may
 have more general applicability, so I separated it into a new
 package. 
 
 For me, specifying the matricies in this way is easier than
 specifying them using R's default matrix.  For instance to fully
-specify a simple 2x2 matrix, in R you specify:
+specify a simple `2x2` matrix, in R you specify:
 
 ```{r}
 mat <- matrix(c(1, 0.5, 0.5, 1),nrow=2,ncol=2,dimnames=list(c("a", "b"), c("a", "b")))
