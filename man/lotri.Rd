@@ -52,7 +52,8 @@ lotri(et2 + et3 + et4 ~ c(40,
                           0.1, 20,
                           0.1, 0.1, 30),
           et5 ~ 6)
-## But if you do enclose in {}, you can use multi-line matrix specifications:
+## But if you do enclose in {}, you can use
+## multi-line matrix specifications:
 
 lotri({et2 + et3 + et4 ~ c(40,
                            0.1, 20,
@@ -66,7 +67,8 @@ lotri(list(et2 + et3 + et4 ~ c(40,
                                0.1, 0.1, 30),
               matrix(1,dimnames=list("et5","et5"))))
 
-## Overall this is a flexible way to specify symmetric block diagonal matrices.
+## Overall this is a flexible way to specify symmetric block
+## diagonal matrices.
 
 }
 \author{
