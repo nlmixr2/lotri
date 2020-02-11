@@ -66,3 +66,9 @@ dimnames(mat) <- list(c("a", "b", "c", "d", "e"), c("a", "b", "c", "d", "e"))
 
 Regardless, I think `lotri` is a bit easier to use.
 
+## New features
+
+A new feature is the ability to condition on variables by `|`.  This
+will be useful when simulating nested random effects using the
+upcoming `RxODE`
+

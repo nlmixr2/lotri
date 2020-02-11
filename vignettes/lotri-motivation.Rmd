@@ -15,7 +15,7 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 ```
-
+# Motivation 
 This was made to allow people (like me) to specify lower triangular
 matrices similar to the domain specific language implemented in
 nlmixr.  Originally I had it included in `RxODE`, but thought it may
@@ -77,3 +77,33 @@ dimnames(mat) <- list(c("a", "b", "c", "d", "e"), c("a", "b", "c", "d", "e"))
 ```
 
 Regardless, I think `lotri` is a bit easier to use.
+
+# Creating lists of matricies with attached properties
+
+`lotri` also allows lists of matrices to be created by conditioning on
+an `id` with the `|` syntax.
+
+For example:
+
+
+```{r}
+mat <- lotri({
+    a+b ~ c(1,
+            0.5, 1) | id
+    c ~ 1 | occ
+    d +e ~ c(1,
+             0.5, 1) | id(lower=3, upper=2, omegaIsChol=FALSE)
+})
+
+print(mat)
+
+print(mat$lower)
+print(mat$upper)
+print(mat$omegaIsChol)
+```
+
+This gives a list of matrix(es) conditioned on the variable after the
+`|`.  It also can add properties to each list that can be accessible
+after the list of matrices is returned, as shown in the above example.
+To do this, you simply have to enclose the properties after the
+conditional variable.  That is `et1 ~ id(lower=3)`.
