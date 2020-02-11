@@ -149,11 +149,11 @@
   }
   .fullCnd <- as.character(cond[[1]])
   if (regexpr("^[a-zA-Z][a-zA-Z0-9_.]*$", .fullCnd) == -1){
-    stop("unsupported conditional statement");
+    stop("unsupported conditional statement")
   }
   .env  <- list2env(as.list(envir), parent=globalenv())
   .env[[.fullCnd]] <- function(...){
-    return(list(...));
+    return(list(...))
   }
   .prop <- eval(cond, envir=.env)
   return(list(.fullCnd, .prop))
@@ -176,15 +176,15 @@
       .cur <- prop[[.n]]
       if (is.null(names(.cur))) {
         if (length(.cur) != 1) {
-          stop(sprintf("multiple arguments for '%s' need to be named: 'lower=c(%s=%s,...)'", .n,
-                       names[1], .cur[1]))
+          stop(sprintf("multiple arguments for '%s' need to be named: 'lower=c(%s=%s,...)'",
+                       .n, names[1], .cur[1]))
         } else {
           .newProp[[.n]] <- setNames(rep(.cur, length(names)), names)
           return(.newProp)
         }
       }
       .new <- setNames(rep(.defaultProperties[.n], length(names)), names)
-      .bad <- c();
+      .bad <- c()
       for (.n2 in names(.cur)) {
         if (is.na(.new[.n2])) {
           .bad <- c(.bad, .n2)
@@ -193,49 +193,58 @@
         }
       }
       if (length(.bad) > 0){
-        stop(sprintf("in '%s' argument/dimension mismatch: %s", .n, paste(.bad, collapse=", ")))
+        stop(sprintf("in '%s' argument/dimension mismatch: %s",
+                     .n, paste(.bad, collapse=", ")))
       }
-      .newProp[[.n]] <- .cur
+      .newProp[[.n]] <- .new
     }
   }
   return(.newProp)
 }
 ##' Merge properties between two matrices
 ##'
-##' @param prop Initial property
+##' @param prop Initial property list or character vector of names to
+##'   apply default properties on...
 ##' @param id ID of the matrix with more properites
 ##' @param new new properites of the matrix
-##' @return A merged property that will be used for lotri composite matrices
+##' @return A merged property that will be used for lotri composite
+##'   matrices
 ##' @author Matthew Fidler
 ##' @noRd
 .mergeProp <- function(prop, id, new) {
   if (is.null(prop)) {
-    .ret <- list();
+    .ret <- list()
     .ret[[id]] <- new
     return(.ret)
   }
-  if (!any(names(prop) == id)){
-    .ret <- prop
-    .ret[[id]] <- new;
-    return(.ret)
-  } else {
-    .old <- prop[[id]];
-    for (.n in names(.old)) {
+  if (!inherits(prop, "list")){
+    for (.n in names(new)) {
       if (any(.n == names(.defaultProperties))) {
-        ## These are fully completed before reaching the merging point
-        .old[[.n]] <- c(.old[[.n]], new)
-        new <- new[[names(new) != .n]]
-      } else if (any(.n == names(new))) {
-        stop(sprintf("conflicting '%s' properties", .n))
+        new[[.n]] <- c(new[[.n]],
+                       setNames(rep(.defaultProperties[.n],
+                                    length(prop)), prop))
       }
     }
-    for (.n in names(new)) {
-      .old[[.n]] <- new[[.n]]
-    }
-    .ret <- prop;
-    .ret[[id]] <- .old;
+    .ret <- list()
+    .ret[[id]] <- new
     return(.ret)
   }
+  .old <- prop[[id]]
+  for (.n in names(.old)) {
+    if (any(.n == names(.defaultProperties))) {
+      ## These are fully completed before reaching the merging point
+      .old[[.n]] <- c(new[[.n]], .old[[.n]])
+      new <- new[names(new) != .n]
+    } else if (any(.n == names(new))) {
+      stop(sprintf("conflicting '%s' properties", .n))
+    }
+  }
+  for (.n in names(new)) {
+    .old[[.n]] <- new[[.n]]
+  }
+  .ret <- prop
+  .ret[[id]] <- .old
+  return(.ret)
 }
 
 ##' Easily Specify block-diagonal matrices with lower triangular info
@@ -301,6 +310,8 @@
 ##'
 ##' @author Matthew L Fidler
 ##' @importFrom methods is
+##' @importFrom stats setNames
+##' @importFrom utils str
 ##' @export
 lotri  <- function(x, ..., envir=parent.frame()) {
   .call <- as.list(match.call())[-1]
@@ -313,8 +324,8 @@ lotri  <- function(x, ..., envir=parent.frame()) {
   if (length(.call[[1]]) > 1) {
     if (identical(.call[[1]][[1]], quote(`|`))) {
       .cnd <- .call[[1]][[3]]
-      .fullCndLst <- .parseCondition(.cnd, envir=envir);
-      .fullCnd <- .fullCndLst[[1]];
+      .fullCndLst <- .parseCondition(.cnd, envir=envir)
+      .fullCnd <- .fullCndLst[[1]]
       x <- eval(.call[[1]][[2]], envir=envir)
     }
   }
@@ -373,7 +384,13 @@ lotri  <- function(x, ..., envir=parent.frame()) {
         dimnames(.ret0)  <- list(.env2$names, .env2$names)
         .extra <- .env[[paste0(.j, ".extra")]]
         if (!is.null(.extra)) {
-          .prop <- .mergeProp(.prop, .j, .amplifyDefault(.extra, .env2$names))
+          if (is.null(.prop)) {
+            if (any(names(.other) == .j)) {
+              .prop <- dimnames(.other[[.j]])[[1]]
+            }
+          }
+          .prop <- .mergeProp(.prop, .j,
+                              .amplifyDefault(.extra, .env2$names))
         }
         if (inherits(.other, "list")) {
           if (any(names(.other) == .j)) {
@@ -443,7 +460,7 @@ lotri  <- function(x, ..., envir=parent.frame()) {
 
 ##'@export
 print.lotri <- function(x, ...){
-  .tmp <- x;
+  .tmp <- x
   .lotri <- attr(.tmp, "lotri")
   class(.tmp) <- NULL
   attr(.tmp, "lotri") <- NULL
@@ -460,6 +477,7 @@ str.lotri <- function(object, ...){
   str(object$.list)
 }
 
+##'@importFrom utils .DollarNames
 ##'@export
 .DollarNames.lotri <- function(x, pattern) {
   grep(pattern, unique(c(names(x), ".names", ".list", x$.names)),
@@ -470,9 +488,9 @@ str.lotri <- function(object, ...){
 `$.lotri` <-  function(obj, arg, exact = FALSE) {
   .lotri <- attr(obj, "lotri")
   if (any(names(obj) == arg)) {
-    .tmp <- obj;
-    class(.tmp) <- NULL;
-    return(.tmp[[arg]]);
+    .tmp <- obj
+    class(.tmp) <- NULL
+    return(.tmp[[arg]])
   }
   if (arg == ".names"){
     return(unique(unlist(lapply(names(obj),
@@ -480,9 +498,9 @@ str.lotri <- function(object, ...){
                                   names(.lotri[[x]])
                                 }))))
   }
-  if (arg == ".list"){
-    .tmp <- obj;
-    class(.tmp) <- NULL;
+  if (arg == ".list") {
+    .tmp <- obj
+    class(.tmp) <- NULL
     attr(.tmp, "lotri") <- NULL
     .names <- obj$.names
     for (.n in .names){

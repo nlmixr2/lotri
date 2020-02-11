@@ -1,5 +1,6 @@
 context("lotri -- easy matrix parsing")
 test_that("lotri matrix parsing", {
+
     expect_equal(lotri({et2 + et3 + et4 ~ c(40,
                                             0.1, 20,
                                             0.1, 0.1, 30)}),
@@ -272,6 +273,38 @@ test_that("lotri matrix parsing", {
 
     expect_error(lotri(et1 + et2 ~ c(1, 2, 3) | id(lower=c(et3=4))))
 
+
+    tmp2 <- lotri(et1 + et2 ~ c(1,
+                                2, 3) | id(lower=3),
+                  et3 ~ 3 | id(lower=4))
+
+    expect_equal(tmp2$lower, list(id=c(et1=3, et2=3, et3=4)))
+
+    tmp2 <- lotri(et1 + et2 ~ c(1,
+                                2, 3) | id(lower=3),
+                  et3 ~ 3 | id)
+
+    expect_equal(tmp2$lower, list(id=c(et1=3, et2=3, et3= -Inf)))
+
+    tmp2 <- lotri(et1 + et2 ~ c(1,
+                                2, 3) | id(upper=3),
+                  et3 ~ 3 | id)
+
+    expect_equal(tmp2$upper, list(id=c(et1=3, et2=3, et3= Inf)))
+
+    tmp2 <- lotri(et1 + et2 ~ c(1,
+                                2, 3) | id(lower=c(et2=3)),
+                  et3 ~ 3 | id)
+
+    expect_equal(tmp2$lower,
+                 list(id = c(et1 = -Inf, et2 = 3, et3 = -Inf)))
+
+    tmp2 <- lotri(et1 + et2 ~ c(1,
+                                2, 3) | id(upper=c(et2=3)),
+                  et3 ~ 3 | id)
+
+    expect_equal(tmp2$upper,
+                 list(id = c(et1 = Inf, et2 = 3, et3 = Inf)))
 
     ## lotri(et5 ~ 1,
     ##                    et2 + et3 ~ c(1,
