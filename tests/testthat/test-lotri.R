@@ -233,6 +233,32 @@ test_that("lotri matrix parsing", {
                                       .Dimnames = list("et1", "et1"))))
 
 
+    expect_error(lotri(et1~c(1) | id + matt))
+
+    tmp <- lotri(et1 ~ 1 | id(df=3), et2~3 | id2)
+
+    expect_equal(tmp$df, list(id = 3, id2 = NULL))
+    expect_equal(tmp$matt, NULL)
+
+    expect_equal(tmp$id, structure(1, .Dim = c(1L, 1L),
+                                   .Dimnames = list("et1", "et1")))
+
+    expect_equal(tmp$.names, "df")
+
+    expect_warning(utils::capture.output(print(tmp)), NA)
+
+    expect_warning(utils::capture.output(str(tmp)), NA)
+
+    expect_equal(.DollarNames(tmp, ""), c("id", "id2", ".names", ".list", "df"))
+
+    expect_equal(.DollarNames(tmp, "i"), c("id", "id2", ".list"))
+
+    expect_error(lotri(et1 ~ 1 | id(df=3), et2~3 | id(df=4)))
+
+    tmp2 <- lotri(et1 ~ 1 | id(df=3), et2~3 | id(df2=4))
+
+    expect_equal(tmp2$df, list(id=3))
+    expect_equal(tmp2$df2, list(id=4))
 
     ## lotri(et5 ~ 1,
     ##                    et2 + et3 ~ c(1,
