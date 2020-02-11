@@ -260,6 +260,19 @@ test_that("lotri matrix parsing", {
     expect_equal(tmp2$df, list(id=3))
     expect_equal(tmp2$df2, list(id=4))
 
+    tmp2 <- lotri(et1 ~ 1 | id(lower=3))
+
+    expect_equal(tmp2$lower, list(id = c(et1 = 3)))
+
+    tmp2 <- lotri(et1 + et2 ~ c(1, 2, 3) | id(lower=3))
+
+    expect_equal(tmp2$lower, list(id = c(et1 = 3, et2 = 3)))
+
+    expect_error(lotri(et1 + et2 ~ c(1, 2, 3) | id(lower=c(2, 3))))
+
+    expect_error(lotri(et1 + et2 ~ c(1, 2, 3) | id(lower=c(et3=4))))
+
+
     ## lotri(et5 ~ 1,
     ##                    et2 + et3 ~ c(1,
     ##                                  2, 3),

@@ -135,7 +135,8 @@
 ##' .. content for \description{} (no empty lines) ..
 ##'
 ##' .. content for \details{} ..
-##' @param cond  Condition parsing tree
+##' @param cond Condition parsing tree
+##' @param envir
 ##' @return list with 2 elements:
 ##' - First element is the name of the condition
 ##' - Second element is extra information
@@ -158,6 +159,55 @@
   return(list(.fullCnd, .prop))
 }
 
+.defaultProperties <- c(lower=-Inf, upper=Inf)
+
+##' Amplify Default properties
+##'
+##' @param prop proprety list where `.defaultProperties` will be amplified
+##' @param names names of matrix components to check against
+##' @return Amplified property list
+##' @author Matthew Fidler
+##' @noRd
+.amplifyDefault <- function(prop, names) {
+  .nD <- names(.defaultProperties)
+  .newProp <- prop
+  for (.n in .nD){
+    if (any(.n == names(prop))) {
+      .cur <- prop[[.n]]
+      if (is.null(names(.cur))) {
+        if (length(.cur) != 1) {
+          stop(sprintf("multiple arguments for '%s' need to be named: 'lower=c(%s=%s,...)'", .n,
+                       names[1], .cur[1]))
+        } else {
+          .newProp[[.n]] <- setNames(rep(.cur, length(names)), names)
+          return(.newProp)
+        }
+      }
+      .new <- setNames(rep(.defaultProperties[.n], length(names)), names)
+      .bad <- c();
+      for (.n2 in names(.cur)) {
+        if (is.na(.new[.n2])) {
+          .bad <- c(.bad, .n2)
+        } else {
+          .new[.n2] <- .cur[.n2]
+        }
+      }
+      if (length(.bad) > 0){
+        stop(sprintf("in '%s' argument/dimension mismatch: %s", .n, paste(.bad, collapse=", ")))
+      }
+      .newProp[[.n]] <- .cur
+    }
+  }
+  return(.newProp)
+}
+##' Merge properties between two matrices
+##'
+##' @param prop Initial property
+##' @param id ID of the matrix with more properites
+##' @param new new properites of the matrix
+##' @return A merged property that will be used for lotri composite matrices
+##' @author Matthew Fidler
+##' @noRd
 .mergeProp <- function(prop, id, new) {
   if (is.null(prop)) {
     .ret <- list();
@@ -171,7 +221,11 @@
   } else {
     .old <- prop[[id]];
     for (.n in names(.old)) {
-      if (any(.n == names(new))) {
+      if (any(.n == names(.defaultProperties))) {
+        ## These are fully completed before reaching the merging point
+        .old[[.n]] <- c(.old[[.n]], new)
+        new <- new[[names(new) != .n]]
+      } else if (any(.n == names(new))) {
         stop(sprintf("conflicting '%s' properties", .n))
       }
     }
@@ -319,7 +373,7 @@ lotri  <- function(x, ..., envir=parent.frame()) {
         dimnames(.ret0)  <- list(.env2$names, .env2$names)
         .extra <- .env[[paste0(.j, ".extra")]]
         if (!is.null(.extra)) {
-          .prop <- .mergeProp(.prop, .j, .extra)
+          .prop <- .mergeProp(.prop, .j, .amplifyDefault(.extra, .env2$names))
         }
         if (inherits(.other, "list")) {
           if (any(names(.other) == .j)) {
