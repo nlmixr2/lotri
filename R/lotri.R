@@ -171,13 +171,13 @@
 .amplifyDefault <- function(prop, names) {
   .nD <- names(.defaultProperties)
   .newProp <- prop
-  for (.n in .nD){
+  for (.n in .nD) {
     if (any(.n == names(prop))) {
       .cur <- prop[[.n]]
       if (is.null(names(.cur))) {
         if (length(.cur) != 1) {
-          stop(sprintf("multiple arguments for '%s' need to be named: 'lower=c(%s=%s,...)'",
-                       .n, names[1], .cur[1]))
+          stop(sprintf("name multiple limits for '%s': '%s=c(%s=%s,...)'",
+                       .n, .n, names[1], .cur[1]))
         } else {
           .newProp[[.n]] <- setNames(rep(.cur, length(names)), names)
           return(.newProp)
