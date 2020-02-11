@@ -290,7 +290,7 @@ lotri  <- function(x, ..., envir=parent.frame()){
       if (any(names(.tmp) == "")) {
         .w <- which(names(.tmp) == "")
         .ret <- lotri(c(list(.ret), .tmp[[.w]]), envir=envir)
-        .tmp <- tmp[-.w];
+        .tmp <- .tmp[-.w];
         return(c(list(.ret), .tmp))
       } else {
         .ret <- c(list(.ret), .tmp)
