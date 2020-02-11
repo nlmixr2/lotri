@@ -1,5 +1,6 @@
 # lotri
 [![Travis build status](https://travis-ci.org/nlmixrdevelopment/lotri.svg?branch=master)](https://travis-ci.org/nlmixrdevelopment/lotri) [![AppVeyor build status](https://ci.appveyor.com/api/projects/status/github/nlmixrdevelopment/lotri?branch=master&svg=true)](https://ci.appveyor.com/project/nlmixrdevelopment/lotri) [![Coverage status](https://codecov.io/gh/nlmixrdevelopment/lotri/branch/master/graph/badge.svg)](https://codecov.io/github/nlmixrdevelopment/lotri?branch=master) [![CRAN status](https://www.r-pkg.org/badges/version/lotri)](https://cran.r-project.org/package=lotri)
+[![CRAN downloads](https://cranlogs.r-pkg.org/badges/lotri)](https://cran.r-project.org/package=lotri)
 
 Easily Specify block-diagonal matrices with (lo)wer (tri)angular
 matrices.  Its as if you have won the (badly spelled) lotri (or lottery).
