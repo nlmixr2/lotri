@@ -1,34 +1,34 @@
-.lotri1 <- function(x2, x3, env){
-  env$netas <- length(x3) - 1;
-  .num <- sqrt(1+env$netas*8)/2-1/2
-  if (round(.num) == .num){
-    .n <- unlist(strsplit(as.character(x2), " +[+] +"));
-    .n <- .n[.n != "+"];
-    if(length(.n) == .num){
-      env$names  <- c(env$names, .n);
-      .r <- x3[-1];
-      .r <- sapply(.r, function(x){
-        return(as.numeric(eval(x)));
+.lotri1 <- function(x2, x3, env) {
+  env$netas <- length(x3) - 1
+  .num <- sqrt(1 + env$netas * 8) / 2 - 1/2
+  if (round(.num) == .num) {
+    .n <- unlist(strsplit(as.character(x2), " +[+] +"))
+    .n <- .n[.n != "+"]
+    if (length(.n) == .num) {
+      env$names  <- c(env$names, .n)
+      .r <- x3[-1]
+      .r <- sapply(.r, function(x) {
+        return(as.numeric(eval(x)))
       });
       .i <- 0
-      .j <- 1;
-      for (.k in seq_along(.r)){
-        .v <- .r[.k];
-        .i <- .i + 1;
-        if (.i==.j){
+      .j <- 1
+      for (.k in seq_along(.r)) {
+        .v <- .r[.k]
+        .i <- .i + 1
+        if (.i == .j) {
           env$df  <- rbind(env$df,
-                           data.frame(i=env$eta1+.i, j=env$eta1+.i, x=.v));
-          .j <- .j + 1;
-          .i <- 0;
+                           data.frame(i=env$eta1+.i, j=env$eta1+.i, x=.v))
+          .j <- .j + 1
+          .i <- 0
         } else {
           env$df  <- rbind(env$df,
                            data.frame(i=c(env$eta1+.i, env$eta1+.j),
-                                      j=c(env$eta1+.j, env$eta1+.i), x=.v));
+                                      j=c(env$eta1+.j, env$eta1+.i), x=.v))
         }
       }
-      env$eta1 <- env$eta1 + .num;
+      env$eta1 <- env$eta1 + .num
     }  else {
-      stop("The left handed side of the expression must match the number of items in the lower triangular matrix.");
+      stop("number of items and lower triangular matrix mismatch")
     }
   } else {
     stop("matrix expression should be 'name ~ c(lower-tri)'")
@@ -98,16 +98,16 @@
 ##' @author Matthew L Fidler
 ##' @importFrom methods is
 ##' @export
-lotri  <- function(x, ..., envir=parent.frame()){
+lotri  <- function(x, ..., envir=parent.frame()) {
   .call <- as.list(match.call())[-1];
   .ncall <- names(.call)
-  if (any(.ncall == "envir")){
+  if (any(.ncall == "envir")) {
     .w <- which(.ncall == "envir")
     .call <- .call[-.w]
   }
   .fullCnd <- NULL
-  if (length(.call[[1]]) > 1){
-    if (identical(.call[[1]][[1]], quote(`|`))){
+  if (length(.call[[1]]) > 1) {
+    if (identical(.call[[1]][[1]], quote(`|`))) {
       .cnd <- .call[[1]][[3]];
       if (length(.cnd) == 1) {
         .fullCnd <- as.character(.cnd);
@@ -121,10 +121,10 @@ lotri  <- function(x, ..., envir=parent.frame()){
     .ret  <- NULL;
   } else if (is.list(x)) {
     omega  <- lapply(x, lotri);
-    if (is(omega, "list")){
+    if (is(omega, "list")) {
       .omega <- as.matrix(Matrix::bdiag(omega));
       .d <- unlist(lapply(seq_along(omega),
-                          function(x){
+                          function(x) {
                             dimnames(omega[[x]])[2]
                           }))
       dimnames(.omega) <- list(.d, .d);
@@ -138,48 +138,48 @@ lotri  <- function(x, ..., envir=parent.frame()){
     .env$df  <- NULL;
     .env$eta1 <- 0L;
     .env$cnd <- character();
-    .f  <- function(x, env){
-      if (is.name(x)){
+    .f  <- function(x, env) {
+      if (is.name(x)) {
         return(character())
-      } else if (is.call(x)){
-        if (identical(x[[1]], quote(`~`))){
-          if (length(x[[3]]) == 1){
+      } else if (is.call(x)) {
+        if (identical(x[[1]], quote(`~`))) {
+          if (length(x[[3]]) == 1) {
             ## et1 ~ 0.2
             env$netas <- 1;
             env$eta1 <- env$eta1 + 1;
             env$names  <- c(env$names, as.character(x[[2]]));
             env$df  <- rbind(env$df,
-                             data.frame(i=env$eta1, j=env$eta1, x=as.numeric(eval(x[[3]]))));
+                             data.frame(i=env$eta1, j=env$eta1, x=as.numeric(eval(x[[3]]))))
           } else {
             ## et1+et2+et3~c() lower triangular matrix
             ## Should fixed be allowed????
-            if (any(tolower(as.character(x[[3]][[1]])) == c("c", "fix", "fixed"))){
+            if (any(tolower(as.character(x[[3]][[1]])) == c("c", "fix", "fixed"))) {
               if (any(tolower(as.character(x[[3]][[1]])) == c("fix", "fixed"))){
-                stop("fix/fixed are not allowed with lotri matrix specifications");
+                stop("fix/fixed are not allowed with lotri matrix specifications")
               }
-              .lotri1(x[[2]], x[[3]], env);
+              .lotri1(x[[2]], x[[3]], env)
             } else {
               .val <- try(eval(x[[3]]), silent=TRUE)
-              if (is.numeric(.val) || is.integer(.val)){
-                env$netas <- 1;
-                env$eta1 <- env$eta1 + 1;
-                env$names  <- c(env$names, as.character(x[[2]]));
+              if (is.numeric(.val) || is.integer(.val)) {
+                env$netas <- 1
+                env$eta1 <- env$eta1 + 1
+                env$names  <- c(env$names, as.character(x[[2]]))
                 env$df  <- rbind(env$df,
-                                 data.frame(i=env$eta1, j=env$eta1, x=.val));
+                                 data.frame(i=env$eta1, j=env$eta1, x=.val))
               } else {
                 .cnd <- try(as.character(x[[3]][[1]]), silent=TRUE)
                 .didCnd <- FALSE
-                if (inherits(.cnd, "character")){
-                  if (.cnd == "|"){
-                    .cnd <- x[[3]][[3]];
+                if (inherits(.cnd, "character")) {
+                  if (.cnd == "|") {
+                    .cnd <- x[[3]][[3]]
                     if (length(.cnd) == 1) {
                       .cnd <- as.character(.cnd);
                       ## Each condition is parsed so this new environment should not be elsewhere
-                      .env2  <- new.env(parent=emptyenv());
-                      .env2$df  <- NULL;
-                      .env2$eta1 <- 0L;
-                      env$cnd <- unique(c(env$cnd, .cnd));
-                      env[[.cnd]] <- .env2;
+                      .env2  <- new.env(parent=emptyenv())
+                      .env2$df  <- NULL
+                      .env2$eta1 <- 0L
+                      env$cnd <- unique(c(env$cnd, .cnd))
+                      env[[.cnd]] <- .env2
                       .val <- try(eval(x[[3]][[2]]), silent=TRUE)
                       if ((length(.val) == 1) && (is.numeric(.val) || is.integer(.val))) {
                         .env2$netas <- 1;
@@ -199,9 +199,9 @@ lotri  <- function(x, ..., envir=parent.frame()){
               }
             }
           }
-        } else if (identical(x[[1]], quote(`{`))){
+        } else if (identical(x[[1]], quote(`{`))) {
           lapply(x, .f, env=env)
-        } else if (identical(x[[1]], quote(`quote`))){
+        } else if (identical(x[[1]], quote(`quote`))) {
           lapply(x[[2]], .f, env=env)
         } else {
           stop("matrix expression should be 'name ~ c(lower-tri)'")
@@ -213,61 +213,62 @@ lotri  <- function(x, ..., envir=parent.frame()){
     }
     .sX  <- substitute(x)
     if (is.call(.sX)){
-      if (identical(.sX[[1]], quote(`[[`))){
+      if (identical(.sX[[1]], quote(`[[`))) {
         .sX  <- x
       }
     }
     .doParse  <- TRUE
-    if (.doParse){
-      .f(.sX,.env);
-      if (length(.env$cnd) == 0L){
+    if (.doParse) {
+      .f(.sX, .env)
+      if (length(.env$cnd) == 0L) {
         .ret <- diag(.env$eta1);
-        for (.i in seq_along(.env$df$i)){
+        for (.i in seq_along(.env$df$i)) {
           .ret[.env$df$i[.i], .env$df$j[.i]]  <- .env$df$x[.i];
         }
-        dimnames(.ret)  <- list(.env$names,.env$names)
+        dimnames(.ret)  <- list(.env$names, .env$names)
       } else {
         .lstC <- list()
         .other <- NULL
-        if (length(.call) > 1){
+        if (length(.call) > 1) {
           .call <- .call[-1]
           .other <- do.call("lotri", .call, envir=envir);
         }
-        for (.j in .env$cnd){
-          .env2 <- .env[[.j]];
-          .ret0 <- diag(.env2$eta1);
-          for (.i in seq_along(.env2$df$i)){
-            .ret0[.env2$df$i[.i], .env2$df$j[.i]]  <- .env2$df$x[.i];
+        for (.j in .env$cnd) {
+          .env2 <- .env[[.j]]
+          .ret0 <- diag(.env2$eta1)
+          for (.i in seq_along(.env2$df$i)) {
+            .ret0[.env2$df$i[.i], .env2$df$j[.i]]  <- .env2$df$x[.i]
           }
           dimnames(.ret0)  <- list(.env2$names, .env2$names)
-          if (inherits(.other, "list")){
-            if (any(names(.other) == .j)){
-              .ret0 <- do.call("lotri", list(.ret0, .other[[.j]], envir=envir),
-                               envir=envir);
-              .other <- .other[names(.other) != .j];
+          if (inherits(.other, "list")) {
+            if (any(names(.other) == .j)) {
+              .ret0 <- do.call("lotri", list(.ret0, .other[[.j]],
+                                             envir=envir),
+                               envir=envir)
+              .other <- .other[names(.other) != .j]
             }
           }
           .lstC[[.j]] <- .ret0
         }
-        if (inherits(.other, "list")){
-          .lstC <- c(.lstC, .other);
-        } else if (!is.null(.other)){
-          return(c(.lstC, list(.other)));
+        if (inherits(.other, "list")) {
+          .lstC <- c(.lstC, .other)
+        } else if (!is.null(.other)) {
+          return(c(.lstC, list(.other)))
         }
         return(.lstC)
       }
     }
   }
-  if (!is.null(.fullCnd)){
-    .lst <- list();
+  if (!is.null(.fullCnd)) {
+    .lst <- list()
     .lst[[.fullCnd]] <- .ret
-    if (length(.call)==1L) return(.lst)
+    if (length(.call) == 1L) return(.lst)
     .call <- .call[-1]
     .tmp <- do.call("lotri", .call, envir=envir)
-    if (any(names(.tmp) == .fullCnd)){
+    if (any(names(.tmp) == .fullCnd)) {
       .ret <- lotri(list(.ret, .tmp[[.fullCnd]]), envir=envir);
       .w <- which(names(.tmp) != .fullCnd)
-      if (length(.w) > 0L){
+      if (length(.w) > 0L) {
         .tmp <- .tmp[.w];
         .tmp2 <- list();
         .tmp2[[.fullCnd]] <- .ret
@@ -283,15 +284,14 @@ lotri  <- function(x, ..., envir=parent.frame()){
       return(c(.lst, .tmp))
     }
   } else {
-    if (length(.call)==1L) return(.ret)
+    if (length(.call) == 1L) return(.ret)
     .call <- .call[-1]
     .tmp <- do.call("lotri", .call, envir=envir)
     if (inherits(.tmp, "list")){
       if (any(names(.tmp) == "")) {
         .w <- which(names(.tmp) == "")
-        .ret <- lotri(c(list(.ret), .tmp[[.w]]), envir=envir)
-        .tmp <- .tmp[-.w];
-        return(c(list(.ret), .tmp))
+        .tmp[[.w]] <- do.call("lotri", list(.ret, .tmp[[.w]], envir=envir), envir=envir)
+        return(.tmp)
       } else {
         .ret <- c(list(.ret), .tmp)
         return(.ret)
