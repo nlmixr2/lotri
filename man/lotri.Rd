@@ -4,13 +4,17 @@
 \alias{lotri}
 \title{Easily Specify block-diagonal matrices with lower triangular info}
 \usage{
-lotri(x, ...)
+lotri(x, ..., envir = parent.frame())
 }
 \arguments{
 \item{x}{list, matrix or expression, see details}
 
 \item{...}{Other arguments treated as a list that will be
 concatenated then reapplied to this function.}
+
+\item{envir}{the \code{\link[base]{environment}} in which \code{expr} is to
+    be evaluated.  May also be \code{NULL}, a list, a data frame,
+    a pairlist or an integer as specified to \code{\link[base]{sys.call}}.}
 }
 \value{
 named symmetric matrix useful in RxODE simulations (and

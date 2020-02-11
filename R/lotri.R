@@ -43,6 +43,8 @@
 ##' @param ... Other arguments treated as a list that will be
 ##'     concatenated then reapplied to this function.
 ##'
+##' @inheritParams base::eval
+##'
 ##' @return named symmetric matrix useful in RxODE simulations (and
 ##'     perhaps elsewhere)
 ##'
