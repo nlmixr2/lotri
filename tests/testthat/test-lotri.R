@@ -157,6 +157,33 @@ test_that("lotri matrix parsing", {
                                      .Dimnames = list(c("et5", "et6"),
                                                       c("et5", "et6")))))
 
+    expect_equal(lotri(et5 ~ 1 | id1,
+                       et2 + et3 ~ c(1,
+                                     2, 3)| id2,
+                       et1 ~ 3| id3),
+                 list(id1 = structure(1, .Dim = c(1L, 1L), .Dimnames = list("et5",
+    "et5")), id2 = structure(c(1, 2, 2, 3), .Dim = c(2L, 2L), .Dimnames = list(
+    c("et2", "et3"), c("et2", "et3"))), id3 = structure(3, .Dim = c(1L,
+1L), .Dimnames = list("et1", "et1"))))
+
+    expect_equal(lotri(et5 ~ 1 | id1,
+                       et2 + et3 ~ c(1,
+                                     2, 3),
+                       et1 ~ 3| id3),
+                 list(id1 = structure(1, .Dim = c(1L, 1L), .Dimnames = list("et5",
+    "et5")), structure(c(1, 2, 2, 3), .Dim = c(2L, 2L), .Dimnames = list(
+    c("et2", "et3"), c("et2", "et3"))), id3 = structure(3, .Dim = c(1L,
+1L), .Dimnames = list("et1", "et1"))))
+
+    expect_equal(lotri(et5 ~ 1 | id1,
+                       et2 + et3 ~ c(1,
+                                     2, 3)| id2,
+                       et1 ~ 3),
+                 list(id1 = structure(1, .Dim = c(1L, 1L), .Dimnames = list("et5",
+    "et5")), id2 = structure(c(1, 2, 2, 3), .Dim = c(2L, 2L), .Dimnames = list(
+    c("et2", "et3"), c("et2", "et3"))), structure(3, .Dim = c(1L,
+1L), .Dimnames = list("et1", "et1"))))
+
     ## lotri(list(et2 + et3 + et4 ~ c(40,
     ##                                0.1, 20,
     ##                                0.1, 0.1, 30),
