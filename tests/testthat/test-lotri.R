@@ -238,7 +238,7 @@ test_that("lotri matrix parsing", {
 
     tmp <- lotri(et1 ~ 1 | id(df=3), et2~3 | id2)
 
-    expect_equal(tmp$df, list(id = 3, id2 = NULL))
+    expect_equal(tmp$df, list(id = 3))
     expect_equal(tmp$matt, NULL)
 
     expect_equal(tmp$id, structure(1, .Dim = c(1L, 1L),
@@ -396,20 +396,27 @@ test_that("lotri matrix parsing", {
 
     tmp2 <- lotri(
         lotri(eta.Cl ~ 0.1,
-              eta.cl ~ 0.2),
+              eta.Ka ~ 0.2),
         lotri(inv.Ka ~ 0.3,
               inv.Cl ~ 0.4) | inv(lower=2),
         lotri(iov.Ka ~ 0.5,
               iov.Cl ~ 0.6) | occ(lower=3))
 
     expect_equal(tmp2$lower,
-                 list(NULL,
+                 list(c(eta.Cl = -Inf, eta.Ka = -Inf),
                       inv = c(inv.Ka = 2, inv.Cl = 2),
                       occ = c(iov.Ka = 3, iov.Cl = 3)))
 
     tmp2 <- lotri(lotri(iov.Ka ~ 0.5,
                         iov.Cl ~ 0.6) | occ)
 
+    expect_equal(tmp2,
+                 list(occ = structure(c(0.5, 0, 0, 0.6),
+                                      .Dim = c(2L, 2L),
+                                      .Dimnames = list(c("iov.Ka",
+                                                         "iov.Cl"),
+                                                       c("iov.Ka",
+                                                         "iov.Cl")))))
 
     tmp2 <- lotri(lotri(iov.Ka ~ 0.5,
                          iov.Cl ~ 0.6) | iov,

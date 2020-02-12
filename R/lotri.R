@@ -645,9 +645,22 @@ str.lotri <- function(object, ...) {
       assign("empty", FALSE, .env)
       return(.ret)
     } else {
+      .def <- .defaultProperties[arg];
+      if (!is.na(.def)) {
+        .w <- which(names(obj) == x)
+        if (length(.w) == 1){
+          .dim <- dimnames(obj[[.w]])[[1]]
+          .ret <- setNames(rep(.def, length(.dim)), .dim)
+          return(.ret)
+        }
+      }
       return(NULL)
     }
   }), names(obj))
+  .w <- which(unlist(lapply(.ret, is.null)))
+  if (length(.w) > 0) {
+      .ret <- .ret[-.w]
+  }
   if (.env$empty) return(NULL)
   return(.ret)
 }
