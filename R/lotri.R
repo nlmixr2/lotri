@@ -201,6 +201,31 @@
   }
   return(.newProp)
 }
+##' Amplifies final lotri list with defaults in .defaultProperties
+##'
+##' @param finalList Final List before return
+##' @param prop current properties
+##' @return lotri amplified with defaults for all parameters
+##' @author Matthew Fidler
+##' @noRd
+.amplifyFinal <- function(finalList, prop) {
+  for (.p in names(prop)) {
+    .cur <- prop[[.p]]
+    .dim <- dimnames(finalList[[.p]])[[1]]
+    for (.d in names(.defaultProperties)) {
+      if (any(names(.cur) == .d)) {
+        .final <- setNames(rep(.defaultProperties[.d], length(.dim)), .dim)
+        .curD <- .cur[[.d]]
+        for (.c in names(.curD)) {
+          .final[.c] <- .curD[.c]
+        }
+        .cur[[.d]] <- .final
+      }
+    }
+    prop[[.p]] <- .cur
+  }
+  return(prop)
+}
 ##' Merge properties between two matrices
 ##'
 ##' @param prop Initial property list or character vector of names to
@@ -217,7 +242,7 @@
     .ret[[id]] <- new
     return(.ret)
   }
-  if (!inherits(prop, "list")){
+  if (!inherits(prop, "list")) {
     for (.n in names(new)) {
       if (any(.n == names(.defaultProperties))) {
         new[[.n]] <- c(new[[.n]],
@@ -245,6 +270,28 @@
   .ret <- prop
   .ret[[id]] <- .old
   return(.ret)
+}
+
+##' Extract a matrix saved in the environment
+##'
+##' @param env Environment where matrix is saved
+##' @param val value where the matrix is saved in
+##' @return named matrix
+##' @author Matthew Fidler
+##' @noRd
+.getMatrix <- function(env, val) {
+  .mats <- env[[val]]
+  .omega <- as.matrix(Matrix::bdiag(.mats))
+  .d <- unlist(lapply(seq_along(.mats),
+                          function(x) {
+                            dimnames(.mats[[x]])[2]
+                          }))
+  .lotri <- lapply(seq_along(.mats),
+                   function(x) {
+                     attr(.mats[[x]], "lotri")
+                   })
+  dimnames(.omega) <- list(.d, .d)
+  return(.omega)
 }
 
 ##' Easily Specify block-diagonal matrices with lower triangular info
@@ -321,6 +368,7 @@ lotri  <- function(x, ..., envir=parent.frame()) {
     .call <- .call[-.w]
   }
   .fullCnd <- NULL
+  .fullCndLst <- list()
   if (length(.call[[1]]) > 1) {
     if (identical(.call[[1]][[1]], quote(`|`))) {
       .cnd <- .call[[1]][[3]]
@@ -332,15 +380,56 @@ lotri  <- function(x, ..., envir=parent.frame()) {
   if (is.null(x)) {
     .ret  <- NULL
   } else if (is.list(x)) {
-    omega  <- lapply(x, lotri)
-    if (is(omega, "list")) {
-      .omega <- as.matrix(Matrix::bdiag(omega))
-      .d <- unlist(lapply(seq_along(omega),
-                          function(x) {
-                            dimnames(omega[[x]])[2]
-                          }))
-      dimnames(.omega) <- list(.d, .d)
-      omega <- .omega
+    omega  <- lapply(x, lotri, envir=envir)
+    if (inherits(omega, "list")) {
+      .env <- new.env(parent=emptyenv())
+      .env[["...cnd"]] <- c()
+      .env[["...empty"]] <- list()
+      lapply(seq_along(omega), function(x){
+        .cur <- omega[[x]]
+        .curName <- names(omega)[x]
+        if (is.null(.curName)) {
+          .curName <- ""
+        }
+        if (inherits(.cur, "matrix")) {
+          if (.curName == "") {
+            assign("...empty", c(.env[["...empty"]], list(.cur)), .env)
+          } else {
+            assign(.curName, c(.env[[.curName]], list(.cur)), .env)
+            assign("...cnd", unique(c(.env[["...cnd"]], .curName)), .env)
+          }
+        } else if (inherits(.cur, "list") || inherits(.cur, "lotri")) {
+          lapply(seq_along(.cur),
+                 function(y) {
+                   .cury <- .cur[[y]]
+                   .curName <- names(.cur)[y]
+                   if (.curName == "") {
+                     assign("...empty", c(.env[["...empty"]],
+                                          list(.cury)), .env)
+                   } else {
+                     assign(.curName, list(.cury), .env)
+                     assign("...cnd", unique(c(.env[["...cnd"]],
+                                               .curName)), .env)
+                   }
+                 })
+        }
+      })
+      if (length(.env$...empty) > 0){
+        .omega <- .getMatrix(.env, "...empty")
+      } else {
+        .omega <- NULL
+      }
+      if (length(.env$...cnd) > 0) {
+        .lst <- setNames(lapply(.env$...cnd, function(cnd) {
+            .getMatrix(.env, cnd)
+        }), .env$...cnd)
+        if (!is.null(.omega)) {
+          .lst <- c(list(.omega), .lst)
+        }
+        omega <- .lst
+      } else {
+        omega <- .omega
+      }
     }
     .ret  <- omega
   } else if (is.matrix(x)) {
@@ -408,6 +497,7 @@ lotri  <- function(x, ..., envir=parent.frame()) {
         .lstC <- c(.lstC, list(.other))
       }
       if (!is.null(.prop)) {
+        .prop <- .amplifyFinal(.lstC, .prop)
         attr(.lstC, "lotri") <- .prop
         class(.lstC) <- "lotri"
       }
@@ -417,26 +507,58 @@ lotri  <- function(x, ..., envir=parent.frame()) {
   if (!is.null(.fullCnd)) {
     .lst <- list()
     .lst[[.fullCnd]] <- .ret
-    if (length(.call) == 1L) return(.lst)
+    .prop <- NULL
+    if (!is.null(.fullCndLst[[2]])) {
+        .prop <- list();
+        .prop[[.fullCnd]] <- .amplifyDefault(.fullCndLst[[2]],
+                                             dimnames(.ret)[[1]])
+    }
+    if (!is.null(.prop)) {
+      attr(.lst, "lotri") <- .amplifyFinal(.lst, .prop)
+      class(.lst) <- "lotri"
+    }
+    if (length(.call) == 1L) {
+      return(.lst)
+    }
     .call <- .call[-1]
     .tmp <- do.call("lotri", .call, envir=envir)
     if (any(names(.tmp) == .fullCnd)) {
+      if (!is.null(.prop)) {
+        .tmpL <- attr(.tmp, "lotri")
+        .tmp0 <- .tmpL[[.fullCnd]];
+        .tmp1 <- .tmpL[names(.tmpL) != .fullCnd];
+        .prop <- .mergeProp(.prop, .fullCnd,
+                            .amplifyDefault(.tmp0,
+                                            dimnames(.tmp[[.fullCnd]])[[1]]));
+        .prop <- c(.prop, .tmp1);
+      }
       .ret <- lotri(list(.ret, .tmp[[.fullCnd]]), envir=envir)
       .w <- which(names(.tmp) != .fullCnd)
       if (length(.w) > 0L) {
         .tmp <- .tmp[.w]
         .tmp2 <- list()
         .tmp2[[.fullCnd]] <- .ret
-        return(c(.tmp2, .tmp))
+        .ret <- c(.tmp2, .tmp)
+        return(.ret)
       } else {
         .tmp <- list()
         .tmp[[.fullCnd]] <- .ret
+        if (!is.null(.prop)) {
+          attr(.tmp, "lotri") <- .amplifyFinal(.tmp, .prop)
+          class(.tmp) <- "lotri"
+        }
         return(.tmp)
       }
     } else {
       .lst <- list()
       .lst[[.fullCnd]] <- .ret
-      return(c(.lst, .tmp))
+      .tmpCnd <- c(.prop, attr(.tmp, "lotri"))
+      .ret <- c(.lst, .tmp)
+      if (!is.null(.tmpCnd)) {
+        attr(.ret, "lotri") <- .amplifyFinal(.ret, .tmpCnd)
+        class(.ret) <- "lotri"
+      }
+      return(.ret)
     }
   } else {
     if (length(.call) == 1L) return(.ret)
@@ -453,7 +575,12 @@ lotri  <- function(x, ..., envir=parent.frame()) {
         return(.ret)
       }
     } else {
-      return(lotri(c(list(.ret), list(.tmp)), envir=envir))
+      .ret <- lotri(c(list(.ret), list(.tmp)), envir=envir)
+      if (inherits(.tmp, "lotri")) {
+        attr(.ret, "lotri") <- .amplifyFinal(.ret, attr(.tmp, "lotri"))
+        class(.ret) <- "lotri"
+      }
+      return(.ret)
     }
   }
 }
@@ -466,14 +593,14 @@ print.lotri <- function(x, ...){
   attr(.tmp, "lotri") <- NULL
   print(.tmp)
   .names <- x$.names
-  if (length(.names) > 0){
+  if (length(.names) > 0) {
     cat(paste0("Properties: ", paste(.names, collapse=", ")), "\n")
   }
   return(invisible(x))
 }
 
 ##' @export
-str.lotri <- function(object, ...){
+str.lotri <- function(object, ...) {
   str(object$.list)
 }
 
@@ -513,7 +640,7 @@ str.lotri <- function(object, ...){
   .env$empty <- TRUE
   .ret <- setNames(lapply(names(obj), function(x) {
     if (any(names(.lotri) == x)) {
-      .ret <-.lotri[[x]][[arg]]
+      .ret <- .lotri[[x]][[arg]]
       if (is.null(.ret)) return(NULL)
       assign("empty", FALSE, .env)
       return(.ret)
