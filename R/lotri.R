@@ -548,7 +548,7 @@ lotri  <- function(x, ..., envir=parent.frame()) {
     .lst[[.fullCnd]] <- .ret
     .prop <- NULL
     if (!is.null(.fullCndLst[[2]])) {
-        .prop <- list();
+        .prop <- list()
         .prop[[.fullCnd]] <- .amplifyDefault(.fullCndLst[[2]],
                                              dimnames(.ret)[[1]])
     }
