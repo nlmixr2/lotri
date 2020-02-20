@@ -70,6 +70,24 @@ lotri(list(et2 + et3 + et4 ~ c(40,
 ## Overall this is a flexible way to specify symmetric block
 ## diagonal matrices.
 
+## For RxODE, you may also condition based on different levels of
+## nesting with lotri;  Here is an example:
+
+mat <- lotri(lotri(iov.Ka ~ 0.5,
+                    iov.Cl ~ 0.6),
+              lotri(occ.Ka ~ 0.5,
+                    occ.Cl ~ 0.6) | occ(lower=4))
+
+mat
+
+## you may access features of the matrix simply by `$` that is
+
+mat$lower
+
+## Shows the lower bound for each condition
+
+
+
 }
 \author{
 Matthew L Fidler

@@ -355,6 +355,45 @@
 ##' ## Overall this is a flexible way to specify symmetric block
 ##' ## diagonal matrices.
 ##'
+##' ## For RxODE, you may also condition based on different levels of
+##' ## nesting with lotri;  Here is an example:
+##'
+##' mat <- lotri(lotri(iov.Ka ~ 0.5,
+##'                     iov.Cl ~ 0.6),
+##'               lotri(occ.Ka ~ 0.5,
+##'                     occ.Cl ~ 0.6) | occ(lower=4,nu=3))
+##'
+##' mat
+##'
+##' ## you may access features of the matrix simply by `$` that is
+##'
+##' mat$lower # Shows the lower bound for each condition
+##'
+##' mat$lower$occ # shows the lower bound for the occasion variable
+##'
+##' ## Note that `lower` fills in defaults for parameters.  This is true
+##' ## for `upper` true;  In fact when accessing this the defaults
+##' ## are put into the list
+##'
+##' mat$upper
+##'
+##' ## However all other values return NULL if they are not present like
+##'
+##' mat$lotri
+##'
+##' ## And values that are specified once are only returned on one list:
+##'
+##' mat$nu
+##'
+##' mat$nu$occ
+##' mat$nu$id
+##'
+##' ## You can also change the default condition with `as.lotri`
+##'
+##' mat <- as.lotri(mat,default="id")
+##'
+##' mat
+##'
 ##' @author Matthew L Fidler
 ##' @importFrom methods is
 ##' @importFrom stats setNames
@@ -525,12 +564,12 @@ lotri  <- function(x, ..., envir=parent.frame()) {
     if (any(names(.tmp) == .fullCnd)) {
       if (!is.null(.prop)) {
         .tmpL <- attr(.tmp, "lotri")
-        .tmp0 <- .tmpL[[.fullCnd]];
-        .tmp1 <- .tmpL[names(.tmpL) != .fullCnd];
+        .tmp0 <- .tmpL[[.fullCnd]]
+        .tmp1 <- .tmpL[names(.tmpL) != .fullCnd]
         .prop <- .mergeProp(.prop, .fullCnd,
                             .amplifyDefault(.tmp0,
-                                            dimnames(.tmp[[.fullCnd]])[[1]]));
-        .prop <- c(.prop, .tmp1);
+                                            dimnames(.tmp[[.fullCnd]])[[1]]))
+        .prop <- c(.prop, .tmp1)
       }
       .ret <- lotri(list(.ret, .tmp[[.fullCnd]]), envir=envir)
       .w <- which(names(.tmp) != .fullCnd)
@@ -645,7 +684,7 @@ str.lotri <- function(object, ...) {
       assign("empty", FALSE, .env)
       return(.ret)
     } else {
-      .def <- .defaultProperties[arg];
+      .def <- .defaultProperties[arg]
       if (!is.na(.def)) {
         .w <- which(names(obj) == x)
         if (length(.w) == 1){
@@ -661,6 +700,68 @@ str.lotri <- function(object, ...) {
   if (length(.w) > 0) {
       .ret <- .ret[-.w]
   }
-  if (.env$empty) return(NULL)
+  if (.env$empty) {
+      .def <- .defaultProperties[arg]
+      if (!is.na(.def)) {
+          .ret <- setNames(lapply(names(obj), function(x) {
+              .dim <- dimnames(obj[[x]])[[1]]
+              setNames(rep(.def, length(.dim)), .dim)
+          }), names(obj))
+          return(.ret)
+      }
+      return(NULL)
+  }
   return(.ret)
+}
+
+##' As lower triangular matrix
+##'
+##' @param x Matrix or other data frame
+##'
+##' @param ... Other factors
+##'
+##' @param default Is the default factor when no conditioning is
+##'     implemented.
+##'
+##' @return Lower triangular matrix
+##'
+##' @author Matthew Fidler
+##'
+##' @export
+as.lotri <- function(x, ..., default="") {
+    UseMethod("as.lotri")
+}
+
+##' @rdname as.lotri
+##' @export
+as.lotri.matrix <- function(x, ..., default="") {
+    .ret <- setNames(list(x), default)
+    class(.ret) <- "lotri"
+    .ret
+}
+
+##' @rdname as.lotri
+##' @export
+as.lotri.default <- function(x, ..., default="") {
+    .ret <- x
+    class(.ret) <- NULL
+    .n <- names(.ret)
+    .w <- which(names(.ret) == "")
+    if (length(.w) == 1) {
+        .n[.w] <- default
+        names(.ret) <- .n
+    }
+    class(.ret) <- "lotri"
+    return(.ret)
+}
+
+##'@export
+as.matrix.lotri <- function(x, ...){
+    .ret <- x
+    class(.ret) <- NULL
+    if (length(.ret) == 1){
+        return(.ret[[1]])
+    } else {
+        stop("cannot convert multiple level lotri matrix to simple matrix")
+    }
 }

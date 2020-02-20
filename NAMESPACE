@@ -2,8 +2,12 @@
 
 S3method("$",lotri)
 S3method(.DollarNames,lotri)
+S3method(as.lotri,default)
+S3method(as.lotri,matrix)
+S3method(as.matrix,lotri)
 S3method(print,lotri)
 S3method(str,lotri)
+export(as.lotri)
 export(lotri)
 importFrom(methods,is)
 importFrom(stats,setNames)

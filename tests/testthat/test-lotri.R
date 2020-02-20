@@ -293,6 +293,8 @@ test_that("lotri matrix parsing", {
 
     expect_equal(tmp2$upper, list(id=c(et1=3, et2=3, et3= Inf)))
 
+    expect_equal(tmp2$lower, list(id = c(et1 = -Inf, et2 = -Inf, et3 = -Inf)))
+
     tmp2 <- lotri(et1 + et2 ~ c(1,
                                 2, 3) | id(lower=c(et2=3)),
                   et3 ~ 3 | id)
@@ -423,16 +425,36 @@ test_that("lotri matrix parsing", {
                   lotri(occ.Ka ~ 0.5,
                         occ.Cl ~ 0.6) | occ(lower=4))
 
+    expect_equal(tmp2,
+                 structure(list(iov = structure(c(0.5, 0, 0, 0.6), .Dim = c(2L,
+2L), .Dimnames = list(c("iov.Ka", "iov.Cl"), c("iov.Ka", "iov.Cl"
+))), occ = structure(c(0.5, 0, 0, 0.6), .Dim = c(2L, 2L), .Dimnames = list(
+    c("occ.Ka", "occ.Cl"), c("occ.Ka", "occ.Cl")))), lotri = list(
+    occ = list(lower = c(occ.Ka = 4, occ.Cl = 4))), class = "lotri"))
+
 
     tmp2 <- lotri(lotri(iov.Ka ~ 0.5,
                          iov.Cl ~ 0.6) | iov(lower=3),
                   lotri(occ.Ka ~ 0.5,
                         occ.Cl ~ 0.6) | occ)
 
+    expect_equal(tmp2,
+                 structure(list(iov = structure(c(0.5, 0, 0, 0.6), .Dim = c(2L,
+2L), .Dimnames = list(c("iov.Ka", "iov.Cl"), c("iov.Ka", "iov.Cl"
+))), occ = structure(c(0.5, 0, 0, 0.6), .Dim = c(2L, 2L), .Dimnames = list(
+    c("occ.Ka", "occ.Cl"), c("occ.Ka", "occ.Cl")))), lotri = list(
+    iov = list(lower = c(iov.Ka = 3, iov.Cl = 3))), class = "lotri"))
+
     tmp2 <- lotri(lotri(iov.Ka ~ 0.5,
                          iov.Cl ~ 0.6) | iov,
                   lotri(occ.Ka ~ 0.5,
                         occ.Cl ~ 0.6) | occ)
+
+    expect_equal(tmp2,
+                 list(iov = structure(c(0.5, 0, 0, 0.6), .Dim = c(2L, 2L), .Dimnames = list(
+    c("iov.Ka", "iov.Cl"), c("iov.Ka", "iov.Cl"))), occ = structure(c(0.5,
+0, 0, 0.6), .Dim = c(2L, 2L), .Dimnames = list(c("occ.Ka", "occ.Cl"
+), c("occ.Ka", "occ.Cl")))))
 
 
     tmp2 <- lotri(lotri(iov.Ka ~ 0.5,
@@ -440,9 +462,44 @@ test_that("lotri matrix parsing", {
                   lotri(occ.Ka ~ 0.5,
                         occ.Cl ~ 0.6) | occ(lower=4))
 
+    expect_equal(tmp2, structure(list(structure(c(0.5, 0, 0, 0.6), .Dim = c(2L, 2L), .Dimnames = list(
+    c("iov.Ka", "iov.Cl"), c("iov.Ka", "iov.Cl"))), occ = structure(c(0.5,
+0, 0, 0.6), .Dim = c(2L, 2L), .Dimnames = list(c("occ.Ka", "occ.Cl"
+), c("occ.Ka", "occ.Cl")))), lotri = list(occ = list(lower = c(occ.Ka = 4,
+occ.Cl = 4))), class = "lotri"))
+
     tmp2 <- lotri(lotri(iov.Ka ~ 0.5,
                          iov.Cl ~ 0.6) | iov(lower=3),
                   lotri(occ.Ka ~ 0.5,
                         occ.Cl ~ 0.6))
+
+    expect_equal(tmp2,
+                 structure(list(iov = structure(c(0.5, 0, 0, 0.6), .Dim = c(2L,
+2L), .Dimnames = list(c("iov.Ka", "iov.Cl"), c("iov.Ka", "iov.Cl"
+))), 0.5, 0, 0, 0.6), lotri = list(iov = list(lower = c(iov.Ka = 3,
+iov.Cl = 3))), class = "lotri"))
+
+
+    tmp2 <- lotri(iov.Ka ~ 0.5,
+                  iov.Cl ~ 0.6)
+
+    tmp3 <- as.lotri(tmp2)
+
+    expect_equal(tmp3, structure(list(structure(c(0.5, 0, 0, 0.6), .Dim = c(2L, 2L), .Dimnames = list(
+    c("iov.Ka", "iov.Cl"), c("iov.Ka", "iov.Cl")))), .Names = "", class = "lotri"))
+
+    tmp3 <- as.lotri(tmp3, default="id")
+
+    expect_equal(tmp3, structure(list(id = structure(c(0.5, 0, 0, 0.6), .Dim = c(2L,
+                                                                                 2L), .Dimnames = list(c("iov.Ka", "iov.Cl"), c("iov.Ka", "iov.Cl")))), class = "lotri"))
+
+    expect_true(inherits(as.matrix(tmp3), "matrix"))
+
+    tmp2 <- lotri(lotri(iov.Ka ~ 0.5,
+                         iov.Cl ~ 0.6) | iov(lower=3),
+                  lotri(occ.Ka ~ 0.5,
+                        occ.Cl ~ 0.6))
+
+    expect_error(as.matrix(tmp2))
 
 })
