@@ -502,4 +502,12 @@ iov.Cl = 3))), class = "lotri"))
 
     expect_error(as.matrix(tmp2))
 
+    l1 <- as.lotri(lotri(et1+et2 ~c(0.1, 0.01, 1)), lower=4, default="id")
+    
+    l2 <- lotri(et1+et2 ~c(0.1, 0.01, 1) | id(lower=4))
+
+    expect_equal(l1,l2)
+
+    expect_error(as.lotri(lotri(et1+et2 ~c(0.1, 0.01, 1)), lower=4))
+
 })

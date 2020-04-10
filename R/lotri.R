@@ -101,7 +101,7 @@
                 env[[paste0(.cnd, ".extra")]] <- .cndFull[[2]]
                 .val <- try(eval(x[[3]][[2]]), silent=TRUE)
                 if ((length(.val) == 1) &&
-                      (is.numeric(.val) || is.integer(.val))) {
+                    (is.numeric(.val) || is.integer(.val))) {
                   .env2$netas <- 1
                   .env2$eta1 <- .env2$eta1 + 1
                   .env2$names  <- c(.env2$names, as.character(x[[2]]))
@@ -132,9 +132,8 @@
     stop("bad matrix specification")
   }
 }
-##' .. content for \description{} (no empty lines) ..
+##' Parses conditione
 ##'
-##' .. content for \details{} ..
 ##' @param cond Condition parsing tree
 ##' @param envir
 ##' @return list with 2 elements:
@@ -283,9 +282,9 @@
   .mats <- env[[val]]
   .omega <- as.matrix(Matrix::bdiag(.mats))
   .d <- unlist(lapply(seq_along(.mats),
-                          function(x) {
-                            dimnames(.mats[[x]])[2]
-                          }))
+                      function(x) {
+                        dimnames(.mats[[x]])[2]
+                      }))
   .lotri <- lapply(seq_along(.mats),
                    function(x) {
                      attr(.mats[[x]], "lotri")
@@ -460,7 +459,7 @@ lotri  <- function(x, ..., envir=parent.frame()) {
       }
       if (length(.env$...cnd) > 0) {
         .lst <- setNames(lapply(.env$...cnd, function(cnd) {
-            .getMatrix(.env, cnd)
+          .getMatrix(.env, cnd)
         }), .env$...cnd)
         if (!is.null(.omega)) {
           .lst <- c(list(.omega), .lst)
@@ -548,9 +547,9 @@ lotri  <- function(x, ..., envir=parent.frame()) {
     .lst[[.fullCnd]] <- .ret
     .prop <- NULL
     if (!is.null(.fullCndLst[[2]])) {
-        .prop <- list()
-        .prop[[.fullCnd]] <- .amplifyDefault(.fullCndLst[[2]],
-                                             dimnames(.ret)[[1]])
+      .prop <- list()
+      .prop[[.fullCnd]] <- .amplifyDefault(.fullCndLst[[2]],
+                                           dimnames(.ret)[[1]])
     }
     if (!is.null(.prop)) {
       attr(.lst, "lotri") <- .amplifyFinal(.lst, .prop)
@@ -698,18 +697,18 @@ str.lotri <- function(object, ...) {
   }), names(obj))
   .w <- which(unlist(lapply(.ret, is.null)))
   if (length(.w) > 0) {
-      .ret <- .ret[-.w]
+    .ret <- .ret[-.w]
   }
   if (.env$empty) {
-      .def <- .defaultProperties[arg]
-      if (!is.na(.def)) {
-          .ret <- setNames(lapply(names(obj), function(x) {
-              .dim <- dimnames(obj[[x]])[[1]]
-              setNames(rep(.def, length(.dim)), .dim)
-          }), names(obj))
-          return(.ret)
-      }
-      return(NULL)
+    .def <- .defaultProperties[arg]
+    if (!is.na(.def)) {
+      .ret <- setNames(lapply(names(obj), function(x) {
+        .dim <- dimnames(obj[[x]])[[1]]
+        setNames(rep(.def, length(.dim)), .dim)
+      }), names(obj))
+      return(.ret)
+    }
+    return(NULL)
   }
   return(.ret)
 }
@@ -729,39 +728,53 @@ str.lotri <- function(object, ...) {
 ##'
 ##' @export
 as.lotri <- function(x, ..., default="") {
-    UseMethod("as.lotri")
+  UseMethod("as.lotri")
 }
 
 ##' @rdname as.lotri
 ##' @export
 as.lotri.matrix <- function(x, ..., default="") {
-    .ret <- setNames(list(x), default)
-    class(.ret) <- "lotri"
-    .ret
+  .ret <- setNames(list(x), default)
+  .extra <- list(...)
+  .extra <- .extra[which(sapply(seq_along(.extra),
+                        function(i){
+                          !is.null(.extra[[i]])
+                        }))]
+  if (length(.extra) > 0 && default != "") {
+    .extra <- .extra[which(!is.null(.extra))];
+    .extra <- .amplifyDefault(.extra, dimnames(x)[[2]])
+    .extra <- list(.extra)
+    .extra <- setNames(.extra, default)
+    attr(.ret, "lotri") <- .extra
+  } else if (length(.extra) > 0) {
+    stop("extra properties need default try `lotri(matrix,x=3,default=\"id\")`")
+  }
+  class(.ret) <- "lotri"
+  .ret
 }
 
 ##' @rdname as.lotri
 ##' @export
 as.lotri.default <- function(x, ..., default="") {
-    .ret <- x
-    class(.ret) <- NULL
-    .n <- names(.ret)
-    .w <- which(names(.ret) == "")
-    if (length(.w) == 1) {
-        .n[.w] <- default
-        names(.ret) <- .n
-    }
-    class(.ret) <- "lotri"
-    return(.ret)
+  .ret <- x
+  class(.ret) <- NULL
+  .n <- names(.ret)
+  .w <- which(names(.ret) == "")
+  if (length(.w) == 1) {
+    .n[.w] <- default
+    names(.ret) <- .n
+  }
+  class(.ret) <- "lotri"
+  return(.ret)
 }
 
 ##'@export
 as.matrix.lotri <- function(x, ...){
-    .ret <- x
-    class(.ret) <- NULL
-    if (length(.ret) == 1){
-        return(.ret[[1]])
-    } else {
-        stop("cannot convert multiple level lotri matrix to simple matrix")
-    }
+  .ret <- x
+  class(.ret) <- NULL
+  if (length(.ret) == 1){
+    return(.ret[[1]])
+  } else {
+    stop("cannot convert multiple level lotri matrix to simple matrix")
+  }
 }
