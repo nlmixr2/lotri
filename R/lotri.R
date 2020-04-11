@@ -736,10 +736,12 @@ as.lotri <- function(x, ..., default="") {
 as.lotri.matrix <- function(x, ..., default="") {
   .ret <- setNames(list(x), default)
   .extra <- list(...)
-  .extra <- .extra[which(sapply(seq_along(.extra),
-                        function(i){
-                          !is.null(.extra[[i]])
-                        }))]
+  if (length(.extra) > 0) {
+    .extra <- .extra[which(sapply(seq_along(.extra),
+                                  function(i){
+                                    !is.null(.extra[[i]])
+                                  }))]
+  }
   if (length(.extra) > 0 && default != "") {
     .extra <- .amplifyDefault(.extra, dimnames(x)[[2]])
     .extra <- list(.extra)
