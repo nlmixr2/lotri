@@ -741,7 +741,6 @@ as.lotri.matrix <- function(x, ..., default="") {
                           !is.null(.extra[[i]])
                         }))]
   if (length(.extra) > 0 && default != "") {
-    .extra <- .extra[which(!is.null(.extra))];
     .extra <- .amplifyDefault(.extra, dimnames(x)[[2]])
     .extra <- list(.extra)
     .extra <- setNames(.extra, default)
