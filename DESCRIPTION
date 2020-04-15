@@ -22,7 +22,8 @@ Suggests:
     covr,
     knitr,
     rmarkdown,
-    Matrix
+    Matrix,
+    microbenchmark
 NeedsCompilation: yes
 Biarch: true
 RoxygenNote: 7.0.2
