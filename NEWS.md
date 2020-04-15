@@ -4,6 +4,8 @@
   wasn't specified.
 * Can change the default conditional matrix to some other value like "id"
 * Can add properties to matrx->lotri by as.lotri(matrix, lower=3, default="id")
+* Dropped `Matrix` import and added `lotriMat` to create banded
+  matrices (faster than `Matrix` for now).
 
 # lotri 0.2.1
 * Added conditional matrix specification `|`; Returns a list of matrices

@@ -1,3 +1,6 @@
+##' @useDynLib lotri, .registration = TRUE
+NULL
+
 ##' Parse lower triangular matrix list
 ##'
 ##' This is for x~c(1..) or x1+x2~c(...)
@@ -279,18 +282,18 @@
 ##' @author Matthew Fidler
 ##' @noRd
 .getMatrix <- function(env, val) {
-  .mats <- env[[val]]
-  .omega <- as.matrix(Matrix::bdiag(.mats))
-  .d <- unlist(lapply(seq_along(.mats),
-                      function(x) {
-                        dimnames(.mats[[x]])[2]
-                      }))
-  .lotri <- lapply(seq_along(.mats),
-                   function(x) {
-                     attr(.mats[[x]], "lotri")
-                   })
-  dimnames(.omega) <- list(.d, .d)
-  return(.omega)
+  return(.Call(`_lotriLstToMat`, env[[val]], PACKAGE='lotri'))
+  ## .omega <- as.matrix(Matrix::bdiag(.mats))
+  ## .d <- unlist(lapply(seq_along(.mats),
+  ##                     function(x) {
+  ##                       dimnames(.mats[[x]])[2]
+  ##                     }))
+  ## .lotri <- lapply(seq_along(.mats),
+  ##                  function(x) {
+  ##                    attr(.mats[[x]], "lotri")
+  ##                  })
+  ## dimnames(.omega) <- list(.d, .d)
+  ## return(.omega)
 }
 
 ##' Easily Specify block-diagonal matrices with lower triangular info
@@ -778,4 +781,28 @@ as.matrix.lotri <- function(x, ...){
   } else {
     stop("cannot convert multiple level lotri matrix to simple matrix")
   }
+}
+##' Create a matrix from a list of matrices
+##' 
+##' @param list List of symmetric named matrices
+##'
+##' @return Named symmetric block diagonal matrix based on
+##'   concatenating the list of matrices together
+##' 
+##' @examples
+##'
+##' testList <- list(lotri({et2 + et3 + et4 ~ c(40,
+##'                            0.1, 20,
+##'                            0.1, 0.1, 30)}),
+##'                  lotri(et5 ~ 6)
+##'             })
+##'
+##' testList
+##'
+##' lotriMat(testList)
+##' 
+##' @export
+##' @author Matthew Fidler
+lotriMat <- function(list) {
+  .Call(`_lotriLstToMat`, list, PACKAGE='lotri')
 }

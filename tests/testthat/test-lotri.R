@@ -510,4 +510,28 @@ iov.Cl = 3))), class = "lotri"))
 
     expect_error(as.lotri(lotri(et1+et2 ~c(0.1, 0.01, 1)), lower=4))
 
+    testList <- list(lotri({et2 + et3 + et4 ~ c(40,
+                            0.1, 20,
+                            0.1, 0.1, 30)}),
+                     lotri(et5 ~ 6),
+                     lotri(et1+et6 ~c(0.1, 0.01, 1)),
+                     matrix(c(1L, 0L, 0L, 1L), 2, 2,
+                            dimnames=list(c("et7", "et8"),
+                                          c("et7", "et8"))))
+    lotriMat(testList)
+
+    expect_error(lotriMat(list(lotri({et2 + et3 + et4 ~ c(40,
+                            0.1, 20,
+                            0.1, 0.1, 30)}),
+                            4)))
+
+    expect_error(lotriMat(3))
+    
+
+    ##   dimnames(.omega) <- list(.d, .d)
+    ##   return(.omega)
+    ## }
+
+    ## microbenchmark::microbenchmark(matf(testList),lotriMat(testList))
+
 })
