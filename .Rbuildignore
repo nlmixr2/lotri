@@ -3,3 +3,4 @@
 ^\.travis\.yml$
 ^lotri\.Rproj$
 ^\.Rproj\.user$
+^README\.Rmd$

@@ -518,7 +518,6 @@ iov.Cl = 3))), class = "lotri"))
                      matrix(c(1L, 0L, 0L, 1L), 2, 2,
                             dimnames=list(c("et7", "et8"),
                                           c("et7", "et8"))))
-    lotriMat(testList)
 
     expect_error(lotriMat(list(lotri({et2 + et3 + et4 ~ c(40,
                             0.1, 20,
@@ -527,11 +526,4 @@ iov.Cl = 3))), class = "lotri"))
 
     expect_error(lotriMat(3))
     
-
-    ##   dimnames(.omega) <- list(.d, .d)
-    ##   return(.omega)
-    ## }
-
-    ## microbenchmark::microbenchmark(matf(testList),lotriMat(testList))
-
 })
