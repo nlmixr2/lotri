@@ -530,7 +530,7 @@ iov.Cl = 3))), class = "lotri"))
     expect_error(lotriMat(list(lotri({et2 + et3 + et4 ~ c(40,
                             0.1, 20,
                             0.1, 0.1, 30)}),
-                            4)))
+                            "A")))
 
     expect_error(lotriMat(3))
 

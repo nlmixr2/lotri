@@ -11,6 +11,33 @@
 #define _(String) (String)
 #endif
 
+static inline int isSymNameMat(SEXP cur) {
+  int type = TYPEOF(cur);
+  if (type == INTSXP || type == REALSXP) {
+    if (Rf_isMatrix(cur)){
+      int nrows = Rf_nrows(cur);
+      int ncols = Rf_ncols(cur);
+      if (nrows == ncols) {
+	SEXP dimn = Rf_getAttrib(cur, R_DimNamesSymbol);
+	if (dimn != R_NilValue) {
+	  return nrows;
+	}
+      }
+    }
+  }
+  return 0;
+}
+
+static inline int isSingleInt(SEXP in) {
+  int type = TYPEOF(in);
+  if (type == INTSXP && Rf_length(in) == 1) {
+    if (!Rf_isMatrix(in)) return INTEGER(in)[0];
+  } else if (type == REALSXP && Rf_length(in) == 1) {
+    if (!Rf_isMatrix(in)) return (int)(REAL(in)[0]);
+  }
+  return NA_INTEGER;
+}
+
 int getCheckDim(SEXP lst, int i) {
   SEXP cur = VECTOR_ELT(lst, i);
   int type = TYPEOF(cur);
@@ -19,13 +46,8 @@ int getCheckDim(SEXP lst, int i) {
     if (Rf_length(cur) != 2){
       Rf_error(_("when repeating matrices you need to use 'list(mat, n)'"));
     }
-    SEXP sameS = VECTOR_ELT(cur, 1);
-    int type2 = TYPEOF(sameS);
-    if (type2 == INTSXP && Rf_length(sameS) == 1) {
-      same = INTEGER(sameS)[0];
-    } else if (type2 == REALSXP && Rf_length(sameS) == 1) {
-      same = (int)(REAL(sameS)[0]);
-    } else {
+    same = isSingleInt(VECTOR_ELT(cur, 1));
+    if (same == NA_INTEGER) {
       Rf_error(_("you can only repeat a matrix a single positive number of times"));
     }
     if (same <= 0) {
@@ -34,19 +56,12 @@ int getCheckDim(SEXP lst, int i) {
     cur = VECTOR_ELT(cur, 0);
     type = TYPEOF(cur);
   }
-  if (type == INTSXP || type == REALSXP) {
-    if (Rf_isMatrix(cur)){
-      int nrows = Rf_nrows(cur);
-      int ncols = Rf_ncols(cur);
-      if (nrows == ncols) {
-	SEXP dimn = Rf_getAttrib(cur, R_DimNamesSymbol);
-	if (dimn != R_NilValue) {
-	  return nrows*same;
-	}
-      }
-    }
+  int ret = isSymNameMat(cur);
+  if (ret){
+    return ret*same;
+  } else {
+    Rf_error(_("list element %d is not a symmetric named matrix"), i+1);
   }
-  Rf_error(_("list element %d is not a symmetric named matrix"), i+1);
   return 0;
 }
 
@@ -65,19 +80,9 @@ static inline int setStrElt(SEXP retN, SEXP colnames, int curBand, int j,
 
 SEXP _lotriLstToMat(SEXP lst, SEXP format, SEXP startNum) {
   int type = TYPEOF(lst), totN;
-
   if (type != VECSXP) {
-    if (type == INTSXP || type == REALSXP) {
-      if (Rf_isMatrix(lst)){
-	int nrows = Rf_nrows(lst);
-	int ncols = Rf_ncols(lst);
-	if (nrows == ncols) {
-	  SEXP dimn = Rf_getAttrib(lst, R_DimNamesSymbol);
-	  if (dimn != R_NilValue) {
-	    return lst;
-	  }
-	}
-      }
+    if (isSymNameMat(lst)) {
+      return lst;
     }
     Rf_error(_("expects a list named symmetric matrices"));
   }
@@ -93,20 +98,29 @@ SEXP _lotriLstToMat(SEXP lst, SEXP format, SEXP startNum) {
   }
   int counter = 0;
   if (doFormat) {
-    type = TYPEOF(startNum);
-    if (type == INTSXP && Rf_length(startNum) == 1) {
-      counter = INTEGER(startNum)[0];
-    } else if (type == REALSXP && Rf_length(startNum) == 1) {
-      counter = (int)(REAL(startNum)[0]);
-    } else {
-      Rf_error(_("When format is specified, startNum must be a single integer"));
+    counter = isSingleInt(startNum);
+    if (counter == NA_INTEGER){
+      Rf_error(_("When format is specified, 'startNum' must be a single integer"));
     }
   }
   int len = Rf_length(lst);
   int pro = 0;
   int totdim = 0;
   int i, j;
-  for (i = 0; i < len; ++i) {
+  if (len == 2) {
+    int repN = isSingleInt(VECTOR_ELT(lst, 1));
+    if (repN == NA_INTEGER){
+    } else if (repN > 0) {
+      if (isSymNameMat(VECTOR_ELT(lst, 0))){
+	SEXP new = PROTECT(Rf_allocVector(VECSXP, 1)); pro++;
+	SET_VECTOR_ELT(new, 0, lst);
+	SEXP ret = _lotriLstToMat(new, format, startNum);
+	UNPROTECT(pro);
+	return ret;
+      }
+    }
+  }
+ for (i = 0; i < len; ++i) {
     totdim += getCheckDim(lst, i);
   }
   SEXP ret = PROTECT(Rf_allocMatrix(REALSXP, totdim, totdim)); pro++;
