@@ -4,15 +4,31 @@
 \alias{lotriMat}
 \title{Create a matrix from a list of matrices}
 \usage{
-lotriMat(list)
+lotriMat(matList)
 }
 \arguments{
-\item{list}{List of symmetric named matrices}
+\item{matList}{list of symmetric named matrices}
 }
 \value{
 Named symmetric block diagonal matrix based on
   concatenating the list of matrices together
 }
 \description{
-Create a matrix from a list of matrices
+This creates a named banded symmetric matrix from a list of named
+symmetric matrices.
+}
+\examples{
+
+testList <- list(lotri({et2 + et3 + et4 ~ c(40,
+                           0.1, 20,
+                           0.1, 0.1, 30)}),
+                 lotri(et5 ~ 6))
+
+testList
+
+lotriMat(testList)
+
+}
+\author{
+Matthew Fidler
 }

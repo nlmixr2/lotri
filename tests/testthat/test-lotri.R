@@ -519,6 +519,14 @@ iov.Cl = 3))), class = "lotri"))
                             dimnames=list(c("et7", "et8"),
                                           c("et7", "et8"))))
 
+    expect_equal(lotriMat(testList),
+                 structure(c(40, 0.1, 0.1, 0, 0, 0, 0, 0, 0.1, 20, 0.1, 0, 0, 
+0, 0, 0, 0.1, 0.1, 30, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 
+0, 0, 0, 0, 0.1, 0.01, 0, 0, 0, 0, 0, 0, 0.01, 1, 0, 0, 0, 0, 
+0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1), .Dim = c(8L, 8L), .Dimnames = list(
+    c("et2", "et3", "et4", "et5", "et1", "et6", "et7", "et8"), 
+    c("et2", "et3", "et4", "et5", "et1", "et6", "et7", "et8"))))
+
     expect_error(lotriMat(list(lotri({et2 + et3 + et4 ~ c(40,
                             0.1, 20,
                             0.1, 0.1, 30)}),

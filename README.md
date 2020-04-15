@@ -1,12 +1,6 @@
----
-output: github_document
----
-
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
 
-
-# lotri
 
 <!-- badges: start -->
 [![Travis build status](https://travis-ci.org/nlmixrdevelopment/lotri.svg?branch=master)](https://travis-ci.org/nlmixrdevelopment/lotri)
@@ -191,9 +185,9 @@ mb <- microbenchmark::microbenchmark(matf(testList),lotriMat(testList))
 
 print(mb)
 #> Unit: nanoseconds
-#>                expr    min       lq      mean   median     uq     max neval
-#>      matf(testList) 498119 511556.5 576768.02 530294.5 547773 4091618   100
-#>  lotriMat(testList)    920   1203.5   2422.58   2589.5   2865    6830   100
+#>                expr    min       lq      mean   median       uq     max neval
+#>      matf(testList) 496370 500427.5 556391.25 503193.0 516199.5 4563822   100
+#>  lotriMat(testList)    978   1167.0   2194.03   1421.5   3052.0   15645   100
 
 plot(mb)
 ```

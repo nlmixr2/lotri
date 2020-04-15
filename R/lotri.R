@@ -783,8 +783,11 @@ as.matrix.lotri <- function(x, ...){
   }
 }
 ##' Create a matrix from a list of matrices
+##'
+##' This creates a named banded symmetric matrix from a list of named
+##' symmetric matrices.
 ##' 
-##' @param list List of symmetric named matrices
+##' @param matList list of symmetric named matrices
 ##'
 ##' @return Named symmetric block diagonal matrix based on
 ##'   concatenating the list of matrices together
@@ -794,15 +797,14 @@ as.matrix.lotri <- function(x, ...){
 ##' testList <- list(lotri({et2 + et3 + et4 ~ c(40,
 ##'                            0.1, 20,
 ##'                            0.1, 0.1, 30)}),
-##'                  lotri(et5 ~ 6)
-##'             })
+##'                  lotri(et5 ~ 6))
 ##'
 ##' testList
 ##'
 ##' lotriMat(testList)
 ##' 
-##' @export
 ##' @author Matthew Fidler
-lotriMat <- function(list) {
-  .Call(`_lotriLstToMat`, list, PACKAGE='lotri')
+##' @export
+lotriMat <- function(matList) {
+  .Call(`_lotriLstToMat`, matList, PACKAGE='lotri')
 }
