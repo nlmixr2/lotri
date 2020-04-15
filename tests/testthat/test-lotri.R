@@ -533,5 +533,67 @@ iov.Cl = 3))), class = "lotri"))
                             4)))
 
     expect_error(lotriMat(3))
+
+    testList <- list(lotri({et2 + et3 + et4 ~ c(40,
+                            0.1, 20,
+                            0.1, 0.1, 30)}),
+                     list(lotri(et5 ~ 6), 3),
+                     lotri(et1+et6 ~c(0.1, 0.01, 1)),
+                     matrix(c(1L, 0L, 0L, 1L), 2, 2,
+                            dimnames=list(c("et7", "et8"),
+                                          c("et7", "et8"))))
+
+    testList1 <- list(lotri({et2 + et3 + et4 ~ c(40,
+                            0.1, 20,
+                            0.1, 0.1, 30)}),
+                     list(lotri(et5 ~ 6), 3L),
+                     lotri(et1+et6 ~c(0.1, 0.01, 1)),
+                     matrix(c(1L, 0L, 0L, 1L), 2, 2,
+                            dimnames=list(c("et7", "et8"),
+                                          c("et7", "et8"))))
+
+    expect_equal(lotriMat(testList), lotriMat(testList1))
+
+    expect_error(lotriMat(testList,4))
+    expect_error(lotriMat(testList,"eta[%d]", "a"))
+
+    expect_equal(dimnames(lotriMat(testList,"ETA[%d]", start=3))[[1]],
+                 c("et2", "et3", "et4", "ETA[3]", "ETA[4]", "ETA[5]",
+                   "et1", "et6", "et7", "et8"))
+
+    expect_equal(dimnames(lotriMat(testList,"ETA[%d]"))[[1]],
+                 c("et2", "et3", "et4", "ETA[1]", "ETA[2]", "ETA[3]",
+                   "et1", "et6", "et7", "et8"))
+
+    testList <- list(lotri({et2 + et3 + et4 ~ c(40,
+                            0.1, 20,
+                            0.1, 0.1, 30)}),
+                     list(lotri(et5 ~ 6), 3, 4),
+                     lotri(et1+et6 ~c(0.1, 0.01, 1)),
+                     matrix(c(1L, 0L, 0L, 1L), 2, 2,
+                            dimnames=list(c("et7", "et8"),
+                                          c("et7", "et8"))))
+    expect_error(lotriMat(testList))
+
+    testList <- list(lotri({et2 + et3 + et4 ~ c(40,
+                            0.1, 20,
+                            0.1, 0.1, 30)}),
+                     list(lotri(et5 ~ 6), 0),
+                     lotri(et1+et6 ~c(0.1, 0.01, 1)),
+                     matrix(c(1L, 0L, 0L, 1L), 2, 2,
+                            dimnames=list(c("et7", "et8"),
+                                          c("et7", "et8"))))
+    expect_error(lotriMat(testList))
+
+    testList <- list(lotri({et2 + et3 + et4 ~ c(40,
+                            0.1, 20,
+                            0.1, 0.1, 30)}),
+                     list(lotri(et5 ~ 6), 1:3),
+                     lotri(et1+et6 ~c(0.1, 0.01, 1)),
+                     matrix(c(1L, 0L, 0L, 1L), 2, 2,
+                            dimnames=list(c("et7", "et8"),
+                                          c("et7", "et8"))))
+
+    expect_error(lotriMat(testList))
     
 })

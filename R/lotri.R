@@ -282,7 +282,7 @@ NULL
 ##' @author Matthew Fidler
 ##' @noRd
 .getMatrix <- function(env, val) {
-  return(.Call(`_lotriLstToMat`, env[[val]], PACKAGE='lotri'))
+  return(.Call(`_lotriLstToMat`, env[[val]], NULL, 1L, PACKAGE='lotri'))
   ## .omega <- as.matrix(Matrix::bdiag(.mats))
   ## .d <- unlist(lapply(seq_along(.mats),
   ##                     function(x) {
@@ -802,9 +802,15 @@ as.matrix.lotri <- function(x, ...){
 ##' testList
 ##'
 ##' lotriMat(testList)
+##'
+##'
+##' testList <- list(list(lotri({et2 + et3 + et4 ~ c(40,
+##'                            0.1, 20,
+##'                            0.1, 0.1, 30)}), 3),
+##'                  lotri(et5 ~ 6))
 ##' 
 ##' @author Matthew Fidler
 ##' @export
-lotriMat <- function(matList) {
-  .Call(`_lotriLstToMat`, matList, PACKAGE='lotri')
+lotriMat <- function(matList, format=NULL, start=1L) {
+  .Call(`_lotriLstToMat`, matList, format, start, PACKAGE='lotri')
 }

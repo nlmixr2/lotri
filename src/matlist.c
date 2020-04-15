@@ -14,6 +14,26 @@
 int getCheckDim(SEXP lst, int i) {
   SEXP cur = VECTOR_ELT(lst, i);
   int type = TYPEOF(cur);
+  int same=1;
+  if (type == VECSXP) {
+    if (Rf_length(cur) != 2){
+      Rf_error(_("when repeating matrices you need to use 'list(mat, n)'"));
+    }
+    SEXP sameS = VECTOR_ELT(cur, 1);
+    int type2 = TYPEOF(sameS);
+    if (type2 == INTSXP && Rf_length(sameS) == 1) {
+      same = INTEGER(sameS)[0];
+    } else if (type2 == REALSXP && Rf_length(sameS) == 1) {
+      same = (int)(REAL(sameS)[0]);
+    } else {
+      Rf_error(_("you can only repeat a matrix a single positive number of times"));
+    }
+    if (same <= 0) {
+      Rf_error(_("you need to repeat a matrix a positive number of times"));
+    }
+    cur = VECTOR_ELT(cur, 0);
+    type = TYPEOF(cur);
+  }
   if (type == INTSXP || type == REALSXP) {
     if (Rf_isMatrix(cur)){
       int nrows = Rf_nrows(cur);
@@ -21,7 +41,7 @@ int getCheckDim(SEXP lst, int i) {
       if (nrows == ncols) {
 	SEXP dimn = Rf_getAttrib(cur, R_DimNamesSymbol);
 	if (dimn != R_NilValue) {
-	  return nrows;
+	  return nrows*same;
 	}
       }
     }
@@ -30,9 +50,44 @@ int getCheckDim(SEXP lst, int i) {
   return 0;
 }
 
-SEXP _lotriLstToMat(SEXP lst) {
+static inline int setStrElt(SEXP retN, SEXP colnames, int curBand, int j,
+			    const char *fmt, int doFormat, int *cnt, int nsame) {
+  if (doFormat && nsame > 1) {
+    char out[100];
+    int cx = snprintf( out, 100, fmt, cnt[0]++);
+    SET_STRING_ELT(retN, curBand+j, Rf_mkChar(out));
+    return cx;
+  } else {
+    SET_STRING_ELT(retN, curBand+j, STRING_ELT(colnames, j));
+  }
+  return 0;
+}
+
+SEXP _lotriLstToMat(SEXP lst, SEXP format, SEXP startNum) {
   if (TYPEOF(lst) != VECSXP) {
     Rf_error(_("expects a list named symmetric matrices"));
+  }
+  int fmtType = TYPEOF(format);
+  const char *fmt;
+  int doFormat = 0;
+  if (fmtType == STRSXP && Rf_length(format) == 1) {
+    fmt = CHAR(STRING_ELT(format, 0));
+    doFormat=1;
+  } else if (fmtType) {
+    Rf_error(_("'format' must be a single length string or NULL"),
+	     fmtType);
+  }
+  int counter = 0;
+  int type, totN;
+  if (doFormat) {
+    type = TYPEOF(startNum);
+    if (type == INTSXP && Rf_length(startNum) == 1) {
+      counter = INTEGER(startNum)[0];
+    } else if (type == REALSXP && Rf_length(startNum) == 1) {
+      counter = (int)(REAL(startNum)[0]);
+    } else {
+      Rf_error(_("When format is specified, startNum must be a single integer"));
+    }
   }
   int len = Rf_length(lst);
   int pro = 0;
@@ -48,37 +103,54 @@ SEXP _lotriLstToMat(SEXP lst) {
   memset(retd, 0, sizeof(double)*totdim*totdim);
   // Now use memcpy/ integer conversion to c
   SEXP cur;
-  int type, totN;
   double *curd;
   int *curi;
   int curBand = 0;
-  SEXP dimnames, colnames;
+  SEXP dimnames, colnames, sameS;
+  int nsame;
   for (i = 0; i < len; ++i) {
     cur = VECTOR_ELT(lst, i);
     type = TYPEOF(cur);
+    nsame = 1;
+    if (type == VECSXP) {
+      sameS = VECTOR_ELT(cur, 1);
+      type = TYPEOF(sameS);
+      if (type == INTSXP) {
+	nsame = INTEGER(sameS)[0];
+      } else {
+	nsame = (int)REAL(sameS)[0];
+      }
+      cur = VECTOR_ELT(cur, 0);
+      type = TYPEOF(cur);
+    }
     totN = Rf_ncols(cur);
     dimnames = Rf_getAttrib(cur, R_DimNamesSymbol);
     colnames = VECTOR_ELT(dimnames, 1);
-    if (type == REALSXP) {
-      curd = REAL(cur);
-      for (j = 0; j  < totN; ++j) {
-	memcpy(&retd[totdim*(curBand+j)+curBand],
-	       &curd[totN*j], sizeof(double)*totN);
-	SET_STRING_ELT(retN, curBand+j, STRING_ELT(colnames, j));
-      }
-    } else {
-      curi = INTEGER(cur);
-      for (j = 0; j < totN; ++j) {
-	double *to = &retd[totdim*(curBand+j)+curBand];
-	double *last = to + totN; // N - count
-	int *from = &curi[totN*j];
-	while (to != last) {
-	  *(to++) = (double)(*(from++));
+    for (int cursame = nsame; cursame--;){
+      if (type == REALSXP) {
+	curd = REAL(cur);
+	for (j = 0; j  < totN; ++j) {
+	  memcpy(&retd[totdim*(curBand+j)+curBand],
+		 &curd[totN*j], sizeof(double)*totN);
+	  // Repeats dim names of repeated matrices
+	  setStrElt(retN, colnames, curBand, j,
+		    fmt, doFormat, &counter, nsame);
 	}
-	SET_STRING_ELT(retN, curBand+j, STRING_ELT(colnames, j));
+      } else {
+	curi = INTEGER(cur);
+	for (j = 0; j < totN; ++j) {
+	  double *to = &retd[totdim*(curBand+j)+curBand];
+	  double *last = to + totN; // N - count
+	  int *from = &curi[totN*j];
+	  while (to != last) {
+	    *(to++) = (double)(*(from++));
+	  }
+	  setStrElt(retN, colnames, curBand, j,
+		    fmt, doFormat, &counter, nsame);
+	}
       }
+      curBand += totN;
     }
-    curBand += totN;
   }
   dimnames = PROTECT(Rf_allocVector(VECSXP, 2)); pro++;
   SET_VECTOR_ELT(dimnames, 0, retN);
@@ -90,7 +162,7 @@ SEXP _lotriLstToMat(SEXP lst) {
 
 void R_init_lotri(DllInfo *info){
   R_CallMethodDef callMethods[]  = {
-    {"_lotriLstToMat", (DL_FUNC) &_lotriLstToMat, 1},
+    {"_lotriLstToMat", (DL_FUNC) &_lotriLstToMat, 3},
     {NULL, NULL, 0}
   };
   R_RegisterCCallable("lotri", "_lotriLstToMat", (DL_FUNC) _lotriLstToMat);
