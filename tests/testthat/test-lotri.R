@@ -595,5 +595,11 @@ iov.Cl = 3))), class = "lotri"))
                                           c("et7", "et8"))))
 
     expect_error(lotriMat(testList))
+
+    mat1 <- lotri({et2 + et3 + et4 ~ c(40,
+                            0.1, 20,
+                            0.1, 0.1, 30)})
+    
+    expect_equal(mat1, lotriMat(mat1))
     
 })

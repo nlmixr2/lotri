@@ -64,7 +64,21 @@ static inline int setStrElt(SEXP retN, SEXP colnames, int curBand, int j,
 }
 
 SEXP _lotriLstToMat(SEXP lst, SEXP format, SEXP startNum) {
-  if (TYPEOF(lst) != VECSXP) {
+  int type = TYPEOF(lst), totN;
+
+  if (type != VECSXP) {
+    if (type == INTSXP || type == REALSXP) {
+      if (Rf_isMatrix(lst)){
+	int nrows = Rf_nrows(lst);
+	int ncols = Rf_ncols(lst);
+	if (nrows == ncols) {
+	  SEXP dimn = Rf_getAttrib(lst, R_DimNamesSymbol);
+	  if (dimn != R_NilValue) {
+	    return lst;
+	  }
+	}
+      }
+    }
     Rf_error(_("expects a list named symmetric matrices"));
   }
   int fmtType = TYPEOF(format);
@@ -78,7 +92,6 @@ SEXP _lotriLstToMat(SEXP lst, SEXP format, SEXP startNum) {
 	     fmtType);
   }
   int counter = 0;
-  int type, totN;
   if (doFormat) {
     type = TYPEOF(startNum);
     if (type == INTSXP && Rf_length(startNum) == 1) {
