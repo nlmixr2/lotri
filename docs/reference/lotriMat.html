@@ -131,7 +131,7 @@ symmetric matrices." />
 symmetric matrices.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>lotriMat</span>(<span class='no'>matList</span>)</pre>
+    <pre class="usage"><span class='fu'>lotriMat</span>(<span class='no'>matList</span>, <span class='kw'>format</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>start</span> <span class='kw'>=</span> <span class='fl'>1L</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -139,6 +139,17 @@ symmetric matrices.</p>
     <tr>
       <th>matList</th>
       <td><p>list of symmetric named matrices</p></td>
+    </tr>
+    <tr>
+      <th>format</th>
+      <td><p>The format of dimension names when a sub-matrix is
+repeated. The format will be called with the dimension number,
+so "ETA[%d]" would represent "ETA[1]", "ETA[2]", etc</p></td>
+    </tr>
+    <tr>
+      <th>start</th>
+      <td><p>The number the counter of each repeated dimension
+should start.</p></td>
     </tr>
     </table>
 
@@ -169,6 +180,57 @@ symmetric matrices.</p>
 #&gt; et3  0.1 20.0  0.1   0
 #&gt; et4  0.1  0.1 30.0   0
 #&gt; et5  0.0  0.0  0.0   6</div><div class='input'>
+
+<span class='co'># Another option is to repeat a matrix a number of times.  This</span>
+<span class='co'># can be done with list(matrix, # times to repeat).</span>
+
+<span class='co'># In the example below, the first matrix is repeated 3 times</span>
+<span class='no'>testList</span> <span class='kw'>&lt;-</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(<span class='fu'><a href='lotri.html'>lotri</a></span>({<span class='no'>et2</span> + <span class='no'>et3</span> + <span class='no'>et4</span> ~ <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>40</span>,
+                           <span class='fl'>0.1</span>, <span class='fl'>20</span>,
+                           <span class='fl'>0.1</span>, <span class='fl'>0.1</span>, <span class='fl'>30</span>)}), <span class='fl'>3</span>),
+                 <span class='fu'><a href='lotri.html'>lotri</a></span>(<span class='no'>et5</span> ~ <span class='fl'>6</span>))
+
+<span class='fu'>lotriMat</span>(<span class='no'>testList</span>)</div><div class='output co'>#&gt;      et2  et3  et4  et2  et3  et4  et2  et3  et4 et5
+#&gt; et2 40.0  0.1  0.1  0.0  0.0  0.0  0.0  0.0  0.0   0
+#&gt; et3  0.1 20.0  0.1  0.0  0.0  0.0  0.0  0.0  0.0   0
+#&gt; et4  0.1  0.1 30.0  0.0  0.0  0.0  0.0  0.0  0.0   0
+#&gt; et2  0.0  0.0  0.0 40.0  0.1  0.1  0.0  0.0  0.0   0
+#&gt; et3  0.0  0.0  0.0  0.1 20.0  0.1  0.0  0.0  0.0   0
+#&gt; et4  0.0  0.0  0.0  0.1  0.1 30.0  0.0  0.0  0.0   0
+#&gt; et2  0.0  0.0  0.0  0.0  0.0  0.0 40.0  0.1  0.1   0
+#&gt; et3  0.0  0.0  0.0  0.0  0.0  0.0  0.1 20.0  0.1   0
+#&gt; et4  0.0  0.0  0.0  0.0  0.0  0.0  0.1  0.1 30.0   0
+#&gt; et5  0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0   6</div><div class='input'>
+<span class='co'># Notice that the dimension names `et2`, `et3` and `et4` are</span>
+<span class='co'># repeated.</span>
+
+<span class='co'># Another option is to name the dimensions.  For example it could</span>
+<span class='co'># be `ETA[1]`, `ETA[2]`, etc by using the 'format' option:</span>
+
+<span class='fu'>lotriMat</span>(<span class='no'>testList</span>, <span class='st'>"ETA[%d]"</span>)</div><div class='output co'>#&gt;        ETA[1] ETA[2] ETA[3] ETA[4] ETA[5] ETA[6] ETA[7] ETA[8] ETA[9] et5
+#&gt; ETA[1]   40.0    0.1    0.1    0.0    0.0    0.0    0.0    0.0    0.0   0
+#&gt; ETA[2]    0.1   20.0    0.1    0.0    0.0    0.0    0.0    0.0    0.0   0
+#&gt; ETA[3]    0.1    0.1   30.0    0.0    0.0    0.0    0.0    0.0    0.0   0
+#&gt; ETA[4]    0.0    0.0    0.0   40.0    0.1    0.1    0.0    0.0    0.0   0
+#&gt; ETA[5]    0.0    0.0    0.0    0.1   20.0    0.1    0.0    0.0    0.0   0
+#&gt; ETA[6]    0.0    0.0    0.0    0.1    0.1   30.0    0.0    0.0    0.0   0
+#&gt; ETA[7]    0.0    0.0    0.0    0.0    0.0    0.0   40.0    0.1    0.1   0
+#&gt; ETA[8]    0.0    0.0    0.0    0.0    0.0    0.0    0.1   20.0    0.1   0
+#&gt; ETA[9]    0.0    0.0    0.0    0.0    0.0    0.0    0.1    0.1   30.0   0
+#&gt; et5       0.0    0.0    0.0    0.0    0.0    0.0    0.0    0.0    0.0   6</div><div class='input'>
+<span class='co'># Or could start with ETA[2]:</span>
+
+<span class='fu'>lotriMat</span>(<span class='no'>testList</span>, <span class='st'>"ETA[%d]"</span>, <span class='fl'>2</span>)</div><div class='output co'>#&gt;         ETA[2] ETA[3] ETA[4] ETA[5] ETA[6] ETA[7] ETA[8] ETA[9] ETA[10] et5
+#&gt; ETA[2]    40.0    0.1    0.1    0.0    0.0    0.0    0.0    0.0     0.0   0
+#&gt; ETA[3]     0.1   20.0    0.1    0.0    0.0    0.0    0.0    0.0     0.0   0
+#&gt; ETA[4]     0.1    0.1   30.0    0.0    0.0    0.0    0.0    0.0     0.0   0
+#&gt; ETA[5]     0.0    0.0    0.0   40.0    0.1    0.1    0.0    0.0     0.0   0
+#&gt; ETA[6]     0.0    0.0    0.0    0.1   20.0    0.1    0.0    0.0     0.0   0
+#&gt; ETA[7]     0.0    0.0    0.0    0.1    0.1   30.0    0.0    0.0     0.0   0
+#&gt; ETA[8]     0.0    0.0    0.0    0.0    0.0    0.0   40.0    0.1     0.1   0
+#&gt; ETA[9]     0.0    0.0    0.0    0.0    0.0    0.0    0.1   20.0     0.1   0
+#&gt; ETA[10]    0.0    0.0    0.0    0.0    0.0    0.0    0.1    0.1    30.0   0
+#&gt; et5        0.0    0.0    0.0    0.0    0.0    0.0    0.0    0.0     0.0   6</div><div class='input'>
 </div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">

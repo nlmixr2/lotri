@@ -1,6 +1,7 @@
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
 
+
 <!-- badges: start -->
 [![Travis build status](https://travis-ci.org/nlmixrdevelopment/lotri.svg?branch=master)](https://travis-ci.org/nlmixrdevelopment/lotri)
 [![AppVeyor build status](https://ci.appveyor.com/api/projects/status/github/nlmixrdevelopment/lotri?branch=master&svg=true)](https://ci.appveyor.com/project/nlmixrdevelopment/lotri) 
@@ -130,6 +131,64 @@ print(mat)
 
 Regardless, I think `lotri` is a bit easier to use.
 
+# Creating lists of matricies with attached properties
+
+`lotri` also allows lists of matrices to be created by conditioning on
+an `id` with the `|` syntax.
+
+For example:
+
+
+
+```r
+mat <- lotri({
+    a+b ~ c(1,
+            0.5, 1) | id
+    c ~ 1 | occ
+    d +e ~ c(1,
+             0.5, 1) | id(lower=3, upper=2, omegaIsChol=FALSE)
+})
+
+print(mat)
+#> $id
+#>     d   e
+#> d 1.0 0.5
+#> e 0.5 1.0
+#> 
+#> $occ
+#>   c
+#> c 1
+#> 
+#> Properties: lower, upper, omegaIsChol
+
+print(mat$lower)
+#> $id
+#> d e 
+#> 3 3 
+#> 
+#> $occ
+#>    c 
+#> -Inf
+print(mat$upper)
+#> $id
+#>   d   e 
+#> Inf Inf 
+#> 
+#> $occ
+#>   c 
+#> Inf
+print(mat$omegaIsChol)
+#> $id
+#> [1] FALSE
+```
+
+This gives a list of matrix(es) conditioned on the variable after the
+`|`.  It also can add properties to each list that can be accessible
+after the list of matrices is returned, as shown in the above example.
+To do this, you simply have to enclose the properties after the
+conditional variable.  That is `et1 ~ id(lower=3)`.
+
+
 ## Combining symmetric named matrices
 
 Now there is even a faster way to do a similar banded matrix
@@ -137,7 +196,6 @@ concatenation with `lotriMat`
 
 
 ```r
-
 testList <- list(lotri({et2 + et3 + et4 ~ c(40,
                             0.1, 20,
                             0.1, 0.1, 30)}),
@@ -184,14 +242,14 @@ mb <- microbenchmark::microbenchmark(matf(testList),lotriMat(testList))
 
 print(mb)
 #> Unit: microseconds
-#>                expr     min       lq      mean   median       uq      max neval
-#>      matf(testList) 501.514 504.6990 564.11480 506.6225 516.9600 4566.771   100
-#>  lotriMat(testList)   1.062   1.4075   2.59666   3.1080   3.4745    7.438   100
+#>                expr     min      lq     mean  median       uq      max neval
+#>      matf(testList) 521.177 527.444 582.2390 530.929 543.0650 4388.479   100
+#>  lotriMat(testList)   1.129   1.556   2.8632   3.237   3.5465   20.545   100
 
-plot(mb)
+plot(mb, log="y")
 ```
 
-<img src="man/figures/README-unnamed-chunk-7-1.png" title="plot of chunk unnamed-chunk-7" alt="plot of chunk unnamed-chunk-7" width="100%" />
+<img src="man/figures/README-unnamed-chunk-8-1.png" title="plot of chunk unnamed-chunk-8" alt="plot of chunk unnamed-chunk-8" width="100%" />
 
 ## New features
 

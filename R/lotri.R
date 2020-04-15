@@ -135,13 +135,12 @@ NULL
     stop("bad matrix specification")
   }
 }
-##' Parses conditione
+##' Parses condition
 ##'
 ##' @param cond Condition parsing tree
-##' @param envir
-##' @return list with 2 elements:
-##' - First element is the name of the condition
-##' - Second element is extra information
+##' @param envir Environment to parse condition in.
+##' 
+##' @return list with 2 elements: - First element is the name of the condition - Second element is extra information
 ##' @author Matthew Fidler
 ##' @noRd
 .parseCondition <- function(cond, envir=parent.frame()) {
@@ -789,6 +788,13 @@ as.matrix.lotri <- function(x, ...){
 ##' 
 ##' @param matList list of symmetric named matrices
 ##'
+##' @param format The format of dimension names when a sub-matrix is
+##'   repeated. The format will be called with the dimension number,
+##'   so "ETA[\%d]" would represent "ETA[1]", "ETA[2]", etc
+##'
+##' @param start The number the counter of each repeated dimension
+##'   should start.
+##'
 ##' @return Named symmetric block diagonal matrix based on
 ##'   concatenating the list of matrices together
 ##' 
@@ -804,10 +810,28 @@ as.matrix.lotri <- function(x, ...){
 ##' lotriMat(testList)
 ##'
 ##'
+##' # Another option is to repeat a matrix a number of times.  This
+##' # can be done with list(matrix, # times to repeat).
+##'
+##' # In the example below, the first matrix is repeated 3 times
 ##' testList <- list(list(lotri({et2 + et3 + et4 ~ c(40,
 ##'                            0.1, 20,
 ##'                            0.1, 0.1, 30)}), 3),
 ##'                  lotri(et5 ~ 6))
+##'
+##' lotriMat(testList)
+##'
+##' # Notice that the dimension names `et2`, `et3` and `et4` are
+##' # repeated.
+##'
+##' # Another option is to name the dimensions.  For example it could
+##' # be `ETA[1]`, `ETA[2]`, etc by using the 'format' option:
+##'
+##' lotriMat(testList, "ETA[%d]")
+##'
+##' # Or could start with ETA[2]:
+##' 
+##' lotriMat(testList, "ETA[%d]", 2)
 ##' 
 ##' @author Matthew Fidler
 ##' @export

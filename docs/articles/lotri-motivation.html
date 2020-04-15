@@ -85,7 +85,7 @@
       <h1>Lotri Motivation</h1>
                         <h4 class="author">Matthew Fidler</h4>
             
-            <h4 class="date">2020-04-14</h4>
+            <h4 class="date">2020-04-15</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/nlmixrdevelopment/lotri/blob/master/vignettes/lotri-motivation.Rmd"><code>vignettes/lotri-motivation.Rmd</code></a></small>
       <div class="hidden name"><code>lotri-motivation.Rmd</code></div>
@@ -176,6 +176,63 @@ mat &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/ba
 <span class="co">#&gt; $id</span>
 <span class="co">#&gt; [1] FALSE</span></code></pre></div>
 <p>This gives a list of matrix(es) conditioned on the variable after the <code><a href="https://rdrr.io/r/base/Logic.html">|</a></code>. It also can add properties to each list that can be accessible after the list of matrices is returned, as shown in the above example. To do this, you simply have to enclose the properties after the conditional variable. That is <code>et1 ~ id(lower=3)</code>.</p>
+<div id="combining-symmetric-named-matrices" class="section level2">
+<h2 class="hasAnchor">
+<a href="#combining-symmetric-named-matrices" class="anchor"></a>Combining symmetric named matrices</h2>
+<p>Now there is even a faster way to do a similar banded matrix concatenation with <code>lotriMat</code></p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">testList &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/list.html">list</a></span>(<span class="kw"><a href="../reference/lotri.html">lotri</a></span>({et2 <span class="op">+</span><span class="st"> </span>et3 <span class="op">+</span><span class="st"> </span>et4 <span class="op">~</span><span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="dv">40</span>,
+                            <span class="fl">0.1</span>, <span class="dv">20</span>,
+                            <span class="fl">0.1</span>, <span class="fl">0.1</span>, <span class="dv">30</span>)}),
+                     <span class="kw"><a href="../reference/lotri.html">lotri</a></span>(et5 <span class="op">~</span><span class="st"> </span><span class="dv">6</span>),
+                     <span class="kw"><a href="../reference/lotri.html">lotri</a></span>(et1<span class="op">+</span>et6 <span class="op">~</span><span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">0.1</span>, <span class="fl">0.01</span>, <span class="dv">1</span>)),
+                     <span class="kw"><a href="https://rdrr.io/r/base/matrix.html">matrix</a></span>(<span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(1L, 0L, 0L, 1L), <span class="dv">2</span>, <span class="dv">2</span>,
+                            <span class="dt">dimnames=</span><span class="kw"><a href="https://rdrr.io/r/base/list.html">list</a></span>(<span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"et7"</span>, <span class="st">"et8"</span>),
+                                          <span class="kw"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"et7"</span>, <span class="st">"et8"</span>))))
+
+matf &lt;-<span class="st"> </span><span class="cf">function</span>(.mats){
+  .omega &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/matrix.html">as.matrix</a></span>(Matrix<span class="op">::</span><span class="kw"><a href="https://rdrr.io/pkg/Matrix/man/bdiag.html">bdiag</a></span>(.mats))
+  .d &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/unlist.html">unlist</a></span>(<span class="kw"><a href="https://rdrr.io/r/base/lapply.html">lapply</a></span>(<span class="kw"><a href="https://rdrr.io/r/base/seq.html">seq_along</a></span>(.mats),
+                      <span class="cf">function</span>(x) {
+                        <span class="kw"><a href="https://rdrr.io/r/base/dimnames.html">dimnames</a></span>(.mats[[x]])[<span class="dv">2</span>]
+                      }))
+  <span class="kw"><a href="https://rdrr.io/r/base/dimnames.html">dimnames</a></span>(.omega) &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/list.html">list</a></span>(.d, .d)
+  <span class="kw"><a href="https://rdrr.io/r/base/function.html">return</a></span>(.omega)
+}
+
+<span class="kw"><a href="https://rdrr.io/r/base/print.html">print</a></span>(<span class="kw">matf</span>(testList))
+<span class="co">#&gt;      et2  et3  et4 et5  et1  et6 et7 et8</span>
+<span class="co">#&gt; et2 40.0  0.1  0.1   0 0.00 0.00   0   0</span>
+<span class="co">#&gt; et3  0.1 20.0  0.1   0 0.00 0.00   0   0</span>
+<span class="co">#&gt; et4  0.1  0.1 30.0   0 0.00 0.00   0   0</span>
+<span class="co">#&gt; et5  0.0  0.0  0.0   6 0.00 0.00   0   0</span>
+<span class="co">#&gt; et1  0.0  0.0  0.0   0 0.10 0.01   0   0</span>
+<span class="co">#&gt; et6  0.0  0.0  0.0   0 0.01 1.00   0   0</span>
+<span class="co">#&gt; et7  0.0  0.0  0.0   0 0.00 0.00   1   0</span>
+<span class="co">#&gt; et8  0.0  0.0  0.0   0 0.00 0.00   0   1</span>
+
+<span class="kw"><a href="https://rdrr.io/r/base/print.html">print</a></span>(<span class="kw"><a href="../reference/lotriMat.html">lotriMat</a></span>(testList))
+<span class="co">#&gt;      et2  et3  et4 et5  et1  et6 et7 et8</span>
+<span class="co">#&gt; et2 40.0  0.1  0.1   0 0.00 0.00   0   0</span>
+<span class="co">#&gt; et3  0.1 20.0  0.1   0 0.00 0.00   0   0</span>
+<span class="co">#&gt; et4  0.1  0.1 30.0   0 0.00 0.00   0   0</span>
+<span class="co">#&gt; et5  0.0  0.0  0.0   6 0.00 0.00   0   0</span>
+<span class="co">#&gt; et1  0.0  0.0  0.0   0 0.10 0.01   0   0</span>
+<span class="co">#&gt; et6  0.0  0.0  0.0   0 0.01 1.00   0   0</span>
+<span class="co">#&gt; et7  0.0  0.0  0.0   0 0.00 0.00   1   0</span>
+<span class="co">#&gt; et8  0.0  0.0  0.0   0 0.00 0.00   0   1</span>
+
+
+mb &lt;-<span class="st"> </span>microbenchmark<span class="op">::</span><span class="kw"><a href="https://rdrr.io/pkg/microbenchmark/man/microbenchmark.html">microbenchmark</a></span>(<span class="kw">matf</span>(testList),<span class="kw"><a href="../reference/lotriMat.html">lotriMat</a></span>(testList))
+
+<span class="kw"><a href="https://rdrr.io/r/base/print.html">print</a></span>(mb)
+<span class="co">#&gt; Unit: microseconds</span>
+<span class="co">#&gt;                expr     min      lq      mean  median      uq      max neval</span>
+<span class="co">#&gt;      matf(testList) 495.691 498.716 549.35265 500.787 504.860 4651.070   100</span>
+<span class="co">#&gt;  lotriMat(testList)   1.119   1.360   2.33294   1.684   3.119   15.731   100</span>
+
+<span class="kw"><a href="https://rdrr.io/r/graphics/plot.html">plot</a></span>(mb, <span class="dt">log=</span><span class="st">"y"</span>)</code></pre></div>
+<p><img src="lotri-motivation_files/figure-html/unnamed-chunk-7-1.png" width="700"></p>
+</div>
 </div>
   </div>
 
@@ -186,7 +243,11 @@ mat &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/ba
 <a href="#tocnav" class="anchor"></a>Contents</h2>
       <ul class="nav nav-pills nav-stacked">
 <li><a href="#motivation">Motivation</a></li>
-      <li><a href="#creating-lists-of-matricies-with-attached-properties">Creating lists of matricies with attached properties</a></li>
+      <li>
+<a href="#creating-lists-of-matricies-with-attached-properties">Creating lists of matricies with attached properties</a><ul class="nav nav-pills nav-stacked">
+<li><a href="#combining-symmetric-named-matrices">Combining symmetric named matrices</a></li>
+      </ul>
+</li>
       </ul>
 </div>
       </div>
