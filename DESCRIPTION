@@ -21,7 +21,8 @@ Suggests:
     testthat,
     covr,
     knitr,
-    rmarkdown
+    rmarkdown,
+    Matrix
 NeedsCompilation: yes
 Biarch: true
 RoxygenNote: 7.0.2
