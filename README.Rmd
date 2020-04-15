@@ -66,6 +66,7 @@ library(lotri)
 
 mat <- lotri(a+b ~ c(1,
                      0.5, 1))
+print(mat)
 ```
 
 I find it more legible and easier to specify, especially if you have a
@@ -79,6 +80,7 @@ mat <- lotri({
     d +e ~ c(1,
              0.5, 1)
 })
+print(mat)
 ```
 
 To fully specify this in base R you would need to use:
@@ -92,6 +94,7 @@ mat <- matrix(c(1, 0.5, 0, 0, 0,
               nrow=5, ncol=5,
               dimnames= list(c("a", "b", "c", "d", "e"),
                              c("a", "b", "c", "d", "e")))
+print(mat)
 ```
 
 Of course with the excellent `Matrix` package this is a bit easier:
@@ -110,6 +113,7 @@ mat <- as.matrix(mat)
 ##
 dimnames(mat) <- list(c("a", "b", "c", "d", "e"),
                       c("a", "b", "c", "d", "e"))
+print(mat)
 ```
 
 Regardless, I think `lotri` is a bit easier to use.
@@ -146,7 +150,6 @@ print(lotriMat(testList))
 
 
 mb <- microbenchmark::microbenchmark(matf(testList),lotriMat(testList))
-
 
 print(mb)
 

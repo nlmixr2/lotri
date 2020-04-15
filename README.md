@@ -61,6 +61,10 @@ library(lotri)
 
 mat <- lotri(a+b ~ c(1,
                      0.5, 1))
+print(mat)
+#>     a   b
+#> a 1.0 0.5
+#> b 0.5 1.0
 ```
 
 I find it more legible and easier to specify, especially if you have a
@@ -75,6 +79,13 @@ mat <- lotri({
     d +e ~ c(1,
              0.5, 1)
 })
+print(mat)
+#>     a   b c   d   e
+#> a 1.0 0.5 0 0.0 0.0
+#> b 0.5 1.0 0 0.0 0.0
+#> c 0.0 0.0 1 0.0 0.0
+#> d 0.0 0.0 0 1.0 0.5
+#> e 0.0 0.0 0 0.5 1.0
 ```
 
 To fully specify this in base R you would need to use:
@@ -89,6 +100,13 @@ mat <- matrix(c(1, 0.5, 0, 0, 0,
               nrow=5, ncol=5,
               dimnames= list(c("a", "b", "c", "d", "e"),
                              c("a", "b", "c", "d", "e")))
+print(mat)
+#>     a   b c   d   e
+#> a 1.0 0.5 0 0.0 0.0
+#> b 0.5 1.0 0 0.0 0.0
+#> c 0.0 0.0 1 0.0 0.0
+#> d 0.0 0.0 0 1.0 0.5
+#> e 0.0 0.0 0 0.5 1.0
 ```
 
 Of course with the excellent `Matrix` package this is a bit easier:
@@ -108,6 +126,13 @@ mat <- as.matrix(mat)
 ##
 dimnames(mat) <- list(c("a", "b", "c", "d", "e"),
                       c("a", "b", "c", "d", "e"))
+print(mat)
+#>     a   b c   d   e
+#> a 1.0 0.5 0 0.0 0.0
+#> b 0.5 1.0 0 0.0 0.0
+#> c 0.0 0.0 1 0.0 0.0
+#> d 0.0 0.0 0 1.0 0.5
+#> e 0.0 0.0 0 0.5 1.0
 ```
 
 Regardless, I think `lotri` is a bit easier to use.
@@ -164,12 +189,11 @@ print(lotriMat(testList))
 
 mb <- microbenchmark::microbenchmark(matf(testList),lotriMat(testList))
 
-
 print(mb)
 #> Unit: nanoseconds
-#>                expr    min       lq      mean median     uq     max neval
-#>      matf(testList) 492481 496302.5 550753.50 499053 515424 4083346   100
-#>  lotriMat(testList)    910   1137.5   2105.26   2403   2667    5609   100
+#>                expr    min       lq      mean   median     uq     max neval
+#>      matf(testList) 498119 511556.5 576768.02 530294.5 547773 4091618   100
+#>  lotriMat(testList)    920   1203.5   2422.58   2589.5   2865    6830   100
 
 plot(mb)
 ```
