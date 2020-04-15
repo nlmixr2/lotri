@@ -106,6 +106,30 @@ SEXP _lotriLstToMat(SEXP lst, SEXP format, SEXP startNum) {
   int pro = 0;
   int totdim = 0;
   int i, j;
+  SEXP cur;
+  if (len == 2){
+    cur = VECTOR_ELT(lst, 1);
+    type = TYPEOF(cur);
+    if (Rf_length(cur) == 1 && (type == INTSXP || type == REALSXP)){
+      cur = VECTOR_ELT(lst, 0);
+      if (type == INTSXP || type == REALSXP) {
+	if (Rf_isMatrix(cur)){
+	  int nrows = Rf_nrows(cur);
+	  int ncols = Rf_ncols(cur);
+	  if (nrows == ncols) {
+	    SEXP dimn = Rf_getAttrib(cur, R_DimNamesSymbol);
+	    if (dimn != R_NilValue) {
+	      SEXP new = PROTECT(Rf_allocVector(VECSXP, 1)); pro++;
+	      SET_VECTOR_ELT(new, 0, lst);
+	      SEXP ret = PROTECT(_lotriLstToMat(new, format, startNum)); pro++;
+	      UNPROTECT(pro);
+	      return ret;
+	    }
+	  }
+	}
+      }
+    }
+  }
   for (i = 0; i < len; ++i) {
     totdim += getCheckDim(lst, i);
   }
@@ -115,7 +139,6 @@ SEXP _lotriLstToMat(SEXP lst, SEXP format, SEXP startNum) {
   // Initialize to zero
   memset(retd, 0, sizeof(double)*totdim*totdim);
   // Now use memcpy/ integer conversion to c
-  SEXP cur;
   double *curd;
   int *curi;
   int curBand = 0;

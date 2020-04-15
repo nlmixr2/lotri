@@ -601,5 +601,11 @@ iov.Cl = 3))), class = "lotri"))
                             0.1, 0.1, 30)})
     
     expect_equal(mat1, lotriMat(mat1))
+
+    mat1 <- list(mat1, 3)
+
+    expect_equal(lotriMat(mat1),lotriMat(list(mat1)))
+    expect_equal(lotriMat(mat1, "ETA[%d]"),lotriMat(list(mat1),"ETA[%d]"))
+    expect_equal(lotriMat(mat1, "ETA[%d]",4),lotriMat(list(mat1),"ETA[%d]",4L))
     
 })
