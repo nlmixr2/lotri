@@ -319,6 +319,7 @@ void R_init_lotri(DllInfo *info){
     {NULL, NULL, 0}
   };
   R_RegisterCCallable("lotri", "_lotriLstToMat", (DL_FUNC) _lotriLstToMat);
+  R_RegisterCCallable("lotri", "_asLotriMat", (DL_FUNC) _asLotriMat);
   R_registerRoutines(info, NULL, callMethods, NULL, NULL);
   R_useDynamicSymbols(info, FALSE);
 }
