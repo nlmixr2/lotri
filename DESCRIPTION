@@ -23,7 +23,8 @@ Suggests:
     knitr,
     rmarkdown,
     Matrix,
-    microbenchmark
+    microbenchmark,
+    RxODE
 NeedsCompilation: yes
 Biarch: true
 RoxygenNote: 7.0.2

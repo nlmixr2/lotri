@@ -736,24 +736,7 @@ as.lotri <- function(x, ..., default="") {
 ##' @rdname as.lotri
 ##' @export
 as.lotri.matrix <- function(x, ..., default="") {
-  .ret <- setNames(list(x), default)
-  .extra <- list(...)
-  if (length(.extra) > 0) {
-    .extra <- .extra[which(sapply(seq_along(.extra),
-                                  function(i){
-                                    !is.null(.extra[[i]])
-                                  }))]
-  }
-  if (length(.extra) > 0 && default != "") {
-    .extra <- .amplifyDefault(.extra, dimnames(x)[[2]])
-    .extra <- list(.extra)
-    .extra <- setNames(.extra, default)
-    attr(.ret, "lotri") <- .extra
-  } else if (length(.extra) > 0) {
-    stop("extra properties need default try `lotri(matrix,x=3,default=\"id\")`")
-  }
-  class(.ret) <- "lotri"
-  .ret
+  .Call(`_asLotriMat`, x, list(...), default=default);
 }
 
 ##' @rdname as.lotri

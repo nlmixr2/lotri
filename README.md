@@ -52,6 +52,10 @@ With `lotri`, you simply specify:
 
 ```r
 library(lotri)
+library(microbenchmark)
+library(ggplot2)
+library(RxODE)
+
 
 mat <- lotri(a+b ~ c(1,
                      0.5, 1))
@@ -145,8 +149,8 @@ mat <- lotri({
     a+b ~ c(1,
             0.5, 1) | id
     c ~ 1 | occ
-    d +e ~ c(1,
-             0.5, 1) | id(lower=3, upper=2, omegaIsChol=FALSE)
+    d + e ~ c(1,
+              0.5, 1) | id(lower=3, upper=2, omegaIsChol=FALSE)
 })
 
 print(mat)
@@ -237,16 +241,16 @@ print(lotriMat(testList))
 #> et7  0.0  0.0  0.0   0 0.00 0.00   1   0
 #> et8  0.0  0.0  0.0   0 0.00 0.00   0   1
 
-
-mb <- microbenchmark::microbenchmark(matf(testList),lotriMat(testList))
+mb <- microbenchmark(matf(testList),lotriMat(testList))
 
 print(mb)
 #> Unit: microseconds
-#>                expr     min      lq     mean  median       uq      max neval
-#>      matf(testList) 521.177 527.444 582.2390 530.929 543.0650 4388.479   100
-#>  lotriMat(testList)   1.129   1.556   2.8632   3.237   3.5465   20.545   100
+#>                expr     min       lq      mean   median       uq      max neval
+#>      matf(testList) 510.885 515.5405 580.50375 519.1395 534.9065 4863.898   100
+#>  lotriMat(testList)   1.180   1.4295   2.40989   2.7780   3.1875    6.714   100
 
-plot(mb, log="y")
+autoplot(mb) + rxTheme()
+#> Coordinate system already present. Adding new coordinate system, which will replace the existing one.
 ```
 
 <img src="man/figures/README-unnamed-chunk-8-1.png" title="plot of chunk unnamed-chunk-8" alt="plot of chunk unnamed-chunk-8" width="100%" />

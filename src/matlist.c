@@ -187,9 +187,135 @@ SEXP _lotriLstToMat(SEXP lst, SEXP format, SEXP startNum) {
   return ret;
 }
 
+SEXP ampDefault(SEXP cur, SEXP dimn, double val, int pro0, const char * what) {
+  if (TYPEOF(cur) != REALSXP) {
+    UNPROTECT(pro0);
+    Rf_error("'%s' needs to be a double", what);
+  }
+  int pro = 0;
+  SEXP names = Rf_getAttrib(cur, R_NamesSymbol);
+  int nDim = Rf_xlength(dimn);
+  if (Rf_isNull(names)) {
+    if (Rf_xlength(cur) == 1){
+      SEXP ret = PROTECT(Rf_allocVector(REALSXP, nDim)); pro++;
+      double *retD = REAL(ret);
+      Rf_setAttrib(ret, R_NamesSymbol, dimn);
+      double val = REAL(cur)[0];
+      for (int i = nDim;i--;){
+	retD[i] = val;
+      }
+      UNPROTECT(pro);
+      return ret;
+    } else {
+      UNPROTECT(pro0);
+      Rf_error("'%s' needs to be named", what);
+    }
+  } else {
+    int nnames = Rf_xlength(names);
+    SEXP ret = PROTECT(Rf_allocVector(REALSXP, nDim)); pro++;
+    double *retD = REAL(ret);
+    double *in = REAL(cur);
+    for (int i=0; i < nDim; ++i) {
+      int found = 0;
+      for (int j = 0; j < nnames; ++j) {
+	if (!strcmp(CHAR(STRING_ELT(dimn, i)),
+		    CHAR(STRING_ELT(names, j)))) {
+	  retD[i] = in[j];
+	  found = 1;
+	  break;
+	}
+      }
+      if (found == 0) {
+	retD[i] = val;
+      }
+    }
+    Rf_setAttrib(ret, R_NamesSymbol, dimn);
+    UNPROTECT(pro);
+    return ret;
+  }
+  return R_NilValue;
+}
+
+// put into C to allow calling from RxODE from C.
+SEXP _asLotriMat(SEXP x, SEXP extra, SEXP def){
+  if (TYPEOF(def) != STRSXP || Rf_length(def) != 1) {
+    Rf_error(_("'default' must be a 'string' of length 1"));
+  }  
+  if (!Rf_isMatrix(x)) {
+    Rf_error(_("'x' needs to be a completely named matrix"));
+  }
+  SEXP dims = Rf_getAttrib(x, R_DimNamesSymbol);
+  if (Rf_isNull(dims)){
+    Rf_error(_("'x' needs to be a completely named matrix"));
+  }
+  SEXP dimn = VECTOR_ELT(dims, 0);
+  if (Rf_isNull(dimn)) {
+    Rf_error(_("'x' needs to be a completely named matrix"));
+  }
+  if (Rf_isNull(VECTOR_ELT(dims, 1))) {
+    Rf_error(_("'x' needs to be a completely named matrix"));
+  }
+  const char *defVal = CHAR(STRING_ELT(def, 0));
+  if (TYPEOF(extra) != VECSXP) {
+    Rf_error(_("'extra' must be a list"));
+  }
+  int pro = 0;
+  SEXP ret = PROTECT(Rf_allocVector(VECSXP, 1)); pro++;
+  SET_VECTOR_ELT(ret, 0, x);
+  Rf_setAttrib(ret, R_NamesSymbol, def);
+  SEXP lotriClass = PROTECT(Rf_allocVector(STRSXP, 1)); pro++;
+  SET_STRING_ELT(lotriClass, 0, Rf_mkChar("lotri"));
+  
+  // Now setup extra
+  int nNull = 0;
+  int lExtra = Rf_length(extra);
+  if (lExtra == 0) {
+    // Here extra isn't added.
+    Rf_setAttrib(ret, R_ClassSymbol, lotriClass);
+    UNPROTECT(pro);
+    return ret;
+  } else if (!strcmp(defVal, "")) {
+    UNPROTECT(pro);
+    Rf_error("extra properties need default try 'lotri(matrix,x=3,default=\"id\")'");
+  }
+  SEXP extraNames = Rf_getAttrib(extra, R_NamesSymbol);
+  for (int i = lExtra; i--;) {
+    if (Rf_isNull(VECTOR_ELT(extra, i))) {
+      nNull++;
+    }
+  }
+  SEXP lotri = PROTECT(Rf_allocVector(VECSXP, 1)); pro++;
+  SEXP fextra = PROTECT(Rf_allocVector(VECSXP, lExtra-nNull)); pro++;
+  Rf_setAttrib(lotri, R_NamesSymbol, def);
+  SEXP fextraN = PROTECT(Rf_allocVector(STRSXP, lExtra-nNull)); pro++;
+  int j = 0;
+  for (int i = lExtra; i--;) {
+    if (!Rf_isNull(VECTOR_ELT(extra, i))){
+      SEXP curNameS = STRING_ELT(extraNames, i);
+      const char *curName = CHAR(curNameS);
+      if (!strcmp("lower", curName)) {
+	SET_VECTOR_ELT(fextra, j, ampDefault(VECTOR_ELT(extra, i), dimn, R_NegInf, pro, "lower"));
+      } else if (!strcmp("upper", curName)) {
+	SET_VECTOR_ELT(fextra, j, ampDefault(VECTOR_ELT(extra, i), dimn, R_PosInf, pro, "upper"));
+      } else {
+	SET_VECTOR_ELT(fextra, j, VECTOR_ELT(extra, i));
+      }
+      SET_STRING_ELT(fextraN, j, curNameS);
+      j++;
+    }
+  }
+  SET_VECTOR_ELT(lotri, 0, fextra);
+  Rf_setAttrib(fextra, R_NamesSymbol, fextraN);
+  Rf_setAttrib(ret, Rf_install("lotri"), lotri);
+  Rf_setAttrib(ret, R_ClassSymbol, lotriClass);
+  UNPROTECT(pro);
+  return ret;
+}
+
 void R_init_lotri(DllInfo *info){
   R_CallMethodDef callMethods[]  = {
     {"_lotriLstToMat", (DL_FUNC) &_lotriLstToMat, 3},
+    {"_asLotriMat", (DL_FUNC) &_asLotriMat, 3}, 
     {NULL, NULL, 0}
   };
   R_RegisterCCallable("lotri", "_lotriLstToMat", (DL_FUNC) _lotriLstToMat);

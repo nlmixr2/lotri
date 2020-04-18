@@ -508,6 +508,39 @@ iov.Cl = 3))), class = "lotri"))
 
     expect_equal(l1,l2)
 
+    l1 <- as.lotri(lotri(et1+et2 ~c(0.1, 0.01, 1)), nu=4, default="id")
+    l2 <- lotri(et1+et2 ~c(0.1, 0.01, 1) | id(nu=4))
+
+    expect_equal(l1,l2)
+
+    l1 <- as.lotri(lotri(et1+et2 ~c(0.1, 0.01, 1)), upper=c(et1=3), default="id")
+    l2 <- lotri(et1+et2 ~c(0.1, 0.01, 1) | id(upper=c(et1=3)))
+
+    expect_equal(l1,l2)
+
+
+    l1 <- as.lotri(lotri(et1+et2 ~c(0.1, 0.01, 1)), upper=c(et1=3), matt=NULL, default="id")
+    l2 <- lotri(et1+et2 ~c(0.1, 0.01, 1) | id(upper=c(et1=3)))
+
+    expect_equal(l1, l2)
+
+    expect_error(as.lotri(lotri(et1+et2 ~c(0.1, 0.01, 1)), upper=c(3,3), default="id"))
+    expect_error(as.lotri(lotri(et1+et2 ~c(0.1, 0.01, 1)), upper=1L, default="id"))
+
+    expect_error(.Call(lotri:::`_asLotriMat`, "a", list(nu=3), "id", PACKAGE="lotri"))
+
+    expect_error(.Call(lotri:::`_asLotriMat`, matrix(1), list(nu=3), "id", PACKAGE="lotri"))
+    expect_error(.Call(lotri:::`_asLotriMat`, structure(1, .Dim = c(1L, 1L), dimnames=list(NULL, c("a"))),
+                       list(nu=3), "id", PACKAGE="lotri"))
+    expect_error(.Call(lotri:::`_asLotriMat`, structure(1, .Dim = c(1L, 1L), dimnames=list(c("a"), NULL)),
+                       list(nu=3), "id", PACKAGE="lotri"))
+
+    expect_error(.Call(lotri:::`_asLotriMat`, lotri(et1+et2 ~c(0.1, 0.01, 1)),
+                       "a", "id", PACKAGE="lotri"))
+    
+    expect_error(as.lotri(lotri(et1+et2 ~c(0.1, 0.01, 1)), upper=1L, default=c("id","id2")))
+    expect_error(as.lotri(lotri(et1+et2 ~c(0.1, 0.01, 1)), upper=1L, default=3))
+
     expect_error(as.lotri(lotri(et1+et2 ~c(0.1, 0.01, 1)), lower=4))
 
     testList <- list(lotri({et2 + et3 + et4 ~ c(40,
