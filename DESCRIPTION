@@ -24,7 +24,8 @@ Suggests:
     rmarkdown,
     Matrix,
     microbenchmark,
-    RxODE
+    RxODE,
+    ggplot2
 NeedsCompilation: yes
 Biarch: true
 RoxygenNote: 7.1.0
