@@ -13,10 +13,19 @@ r:
   - 3.5
   - 3.6
   - devel
+
+allow_failures:
+  - r: devel
+    os: linux
+  - r: devel
+    os: osx
   
 os:
   - linux
   - osx
+
+apt_packages:
+  - libudunits2-dev
 
 
 after_success:
