@@ -27,7 +27,7 @@ Suggests:
     RxODE
 NeedsCompilation: yes
 Biarch: true
-RoxygenNote: 7.0.2
+RoxygenNote: 7.1.0
 VignetteBuilder: knitr
 BugReports: https://github.com/nlmixrdevelopment/lotri/issues
 URL: https://github.com/nlmixrdevelopment/lotri

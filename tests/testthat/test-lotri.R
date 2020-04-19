@@ -479,7 +479,7 @@ occ.Cl = 4))), class = "lotri"))
 ))), 0.5, 0, 0, 0.6), lotri = list(iov = list(lower = c(iov.Ka = 3,
 iov.Cl = 3))), class = "lotri"))
 
-
+    context("as.lotri")
     tmp2 <- lotri(iov.Ka ~ 0.5,
                   iov.Cl ~ 0.6)
 
@@ -526,6 +526,8 @@ iov.Cl = 3))), class = "lotri"))
 
     expect_error(as.lotri(lotri(et1+et2 ~c(0.1, 0.01, 1)), upper=c(3,3), default="id"))
     expect_error(as.lotri(lotri(et1+et2 ~c(0.1, 0.01, 1)), upper=1L, default="id"))
+
+    context("lotriMat");
 
     expect_error(.Call(lotri:::`_asLotriMat`, "a", list(nu=3), "id", PACKAGE="lotri"))
 
@@ -640,5 +642,79 @@ iov.Cl = 3))), class = "lotri"))
     expect_equal(lotriMat(mat1),lotriMat(list(mat1)))
     expect_equal(lotriMat(mat1, "ETA[%d]"),lotriMat(list(mat1),"ETA[%d]"))
     expect_equal(lotriMat(mat1, "ETA[%d]",4),lotriMat(list(mat1),"ETA[%d]",4L))
+
+    context("lotriSep");
+
+    omega <- lotri(lotri(eta.Cl ~ 0.1,
+                             eta.Ka ~ 0.1) | id(nu=100),
+                       lotri(eye.Cl ~ 0.05,
+                             eye.Ka ~ 0.05) | eye(nu=50),
+                       lotri(iov.Cl ~ 0.01,
+                             iov.Ka ~ 0.01) | occ(nu=200),
+                       lotri(inv.Cl ~ 0.02,
+                             inv.Ka ~ 0.02) | inv(nu=10))
+
+    sepA <- lotriSep(omega, above=c(inv=10L), below=c(eye=2L, occ=4L))
+
+    sepB <- list(above=lotri(lotri(inv.Cl ~ 0.02,
+                                    inv.Ka ~ 0.02) |
+                              inv(nu=100, same=10L)),
+                  below=lotri(lotri(eta.Cl ~ 0.1,
+                                    eta.Ka ~ 0.1) | id(nu=100),
+                              lotri(eye.Cl ~ 0.05,
+                                    eye.Ka ~ 0.05) | eye(nu=50, same=2L),
+                              lotri(iov.Cl ~ 0.01,
+                                    iov.Ka ~ 0.01) | occ(nu=200, same=4L)))
+
+    attr(sepB$below, "format") <- "ETA[%d]"
+    attr(sepB$below, "start")  <- 1L
+
+    attr(sepB$above, "format") <- "THETA[%d]"
+    attr(sepB$above, "start")  <- 1L
+
+    expect_equal(sepA, sepB)
+
+    expect_error(lotriSep(omega, above=c(inv=10L), below=c(eye=2L, occ=4L), aboveStart=1:2))
+
+    expect_error(lotriSep(omega, above=c(inv=10), below=c(eye=2L, occ=4L)))
+
+    expect_error(lotriSep(omega, above=c(inv=10L), below=c(eye=2, occ=4)))
+
+    expect_error(lotriSep(omega, above=c(10L), below=c(eye=2L, occ=4L)))
+
+    expect_error(lotriSep(omega, above=c(inv=10L), below=c(2L, 4L)))
+
+    expect_error(lotriSep(omega, above=c(inv=10L), below=c(eye=2L, matt=4L), aboveStart=2L))
+
+    omega0 <- lotri(lotri(eye.Cl ~ 0.05,
+                          eye.Ka ~ 0.05) | eye(nu=50),
+                    lotri(iov.Cl ~ 0.01,
+                          iov.Ka ~ 0.01) | occ(nu=200),
+                    lotri(inv.Cl ~ 0.02,
+                          inv.Ka ~ 0.02) | inv(nu=10))
+
+    expect_error(lotriSep(omega0, above=c(inv=10L), below=c(eye=2L, occ=4L), aboveStart=2L))
+
+    sepA <- lotriSep(omega, above=c(), below=c(eye=2L, occ=4L))
     
+    expect_equal(sepA$above, NULL)
+
+    sepA <- lotriSep(omega, above=NULL, below=c(eye=2L, occ=4L))
+
+    expect_equal(sepA$above, NULL)
+
+    ## Bad Lotri matrix
+
+    omega1 <- structure(list(id = structure(c(0.1, 0, 0, 0.1), .Dim = c(2L, 
+2L), .Dimnames = list(c("eta.Cl", "eta.Ka"), c("eta.Cl", "eta.Ka"
+))), eye = structure(c(0.05, 0, 0, 0.05), .Dim = c(2L, 2L), .Dimnames = list(
+    c("eye.Cl", "eye.Ka"), c("eye.Cl", "eye.Ka"))), occ = structure(c(0.01, 
+0, 0, 0.01), .Dim = c(2L, 2L), .Dimnames = list(c("iov.Cl", "iov.Ka"
+), c("iov.Cl", "iov.Ka"))), inv = structure(c(0.02, 0, 0, 0.02
+), .Dim = c(2L, 2L), .Dimnames = list(c("inv.Cl", "inv.Ka"), 
+    c("inv.Cl", "inv.Ka")))), lotri = list(id = list(nu = 100), 
+    eye = list(nu = 50), inv = list(nu = 10)), class = "lotri")
+    
+    expect_error(lotriSep(omega1, above=c(), below=c(eye=2L, occ=4L)))
+
 })

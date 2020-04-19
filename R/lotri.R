@@ -821,3 +821,39 @@ as.matrix.lotri <- function(x, ...){
 lotriMat <- function(matList, format=NULL, start=1L) {
   .Call(`_lotriLstToMat`, matList, format, start, PACKAGE='lotri')
 }
+
+##' Separate a lotri matrix into above and below lotri matrices
+##'
+##' This is used for creating nesting simulations in `RxODE` and may
+##' not be useful for external function calls.
+##' 
+##' @param x lotri matrix
+##' @param above Named integer vector listing variability above the id
+##'   level.  Each element lists the number of population differences
+##'   in the whole data-set (as integer)
+##' @param below Named integer vector listing variability below the id
+##'   level.  Each element lists the number of items below the
+##'   individual level.  For example with 3 occasions per indivdiual
+##'   you could use 'c(occ=3L)'
+##' @param aboveStart Add the attribute of where THETA[#] will be added
+##' @param belowStart Add the attribute of where ETA[#] will be added
+##' @return List of two lotri matrices
+##' @author Matthew Fidler
+##' @export
+##' @examples
+##' omega <- lotri(lotri(eta.Cl ~ 0.1,
+##'                         eta.Ka ~ 0.1) | id(nu=100),
+##'                   lotri(eye.Cl ~ 0.05,
+##'                         eye.Ka ~ 0.05) | eye(nu=50),
+##'                   lotri(iov.Cl ~ 0.01,
+##'                         iov.Ka ~ 0.01) | occ(nu=200),
+##'                   lotri(inv.Cl ~ 0.02,
+##'                         inv.Ka ~ 0.02) | inv(nu=10))
+##'
+##' lotriSep(omega, above=c(inv=10L), below=c(eye=2L, occ=4L))
+lotriSep <- function(x, above, below,
+                     aboveStart=1L, belowStart=1L){
+  .Call(`_lotriSep`, x, above, below,
+        aboveStart=as.integer(aboveStart), belowStart=as.integer(belowStart),
+        PACKAGE="lotri")
+}
