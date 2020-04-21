@@ -24,7 +24,6 @@ Suggests:
     rmarkdown,
     Matrix,
     microbenchmark,
-    RxODE,
     ggplot2
 NeedsCompilation: yes
 Biarch: true

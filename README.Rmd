@@ -59,7 +59,6 @@ With `lotri`, you simply specify:
 library(lotri)
 library(microbenchmark)
 library(ggplot2)
-library(RxODE)
 
 
 mat <- lotri(a+b ~ c(1,
@@ -180,7 +179,7 @@ mb <- microbenchmark(matf(testList),lotriMat(testList))
 
 print(mb)
 
-autoplot(mb) + rxTheme()
+autoplot(mb)
 ```
 
 ## New features

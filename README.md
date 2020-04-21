@@ -54,7 +54,6 @@ With `lotri`, you simply specify:
 library(lotri)
 library(microbenchmark)
 library(ggplot2)
-library(RxODE)
 
 
 mat <- lotri(a+b ~ c(1,
@@ -245,11 +244,11 @@ mb <- microbenchmark(matf(testList),lotriMat(testList))
 
 print(mb)
 #> Unit: microseconds
-#>                expr     min       lq      mean   median       uq      max neval
-#>      matf(testList) 510.885 515.5405 580.50375 519.1395 534.9065 4863.898   100
-#>  lotriMat(testList)   1.180   1.4295   2.40989   2.7780   3.1875    6.714   100
+#>                expr     min       lq      mean   median      uq      max neval
+#>      matf(testList) 504.496 509.9065 609.22553 521.1295 579.006 5557.740   100
+#>  lotriMat(testList)   1.144   1.3660   2.55261   2.8855   3.116   21.524   100
 
-autoplot(mb) + rxTheme()
+autoplot(mb)
 #> Coordinate system already present. Adding new coordinate system, which will replace the existing one.
 ```
 
