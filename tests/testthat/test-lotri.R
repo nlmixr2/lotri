@@ -674,6 +674,18 @@ iov.Cl = 3))), class = "lotri"))
 
     expect_equal(sepA, sepB)
 
+    expect_equal(dimnames(lotriMat(sepA$above))[[1]],
+                 sprintf("THETA[%d]", 1:20))
+    expect_equal(dimnames(lotriMat(sepA$below))[[1]],
+                 c("eta.Cl","eta.Ka",sprintf("ETA[%d]", 1:12)))
+
+    above1 <- attr(sepA$above, "lotri")
+    above1$inv$same <- "matt"
+    above <- sepA$above;
+    attr(above, "lotri") <- above1
+
+    expect_equal(dimnames(lotriMat(above))[[1]],c("inv.Cl", "inv.Ka"))
+
     expect_error(lotriSep(omega, above=c(inv=10L), below=c(eye=2L, occ=4L), aboveStart=1:2))
 
     expect_error(lotriSep(omega, above=c(inv=10), below=c(eye=2L, occ=4L)))

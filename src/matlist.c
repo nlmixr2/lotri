@@ -30,6 +30,15 @@ int casecmp(const char *s1, const char *s2) {
   }
 }
 
+static inline int isSingleInt(SEXP in) {
+  int type = TYPEOF(in);
+  if (type == INTSXP && Rf_length(in) == 1) {
+    if (!Rf_isMatrix(in)) return INTEGER(in)[0];
+  } else if (type == REALSXP && Rf_length(in) == 1) {
+    if (!Rf_isMatrix(in)) return (int)(REAL(in)[0]);
+  }
+  return NA_INTEGER;
+}
 
 static inline int isSymNameMat(SEXP cur) {
   int type = TYPEOF(cur);
@@ -46,16 +55,6 @@ static inline int isSymNameMat(SEXP cur) {
     }
   }
   return 0;
-}
-
-static inline int isSingleInt(SEXP in) {
-  int type = TYPEOF(in);
-  if (type == INTSXP && Rf_length(in) == 1) {
-    if (!Rf_isMatrix(in)) return INTEGER(in)[0];
-  } else if (type == REALSXP && Rf_length(in) == 1) {
-    if (!Rf_isMatrix(in)) return (int)(REAL(in)[0]);
-  }
-  return NA_INTEGER;
 }
 
 int getCheckDim(SEXP lst, int i) {
@@ -98,11 +97,67 @@ static inline int setStrElt(SEXP retN, SEXP colnames, int curBand, int j,
   return 0;
 }
 
-SEXP _lotriLstToMat(SEXP lst, SEXP format, SEXP startNum) {
+int getSame(SEXP names, int i, SEXP lotriProp, SEXP lotriPropNames) {
+  const char *what = CHAR(STRING_ELT(names, i));
+  int nsame = 1;
+  for (int j = Rf_length(lotriPropNames); j--;) {
+    const char *cur = CHAR(STRING_ELT(lotriPropNames, j));
+    if (!strcmp(what, cur)){
+      SEXP lotriCur = VECTOR_ELT(lotriProp, j);
+      SEXP lotriCurNames = Rf_getAttrib(lotriCur, R_NamesSymbol);
+      for (int k = Rf_length(lotriCurNames); k--; ) {
+	const char *cur2 = CHAR(STRING_ELT(lotriCurNames, k));
+	if (!strcmp(cur2, "same")) {
+	  nsame = isSingleInt(VECTOR_ELT(lotriCur, k));
+	  if (nsame == NA_INTEGER){
+	    nsame = 1;
+	  }
+	  break;
+	}
+      }
+      break;
+    }
+  }
+  return nsame;
+}
+
+SEXP lotriToLstMat(SEXP lotri){
+  if (TYPEOF(lotri) != VECSXP){
+    return lotri;
+  }
+  SEXP lotriProp = Rf_getAttrib(lotri, Rf_install("lotri"));
+  if (Rf_isNull(lotriProp)) {
+    return lotri;
+  }
+  SEXP lotriNames = Rf_getAttrib(lotri, R_NamesSymbol);
+  SEXP lotriPropNames = Rf_getAttrib(lotriProp, R_NamesSymbol);
+  int pro=0;
+  SEXP ret = PROTECT(Rf_allocVector(VECSXP, Rf_length(lotri))); pro++;
+  int nsame;
+  for (int i = Rf_length(ret); i--;) {
+    nsame = getSame(lotriNames, i, lotriProp, lotriPropNames);
+    if (nsame > 1){
+      SEXP cur = PROTECT(Rf_allocVector(VECSXP, 2)); pro++;
+      SET_VECTOR_ELT(cur, 0, VECTOR_ELT(lotri, i));
+      SEXP ns = PROTECT(Rf_allocVector(INTSXP, 1)); pro++;
+      INTEGER(ns)[0] = nsame;
+      SET_VECTOR_ELT(cur, 1, ns);
+      SET_VECTOR_ELT(ret, i, cur);
+    } else {
+      SET_VECTOR_ELT(ret, i, VECTOR_ELT(lotri, i));
+    }
+  }
+  UNPROTECT(pro);
+  return ret;
+}
+
+SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum) {
+  int pro=0;
+  SEXP lst = PROTECT(lotriToLstMat(lst_)); pro++;
   int type = TYPEOF(lst), totN;
   if (type != VECSXP) {
     if (isSymNameMat(lst)) {
-      return lst;
+      return lst_;
     }
     Rf_error(_("expects a list named symmetric matrices"));
   }
@@ -113,18 +168,29 @@ SEXP _lotriLstToMat(SEXP lst, SEXP format, SEXP startNum) {
     fmt = CHAR(STRING_ELT(format, 0));
     doFormat=1;
   } else if (fmtType) {
+    UNPROTECT(pro);
     Rf_error(_("'format' must be a single length string or NULL"),
 	     fmtType);
+  } else {
+    SEXP fmt2 = Rf_getAttrib(lst_, Rf_install("format"));
+    if (TYPEOF(fmt2) == STRSXP && Rf_length(fmt2) == 1) {
+      fmt = CHAR(STRING_ELT(fmt2, 0));
+      doFormat=1;
+    }
   }
   int counter = 0;
   if (doFormat) {
     counter = isSingleInt(startNum);
     if (counter == NA_INTEGER){
-      Rf_error(_("When format is specified, 'startNum' must be a single integer"));
+      SEXP startNum2 = Rf_getAttrib(lst_, Rf_install("start"));
+      counter = isSingleInt(startNum2);
+      if (counter == NA_INTEGER) {
+	UNPROTECT(pro);
+	Rf_error(_("When format is specified, 'startNum' must be a single integer"));
+      }
     }
   }
   int len = Rf_length(lst);
-  int pro = 0;
   int totdim = 0;
   int i, j;
   if (len == 2) {
@@ -531,7 +597,6 @@ SEXP _lotriAllNames(SEXP lotri) {
     }
   }  
 }
-
 
 void R_init_lotri(DllInfo *info){
   R_CallMethodDef callMethods[]  = {
