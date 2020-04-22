@@ -665,6 +665,9 @@ str.lotri <- function(object, ...) {
                                   names(.lotri[[x]])
                                 }))))
   }
+  if (arg == ".allNames") {
+    return(.Call(`_lotriAllNames`, obj ,PACKAGE="lotri"))
+  }
   if (arg == ".list") {
     .tmp <- obj
     class(.tmp) <- NULL

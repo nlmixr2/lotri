@@ -486,11 +486,59 @@ SEXP _lotriSep(SEXP lotri, SEXP above, SEXP below,
   return ret;
 }
 
+SEXP _lotriAllNames(SEXP lotri) {
+  int pro = 0;
+  if (Rf_isMatrix(lotri)){
+    SEXP dimn = Rf_getAttrib(lotri, R_DimNamesSymbol);
+    if (dimn == R_NilValue) {
+      SEXP retN = PROTECT(Rf_allocVector(STRSXP, 0)); pro++;
+      UNPROTECT(pro);
+      return retN;
+    }
+    SEXP colnames = VECTOR_ELT(dimn, 1);
+    if (Rf_isNull(colnames)){
+      colnames = VECTOR_ELT(dimn, 0);
+      if (Rf_isNull(colnames)) {
+	SEXP retN = PROTECT(Rf_allocVector(STRSXP, 0)); pro++;
+	UNPROTECT(pro);
+	return retN;
+      }
+    }
+    return colnames;
+  } else {
+    int type = TYPEOF(lotri);
+    if (type == VECSXP) {
+      int intN=0;
+      for (int i = Rf_length(lotri); i--;){
+	intN +=
+	  Rf_length(VECTOR_ELT(Rf_getAttrib(VECTOR_ELT(lotri, i),
+					    R_DimNamesSymbol), 1));
+      }
+      int j = 0;
+      SEXP ret = PROTECT(Rf_allocVector(STRSXP, intN)); pro++;
+      for (int i = Rf_length(lotri); i--;){
+	SEXP cur = VECTOR_ELT(Rf_getAttrib(VECTOR_ELT(lotri, i),
+					   R_DimNamesSymbol), 1);
+	for (int k = 0; k < Rf_length(cur); ++k) {
+	  /* SET_STRING_ELT(retN, curBand+j, Rf_mkChar(out)); */
+	  SET_STRING_ELT(ret, j++, STRING_ELT(cur, k));
+	}
+      }
+      UNPROTECT(pro);
+      return ret;
+    } else {
+      Rf_error(_("not a matrix or lotri matrix"));
+    }
+  }  
+}
+
+
 void R_init_lotri(DllInfo *info){
   R_CallMethodDef callMethods[]  = {
     {"_lotriLstToMat", (DL_FUNC) &_lotriLstToMat, 3},
     {"_asLotriMat", (DL_FUNC) &_asLotriMat, 3},
     {"_lotriSep", (DL_FUNC) &_lotriSep, 5},
+    {"_lotriAllNames", (DL_FUNC) &_lotriAllNames, 1},
     {NULL, NULL, 0}
   };
   R_RegisterCCallable("lotri", "_lotriLstToMat", (DL_FUNC) _lotriLstToMat);
