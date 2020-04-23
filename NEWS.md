@@ -7,6 +7,7 @@
 * Dropped `Matrix` import and added `lotriMat` to create banded
   matrices (faster than `Matrix` for now included repeated matrices
   with `list(matrix, rep)`).
+* Bug fix for default properties when both `upper` and `lower` bounds are specified
 
 # lotri 0.2.1
 * Added conditional matrix specification `|`; Returns a list of matrices

@@ -181,7 +181,7 @@ NULL
                        .n, .n, names[1], .cur[1]))
         } else {
           .newProp[[.n]] <- setNames(rep(.cur, length(names)), names)
-          return(.newProp)
+          next;
         }
       }
       .new <- setNames(rep(.defaultProperties[.n], length(names)), names)
@@ -282,17 +282,6 @@ NULL
 ##' @noRd
 .getMatrix <- function(env, val) {
   return(.Call(`_lotriLstToMat`, env[[val]], NULL, 1L, PACKAGE='lotri'))
-  ## .omega <- as.matrix(Matrix::bdiag(.mats))
-  ## .d <- unlist(lapply(seq_along(.mats),
-  ##                     function(x) {
-  ##                       dimnames(.mats[[x]])[2]
-  ##                     }))
-  ## .lotri <- lapply(seq_along(.mats),
-  ##                  function(x) {
-  ##                    attr(.mats[[x]], "lotri")
-  ##                  })
-  ## dimnames(.omega) <- list(.d, .d)
-  ## return(.omega)
 }
 
 ##' Easily Specify block-diagonal matrices with lower triangular info
@@ -667,6 +656,9 @@ str.lotri <- function(object, ...) {
   }
   if (arg == ".allNames") {
     return(.Call(`_lotriAllNames`, obj ,PACKAGE="lotri"))
+  }
+  if (arg == ".bounds") {
+    return(.Call(`_getBounds`, obj, NULL, 1L, PACKAGE="lotri"))
   }
   if (arg == ".list") {
     .tmp <- obj

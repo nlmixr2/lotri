@@ -30,14 +30,14 @@ int casecmp(const char *s1, const char *s2) {
   }
 }
 
-static inline int isSingleInt(SEXP in) {
+static inline int isSingleInt(SEXP in, int defaultVal) {
   int type = TYPEOF(in);
   if (type == INTSXP && Rf_length(in) == 1) {
     if (!Rf_isMatrix(in)) return INTEGER(in)[0];
   } else if (type == REALSXP && Rf_length(in) == 1) {
     if (!Rf_isMatrix(in)) return (int)(REAL(in)[0]);
   }
-  return NA_INTEGER;
+  return defaultVal;
 }
 
 static inline int isSymNameMat(SEXP cur) {
@@ -65,7 +65,7 @@ int getCheckDim(SEXP lst, int i) {
     if (Rf_length(cur) != 2){
       Rf_error(_("when repeating matrices you need to use 'list(mat, n)'"));
     }
-    same = isSingleInt(VECTOR_ELT(cur, 1));
+    same = isSingleInt(VECTOR_ELT(cur, 1), NA_INTEGER);
     if (same == NA_INTEGER) {
       Rf_error(_("you can only repeat a matrix a single positive number of times"));
     }
@@ -97,9 +97,10 @@ static inline int setStrElt(SEXP retN, SEXP colnames, int curBand, int j,
   return 0;
 }
 
-int getSame(SEXP names, int i, SEXP lotriProp, SEXP lotriPropNames) {
+SEXP getLotriProp(SEXP names, int i,
+		  SEXP lotriProp,
+		  SEXP lotriPropNames, const char *prop) {
   const char *what = CHAR(STRING_ELT(names, i));
-  int nsame = 1;
   for (int j = Rf_length(lotriPropNames); j--;) {
     const char *cur = CHAR(STRING_ELT(lotriPropNames, j));
     if (!strcmp(what, cur)){
@@ -107,24 +108,24 @@ int getSame(SEXP names, int i, SEXP lotriProp, SEXP lotriPropNames) {
       SEXP lotriCurNames = Rf_getAttrib(lotriCur, R_NamesSymbol);
       for (int k = Rf_length(lotriCurNames); k--; ) {
 	const char *cur2 = CHAR(STRING_ELT(lotriCurNames, k));
-	if (!strcmp(cur2, "same")) {
-	  nsame = isSingleInt(VECTOR_ELT(lotriCur, k));
-	  if (nsame == NA_INTEGER){
-	    nsame = 1;
-	  }
-	  break;
+	if (!strcmp(cur2, prop)) {
+	  return VECTOR_ELT(lotriCur, k);
 	}
       }
-      break;
     }
   }
-  return nsame;
+  return R_NilValue;
+}
+
+int getSame(SEXP names, int i, SEXP lotriProp, SEXP lotriPropNames) {
+  SEXP s = getLotriProp(names, i, lotriProp, lotriPropNames, "same");
+  if (!Rf_isNull(s)) {
+    return isSingleInt(s, 1);
+  }
+  return 1;
 }
 
 SEXP lotriToLstMat(SEXP lotri){
-  if (TYPEOF(lotri) != VECSXP){
-    return lotri;
-  }
   SEXP lotriProp = Rf_getAttrib(lotri, Rf_install("lotri"));
   if (Rf_isNull(lotriProp)) {
     return lotri;
@@ -151,66 +152,79 @@ SEXP lotriToLstMat(SEXP lotri){
   return ret;
 }
 
-SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum) {
-  int pro=0;
-  SEXP lst = PROTECT(lotriToLstMat(lst_)); pro++;
-  int type = TYPEOF(lst), totN;
-  if (type != VECSXP) {
-    if (isSymNameMat(lst)) {
-      return lst_;
-    }
-    Rf_error(_("expects a list named symmetric matrices"));
-  }
-  int fmtType = TYPEOF(format);
+typedef struct lotriInfo {
+  SEXP lst;
+  int doFormat;
   const char *fmt;
-  int doFormat = 0;
+  int counter;
+  int pro;
+} lotriInfo;
+
+lotriInfo _lotriLstToMat0(SEXP lst_, SEXP format, SEXP startNum) {
+  lotriInfo ret;
+  ret.pro = 0;
+  ret.lst = PROTECT(lotriToLstMat(lst_)); ret.pro++;
+  int fmtType = TYPEOF(format);
+  ret.doFormat = 0;
   if (fmtType == STRSXP && Rf_length(format) == 1) {
-    fmt = CHAR(STRING_ELT(format, 0));
-    doFormat=1;
+    ret.fmt = CHAR(STRING_ELT(format, 0));
+    ret.doFormat=1;
   } else if (fmtType) {
-    UNPROTECT(pro);
+    UNPROTECT(ret.pro);
     Rf_error(_("'format' must be a single length string or NULL"),
 	     fmtType);
   } else {
     SEXP fmt2 = Rf_getAttrib(lst_, Rf_install("format"));
     if (TYPEOF(fmt2) == STRSXP && Rf_length(fmt2) == 1) {
-      fmt = CHAR(STRING_ELT(fmt2, 0));
-      doFormat=1;
+      ret.fmt = CHAR(STRING_ELT(fmt2, 0));
+      ret.doFormat=1;
     }
   }
-  int counter = 0;
-  if (doFormat) {
-    counter = isSingleInt(startNum);
-    if (counter == NA_INTEGER){
+  ret.counter = 0;
+  if (ret.doFormat) {
+    ret.counter = isSingleInt(startNum, NA_INTEGER);
+    if (ret.counter == NA_INTEGER){
       SEXP startNum2 = Rf_getAttrib(lst_, Rf_install("start"));
-      counter = isSingleInt(startNum2);
-      if (counter == NA_INTEGER) {
-	UNPROTECT(pro);
-	Rf_error(_("When format is specified, 'startNum' must be a single integer"));
+      ret.counter = isSingleInt(startNum2, NA_INTEGER);
+      if (ret.counter == NA_INTEGER) {
+	UNPROTECT(ret.pro);
+	Rf_error(_("when format is specified, 'startNum' must be a single integer"));
       }
     }
   }
-  int len = Rf_length(lst);
+  return ret;
+}
+
+SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum) {
+  int type = TYPEOF(lst_), totN;
+  if (type != VECSXP) {
+    if (isSymNameMat(lst_)) {
+      return lst_;
+    }
+    Rf_error(_("expects a list named symmetric matrices"));
+  }
+  lotriInfo li = _lotriLstToMat0(lst_, format, startNum);
+  int len = Rf_length(li.lst);
   int totdim = 0;
   int i, j;
   if (len == 2) {
-    int repN = isSingleInt(VECTOR_ELT(lst, 1));
+    int repN = isSingleInt(VECTOR_ELT(li.lst, 1), NA_INTEGER);
     if (repN == NA_INTEGER){
     } else if (repN > 0) {
-      if (isSymNameMat(VECTOR_ELT(lst, 0))){
-	SEXP new = PROTECT(Rf_allocVector(VECSXP, 1)); pro++;
-	SET_VECTOR_ELT(new, 0, lst);
+      if (isSymNameMat(VECTOR_ELT(li.lst, 0))){
+	SEXP new = PROTECT(Rf_allocVector(VECSXP, 1)); li.pro++;
+	SET_VECTOR_ELT(new, 0, li.lst);
 	SEXP ret = _lotriLstToMat(new, format, startNum);
-	UNPROTECT(pro);
+	UNPROTECT(li.pro);
 	return ret;
       }
     }
   }
- for (i = 0; i < len; ++i) {
-    totdim += getCheckDim(lst, i);
+  for (i = 0; i < len; ++i) {
+    totdim += getCheckDim(li.lst, i);
   }
-  SEXP ret = PROTECT(Rf_allocMatrix(REALSXP, totdim, totdim)); pro++;
-  SEXP retN = PROTECT(Rf_allocVector(STRSXP, totdim)); pro++;
+  SEXP ret = PROTECT(Rf_allocMatrix(REALSXP, totdim, totdim)); li.pro++;
+  SEXP retN = PROTECT(Rf_allocVector(STRSXP, totdim)); li.pro++;
   double *retd = REAL(ret);
   // Initialize to zero
   memset(retd, 0, sizeof(double)*totdim*totdim);
@@ -222,17 +236,12 @@ SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum) {
   SEXP dimnames, colnames, sameS;
   int nsame;
   for (i = 0; i < len; ++i) {
-    cur = VECTOR_ELT(lst, i);
+    cur = VECTOR_ELT(li.lst, i);
     type = TYPEOF(cur);
     nsame = 1;
     if (type == VECSXP) {
       sameS = VECTOR_ELT(cur, 1);
-      type = TYPEOF(sameS);
-      if (type == INTSXP) {
-	nsame = INTEGER(sameS)[0];
-      } else {
-	nsame = (int)REAL(sameS)[0];
-      }
+      nsame = isSingleInt(sameS, 1);
       cur = VECTOR_ELT(cur, 0);
       type = TYPEOF(cur);
     }
@@ -247,7 +256,7 @@ SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum) {
 		 &curd[totN*j], sizeof(double)*totN);
 	  // Repeats dim names of repeated matrices
 	  setStrElt(retN, colnames, curBand, j,
-		    fmt, doFormat, &counter, nsame);
+		    li.fmt, li.doFormat, &li.counter, nsame);
 	}
       } else {
 	curi = INTEGER(cur);
@@ -259,17 +268,130 @@ SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum) {
 	    *(to++) = (double)(*(from++));
 	  }
 	  setStrElt(retN, colnames, curBand, j,
-		    fmt, doFormat, &counter, nsame);
+		    li.fmt, li.doFormat, &li.counter, nsame);
 	}
       }
       curBand += totN;
     }
   }
-  dimnames = PROTECT(Rf_allocVector(VECSXP, 2)); pro++;
+  dimnames = PROTECT(Rf_allocVector(VECSXP, 2)); li.pro++;
   SET_VECTOR_ELT(dimnames, 0, retN);
   SET_VECTOR_ELT(dimnames, 1, retN);
   Rf_setAttrib(ret, R_DimNamesSymbol, dimnames);
-  UNPROTECT(pro);
+  UNPROTECT(li.pro);
+  return ret;
+}
+
+double getDouble(SEXP colnames, int i, SEXP inUpperLower, SEXP upperLowerNames,
+		 double defaultValue, int type) {
+  const char *lookup = CHAR(STRING_ELT(colnames, i));
+  const char *current;
+  for (int j = Rf_length(upperLowerNames); j--;) {
+    current = CHAR(STRING_ELT(upperLowerNames, j));
+    if (!strcmp(current, lookup)){
+      return REAL(inUpperLower)[j];
+    }
+  }
+  return defaultValue;
+}
+
+void setUpperLower(SEXP inUpperLower, SEXP colnames,
+		   double *outUpperLower, int i0, double defaultValue,
+		   const char *what, int pro0, int nsame) {
+  SEXP upperLowerNames = Rf_getAttrib(inUpperLower, R_NamesSymbol);
+  double value = defaultValue;
+  int ncol = Rf_length(colnames);
+  if (Rf_isNull(upperLowerNames)){
+    if (Rf_length(inUpperLower) == 1) {
+      int typ = TYPEOF(inUpperLower);
+      if (typ == REALSXP) {
+	value = REAL(inUpperLower)[0];
+      } else if (typ == INTSXP) {
+	value = (double)(INTEGER(inUpperLower)[0]);
+      }
+    } else if (Rf_length(inUpperLower) != 0) {
+      UNPROTECT(pro0);
+      Rf_error(_("cannot figure out valid '%s' properties"), what);
+    }
+    for (int i = ncol*nsame; i--;) {
+      outUpperLower[i0+i] = value;
+    }      
+  } else {
+    int typ = TYPEOF(inUpperLower);
+    for (int i = ncol; i--;) {
+      outUpperLower[i0+i] = getDouble(colnames, i, inUpperLower,
+				      upperLowerNames, defaultValue, typ);
+    }
+    for (int i = 1; i < nsame; ++i) {
+      memcpy(&outUpperLower[i0+i*ncol], &outUpperLower[i0], ncol*sizeof(double));
+    }
+  }
+}
+
+SEXP _getBounds(SEXP lst_, SEXP format, SEXP startNum) {
+  int type = TYPEOF(lst_), totN;
+  if (type != VECSXP) {
+    Rf_error(_("expects lotri matrix"));
+  }
+  SEXP lotriProp = Rf_getAttrib(lst_, Rf_install("lotri"));
+  SEXP lotriPropNames = Rf_getAttrib(lotriProp, R_NamesSymbol);
+  SEXP names = Rf_getAttrib(lst_, R_NamesSymbol);
+  if (Rf_isNull(lotriProp)) {
+    Rf_error(_("only works with lotri matrices"));
+  }
+  
+  lotriInfo li = _lotriLstToMat0(lst_, format, startNum);
+  int len = Rf_length(li.lst);
+  int totdim=0;
+  for (int i = 0; i < len; ++i) {
+    totdim += getCheckDim(li.lst, i);
+  }
+  SEXP retN = PROTECT(Rf_allocVector(STRSXP, totdim)); li.pro++;
+  SEXP boundLower = PROTECT(Rf_allocVector(REALSXP, totdim)); li.pro++;
+  double *boundLowerD = REAL(boundLower);
+  SEXP boundUpper = PROTECT(Rf_allocVector(REALSXP, totdim)); li.pro++;
+  double *boundUpperD = REAL(boundUpper);
+  int nsame, j;
+  SEXP cur, sameS, dimnames, colnames;
+  int curBand = 0;
+  for (int i = 0; i < len; ++i) {
+    cur = VECTOR_ELT(li.lst, i);
+    type = TYPEOF(cur);
+    nsame = 1;
+    if (type == VECSXP) {
+      sameS = VECTOR_ELT(cur, 1);
+      nsame = isSingleInt(sameS, 1);
+      cur = VECTOR_ELT(cur, 0);
+      type = TYPEOF(cur);
+    }
+    totN = Rf_ncols(cur);
+    dimnames = Rf_getAttrib(cur, R_DimNamesSymbol);
+    colnames = VECTOR_ELT(dimnames, 1);
+    SEXP upper = getLotriProp(names, i, lotriProp, lotriPropNames, "upper");
+    setUpperLower(upper, colnames, boundUpperD, curBand, R_PosInf,
+		  "upper", li.pro, nsame);
+    SEXP lower = getLotriProp(names, i, lotriProp, lotriPropNames, "lower");
+    setUpperLower(lower, colnames, boundLowerD, curBand, R_NegInf,
+		  "lower", li.pro, nsame);
+    for (int cursame = nsame; cursame--;){
+      // Repeats dim names of repeated matrices
+      for (j = 0; j  < totN; ++j) {
+	setStrElt(retN, colnames, curBand, j,
+		  li.fmt, li.doFormat, &li.counter, nsame);
+      }
+      curBand += totN;
+    }
+  }
+  Rf_setAttrib(boundLower, R_NamesSymbol, retN);
+  Rf_setAttrib(boundUpper, R_NamesSymbol, retN);
+  SEXP ret = PROTECT(Rf_allocVector(VECSXP, 2)); li.pro++;
+  SET_VECTOR_ELT(ret, 0, boundLower);
+  SET_VECTOR_ELT(ret, 1, boundUpper);
+  SEXP retFN = PROTECT(Rf_allocVector(STRSXP, 2)); li.pro++;
+  SET_STRING_ELT(retFN, 0, Rf_mkChar("lower"));
+  SET_STRING_ELT(retFN, 1, Rf_mkChar("upper"));
+  Rf_setAttrib(ret, R_NamesSymbol, retFN);
+  UNPROTECT(li.pro);
   return ret;
 }
 
@@ -604,6 +726,7 @@ void R_init_lotri(DllInfo *info){
     {"_asLotriMat", (DL_FUNC) &_asLotriMat, 3},
     {"_lotriSep", (DL_FUNC) &_lotriSep, 5},
     {"_lotriAllNames", (DL_FUNC) &_lotriAllNames, 1},
+    {"_getBounds", (DL_FUNC) &_getBounds, 3},
     {NULL, NULL, 0}
   };
   R_RegisterCCallable("lotri", "_lotriLstToMat", (DL_FUNC) _lotriLstToMat);
