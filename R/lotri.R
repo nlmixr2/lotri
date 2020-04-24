@@ -658,7 +658,7 @@ str.lotri <- function(object, ...) {
     return(.Call(`_lotriAllNames`, obj ,PACKAGE="lotri"))
   }
   if (arg == ".bounds") {
-    return(.Call(`_getBounds`, obj, NULL, 1L, PACKAGE="lotri"))
+    return(.Call(`_lotriGetBounds`, obj, NULL, 1L, PACKAGE="lotri"))
   }
   if (arg == ".list") {
     .tmp <- obj

@@ -856,7 +856,7 @@ iov.Ka = Inf, inv.Cl = Inf, inv.Ka = Inf))
 
     expect_error(above6$.bounds)
 
-    expect_error(.Call(lotri:::`_getBounds`, lotri(a~3), NULL, 1, PACKAGE="lotri"))
+    expect_error(.Call(lotri:::`_lotriGetBounds`, lotri(a~3), NULL, 1, PACKAGE="lotri"))
 
     lotriProp$inv$lower <- c(inv.Cl=3L, inv.Ka=3L)
     above7 <- above
@@ -865,6 +865,6 @@ iov.Ka = Inf, inv.Cl = Inf, inv.Ka = Inf))
 
     expect_equal(as.vector(above4$.bounds$lower), rep(3.0, 20))
 
-    expect_error(.Call(lotri:::`_getBounds`, "A", NULL, 1, PACKAGE="lotri"))
+    expect_error(.Call(lotri:::`_lotriGetBounds`, "A", NULL, 1, PACKAGE="lotri"))
 
 })
