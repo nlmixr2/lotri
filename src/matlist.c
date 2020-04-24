@@ -328,7 +328,7 @@ void setUpperLower(SEXP inUpperLower, SEXP colnames,
   }
 }
 
-SEXP _getBounds(SEXP lst_, SEXP format, SEXP startNum) {
+SEXP _lotriGetBounds(SEXP lst_, SEXP format, SEXP startNum) {
   int type = TYPEOF(lst_), totN;
   if (type != VECSXP) {
     Rf_error(_("expects lotri matrix"));
@@ -726,14 +726,14 @@ void R_init_lotri(DllInfo *info){
     {"_asLotriMat", (DL_FUNC) &_asLotriMat, 3},
     {"_lotriSep", (DL_FUNC) &_lotriSep, 5},
     {"_lotriAllNames", (DL_FUNC) &_lotriAllNames, 1},
-    {"_getBounds", (DL_FUNC) &_getBounds, 3},
+    {"_lotriGetBounds", (DL_FUNC) &_lotriGetBounds, 3},
     {NULL, NULL, 0}
   };
   R_RegisterCCallable("lotri", "_lotriLstToMat", (DL_FUNC) _lotriLstToMat);
   R_RegisterCCallable("lotri", "_asLotriMat", (DL_FUNC) _asLotriMat);
   R_RegisterCCallable("lotri", "_lotriSep", (DL_FUNC) _lotriSep);
   R_RegisterCCallable("lotri", "_lotriAllNames", (DL_FUNC) _lotriAllNames);
-  R_RegisterCCallable("lotri", "_getBounds", (DL_FUNC) _getBounds);
+  R_RegisterCCallable("lotri", "_lotriGetBounds", (DL_FUNC) _lotriGetBounds);
   R_registerRoutines(info, NULL, callMethods, NULL, NULL);
   R_useDynamicSymbols(info, FALSE);
 }
