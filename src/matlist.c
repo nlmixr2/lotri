@@ -327,6 +327,7 @@ void setUpperLower(SEXP inUpperLower, SEXP colnames,
     }
   }
 }
+SEXP _lotriAllNames(SEXP lotri);
 
 SEXP _lotriGetBounds(SEXP lst_, SEXP format, SEXP startNum) {
   int type = TYPEOF(lst_), totN;
@@ -337,6 +338,28 @@ SEXP _lotriGetBounds(SEXP lst_, SEXP format, SEXP startNum) {
   SEXP lotriPropNames = Rf_getAttrib(lotriProp, R_NamesSymbol);
   SEXP names = Rf_getAttrib(lst_, R_NamesSymbol);
   if (Rf_isNull(lotriProp)) {
+    SEXP names = _lotriAllNames(lst_);
+    int len = Rf_length(names);
+    int pro = 0;
+    SEXP boundLower = PROTECT(Rf_allocVector(REALSXP, len)); pro++;
+    SEXP boundUpper = PROTECT(Rf_allocVector(REALSXP, len)); pro++;
+    Rf_setAttrib(boundLower, R_NamesSymbol, names);
+    Rf_setAttrib(boundUpper, R_NamesSymbol, names);
+    double *bL = REAL(boundLower);
+    double *bU = REAL(boundUpper);
+    for (int j = len; j--; ){
+      bL[j] = R_NegInf;
+      bU[j] = R_PosInf;
+    }
+    SEXP ret = PROTECT(Rf_allocVector(VECSXP, 2)); pro++;
+    SET_VECTOR_ELT(ret, 0, boundLower);
+    SET_VECTOR_ELT(ret, 1, boundUpper);
+    SEXP retFN = PROTECT(Rf_allocVector(STRSXP, 2)); pro++;
+    SET_STRING_ELT(retFN, 0, Rf_mkChar("lower"));
+    SET_STRING_ELT(retFN, 1, Rf_mkChar("upper"));
+    Rf_setAttrib(ret, R_NamesSymbol, retFN);
+    UNPROTECT(pro);
+    return ret;
     Rf_error(_("only works with lotri matrices"));
   }
   
@@ -619,11 +642,26 @@ SEXP getNestLotri(int lenNest, int extra, int pro0, int lotriLen,
   return nestLotri;
 }
 
+SEXP blankProp(SEXP names){
+  int pro = 0;
+  SEXP lotriProp = PROTECT(Rf_allocVector(VECSXP, Rf_length(names)));pro++;
+  for (int j = Rf_length(names); j--;) {
+    SET_VECTOR_ELT(lotriProp, j, PROTECT(Rf_allocVector(VECSXP, 0))); pro++;
+  }
+  Rf_setAttrib(lotriProp, R_NamesSymbol, names);
+  UNPROTECT(pro);
+  return lotriProp;
+}
+
+
 SEXP _lotriSep(SEXP lotri, SEXP above, SEXP below,
 	       SEXP aboveStart, SEXP belowStart) {
   int pro    = 0;
   SEXP names = Rf_getAttrib(lotri, R_NamesSymbol);
   SEXP lotri0 = Rf_getAttrib(lotri, Rf_install("lotri"));
+  if (Rf_isNull(lotri0)) {
+    lotri0 = blankProp(names);
+  }
   SEXP lotri0names = Rf_getAttrib(lotri0, R_NamesSymbol);
   int lotriLen = Rf_length(names);
   if (lotriLen != Rf_length(lotri0)) {
@@ -717,7 +755,62 @@ SEXP _lotriAllNames(SEXP lotri) {
     } else {
       Rf_error(_("not a matrix or lotri matrix"));
     }
-  }  
+  }
+}
+
+SEXP _lotriMaxNu(SEXP lotri) {
+  SEXP lotriProp = Rf_getAttrib(lotri, Rf_install("lotri"));
+  SEXP ret = PROTECT(Rf_allocVector(REALSXP, 1));
+  REAL(ret)[0] = 0.0;
+  if (Rf_isNull(lotriProp)){
+    UNPROTECT(1);
+    return ret;
+  }
+  SEXP lotriPropNames = Rf_getAttrib(lotriProp, R_NamesSymbol);
+  SEXP names = Rf_getAttrib(lotri, R_NamesSymbol);
+  double maxNu = 0.0;
+  for (int i = Rf_length(lotri); i--;) {
+    SEXP nu = getLotriProp(names, i, lotriProp, lotriPropNames, "nu");
+    if (!Rf_isNull(nu) && Rf_length(nu) == 1){
+      double tmp=0;
+      if (TYPEOF(nu) == REALSXP && maxNu < (tmp = REAL(nu)[0])) {
+	maxNu = tmp;
+      }
+    }
+  }
+  REAL(ret)[0] = maxNu;
+  UNPROTECT(1);
+  return ret;
+}
+
+SEXP _isLotri(SEXP lotri) {
+  SEXP lotriProp = Rf_getAttrib(lotri, Rf_install("lotri"));
+  SEXP ret = PROTECT(Rf_allocVector(LGLSXP, 1)); 
+  if (Rf_isNull(lotriProp)) {
+    if (TYPEOF(lotri) == VECSXP){
+      int isL = 1;
+      for (int i = Rf_length(lotri); i--;){
+	SEXP cur = VECTOR_ELT(lotri, i);
+	if (Rf_isMatrix(cur)) {
+	  SEXP dimnames = Rf_getAttrib(cur, R_DimNamesSymbol);
+	  if (Rf_isNull(dimnames)) {
+	    isL = 0;
+	    break;
+	  }
+	} else {
+	  isL = 0;
+	  break;
+	}
+      }
+      INTEGER(ret)[0] = isL;
+    } else {
+      INTEGER(ret)[0] = 0;
+    }
+  } else {
+    INTEGER(ret)[0] = 1;
+  }
+  UNPROTECT(1);
+  return ret;
 }
 
 void R_init_lotri(DllInfo *info){
@@ -727,6 +820,8 @@ void R_init_lotri(DllInfo *info){
     {"_lotriSep", (DL_FUNC) &_lotriSep, 5},
     {"_lotriAllNames", (DL_FUNC) &_lotriAllNames, 1},
     {"_lotriGetBounds", (DL_FUNC) &_lotriGetBounds, 3},
+    {"_lotriMaxNu", (DL_FUNC) &_lotriMaxNu, 1},
+    {"_isLotri", (DL_FUNC) &_isLotri, 1},
     {NULL, NULL, 0}
   };
   R_RegisterCCallable("lotri", "_lotriLstToMat", (DL_FUNC) _lotriLstToMat);
@@ -734,6 +829,9 @@ void R_init_lotri(DllInfo *info){
   R_RegisterCCallable("lotri", "_lotriSep", (DL_FUNC) _lotriSep);
   R_RegisterCCallable("lotri", "_lotriAllNames", (DL_FUNC) _lotriAllNames);
   R_RegisterCCallable("lotri", "_lotriGetBounds", (DL_FUNC) _lotriGetBounds);
+  R_RegisterCCallable("lotri", "_lotriMaxNu", (DL_FUNC) _lotriMaxNu);
+  R_RegisterCCallable("lotri", "_isLotri", (DL_FUNC) _isLotri);
   R_registerRoutines(info, NULL, callMethods, NULL, NULL);
   R_useDynamicSymbols(info, FALSE);
 }
+

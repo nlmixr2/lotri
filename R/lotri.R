@@ -636,13 +636,17 @@ str.lotri <- function(object, ...) {
 ##'@importFrom utils .DollarNames
 ##'@export
 .DollarNames.lotri <- function(x, pattern) {
-  grep(pattern, unique(c(names(x), ".names", ".list", x$.names)),
+  grep(pattern, unique(c(names(x), ".allNames", ".bounds",
+                         ".names", ".list", ".maxNu", x$.names)),
        value=TRUE)
 }
 
 ##'@export
 `$.lotri` <-  function(obj, arg, exact = FALSE) {
   .lotri <- attr(obj, "lotri")
+  if (arg == ".maxNu") {
+    return(.Call(`_lotriMaxNu`, obj, PACKAGE="lotri"));
+  }
   if (any(names(obj) == arg)) {
     .tmp <- obj
     class(.tmp) <- NULL
@@ -671,6 +675,7 @@ str.lotri <- function(object, ...) {
     }
     return(.tmp)
   }
+  
   .env <- new.env(parent=emptyenv())
   .env$empty <- TRUE
   .ret <- setNames(lapply(names(obj), function(x) {
