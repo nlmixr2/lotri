@@ -732,6 +732,8 @@ void R_init_lotri(DllInfo *info){
   R_RegisterCCallable("lotri", "_lotriLstToMat", (DL_FUNC) _lotriLstToMat);
   R_RegisterCCallable("lotri", "_asLotriMat", (DL_FUNC) _asLotriMat);
   R_RegisterCCallable("lotri", "_lotriSep", (DL_FUNC) _lotriSep);
+  R_RegisterCCallable("lotri", "_lotriAllNames", (DL_FUNC) _lotriAllNames);
+  R_RegisterCCallable("lotri", "_getBounds", (DL_FUNC) _getBounds);
   R_registerRoutines(info, NULL, callMethods, NULL, NULL);
   R_useDynamicSymbols(info, FALSE);
 }
