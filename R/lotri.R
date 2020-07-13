@@ -41,10 +41,10 @@ NULL
       }
       env$eta1 <- env$eta1 + .num
     }  else {
-      stop("number of items and lower triangular matrix mismatch")
+      stop("number of items and lower triangular matrix mismatch", call.=FALSE)
     }
   } else {
-    stop("matrix expression should be 'name ~ c(lower-tri)'")
+    stop("matrix expression should be 'name ~ c(lower-tri)'", call.=FALSE)
   }
 
 }
@@ -75,7 +75,7 @@ NULL
         ## Should fixed be allowed????
         if (any(tolower(as.character(x[[3]][[1]])) == c("c", "fix", "fixed"))) {
           if (any(tolower(as.character(x[[3]][[1]])) == c("fix", "fixed"))){
-            stop("fix/fixed are not allowed with lotri matrix specifications")
+            stop("fix/fixed are not allowed with lotri matrix specifications", call.=FALSE)
           }
           .lotri1(x[[2]], x[[3]], env)
         } else {
@@ -118,7 +118,7 @@ NULL
               }
             }
             if (!.didCnd) {
-              stop("matrix expression should be 'name ~ c(lower-tri)'")
+              stop("matrix expression should be 'name ~ c(lower-tri)'", call.=FALSE)
             }
           }
         }
@@ -128,18 +128,18 @@ NULL
     } else if (identical(x[[1]], quote(`quote`))) {
       lapply(x[[2]], .f, env=env)
     } else {
-      stop("matrix expression should be 'name ~ c(lower-tri)'")
+      stop("matrix expression should be 'name ~ c(lower-tri)'", call.=FALSE)
     }
   } else {
     ## is.pairlist OR is.atomic OR unknown...
-    stop("bad matrix specification")
+    stop("bad matrix specification", call.=FALSE)
   }
 }
 ##' Parses condition
 ##'
 ##' @param cond Condition parsing tree
 ##' @param envir Environment to parse condition in.
-##' 
+##'
 ##' @return list with 2 elements: - First element is the name of the condition - Second element is extra information
 ##' @author Matthew Fidler
 ##' @noRd
@@ -150,7 +150,7 @@ NULL
   }
   .fullCnd <- as.character(cond[[1]])
   if (regexpr("^[a-zA-Z][a-zA-Z0-9_.]*$", .fullCnd) == -1){
-    stop("unsupported conditional statement")
+    stop("unsupported conditional statement", call.=FALSE)
   }
   .env  <- list2env(as.list(envir), parent=globalenv())
   .env[[.fullCnd]] <- function(...){
@@ -177,8 +177,8 @@ NULL
       .cur <- prop[[.n]]
       if (is.null(names(.cur))) {
         if (length(.cur) != 1) {
-          stop(sprintf("name multiple limits for '%s': '%s=c(%s=%s,...)'",
-                       .n, .n, names[1], .cur[1]))
+          stop(sprintf(gettext("name multiple limits for '%s': '%s=c(%s=%s,...)'"),
+                       .n, .n, names[1], .cur[1]), call.=FALSE)
         } else {
           .newProp[[.n]] <- setNames(rep(.cur, length(names)), names)
           next;
@@ -194,8 +194,8 @@ NULL
         }
       }
       if (length(.bad) > 0){
-        stop(sprintf("in '%s' argument/dimension mismatch: %s",
-                     .n, paste(.bad, collapse=", ")))
+        stop(sprintf(gettext("in '%s' argument/dimension mismatch: %s"),
+                     .n, paste(.bad, collapse=", ")), call.=FALSE)
       }
       .newProp[[.n]] <- .new
     }
@@ -262,7 +262,7 @@ NULL
       .old[[.n]] <- c(new[[.n]], .old[[.n]])
       new <- new[names(new) != .n]
     } else if (any(.n == names(new))) {
-      stop(sprintf("conflicting '%s' properties", .n))
+      stop(sprintf(gettext("conflicting '%s' properties"), .n), call.=FALSE)
     }
   }
   for (.n in names(new)) {
@@ -675,7 +675,7 @@ str.lotri <- function(object, ...) {
     }
     return(.tmp)
   }
-  
+
   .env <- new.env(parent=emptyenv())
   .env$empty <- TRUE
   .ret <- setNames(lapply(names(obj), function(x) {
@@ -761,14 +761,14 @@ as.matrix.lotri <- function(x, ...){
   if (length(.ret) == 1){
     return(.ret[[1]])
   } else {
-    stop("cannot convert multiple level lotri matrix to simple matrix")
+    stop("cannot convert multiple level lotri matrix to simple matrix", call.=FALSE)
   }
 }
 ##' Create a matrix from a list of matrices
 ##'
 ##' This creates a named banded symmetric matrix from a list of named
 ##' symmetric matrices.
-##' 
+##'
 ##' @param matList list of symmetric named matrices
 ##'
 ##' @param format The format of dimension names when a sub-matrix is
@@ -780,7 +780,7 @@ as.matrix.lotri <- function(x, ...){
 ##'
 ##' @return Named symmetric block diagonal matrix based on
 ##'   concatenating the list of matrices together
-##' 
+##'
 ##' @examples
 ##'
 ##' testList <- list(lotri({et2 + et3 + et4 ~ c(40,
@@ -813,9 +813,9 @@ as.matrix.lotri <- function(x, ...){
 ##' lotriMat(testList, "ETA[%d]")
 ##'
 ##' # Or could start with ETA[2]:
-##' 
+##'
 ##' lotriMat(testList, "ETA[%d]", 2)
-##' 
+##'
 ##' @author Matthew Fidler
 ##' @export
 lotriMat <- function(matList, format=NULL, start=1L) {
@@ -826,7 +826,7 @@ lotriMat <- function(matList, format=NULL, start=1L) {
 ##'
 ##' This is used for creating nesting simulations in `RxODE` and may
 ##' not be useful for external function calls.
-##' 
+##'
 ##' @param x lotri matrix
 ##' @param above Named integer vector listing variability above the id
 ##'   level.  Each element lists the number of population differences

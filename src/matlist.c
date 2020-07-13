@@ -63,14 +63,14 @@ int getCheckDim(SEXP lst, int i) {
   int same=1;
   if (type == VECSXP) {
     if (Rf_length(cur) != 2){
-      Rf_error(_("when repeating matrices you need to use 'list(mat, n)'"));
+      Rf_errorcall(R_NilValue, _("when repeating matrices you need to use 'list(mat, n)'"));
     }
     same = isSingleInt(VECTOR_ELT(cur, 1), NA_INTEGER);
     if (same == NA_INTEGER) {
-      Rf_error(_("you can only repeat a matrix a single positive number of times"));
+      Rf_errorcall(R_NilValue, _("you can only repeat a matrix a single positive number of times"));
     }
     if (same <= 0) {
-      Rf_error(_("you need to repeat a matrix a positive number of times"));
+      Rf_errorcall(R_NilValue, _("you need to repeat a matrix a positive number of times"));
     }
     cur = VECTOR_ELT(cur, 0);
     type = TYPEOF(cur);
@@ -79,7 +79,7 @@ int getCheckDim(SEXP lst, int i) {
   if (ret){
     return ret*same;
   } else {
-    Rf_error(_("list element %d is not a symmetric named matrix"), i+1);
+    Rf_errorcall(R_NilValue, _("list element %d is not a symmetric named matrix"), i+1);
   }
   return 0;
 }
@@ -171,7 +171,7 @@ lotriInfo _lotriLstToMat0(SEXP lst_, SEXP format, SEXP startNum) {
     ret.doFormat=1;
   } else if (fmtType) {
     UNPROTECT(ret.pro);
-    Rf_error(_("'format' must be a single length string or NULL"),
+    Rf_errorcall(R_NilValue, _("'format' must be a single length string or NULL"),
 	     fmtType);
   } else {
     SEXP fmt2 = Rf_getAttrib(lst_, Rf_install("format"));
@@ -188,7 +188,7 @@ lotriInfo _lotriLstToMat0(SEXP lst_, SEXP format, SEXP startNum) {
       ret.counter = isSingleInt(startNum2, NA_INTEGER);
       if (ret.counter == NA_INTEGER) {
 	UNPROTECT(ret.pro);
-	Rf_error(_("when format is specified, 'startNum' must be a single integer"));
+	Rf_errorcall(R_NilValue, _("when format is specified, 'startNum' must be a single integer"));
       }
     }
   }
@@ -201,7 +201,7 @@ SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum) {
     if (isSymNameMat(lst_)) {
       return lst_;
     }
-    Rf_error(_("expects a list named symmetric matrices"));
+    Rf_errorcall(R_NilValue, _("expects a list named symmetric matrices"));
   }
   lotriInfo li = _lotriLstToMat0(lst_, format, startNum);
   int len = Rf_length(li.lst);
@@ -311,7 +311,7 @@ void setUpperLower(SEXP inUpperLower, SEXP colnames,
       }
     } else if (Rf_length(inUpperLower) != 0) {
       UNPROTECT(pro0);
-      Rf_error(_("cannot figure out valid '%s' properties"), what);
+      Rf_errorcall(R_NilValue, _("cannot figure out valid '%s' properties"), what);
     }
     for (int i = ncol*nsame; i--;) {
       outUpperLower[i0+i] = value;
@@ -332,7 +332,7 @@ SEXP _lotriAllNames(SEXP lotri);
 SEXP _lotriGetBounds(SEXP lst_, SEXP format, SEXP startNum) {
   int type = TYPEOF(lst_), totN;
   if (type != VECSXP) {
-    Rf_error(_("expects lotri matrix"));
+    Rf_errorcall(R_NilValue, _("expects lotri matrix"));
   }
   SEXP lotriProp = Rf_getAttrib(lst_, Rf_install("lotri"));
   SEXP lotriPropNames = Rf_getAttrib(lotriProp, R_NamesSymbol);
@@ -360,7 +360,7 @@ SEXP _lotriGetBounds(SEXP lst_, SEXP format, SEXP startNum) {
     Rf_setAttrib(ret, R_NamesSymbol, retFN);
     UNPROTECT(pro);
     return ret;
-    Rf_error(_("only works with lotri matrices"));
+    Rf_errorcall(R_NilValue, _("only works with lotri matrices"));
   }
   
   lotriInfo li = _lotriLstToMat0(lst_, format, startNum);
@@ -421,7 +421,7 @@ SEXP _lotriGetBounds(SEXP lst_, SEXP format, SEXP startNum) {
 SEXP ampDefault(SEXP cur, SEXP dimn, double val, int pro0, const char * what) {
   if (TYPEOF(cur) != REALSXP) {
     UNPROTECT(pro0);
-    Rf_error("'%s' needs to be a double", what);
+    Rf_errorcall(R_NilValue, "'%s' needs to be a double", what);
   }
   int pro = 0;
   SEXP names = Rf_getAttrib(cur, R_NamesSymbol);
@@ -439,7 +439,7 @@ SEXP ampDefault(SEXP cur, SEXP dimn, double val, int pro0, const char * what) {
       return ret;
     } else {
       UNPROTECT(pro0);
-      Rf_error("'%s' needs to be named", what);
+      Rf_errorcall(R_NilValue, "'%s' needs to be named", what);
     }
   } else {
     int nnames = Rf_xlength(names);
@@ -470,25 +470,25 @@ SEXP ampDefault(SEXP cur, SEXP dimn, double val, int pro0, const char * what) {
 // put into C to allow calling from RxODE from C.
 SEXP _asLotriMat(SEXP x, SEXP extra, SEXP def){
   if (TYPEOF(def) != STRSXP || Rf_length(def) != 1) {
-    Rf_error(_("'default' must be a 'string' of length 1"));
+    Rf_errorcall(R_NilValue, _("'default' must be a 'string' of length 1"));
   }  
   if (!Rf_isMatrix(x)) {
-    Rf_error(_("'x' needs to be a completely named matrix"));
+    Rf_errorcall(R_NilValue, _("'x' needs to be a completely named matrix"));
   }
   SEXP dims = Rf_getAttrib(x, R_DimNamesSymbol);
   if (Rf_isNull(dims)){
-    Rf_error(_("'x' needs to be a completely named matrix"));
+    Rf_errorcall(R_NilValue, _("'x' needs to be a completely named matrix"));
   }
   SEXP dimn = VECTOR_ELT(dims, 0);
   if (Rf_isNull(dimn)) {
-    Rf_error(_("'x' needs to be a completely named matrix"));
+    Rf_errorcall(R_NilValue, _("'x' needs to be a completely named matrix"));
   }
   if (Rf_isNull(VECTOR_ELT(dims, 1))) {
-    Rf_error(_("'x' needs to be a completely named matrix"));
+    Rf_errorcall(R_NilValue, _("'x' needs to be a completely named matrix"));
   }
   const char *defVal = CHAR(STRING_ELT(def, 0));
   if (TYPEOF(extra) != VECSXP) {
-    Rf_error(_("'extra' must be a list"));
+    Rf_errorcall(R_NilValue, _("'extra' must be a list"));
   }
   int pro = 0;
   SEXP ret = PROTECT(Rf_allocVector(VECSXP, 1)); pro++;
@@ -507,7 +507,7 @@ SEXP _asLotriMat(SEXP x, SEXP extra, SEXP def){
     return ret;
   } else if (!strcmp(defVal, "")) {
     UNPROTECT(pro);
-    Rf_error("extra properties need default try 'lotri(matrix,x=3,default=\"id\")'");
+    Rf_errorcall(R_NilValue, "extra properties need default try 'lotri(matrix,x=3,default=\"id\")'");
   }
   SEXP extraNames = Rf_getAttrib(extra, R_NamesSymbol);
   for (int i = lExtra; i--;) {
@@ -548,7 +548,7 @@ SEXP getNestLotri(int lenNest, int extra, int pro0, int lotriLen,
 		   SEXP sameC, const char *what, int *nestI, SEXP nestStart){
   if (TYPEOF(nestStart) != INTSXP || Rf_length(nestStart) != 1) {
     UNPROTECT(pro0);
-    Rf_error("'%sStart' needs to be an 'integer' of length 1", what);
+    Rf_errorcall(R_NilValue, "'%sStart' needs to be an 'integer' of length 1", what);
   }
   int pro = 0;
   SEXP nestLotri = PROTECT(Rf_allocVector(VECSXP, lenNest+extra)); pro++;
@@ -579,7 +579,7 @@ SEXP getNestLotri(int lenNest, int extra, int pro0, int lotriLen,
     }
     if (found1 == 0 || found2 == 0) {
       UNPROTECT(pro+pro0);
-      Rf_error("'id' not found in 'lotri' matrix");
+      Rf_errorcall(R_NilValue, "'id' not found in 'lotri' matrix");
     }
     for (int i = 0; i  < lenNest; ++i) {
       SET_STRING_ELT(nestN2, i+1, STRING_ELT(nestN, i));
@@ -626,7 +626,7 @@ SEXP getNestLotri(int lenNest, int extra, int pro0, int lotriLen,
     }
     if (found1 == 0 || found2 == 0) {
       UNPROTECT(pro+pro0);
-      Rf_error("'%s' names do not match 'lotri' matrix", what);
+      Rf_errorcall(R_NilValue, "'%s' names do not match 'lotri' matrix", what);
     }
   }
   SEXP format = PROTECT(Rf_allocVector(STRSXP, 1)); pro++;
@@ -665,15 +665,15 @@ SEXP _lotriSep(SEXP lotri, SEXP above, SEXP below,
   SEXP lotri0names = Rf_getAttrib(lotri0, R_NamesSymbol);
   int lotriLen = Rf_length(names);
   if (lotriLen != Rf_length(lotri0)) {
-    Rf_error("'lotri' malformed");
+    Rf_errorcall(R_NilValue, "'lotri' malformed");
   }
   SEXP aboveN;
   SEXP belowN = Rf_getAttrib(below, R_NamesSymbol);
   if (Rf_isNull(belowN)){
-    Rf_error("'below' needs to be named");
+    Rf_errorcall(R_NilValue, "'below' needs to be named");
   }
   if (TYPEOF(below) != INTSXP) {
-    Rf_error("'below' needs to be an integer");
+    Rf_errorcall(R_NilValue, "'below' needs to be an integer");
   }
   int *belowI = INTEGER(below);
   int *aboveI;
@@ -690,10 +690,10 @@ SEXP _lotriSep(SEXP lotri, SEXP above, SEXP below,
   } else {
     aboveN = Rf_getAttrib(above, R_NamesSymbol);
     if (Rf_isNull(aboveN)){
-      Rf_error("'above' needs to be named");
+      Rf_errorcall(R_NilValue, "'above' needs to be named");
     }  
     if (TYPEOF(above) != INTSXP) {
-      Rf_error("'above' needs to be an integer");
+      Rf_errorcall(R_NilValue, "'above' needs to be an integer");
     }
     aboveI = INTEGER(above);    
 
@@ -753,7 +753,7 @@ SEXP _lotriAllNames(SEXP lotri) {
       UNPROTECT(pro);
       return ret;
     } else {
-      Rf_error(_("not a matrix or lotri matrix"));
+      Rf_errorcall(R_NilValue, _("not a matrix or lotri matrix"));
     }
   }
 }

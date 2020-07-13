@@ -1,3 +1,5 @@
+# lotri XXX
+* Change errors/warnings to use `call.=FALSE` or equivalent. 
 # lotri 0.2.2
 * Bug fix for conditional matrices
 * Now accessing `$lower` and `$upper` gives default values even if it
