@@ -286,6 +286,11 @@ double getDouble(SEXP colnames, int i, SEXP inUpperLower, SEXP upperLowerNames,
 		 double defaultValue, int type) {
   const char *lookup = CHAR(STRING_ELT(colnames, i));
   const char *current;
+  int upperLowerNamesSize = Rf_length(upperLowerNames);
+  int inUpperLowerSize = Rf_length(inUpperLower);
+  if (inUpperLowerSize != upperLowerNamesSize) {
+    Rf_errorcall(R_NilValue,_("malformed upper/lower names; names length and vector length are unequal"));
+  }
   for (int j = Rf_length(upperLowerNames); j--;) {
     current = CHAR(STRING_ELT(upperLowerNames, j));
     if (!strcmp(current, lookup)){
