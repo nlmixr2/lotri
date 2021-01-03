@@ -659,22 +659,25 @@ SEXP blankProp(SEXP names){
 SEXP _lotriSep(SEXP lotri, SEXP above, SEXP below,
 	       SEXP aboveStart, SEXP belowStart) {
   int pro    = 0;
-  SEXP names = Rf_getAttrib(lotri, R_NamesSymbol);
-  SEXP lotri0 = Rf_getAttrib(lotri, Rf_install("lotri"));
+  SEXP names = PROTECT(Rf_getAttrib(lotri, R_NamesSymbol)); pro++;
+  SEXP lotri0 = PROTECT(Rf_getAttrib(lotri, Rf_install("lotri"))); pro++;
   if (Rf_isNull(lotri0)) {
-    lotri0 = blankProp(names);
+    lotri0 = PROTECT(blankProp(names)); pro++;
   }
-  SEXP lotri0names = Rf_getAttrib(lotri0, R_NamesSymbol);
+  SEXP lotri0names = PROTECT(Rf_getAttrib(lotri0, R_NamesSymbol)); pro++;
   int lotriLen = Rf_length(names);
   if (lotriLen != Rf_length(lotri0)) {
+    UNPROTECT(pro);
     Rf_errorcall(R_NilValue, "'lotri' malformed");
   }
   SEXP aboveN;
-  SEXP belowN = Rf_getAttrib(below, R_NamesSymbol);
+  SEXP belowN = PROTECT(Rf_getAttrib(below, R_NamesSymbol)); pro++;
   if (Rf_isNull(belowN)){
+    UNPROTECT(pro);
     Rf_errorcall(R_NilValue, "'below' needs to be named");
   }
   if (TYPEOF(below) != INTSXP) {
+    UNPROTECT(pro);
     Rf_errorcall(R_NilValue, "'below' needs to be an integer");
   }
   int *belowI = INTEGER(below);
@@ -690,7 +693,7 @@ SEXP _lotriSep(SEXP lotri, SEXP above, SEXP below,
   if (lenAbove == 0) {
     SET_VECTOR_ELT(ret, 0, R_NilValue);
   } else {
-    aboveN = Rf_getAttrib(above, R_NamesSymbol);
+    aboveN = PROTECT(Rf_getAttrib(above, R_NamesSymbol)); pro++;
     if (Rf_isNull(aboveN)){
       Rf_errorcall(R_NilValue, "'above' needs to be named");
     }  
@@ -698,17 +701,16 @@ SEXP _lotriSep(SEXP lotri, SEXP above, SEXP below,
       Rf_errorcall(R_NilValue, "'above' needs to be an integer");
     }
     aboveI = INTEGER(above);    
-
     SET_VECTOR_ELT(ret, 0,
-		   getNestLotri(lenAbove, 0, pro, lotriLen,
-				 aboveN, lotri, names, lotri0, lotri0names,
-				 sameC, "above", aboveI, aboveStart));
+		   PROTECT(getNestLotri(lenAbove, 0, pro, lotriLen,
+					aboveN, lotri, names, lotri0, lotri0names,
+					sameC, "above", aboveI, aboveStart))); pro++;
   }
 
   SET_VECTOR_ELT(ret, 1,
-		   getNestLotri(lenBelow, 1, pro, lotriLen,
-				 belowN, lotri, names, lotri0, lotri0names,
-				 sameC, "below", belowI, belowStart));
+		 PROTECT(getNestLotri(lenBelow, 1, pro, lotriLen,
+				      belowN, lotri, names, lotri0, lotri0names,
+				      sameC, "below", belowI, belowStart))); pro++;
   
   UNPROTECT(pro);
   return ret;
