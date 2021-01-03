@@ -589,6 +589,28 @@ SEXP _asLotriMat(SEXP x, SEXP extra, SEXP def){
   return ret;
 }
 
+SEXP addLotriPropertyAtEnd(SEXP lotri0, int i, SEXP sameC, int *nestI, int extra) {
+  // Here we found the lotri property,
+  // Create a new list with "same" at the end
+  int pro = 0;
+  SEXP curProp  = VECTOR_ELT(lotri0, i);
+  int curPropN = Rf_length(curProp);
+  SEXP curPropS = Rf_getAttrib(curProp, R_NamesSymbol);
+  SEXP newProp  = PROTECT(Rf_allocVector(VECSXP, Rf_length(curProp)+1)); pro++;
+  SEXP newPropS = PROTECT(Rf_allocVector(STRSXP, Rf_length(curProp)+1)); pro++;
+  for (int k = 0; k < curPropN; ++k) {
+    SET_VECTOR_ELT(newProp, k, VECTOR_ELT(curProp, k));
+    SET_STRING_ELT(newPropS, k, STRING_ELT(curPropS, k));
+  }
+  SET_STRING_ELT(newPropS, curPropN, sameC);
+  SEXP nestVal = PROTECT(Rf_allocVector(INTSXP, 1)); pro++;
+  INTEGER(nestVal)[0] = nestI[i-extra];
+  SET_VECTOR_ELT(newProp, curPropN, nestVal);
+  Rf_setAttrib(newProp, R_NamesSymbol, newPropS);
+  UNPROTECT(pro);
+  return newProp;
+}
+
 typedef struct lotriNestInfo {
   SEXP ret;
   int err;
@@ -655,24 +677,8 @@ lotriNestInfo getNestLotri(int lenNest, int extra, int lotriLen,
       }
       if (found2 == 0 &&
 	  !strcmp(curNest, CHAR(STRING_ELT(lotri0names, j)))) {
-	// Here we found the lotri property,
-	// Create a new list with "same" at the end
-	SEXP curProp  = VECTOR_ELT(lotri0, i);
-	int curPropN = Rf_length(curProp);
-	SEXP curPropS = Rf_getAttrib(curProp, R_NamesSymbol);
-	SEXP newProp  = PROTECT(Rf_allocVector(VECSXP, Rf_length(curProp)+1)); pro++;
-	SEXP newPropS = PROTECT(Rf_allocVector(STRSXP, Rf_length(curProp)+1)); pro++;
-	for (int k = 0; k < curPropN; ++k) {
-	  SET_VECTOR_ELT(newProp, k, VECTOR_ELT(curProp, k));
-	  SET_STRING_ELT(newPropS, k, STRING_ELT(curPropS, k));
-	}
-	SET_STRING_ELT(newPropS, curPropN, sameC);
-	SEXP nestVal = PROTECT(Rf_allocVector(INTSXP, 1)); pro++;
-	INTEGER(nestVal)[0] = nestI[i-extra];
-	SET_VECTOR_ELT(newProp, curPropN, nestVal);
-	Rf_setAttrib(newProp, R_NamesSymbol, newPropS);
 	// Now assign it
-	SET_VECTOR_ELT(nestLotriProp, i, newProp);
+	SET_VECTOR_ELT(nestLotriProp, i, addLotriPropertyAtEnd(lotri0, i, sameC, nestI, extra));
 	found2 = 1;
       }
       if (found1 == 1 && found2 == 1) {
@@ -680,7 +686,6 @@ lotriNestInfo getNestLotri(int lenNest, int extra, int lotriLen,
       }
     }
     if (found1 == 0 || found2 == 0) {
-      UNPROTECT(pro);
       ret.err = 3;
       return ret;
     }
