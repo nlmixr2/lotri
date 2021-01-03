@@ -118,15 +118,15 @@ test_that("lotri matrix parsing", {
                                                     c("et2", "et3", "et4")
                                                     ))))
 
-  expect_equal(lotri({et1 ~ c(40) | id}),
-               list(id = structure(c(40), .Dim = c(1L, 1L),
-                                   .Dimnames = list(c("et1"),
-                                                    c("et1")))))
+  expect_equal(lotri({et1 ~ c(40) | id}), #nolint
+               list(id = structure(40, .Dim = c(1L, 1L),
+                                   .Dimnames = list("et1",
+                                                    "et1"))))
 
   expect_equal(lotri({et1 ~ 40 | id}),
-               list(id = structure(c(40), .Dim = c(1L, 1L),
-                                   .Dimnames = list(c("et1"),
-                                                    c("et1")))))
+               list(id = structure(40, .Dim = c(1L, 1L),
+                                   .Dimnames = list("et1",
+                                                    "et1"))))
 
   expect_equal(lotri({eta.Cl ~ 0.4^2 | id}),
                list(id = structure(0.16, .Dim = c(1L, 1L),
@@ -246,7 +246,8 @@ test_that("lotri matrix parsing", {
                                     .Dimnames = list("et1", "et1"))))
 
 
-  expect_error(lotri(et1~c(1) | id + matt))
+  expect_error(lotri(et1~c(1) | id + matt)) # nolint
+  expect_error(lotri(et1~1 | id + matt))
 
   tmp <- lotri(et1 ~ 1 | id(df=3), et2~3 | id2)
 
@@ -549,9 +550,9 @@ test_that("lotri matrix parsing", {
   expect_error(.Call(lotri.lotri$`_asLotriMat`, "a", list(nu=3), "id", PACKAGE="lotri"))
 
   expect_error(.Call(lotri.lotri$`_asLotriMat`, matrix(1), list(nu=3), "id", PACKAGE="lotri"))
-  expect_error(.Call(lotri.lotri$`_asLotriMat`, structure(1, .Dim = c(1L, 1L), dimnames=list(NULL, c("a"))),
+  expect_error(.Call(lotri.lotri$`_asLotriMat`, structure(1, .Dim = c(1L, 1L), dimnames=list(NULL, "a")),
                      list(nu=3), "id", PACKAGE="lotri"))
-  expect_error(.Call(lotri.lotri$`_asLotriMat`, structure(1, .Dim = c(1L, 1L), dimnames=list(c("a"), NULL)),
+  expect_error(.Call(lotri.lotri$`_asLotriMat`, structure(1, .Dim = c(1L, 1L), dimnames=list("a", NULL)),
                      list(nu=3), "id", PACKAGE="lotri"))
 
   expect_error(.Call(lotri.lotri$`_asLotriMat`, lotri(et1+et2 ~c(0.1, 0.01, 1)),
@@ -660,7 +661,7 @@ test_that("lotri matrix parsing", {
   expect_equal(lotriMat(mat1, "ETA[%d]"),lotriMat(list(mat1),"ETA[%d]"))
   expect_equal(lotriMat(mat1, "ETA[%d]",4),lotriMat(list(mat1),"ETA[%d]",4L))
 
-  context("lotriSep");
+  context("lotriSep")
 
   omega <- lotri(lotri(eta.Cl ~ 0.1,
                        eta.Ka ~ 0.1) | id(nu=100),
@@ -707,7 +708,7 @@ test_that("lotri matrix parsing", {
 
   above1 <- attr(sepA$above, "lotri")
   above1$inv$same <- "matt"
-  above <- sepA$above;
+  above <- sepA$above
   attr(above, "lotri") <- above1
 
   expect_equal(dimnames(lotriMat(above))[[1]],c("inv.Cl", "inv.Ka"))
@@ -718,7 +719,7 @@ test_that("lotri matrix parsing", {
 
   expect_error(lotriSep(omega, above=c(inv=10L), below=c(eye=2, occ=4)))
 
-  expect_error(lotriSep(omega, above=c(10L), below=c(eye=2L, occ=4L)))
+  expect_error(lotriSep(omega, above=10L, below=c(eye=2L, occ=4L)))
 
   expect_error(lotriSep(omega, above=c(inv=10L), below=c(2L, 4L)))
 
@@ -733,7 +734,7 @@ test_that("lotri matrix parsing", {
 
   expect_error(lotriSep(omega0, above=c(inv=10L), below=c(eye=2L, occ=4L), aboveStart=2L))
 
-  sepA <- lotriSep(omega, above=c(), below=c(eye=2L, occ=4L))
+  sepA <- lotriSep(omega, above=NULL, below=c(eye=2L, occ=4L))
 
   expect_equal(sepA$above, NULL)
 
@@ -913,7 +914,7 @@ test_that("lotri matrix parsing", {
 
   expect_equal(.Call(lotri.lotri$`_lotriMaxNu`, omega9, PACKAGE="lotri"), 0)
 
-  context("isLotri C");
+  context("isLotri C")
 
   expect_equal(.Call(lotri.lotri$`_isLotri`, omega9, PACKAGE="lotri"), TRUE)
   expect_equal(.Call(lotri.lotri$`_isLotri`, omega, PACKAGE="lotri"), TRUE)
