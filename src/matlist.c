@@ -589,12 +589,21 @@ SEXP _asLotriMat(SEXP x, SEXP extra, SEXP def){
   return ret;
 }
 
-SEXP getNestLotri(int lenNest, int extra, int pro0, int lotriLen,
-		   SEXP nestN, SEXP lotri, SEXP names, SEXP lotri0, SEXP lotri0names,
-		   SEXP sameC, const char *what, int *nestI, SEXP nestStart){
+typedef struct lotriNestInfo {
+  SEXP ret;
+  int err;
+} lotriNestInfo;
+
+
+lotriNestInfo getNestLotri(int lenNest, int extra, int lotriLen,
+			   SEXP nestN, SEXP lotri, SEXP names, SEXP lotri0, SEXP lotri0names,
+			   SEXP sameC, int *nestI, SEXP nestStart) {
+  lotriNestInfo ret;
+  ret.err = 0;
   if (TYPEOF(nestStart) != INTSXP || Rf_length(nestStart) != 1) {
-    UNPROTECT(pro0);
-    Rf_errorcall(R_NilValue, "'%sStart' needs to be an 'integer' of length 1", what);
+    ret.err = 1;
+    return ret;
+    /* Rf_errorcall(R_NilValue, "'%sStart' needs to be an 'integer' of length 1", what); */
   }
   int pro = 0;
   SEXP nestLotri = PROTECT(Rf_allocVector(VECSXP, lenNest+extra)); pro++;
@@ -624,8 +633,8 @@ SEXP getNestLotri(int lenNest, int extra, int pro0, int lotriLen,
       }
     }
     if (found1 == 0 || found2 == 0) {
-      UNPROTECT(pro+pro0);
-      Rf_errorcall(R_NilValue, "'id' not found in 'lotri' matrix");
+      ret.err = 2;
+      return ret;
     }
     for (int i = 0; i  < lenNest; ++i) {
       SET_STRING_ELT(nestN2, i+1, STRING_ELT(nestN, i));
@@ -671,8 +680,9 @@ SEXP getNestLotri(int lenNest, int extra, int pro0, int lotriLen,
       }
     }
     if (found1 == 0 || found2 == 0) {
-      UNPROTECT(pro+pro0);
-      Rf_errorcall(R_NilValue, "'%s' names do not match 'lotri' matrix", what);
+      UNPROTECT(pro);
+      ret.err = 3;
+      return ret;
     }
   }
   SEXP format = PROTECT(Rf_allocVector(STRSXP, 1)); pro++;
@@ -684,8 +694,9 @@ SEXP getNestLotri(int lenNest, int extra, int pro0, int lotriLen,
   Rf_setAttrib(nestLotri, R_ClassSymbol, lotriClass);
   Rf_setAttrib(nestLotri, Rf_install("format"), format);
   Rf_setAttrib(nestLotri, Rf_install("start"), nestStart);
+  ret.ret = nestLotri;
   UNPROTECT(pro);
-  return nestLotri;
+  return ret;
 }
 
 SEXP blankProp(SEXP names){
@@ -698,7 +709,6 @@ SEXP blankProp(SEXP names){
   UNPROTECT(pro);
   return lotriProp;
 }
-
 
 SEXP _lotriSep(SEXP lotri, SEXP above, SEXP below,
 	       SEXP aboveStart, SEXP belowStart) {
@@ -744,17 +754,35 @@ SEXP _lotriSep(SEXP lotri, SEXP above, SEXP below,
     if (TYPEOF(above) != INTSXP) {
       Rf_errorcall(R_NilValue, "'above' needs to be an integer");
     }
-    aboveI = INTEGER(above);    
-    SET_VECTOR_ELT(ret, 0,
-		   PROTECT(getNestLotri(lenAbove, 0, pro, lotriLen,
-					aboveN, lotri, names, lotri0, lotri0names,
-					sameC, "above", aboveI, aboveStart))); pro++;
+    aboveI = INTEGER(above);
+    lotriNestInfo curLT =getNestLotri(lenAbove, 0, lotriLen, aboveN, lotri, names, lotri0, lotri0names,
+				     sameC, aboveI, aboveStart);
+    if (curLT.err == 1) {
+      UNPROTECT(pro);
+      Rf_errorcall(R_NilValue, "'aboveStart' needs to be an 'integer' of length 1");
+    } else if (curLT.err == 2) {
+      UNPROTECT(pro);
+      Rf_errorcall(R_NilValue, "'id' not found in 'lotri' matrix");
+    } else if (curLT.err == 3) {
+      UNPROTECT(pro);
+      Rf_errorcall(R_NilValue, "'above' names do not match 'lotri' matrix");
+    }
+    SET_VECTOR_ELT(ret, 0, PROTECT(curLT.ret)); pro++;
   }
-
-  SET_VECTOR_ELT(ret, 1,
-		 PROTECT(getNestLotri(lenBelow, 1, pro, lotriLen,
-				      belowN, lotri, names, lotri0, lotri0names,
-				      sameC, "below", belowI, belowStart))); pro++;
+  lotriNestInfo curLT2 =  getNestLotri(lenBelow, 1, lotriLen,
+				       belowN, lotri, names, lotri0, lotri0names,
+				       sameC, belowI, belowStart);
+  if (curLT2.err == 1) {
+    UNPROTECT(pro);
+    Rf_errorcall(R_NilValue, "'belowStart' needs to be an 'integer' of length 1");
+  } else if (curLT2.err == 2) {
+    UNPROTECT(pro);
+    Rf_errorcall(R_NilValue, "'id' not found in 'lotri' matrix");
+  } else if (curLT2.err == 3) {
+    UNPROTECT(pro);
+    Rf_errorcall(R_NilValue, "'below' names do not match 'lotri' matrix");
+  }
+  SET_VECTOR_ELT(ret, 1, PROTECT(curLT2.ret)); pro++;
   
   UNPROTECT(pro);
   return ret;
