@@ -334,6 +334,31 @@ int setUpperLower(SEXP inUpperLower, SEXP colnames,
 }
 SEXP _lotriAllNames(SEXP lotri);
 
+SEXP _lotriAssumeUnbounded(SEXP lst_) {
+  int pro=0;
+  SEXP names = PROTECT(_lotriAllNames(lst_)); pro++;
+  int len = Rf_length(names);
+  SEXP boundLower = PROTECT(Rf_allocVector(REALSXP, len)); pro++;
+  SEXP boundUpper = PROTECT(Rf_allocVector(REALSXP, len)); pro++;
+  Rf_setAttrib(boundLower, R_NamesSymbol, names);
+  Rf_setAttrib(boundUpper, R_NamesSymbol, names);
+  double *bL = REAL(boundLower);
+  double *bU = REAL(boundUpper);
+  for (int j = len; j--; ){
+    bL[j] = R_NegInf;
+    bU[j] = R_PosInf;
+  }
+  SEXP ret = PROTECT(Rf_allocVector(VECSXP, 2)); pro++;
+  SET_VECTOR_ELT(ret, 0, boundLower);
+  SET_VECTOR_ELT(ret, 1, boundUpper);
+  SEXP retFN = PROTECT(Rf_allocVector(STRSXP, 2)); pro++;
+  SET_STRING_ELT(retFN, 0, Rf_mkChar("lower"));
+  SET_STRING_ELT(retFN, 1, Rf_mkChar("upper"));
+  Rf_setAttrib(ret, R_NamesSymbol, retFN);
+  UNPROTECT(pro);
+  return ret;
+}
+
 SEXP _lotriGetBounds(SEXP lst_, SEXP format, SEXP startNum) {
   int type = TYPEOF(lst_), totN;
   if (type != VECSXP) {
@@ -344,27 +369,8 @@ SEXP _lotriGetBounds(SEXP lst_, SEXP format, SEXP startNum) {
   SEXP lotriPropNames = PROTECT(Rf_getAttrib(lotriProp, R_NamesSymbol)); pro++;
   SEXP names = PROTECT(Rf_getAttrib(lst_, R_NamesSymbol)); pro++;
   if (Rf_isNull(lotriProp)) {
-    SEXP names = PROTECT(_lotriAllNames(lst_)); pro++;
-    int len = Rf_length(names);
-    SEXP boundLower = PROTECT(Rf_allocVector(REALSXP, len)); pro++;
-    SEXP boundUpper = PROTECT(Rf_allocVector(REALSXP, len)); pro++;
-    Rf_setAttrib(boundLower, R_NamesSymbol, names);
-    Rf_setAttrib(boundUpper, R_NamesSymbol, names);
-    double *bL = REAL(boundLower);
-    double *bU = REAL(boundUpper);
-    for (int j = len; j--; ){
-      bL[j] = R_NegInf;
-      bU[j] = R_PosInf;
-    }
-    SEXP ret = PROTECT(Rf_allocVector(VECSXP, 2)); pro++;
-    SET_VECTOR_ELT(ret, 0, boundLower);
-    SET_VECTOR_ELT(ret, 1, boundUpper);
-    SEXP retFN = PROTECT(Rf_allocVector(STRSXP, 2)); pro++;
-    SET_STRING_ELT(retFN, 0, Rf_mkChar("lower"));
-    SET_STRING_ELT(retFN, 1, Rf_mkChar("upper"));
-    Rf_setAttrib(ret, R_NamesSymbol, retFN);
     UNPROTECT(pro);
-    return ret;
+    return _lotriAssumeUnbounded(lst_);
   }
   
   lotriInfo li = _lotriLstToMat0(lst_, format, startNum, &pro);
