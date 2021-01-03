@@ -71,7 +71,7 @@ NULL
                                     j=env$eta1,
                                     x=as.numeric(eval(x[[3]]))))
       } else {
-        ## et1+et2+et3~c() lower triangular matrix
+        ## et1+et2+et3~NULL lower triangular matrix
         ## Should fixed be allowed????
         if (any(tolower(as.character(x[[3]][[1]])) == c("c", "fix", "fixed"))) {
           if (any(tolower(as.character(x[[3]][[1]])) == c("fix", "fixed"))){
@@ -181,11 +181,11 @@ NULL
                        .n, .n, names[1], .cur[1]), call.=FALSE)
         } else {
           .newProp[[.n]] <- setNames(rep(.cur, length(names)), names)
-          next;
+          next
         }
       }
       .new <- setNames(rep(.defaultProperties[.n], length(names)), names)
-      .bad <- c()
+      .bad <- NULL
       for (.n2 in names(.cur)) {
         if (is.na(.new[.n2])) {
           .bad <- c(.bad, .n2)
@@ -332,8 +332,8 @@ NULL
 ##'
 ##' lotri({et2 + et3 + et4 ~ c(40,
 ##'                            0.1, 20,
-##'                            0.1, 0.1, 30);
-##'           et5 ~ 6;
+##'                            0.1, 0.1, 30)
+##'           et5 ~ 6
 ##'           })
 ##'
 ##' ## You can also add lists or actual R matrices as in this example:
@@ -412,7 +412,7 @@ lotri  <- function(x, ..., envir=parent.frame()) {
     omega  <- lapply(x, lotri, envir=envir)
     if (inherits(omega, "list")) {
       .env <- new.env(parent=emptyenv())
-      .env[["...cnd"]] <- c()
+      .env[["...cnd"]] <- NULL
       .env[["...empty"]] <- list()
       lapply(seq_along(omega), function(x){
         .cur <- omega[[x]]
@@ -645,7 +645,7 @@ str.lotri <- function(object, ...) {
 `$.lotri` <-  function(obj, arg, exact = FALSE) {
   .lotri <- attr(obj, "lotri")
   if (arg == ".maxNu") {
-    return(.Call(`_lotriMaxNu`, obj, PACKAGE="lotri"));
+    return(.Call(`_lotriMaxNu`, obj, PACKAGE="lotri"))
   }
   if (any(names(obj) == arg)) {
     .tmp <- obj
@@ -736,7 +736,7 @@ as.lotri <- function(x, ..., default="") {
 ##' @rdname as.lotri
 ##' @export
 as.lotri.matrix <- function(x, ..., default="") {
-  .Call(`_asLotriMat`, x, list(...), default=default);
+  .Call(`_asLotriMat`, x, list(...), default=default)
 }
 
 ##' @rdname as.lotri

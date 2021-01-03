@@ -1,4 +1,4 @@
-library(testthat)
-library(lotri)
+library(testthat) # nolint
+library(lotri) # nolint
 
 test_check("lotri")
