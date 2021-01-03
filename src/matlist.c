@@ -339,13 +339,13 @@ SEXP _lotriGetBounds(SEXP lst_, SEXP format, SEXP startNum) {
   if (type != VECSXP) {
     Rf_errorcall(R_NilValue, _("expects lotri matrix"));
   }
-  SEXP lotriProp = Rf_getAttrib(lst_, Rf_install("lotri"));
-  SEXP lotriPropNames = Rf_getAttrib(lotriProp, R_NamesSymbol);
-  SEXP names = Rf_getAttrib(lst_, R_NamesSymbol);
+  int pro = 0;
+  SEXP lotriProp = PROTECT(Rf_getAttrib(lst_, Rf_install("lotri"))); pro++;
+  SEXP lotriPropNames = PROTECT(Rf_getAttrib(lotriProp, R_NamesSymbol)); pro++;
+  SEXP names = PROTECT(Rf_getAttrib(lst_, R_NamesSymbol)); pro++;
   if (Rf_isNull(lotriProp)) {
     SEXP names = _lotriAllNames(lst_);
     int len = Rf_length(names);
-    int pro = 0;
     SEXP boundLower = PROTECT(Rf_allocVector(REALSXP, len)); pro++;
     SEXP boundUpper = PROTECT(Rf_allocVector(REALSXP, len)); pro++;
     Rf_setAttrib(boundLower, R_NamesSymbol, names);
@@ -365,7 +365,6 @@ SEXP _lotriGetBounds(SEXP lst_, SEXP format, SEXP startNum) {
     Rf_setAttrib(ret, R_NamesSymbol, retFN);
     UNPROTECT(pro);
     return ret;
-    Rf_errorcall(R_NilValue, _("only works with lotri matrices"));
   }
   
   lotriInfo li = _lotriLstToMat0(lst_, format, startNum);
@@ -419,7 +418,7 @@ SEXP _lotriGetBounds(SEXP lst_, SEXP format, SEXP startNum) {
   SET_STRING_ELT(retFN, 0, Rf_mkChar("lower"));
   SET_STRING_ELT(retFN, 1, Rf_mkChar("upper"));
   Rf_setAttrib(ret, R_NamesSymbol, retFN);
-  UNPROTECT(li.pro);
+  UNPROTECT(li.pro+pro);
   return ret;
 }
 
