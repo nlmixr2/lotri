@@ -1,0 +1,6 @@
+  rchk:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - uses: randy3k/github-action-rchk@master
+
