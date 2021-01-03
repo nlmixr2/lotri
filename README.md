@@ -3,8 +3,7 @@
 
 
 <!-- badges: start -->
-[![Travis build status](https://travis-ci.org/nlmixrdevelopment/lotri.svg?branch=master)](https://travis-ci.org/nlmixrdevelopment/lotri)
-[![AppVeyor build status](https://ci.appveyor.com/api/projects/status/github/nlmixrdevelopment/lotri?branch=master&svg=true)](https://ci.appveyor.com/project/nlmixrdevelopment/lotri) 
+[![R-CMD-check](https://github.com/nlmixrdevelopment/lotri/workflows/R-CMD-check/badge.svg)](https://github.com/nlmixrdevelopment/lotri/actions)
 [![Coverage status](https://codecov.io/gh/nlmixrdevelopment/lotri/branch/master/graph/badge.svg)](https://codecov.io/github/nlmixrdevelopment/lotri?branch=master) 
 [![CRAN status](https://www.r-pkg.org/badges/version/lotri)](https://cran.r-project.org/package=lotri)
 [![CRAN downloads](https://cranlogs.r-pkg.org/badges/lotri)](https://cran.r-project.org/package=lotri)
@@ -174,8 +173,8 @@ print(mat$lower)
 #> -Inf
 print(mat$upper)
 #> $id
-#>   d   e 
-#> Inf Inf 
+#> d e 
+#> 2 2 
 #> 
 #> $occ
 #>   c 
@@ -244,9 +243,9 @@ mb <- microbenchmark(matf(testList),lotriMat(testList))
 
 print(mb)
 #> Unit: microseconds
-#>                expr     min       lq      mean   median      uq      max neval
-#>      matf(testList) 504.496 509.9065 609.22553 521.1295 579.006 5557.740   100
-#>  lotriMat(testList)   1.144   1.3660   2.55261   2.8855   3.116   21.524   100
+#>                expr     min       lq      mean   median       uq      max neval
+#>      matf(testList) 566.836 581.1185 683.27433 600.7095 631.2865 6757.114   100
+#>  lotriMat(testList)   1.267   1.5335   3.57351   3.5980   5.3590    9.708   100
 
 autoplot(mb)
 #> Coordinate system already present. Adding new coordinate system, which will replace the existing one.
