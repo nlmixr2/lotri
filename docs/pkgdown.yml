@@ -1,7 +1,0 @@
-pandoc: 1.19.2.1
-pkgdown: 1.5.1
-pkgdown_sha: ~
-articles:
-  lotri-motivation: lotri-motivation.html
-last_built: 2020-04-19T03:54Z
-
