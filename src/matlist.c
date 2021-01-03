@@ -656,6 +656,7 @@ lotriNestInfo getNestLotri(int lenNest, int extra, int lotriLen,
     }
     if (found1 == 0 || found2 == 0) {
       ret.err = 2;
+      UNPROTECT(pro);
       return ret;
     }
     for (int i = 0; i  < lenNest; ++i) {
