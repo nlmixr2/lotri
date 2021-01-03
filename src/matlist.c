@@ -748,8 +748,8 @@ SEXP _lotriAllNames(SEXP lotri) {
       int j = 0;
       SEXP ret = PROTECT(Rf_allocVector(STRSXP, intN)); pro++;
       for (int i = Rf_length(lotri); i--;){
-	SEXP cur = PROTECT(VECTOR_ELT(Rf_getAttrib(VECTOR_ELT(lotri, i),
-						   R_DimNamesSymbol), 1)); pro++;
+	SEXP cur = VECTOR_ELT(Rf_getAttrib(VECTOR_ELT(lotri, i),
+					   R_DimNamesSymbol), 1);
 	for (int k = 0; k < Rf_length(cur); ++k) {
 	  /* SET_STRING_ELT(retN, curBand+j, Rf_mkChar(out)); */
 	  SET_STRING_ELT(ret, j++, STRING_ELT(cur, k));
