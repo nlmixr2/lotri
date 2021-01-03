@@ -364,14 +364,13 @@ SEXP _lotriGetBounds(SEXP lst_, SEXP format, SEXP startNum) {
   if (type != VECSXP) {
     Rf_errorcall(R_NilValue, _("expects lotri matrix"));
   }
+  if (Rf_isNull(Rf_getAttrib(lst_, Rf_install("lotri")))) {
+    return _lotriAssumeUnbounded(lst_);
+  }
   int pro = 0;
   SEXP lotriProp = PROTECT(Rf_getAttrib(lst_, Rf_install("lotri"))); pro++;
   SEXP lotriPropNames = PROTECT(Rf_getAttrib(lotriProp, R_NamesSymbol)); pro++;
   SEXP names = PROTECT(Rf_getAttrib(lst_, R_NamesSymbol)); pro++;
-  if (Rf_isNull(lotriProp)) {
-    UNPROTECT(pro);
-    return _lotriAssumeUnbounded(lst_);
-  }
   
   lotriInfo li = _lotriLstToMat0(lst_, format, startNum, &pro);
   int len = Rf_length(li.lst);
