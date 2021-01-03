@@ -547,15 +547,15 @@ test_that("lotri matrix parsing", {
                c("eta.Cl", "eta.Ka", "eye.Cl", "eye.Ka", "iov.Cl",
                  "iov.Ka", "inv.Cl", "inv.Ka"))
 
-  expect_error(.Call(lotri.lotri$`_asLotriMat`, "a", list(nu=3), "id", PACKAGE="lotri"))
+  expect_error(.Call(.lotri$`_asLotriMat`, "a", list(nu=3), "id", PACKAGE="lotri"))
 
-  expect_error(.Call(lotri.lotri$`_asLotriMat`, matrix(1), list(nu=3), "id", PACKAGE="lotri"))
-  expect_error(.Call(lotri.lotri$`_asLotriMat`, structure(1, .Dim = c(1L, 1L), dimnames=list(NULL, "a")),
+  expect_error(.Call(.lotri$`_asLotriMat`, matrix(1), list(nu=3), "id", PACKAGE="lotri"))
+  expect_error(.Call(.lotri$`_asLotriMat`, structure(1, .Dim = c(1L, 1L), dimnames=list(NULL, "a")),
                      list(nu=3), "id", PACKAGE="lotri"))
-  expect_error(.Call(lotri.lotri$`_asLotriMat`, structure(1, .Dim = c(1L, 1L), dimnames=list("a", NULL)),
+  expect_error(.Call(.lotri$`_asLotriMat`, structure(1, .Dim = c(1L, 1L), dimnames=list("a", NULL)),
                      list(nu=3), "id", PACKAGE="lotri"))
 
-  expect_error(.Call(lotri.lotri$`_asLotriMat`, lotri(et1+et2 ~c(0.1, 0.01, 1)),
+  expect_error(.Call(.lotri$`_asLotriMat`, lotri(et1+et2 ~c(0.1, 0.01, 1)),
                      "a", "id", PACKAGE="lotri"))
 
   expect_error(as.lotri(lotri(et1+et2 ~c(0.1, 0.01, 1)), upper=1L, default=c("id","id2")))
@@ -771,7 +771,7 @@ test_that("lotri matrix parsing", {
                c("inv.Cl", "inv.Ka", "iov.Cl", "iov.Ka",
                  "eye.Cl", "eye.Ka", "eta.Cl", "eta.Ka"))
 
-  expect_error(.Call(lotri.lotri$`_lotriAllNames`, 1:20, PACKAGE="lotri"))
+  expect_error(.Call(.lotri$`_lotriAllNames`, 1:20, PACKAGE="lotri"))
 
 
   mat0 <- lotri(eta.Cl ~ 0.1,
@@ -780,36 +780,36 @@ test_that("lotri matrix parsing", {
   dn0 <- list(dn[[1]],NULL)
   dimnames(mat0) <- dn0
 
-  dn1 <- .Call(lotri.lotri$`_lotriAllNames`, mat0, PACKAGE="lotri")
+  dn1 <- .Call(.lotri$`_lotriAllNames`, mat0, PACKAGE="lotri")
 
   dn0 <- list(NULL, dn[[1]])
   dimnames(mat0) <- dn0
 
-  dn2 <- .Call(lotri.lotri$`_lotriAllNames`, mat0, PACKAGE="lotri")
+  dn2 <- .Call(.lotri$`_lotriAllNames`, mat0, PACKAGE="lotri")
 
   expect_equal(dn1, dn2)
 
   dn0 <- list(NULL, NULL)
   dimnames(mat0) <- dn0
 
-  dn3 <- .Call(lotri.lotri$`_lotriAllNames`, mat0, PACKAGE="lotri")
+  dn3 <- .Call(.lotri$`_lotriAllNames`, mat0, PACKAGE="lotri")
 
   expect_equal(dn3, character(0))
 
   dimnames(mat0) <- NULL
 
-  dn3 <- .Call(lotri.lotri$`_lotriAllNames`, mat0, PACKAGE="lotri")
+  dn3 <- .Call(.lotri$`_lotriAllNames`, mat0, PACKAGE="lotri")
 
   expect_equal(dn3, character(0))
 
   name9 <- c("inv.Cl", "inv.Ka", "iov.Cl", "iov.Ka", "eye.Cl", "eye.Ka",
                  "eta.Cl", "eta.Ka")
-  expect_equal(.Call(lotri.lotri$`_lotriAllNames`, omega9, PACKAGE="lotri"),
+  expect_equal(.Call(.lotri$`_lotriAllNames`, omega9, PACKAGE="lotri"),
                name9)
 
   context("bounds C")
 
-  tmp <-.Call(lotri.lotri$`_lotriGetBounds`, omega9, NULL, NULL, PACKAGE="lotri")
+  tmp <-.Call(.lotri$`_lotriGetBounds`, omega9, NULL, NULL, PACKAGE="lotri")
   expect_true(all(!is.finite(tmp$lower)))
   expect_true(all(!is.finite(tmp$upper)))
 
@@ -887,7 +887,7 @@ test_that("lotri matrix parsing", {
 
   expect_error(above5$.bounds)
 
-  expect_error(.Call(lotri.lotri$`_lotriGetBounds`, lotri(a~3), NULL, 1, PACKAGE="lotri"))
+  expect_error(.Call(.lotri$`_lotriGetBounds`, lotri(a~3), NULL, 1, PACKAGE="lotri"))
 
   lotriProp$inv$lower <- c(inv.Cl=3L, inv.Ka=3L)
   above7 <- above
@@ -896,7 +896,7 @@ test_that("lotri matrix parsing", {
 
   expect_equal(as.vector(above4$.bounds$lower), rep(3.0, 20))
 
-  expect_error(.Call(lotri.lotri$`_lotriGetBounds`, "A", NULL, 1, PACKAGE="lotri"))
+  expect_error(.Call(.lotri$`_lotriGetBounds`, "A", NULL, 1, PACKAGE="lotri"))
 
   context(".maxNu")
 
@@ -912,19 +912,19 @@ test_that("lotri matrix parsing", {
   expect_equal(omega$.maxNu, 200)
 
 
-  expect_equal(.Call(lotri.lotri$`_lotriMaxNu`, omega9, PACKAGE="lotri"), 0)
+  expect_equal(.Call(.lotri$`_lotriMaxNu`, omega9, PACKAGE="lotri"), 0)
 
   context("isLotri C")
 
-  expect_equal(.Call(lotri.lotri$`_isLotri`, omega9, PACKAGE="lotri"), TRUE)
-  expect_equal(.Call(lotri.lotri$`_isLotri`, omega, PACKAGE="lotri"), TRUE)
+  expect_equal(.Call(.lotri$`_isLotri`, omega9, PACKAGE="lotri"), TRUE)
+  expect_equal(.Call(.lotri$`_isLotri`, omega, PACKAGE="lotri"), TRUE)
 
   omega9[[2]] <- 3
-  expect_equal(.Call(lotri.lotri$`_isLotri`, omega9, PACKAGE="lotri"), FALSE)
+  expect_equal(.Call(.lotri$`_isLotri`, omega9, PACKAGE="lotri"), FALSE)
 
   omega9[[2]] <- matrix(3)
-  expect_equal(.Call(lotri.lotri$`_isLotri`, omega9, PACKAGE="lotri"), FALSE)
+  expect_equal(.Call(.lotri$`_isLotri`, omega9, PACKAGE="lotri"), FALSE)
 
-  expect_equal(.Call(lotri.lotri$`_isLotri`, "matt", PACKAGE="lotri"), FALSE)
+  expect_equal(.Call(.lotri$`_isLotri`, "matt", PACKAGE="lotri"), FALSE)
 
 })
