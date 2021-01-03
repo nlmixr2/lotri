@@ -342,7 +342,7 @@ SEXP _lotriGetBounds(SEXP lst_, SEXP format, SEXP startNum) {
   SEXP lotriPropNames = PROTECT(Rf_getAttrib(lotriProp, R_NamesSymbol)); pro++;
   SEXP names = PROTECT(Rf_getAttrib(lst_, R_NamesSymbol)); pro++;
   if (Rf_isNull(lotriProp)) {
-    SEXP names = _lotriAllNames(lst_);
+    SEXP names = PROTECT(_lotriAllNames(lst_)); pro++;
     int len = Rf_length(names);
     SEXP boundLower = PROTECT(Rf_allocVector(REALSXP, len)); pro++;
     SEXP boundUpper = PROTECT(Rf_allocVector(REALSXP, len)); pro++;
@@ -648,7 +648,7 @@ SEXP blankProp(SEXP names){
   int pro = 0;
   SEXP lotriProp = PROTECT(Rf_allocVector(VECSXP, Rf_length(names)));pro++;
   for (int j = Rf_length(names); j--;) {
-    SET_VECTOR_ELT(lotriProp, j, PROTECT(Rf_allocVector(VECSXP, 0))); pro++;
+    SET_VECTOR_ELT(lotriProp, j, Rf_allocVector(VECSXP, 0));
   }
   Rf_setAttrib(lotriProp, R_NamesSymbol, names);
   UNPROTECT(pro);
@@ -719,21 +719,22 @@ SEXP _lotriSep(SEXP lotri, SEXP above, SEXP below,
 SEXP _lotriAllNames(SEXP lotri) {
   int pro = 0;
   if (Rf_isMatrix(lotri)){
-    SEXP dimn = Rf_getAttrib(lotri, R_DimNamesSymbol);
+    SEXP dimn = PROTECT(Rf_getAttrib(lotri, R_DimNamesSymbol)); pro++;
     if (dimn == R_NilValue) {
       SEXP retN = PROTECT(Rf_allocVector(STRSXP, 0)); pro++;
       UNPROTECT(pro);
       return retN;
     }
-    SEXP colnames = VECTOR_ELT(dimn, 1);
+    SEXP colnames = PROTECT(VECTOR_ELT(dimn, 1)); pro++;
     if (Rf_isNull(colnames)){
-      colnames = VECTOR_ELT(dimn, 0);
+      colnames = PROTECT(VECTOR_ELT(dimn, 0)); pro++;
       if (Rf_isNull(colnames)) {
 	SEXP retN = PROTECT(Rf_allocVector(STRSXP, 0)); pro++;
 	UNPROTECT(pro);
 	return retN;
       }
     }
+    UNPROTECT(pro);
     return colnames;
   } else {
     int type = TYPEOF(lotri);
@@ -747,8 +748,8 @@ SEXP _lotriAllNames(SEXP lotri) {
       int j = 0;
       SEXP ret = PROTECT(Rf_allocVector(STRSXP, intN)); pro++;
       for (int i = Rf_length(lotri); i--;){
-	SEXP cur = VECTOR_ELT(Rf_getAttrib(VECTOR_ELT(lotri, i),
-					   R_DimNamesSymbol), 1);
+	SEXP cur = PROTECT(VECTOR_ELT(Rf_getAttrib(VECTOR_ELT(lotri, i),
+						   R_DimNamesSymbol), 1)); pro++;
 	for (int k = 0; k < Rf_length(cur); ++k) {
 	  /* SET_STRING_ELT(retN, curBand+j, Rf_mkChar(out)); */
 	  SET_STRING_ELT(ret, j++, STRING_ELT(cur, k));
@@ -757,6 +758,7 @@ SEXP _lotriAllNames(SEXP lotri) {
       UNPROTECT(pro);
       return ret;
     } else {
+      UNPROTECT(pro);
       Rf_errorcall(R_NilValue, _("not a matrix or lotri matrix"));
     }
   }
