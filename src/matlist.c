@@ -298,9 +298,9 @@ double getDouble(SEXP colnames, int i, SEXP inUpperLower, SEXP upperLowerNames,
   return defaultValue;
 }
 
-void setUpperLower(SEXP inUpperLower, SEXP colnames,
+int setUpperLower(SEXP inUpperLower, SEXP colnames,
 		   double *outUpperLower, int i0, double defaultValue,
-		   const char *what, int *pro0, int nsame) {
+		   const char *what, int nsame) {
   SEXP upperLowerNames = Rf_getAttrib(inUpperLower, R_NamesSymbol);
   double value = defaultValue;
   int ncol = Rf_length(colnames);
@@ -313,12 +313,13 @@ void setUpperLower(SEXP inUpperLower, SEXP colnames,
 	value = (double)(INTEGER(inUpperLower)[0]);
       }
     } else if (Rf_length(inUpperLower) != 0) {
-      UNPROTECT(*pro0);
-      Rf_errorcall(R_NilValue, _("cannot figure out valid '%s' properties"), what);
+      /* UNPROTECT(*pro0); */
+      /* Rf_errorcall(R_NilValue, _("cannot figure out valid '%s' properties"), what); */
+      return 1;
     }
     for (int i = ncol*nsame; i--;) {
       outUpperLower[i0+i] = value;
-    }      
+    }
   } else {
     int typ = TYPEOF(inUpperLower);
     for (int i = ncol; i--;) {
@@ -329,6 +330,7 @@ void setUpperLower(SEXP inUpperLower, SEXP colnames,
       memcpy(&outUpperLower[i0+i*ncol], &outUpperLower[i0], ncol*sizeof(double));
     }
   }
+  return 0;
 }
 SEXP _lotriAllNames(SEXP lotri);
 
@@ -379,6 +381,7 @@ SEXP _lotriGetBounds(SEXP lst_, SEXP format, SEXP startNum) {
   int nsame, j;
   SEXP cur, sameS, dimnames, colnames;
   int curBand = 0;
+  int badUpper = 0, badLower = 0;
   for (int i = 0; i < len; ++i) {
     cur = VECTOR_ELT(li.lst, i);
     type = TYPEOF(cur);
@@ -393,11 +396,17 @@ SEXP _lotriGetBounds(SEXP lst_, SEXP format, SEXP startNum) {
     dimnames = Rf_getAttrib(cur, R_DimNamesSymbol);
     colnames = VECTOR_ELT(dimnames, 1);
     SEXP upper = getLotriProp(names, i, lotriProp, lotriPropNames, "upper");
-    setUpperLower(upper, colnames, boundUpperD, curBand, R_PosInf,
-		  "upper", &pro, nsame);
+    if (setUpperLower(upper, colnames, boundUpperD, curBand, R_PosInf,
+		      "upper",nsame)) {
+      badUpper=1;
+      break;
+    }
     SEXP lower = getLotriProp(names, i, lotriProp, lotriPropNames, "lower");
-    setUpperLower(lower, colnames, boundLowerD, curBand, R_NegInf,
-		  "lower", &pro, nsame);
+    if (setUpperLower(lower, colnames, boundLowerD, curBand, R_NegInf,
+		  "lower", nsame)) {
+      badLower=1;
+      break;
+    }
     for (int cursame = nsame; cursame--;){
       // Repeats dim names of repeated matrices
       for (j = 0; j  < totN; ++j) {
@@ -406,6 +415,14 @@ SEXP _lotriGetBounds(SEXP lst_, SEXP format, SEXP startNum) {
       }
       curBand += totN;
     }
+  }
+  if (badUpper) {
+    Rf_errorcall(R_NilValue, _("cannot figure out valid 'upper' properties"));
+    UNPROTECT(pro);
+  }
+  if (badLower) {
+    Rf_errorcall(R_NilValue, _("cannot figure out valid 'lower' properties"));
+    UNPROTECT(pro);
   }
   Rf_setAttrib(boundLower, R_NamesSymbol, retN);
   Rf_setAttrib(boundUpper, R_NamesSymbol, retN);
