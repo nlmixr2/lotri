@@ -157,20 +157,23 @@ typedef struct lotriInfo {
   int doFormat;
   const char *fmt;
   int counter;
+  int err;
 } lotriInfo;
 
-static inline lotriInfo _lotriLstToMat0(SEXP lst_, SEXP format, SEXP startNum, int *pro) {
+static inline lotriInfo _lotriLstToMat0(SEXP lst_, SEXP format, SEXP startNum) {
   lotriInfo ret;
-  ret.lst = PROTECT(lotriToLstMat(lst_)); (*pro)++;
+  ret.err = 0;
+  int pro = 0;
+  ret.lst = PROTECT(lotriToLstMat(lst_)); pro++;
   int fmtType = TYPEOF(format);
   ret.doFormat = 0;
   if (fmtType == STRSXP && Rf_length(format) == 1) {
     ret.fmt = CHAR(STRING_ELT(format, 0));
     ret.doFormat=1;
   } else if (fmtType) {
-    UNPROTECT(*pro);
-    Rf_errorcall(R_NilValue, _("'format' must be a single length string or NULL"),
-	     fmtType);
+    ret.err = 1;
+    UNPROTECT(pro);
+    return ret;
   } else {
     SEXP fmt2 = Rf_getAttrib(lst_, Rf_install("format"));
     if (TYPEOF(fmt2) == STRSXP && Rf_length(fmt2) == 1) {
@@ -185,11 +188,13 @@ static inline lotriInfo _lotriLstToMat0(SEXP lst_, SEXP format, SEXP startNum, i
       SEXP startNum2 = Rf_getAttrib(lst_, Rf_install("start"));
       ret.counter = isSingleInt(startNum2, NA_INTEGER);
       if (ret.counter == NA_INTEGER) {
-	UNPROTECT(*pro);
-	Rf_errorcall(R_NilValue, _("when format is specified, 'startNum' must be a single integer"));
+	ret.err = 2;
+	UNPROTECT(pro);
+	return ret;
       }
     }
   }
+  UNPROTECT(pro);
   return ret;
 }
 
@@ -201,7 +206,16 @@ SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum) {
     }
     Rf_errorcall(R_NilValue, _("expects a list named symmetric matrices"));
   }
-  lotriInfo li = _lotriLstToMat0(lst_, format, startNum, &pro);
+  lotriInfo li = _lotriLstToMat0(lst_, format, startNum);
+  PROTECT(li.lst); pro++;
+  if (li.err == 1) {
+    UNPROTECT(1);
+    Rf_errorcall(R_NilValue, _("'format' must be a single length string or NULL"));
+  }
+  if (li.err == 2) {
+    UNPROTECT(1);
+    Rf_errorcall(R_NilValue, _("when format is specified, 'startNum' must be a single integer"));
+  }
   int len = Rf_length(li.lst);
   int totdim = 0;
   int i, j;
@@ -371,8 +385,16 @@ SEXP _lotriGetBounds(SEXP lst_, SEXP format, SEXP startNum) {
   SEXP lotriProp = PROTECT(Rf_getAttrib(lst_, Rf_install("lotri"))); pro++;
   SEXP lotriPropNames = PROTECT(Rf_getAttrib(lotriProp, R_NamesSymbol)); pro++;
   SEXP names = PROTECT(Rf_getAttrib(lst_, R_NamesSymbol)); pro++;
-  
-  lotriInfo li = _lotriLstToMat0(lst_, format, startNum, &pro);
+  lotriInfo li = _lotriLstToMat0(lst_, format, startNum);
+  PROTECT(li.lst); pro++;
+  if (li.err == 1) {
+    UNPROTECT(pro);
+    Rf_errorcall(R_NilValue, _("'format' must be a single length string or NULL"));
+  }
+  if (li.err == 2) {
+    UNPROTECT(pro);
+    Rf_errorcall(R_NilValue, _("when format is specified, 'startNum' must be a single integer"));
+  }
   int len = Rf_length(li.lst);
   int totdim=0;
   for (int i = 0; i < len; ++i) {
