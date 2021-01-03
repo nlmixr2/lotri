@@ -688,7 +688,7 @@ lotriNestInfo getNestLotri(int lenNest, int extra, int lotriLen,
     }
     if (found1 == 0 || found2 == 0) {
       ret.err = 3;
-      return ret;
+      break;
     }
   }
   SEXP format = PROTECT(Rf_allocVector(STRSXP, 1)); pro++;
