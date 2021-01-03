@@ -15,6 +15,7 @@ knitr::opts_chunk$set(
 [![Coverage status](https://codecov.io/gh/nlmixrdevelopment/lotri/branch/master/graph/badge.svg)](https://codecov.io/github/nlmixrdevelopment/lotri?branch=master) 
 [![CRAN status](https://www.r-pkg.org/badges/version/lotri)](https://cran.r-project.org/package=lotri)
 [![CRAN downloads](https://cranlogs.r-pkg.org/badges/lotri)](https://cran.r-project.org/package=lotri)
+[![R-CMD-check](https://github.com/nlmixrdevelopment/lotri/workflows/R-CMD-check/badge.svg)](https://github.com/nlmixrdevelopment/lotri/actions)
 <!-- badges: end -->
 
 # lotri
