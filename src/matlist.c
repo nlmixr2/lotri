@@ -595,7 +595,7 @@ SEXP addLotriPropertyAtEnd(SEXP lotri0, int i, SEXP sameC, int *nestI, int extra
   int pro = 0;
   SEXP curProp  = VECTOR_ELT(lotri0, i);
   int curPropN = Rf_length(curProp);
-  SEXP curPropS = Rf_getAttrib(curProp, R_NamesSymbol);
+  SEXP curPropS = PROTECT(Rf_getAttrib(curProp, R_NamesSymbol)); pro++;
   SEXP newProp  = PROTECT(Rf_allocVector(VECSXP, Rf_length(curProp)+1)); pro++;
   SEXP newPropS = PROTECT(Rf_allocVector(STRSXP, Rf_length(curProp)+1)); pro++;
   for (int k = 0; k < curPropN; ++k) {
