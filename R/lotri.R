@@ -307,6 +307,67 @@ NULL
   return(.Call(`_lotriLstToMat`, env[[val]], NULL, 1L, PACKAGE = "lotri"))
 }
 
+.lotriList <- function(x, ..., envir = parent.frame()) {
+  omega <- lapply(x, lotri, envir = envir)
+  if (inherits(omega, "list")) {
+    .env <- new.env(parent = emptyenv())
+    .env[["...cnd"]] <- NULL
+    .env[["...empty"]] <- list()
+    lapply(seq_along(omega), function(x) {
+      .cur <- omega[[x]]
+      .curName <- names(omega)[x]
+      if (is.null(.curName)) {
+        .curName <- ""
+      }
+      if (inherits(.cur, "matrix")) {
+        if (.curName == "") {
+          assign("...empty", c(.env[["...empty"]], list(.cur)), .env)
+        } else {
+          assign(.curName, c(.env[[.curName]], list(.cur)), .env)
+          assign("...cnd", unique(c(.env[["...cnd"]], .curName)), .env)
+        }
+      } else if (inherits(.cur, "list") || inherits(.cur, "lotri")) {
+        lapply(
+          seq_along(.cur),
+          function(y) {
+            .cury <- .cur[[y]]
+            .curName <- names(.cur)[y]
+            if (.curName == "") {
+              assign("...empty", c(
+                .env[["...empty"]],
+                list(.cury)
+              ), .env)
+            } else {
+              assign(.curName, list(.cury), .env)
+              assign("...cnd", unique(c(
+                .env[["...cnd"]],
+                .curName
+              )), .env)
+            }
+          }
+        )
+      }
+    })
+    if (length(.env$...empty) > 0) {
+      .omega <- .getMatrix(.env, "...empty")
+    } else {
+      .omega <- NULL
+    }
+    if (length(.env$...cnd) > 0) {
+      .lst <- setNames(lapply(.env$...cnd, function(cnd) {
+        .getMatrix(.env, cnd)
+      }), .env$...cnd)
+      if (!is.null(.omega)) {
+        .lst <- c(list(.omega), .lst)
+      }
+      omega <- .lst
+    } else {
+      omega <- .omega
+    }
+  }
+  omega
+}
+
 ##' Easily Specify block-diagonal matrices with lower triangular info
 ##'
 ##' @param x list, matrix or expression, see details
@@ -432,64 +493,7 @@ lotri <- function(x, ..., envir = parent.frame()) {
   if (is.null(x)) {
     .ret <- NULL
   } else if (is.list(x)) {
-    omega <- lapply(x, lotri, envir = envir)
-    if (inherits(omega, "list")) {
-      .env <- new.env(parent = emptyenv())
-      .env[["...cnd"]] <- NULL
-      .env[["...empty"]] <- list()
-      lapply(seq_along(omega), function(x) {
-        .cur <- omega[[x]]
-        .curName <- names(omega)[x]
-        if (is.null(.curName)) {
-          .curName <- ""
-        }
-        if (inherits(.cur, "matrix")) {
-          if (.curName == "") {
-            assign("...empty", c(.env[["...empty"]], list(.cur)), .env)
-          } else {
-            assign(.curName, c(.env[[.curName]], list(.cur)), .env)
-            assign("...cnd", unique(c(.env[["...cnd"]], .curName)), .env)
-          }
-        } else if (inherits(.cur, "list") || inherits(.cur, "lotri")) {
-          lapply(
-            seq_along(.cur),
-            function(y) {
-              .cury <- .cur[[y]]
-              .curName <- names(.cur)[y]
-              if (.curName == "") {
-                assign("...empty", c(
-                  .env[["...empty"]],
-                  list(.cury)
-                ), .env)
-              } else {
-                assign(.curName, list(.cury), .env)
-                assign("...cnd", unique(c(
-                  .env[["...cnd"]],
-                  .curName
-                )), .env)
-              }
-            }
-          )
-        }
-      })
-      if (length(.env$...empty) > 0) {
-        .omega <- .getMatrix(.env, "...empty")
-      } else {
-        .omega <- NULL
-      }
-      if (length(.env$...cnd) > 0) {
-        .lst <- setNames(lapply(.env$...cnd, function(cnd) {
-          .getMatrix(.env, cnd)
-        }), .env$...cnd)
-        if (!is.null(.omega)) {
-          .lst <- c(list(.omega), .lst)
-        }
-        omega <- .lst
-      } else {
-        omega <- .omega
-      }
-    }
-    .ret <- omega
+    .ret <- .lotriList(x, ..., envir = envir)
   } else if (is.matrix(x)) {
     .ret <- x
   } else {
