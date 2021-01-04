@@ -1,3 +1,6 @@
+#ifndef __MATLIST_H__
+#define __MATLIST_H__
+
 #define R_NO_REMAP
 #include <R.h>
 #include <Rinternals.h>
@@ -6,15 +9,12 @@
 
 #ifdef ENABLE_NLS
 #include <libintl.h>
-#define _(String) dgettext ("RxODE", String)
+#define _(String) dgettext ("lotri", String)
 /* replace pkg as appropriate */
 #else
 #define _(String) (String)
 #endif
 
-#ifndef HAVE_STRCASECMP
-#define HAVE_STRCASECMP 0
-#endif
 
 static inline int casecmp(const char *s1, const char *s2) {
   register unsigned char u1, u2;
@@ -97,68 +97,6 @@ static inline int setStrElt(SEXP retN, SEXP colnames, int curBand, int j,
   return 0;
 }
 
-SEXP getLotriProp(SEXP names, int i, SEXP lotriProp, SEXP lotriPropNames, const char *prop);
-
-SEXP lotriToLstMat(SEXP lotri);
-
-static inline int getSame(SEXP names, int i, SEXP lotriProp, SEXP lotriPropNames) {
-  SEXP s = getLotriProp(names, i, lotriProp, lotriPropNames, "same");
-  if (!Rf_isNull(s)) {
-    return isSingleInt(s, 1);
-  }
-  return 1;
-}
-
-typedef struct lotriInfo {
-  SEXP lst;
-  int doFormat;
-  const char *fmt;
-  int counter;
-  int err;
-  int sym;
-} lotriInfo;
-
-
-
-static inline lotriInfo _lotriLstToMat0(SEXP lst_, SEXP format, SEXP startNum) {
-  lotriInfo ret;
-  ret.err = 0;
-  int pro = 0;
-  ret.sym = 0;
-  ret.lst = PROTECT(lotriToLstMat(lst_)); pro++;
-  int fmtType = TYPEOF(format);
-  ret.doFormat = 0;
-  if (fmtType == STRSXP && Rf_length(format) == 1) {
-    ret.fmt = CHAR(STRING_ELT(format, 0));
-    ret.doFormat=1;
-  } else if (fmtType) {
-    ret.err = 1;
-    UNPROTECT(pro);
-    return ret;
-  } else {
-    SEXP fmt2 = Rf_getAttrib(lst_, Rf_install("format"));
-    if (TYPEOF(fmt2) == STRSXP && Rf_length(fmt2) == 1) {
-      ret.fmt = CHAR(STRING_ELT(fmt2, 0));
-      ret.doFormat=1;
-    }
-  }
-  ret.counter = 0;
-  if (ret.doFormat) {
-    ret.counter = isSingleInt(startNum, NA_INTEGER);
-    if (ret.counter == NA_INTEGER){
-      SEXP startNum2 = Rf_getAttrib(lst_, Rf_install("start"));
-      ret.counter = isSingleInt(startNum2, NA_INTEGER);
-      if (ret.counter == NA_INTEGER) {
-	ret.err = 2;
-	UNPROTECT(pro);
-	return ret;
-      }
-    }
-  }
-  UNPROTECT(pro);
-  return ret;
-}
-
 static inline double getDouble(SEXP colnames, int i, SEXP inUpperLower, SEXP upperLowerNames,
 			       double defaultValue, int type) {
   const char *lookup = CHAR(STRING_ELT(colnames, i));
@@ -212,21 +150,26 @@ static inline int setUpperLower(SEXP inUpperLower, SEXP colnames,
   return 0;
 }
 
-typedef struct lotriNestInfo {
-  SEXP ret;
-  int err;
-} lotriNestInfo;
 
-typedef struct lotriNestGet {
-  int lenNest;
-  int extra;
-  int lotriLen;
-  SEXP nestN;
-  SEXP lotri;
-  SEXP names;
-  SEXP lotri0;
-  SEXP lotri0names;
-  SEXP sameC;
-  int *nestI;
-  SEXP nestStart;
-} lotriNestGet;
+
+#include "asLotriMat.h"
+#include "lotriProp.h"
+#include "lotriBounds.h"
+#include "lotriLstToMat.h"
+#include "lotriNest.h"
+#include "matlist.h"
+
+
+#ifndef HAVE_STRCASECMP
+#define HAVE_STRCASECMP 0
+#endif
+
+
+
+SEXP getLotriProp(SEXP names, int i, SEXP lotriProp, SEXP lotriPropNames, const char *prop);
+
+SEXP lotriToLstMat(SEXP lotri);
+
+SEXP _lotriAllNames(SEXP lotri);
+
+#endif // __MATLIST_H__
