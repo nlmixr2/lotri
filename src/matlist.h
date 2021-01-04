@@ -40,13 +40,14 @@ static inline int isSingleInt(SEXP in, int defaultVal) {
   return defaultVal;
 }
 
-static inline int isSymNameMat(SEXP cur) {
+static inline int isSymNameMat(SEXP cur, int named) {
   int type = TYPEOF(cur);
   if (type == INTSXP || type == REALSXP) {
     if (Rf_isMatrix(cur)){
       int nrows = Rf_nrows(cur);
       int ncols = Rf_ncols(cur);
       if (nrows == ncols) {
+	if (!named) return nrows;
 	SEXP dimn = Rf_getAttrib(cur, R_DimNamesSymbol);
 	if (dimn != R_NilValue) {
 	  return nrows;
@@ -57,7 +58,7 @@ static inline int isSymNameMat(SEXP cur) {
   return 0;
 }
 
-static inline int getCheckDim(SEXP lst, int i) {
+static inline int getCheckDim(SEXP lst, int i, int *named) {
   SEXP cur = VECTOR_ELT(lst, i);
   int type = TYPEOF(cur);
   int same=1;
@@ -75,11 +76,20 @@ static inline int getCheckDim(SEXP lst, int i) {
     cur = VECTOR_ELT(cur, 0);
     type = TYPEOF(cur);
   }
-  int ret = isSymNameMat(cur);
+  int ret = isSymNameMat(cur, *named);
   if (ret){
     return ret*same;
   } else {
-    Rf_errorcall(R_NilValue, _("list element %d is not a symmetric named matrix"), i+1);
+    // if named is 2, then reassign named to 0 and return the dimension, reset the named to 0
+    if (*named == 2) {
+      ret = isSymNameMat(cur, 0);
+      if (ret) {
+	*named = 0;
+	return ret*same;
+      }
+    }
+    if (*named) Rf_errorcall(R_NilValue, _("list element %d is not a symmetric named matrix"), i+1);
+    else Rf_errorcall(R_NilValue, _("list element %d is not a symmetric matrix"), i+1);
   }
   return 0;
 }

@@ -192,7 +192,7 @@ To do this, you simply have to enclose the properties after the
 conditional variable.  That is `et1 ~ id(lower=3)`.
 
 
-## Combining symmetric named matrices
+## Combining symmetric (named) matrices
 
 Now there is even a faster way to do a similar banded matrix
 concatenation with `lotriMat`
@@ -244,15 +244,68 @@ mb <- microbenchmark(matf(testList),lotriMat(testList))
 
 print(mb)
 #> Unit: microseconds
-#>                expr     min       lq      mean   median       uq      max neval
-#>      matf(testList) 464.486 470.1440 554.46817 474.5055 519.6730 6347.862   100
-#>  lotriMat(testList)   1.109   1.4095   2.59312   1.9420   2.5075   59.198   100
+#>                expr     min      lq      mean  median       uq      max neval
+#>      matf(testList) 463.599 491.021 598.57232 521.231 585.1135 5710.686   100
+#>  lotriMat(testList)   1.297   1.646   2.56874   2.732   3.0105    7.734   100
 
 autoplot(mb)
 #> Coordinate system already present. Adding new coordinate system, which will replace the existing one.
 ```
 
 <img src="man/figures/README-unnamed-chunk-8-1.png" title="plot of chunk unnamed-chunk-8" alt="plot of chunk unnamed-chunk-8" width="100%" />
+
+You may also combine named and unnamed matrices, but the resulting
+matrix will be unnamed, and still be faster than `Matrix`:
+
+
+```r
+testList <- list(lotri({et2 + et3 + et4 ~ c(40,
+                            0.1, 20,
+                            0.1, 0.1, 30)}),
+                     lotri(et5 ~ 6),
+                     lotri(et1+et6 ~c(0.1, 0.01, 1)),
+                     matrix(c(1L, 0L, 0L, 1L), 2, 2))
+
+matf <- function(.mats){
+  .omega <- as.matrix(Matrix::bdiag(.mats))
+  return(.omega)
+}
+
+print(matf(testList))
+#>      [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8]
+#> [1,] 40.0  0.1  0.1    0 0.00 0.00    0    0
+#> [2,]  0.1 20.0  0.1    0 0.00 0.00    0    0
+#> [3,]  0.1  0.1 30.0    0 0.00 0.00    0    0
+#> [4,]  0.0  0.0  0.0    6 0.00 0.00    0    0
+#> [5,]  0.0  0.0  0.0    0 0.10 0.01    0    0
+#> [6,]  0.0  0.0  0.0    0 0.01 1.00    0    0
+#> [7,]  0.0  0.0  0.0    0 0.00 0.00    1    0
+#> [8,]  0.0  0.0  0.0    0 0.00 0.00    0    1
+
+print(lotriMat(testList))
+#>      [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8]
+#> [1,] 40.0  0.1  0.1    0 0.00 0.00    0    0
+#> [2,]  0.1 20.0  0.1    0 0.00 0.00    0    0
+#> [3,]  0.1  0.1 30.0    0 0.00 0.00    0    0
+#> [4,]  0.0  0.0  0.0    6 0.00 0.00    0    0
+#> [5,]  0.0  0.0  0.0    0 0.10 0.01    0    0
+#> [6,]  0.0  0.0  0.0    0 0.01 1.00    0    0
+#> [7,]  0.0  0.0  0.0    0 0.00 0.00    1    0
+#> [8,]  0.0  0.0  0.0    0 0.00 0.00    0    1
+
+mb <- microbenchmark(matf(testList),lotriMat(testList))
+
+print(mb)
+#> Unit: nanoseconds
+#>                expr    min       lq      mean   median       uq     max neval
+#>      matf(testList) 448951 454581.5 535816.43 463802.5 528361.0 2228159   100
+#>  lotriMat(testList)    989   1281.5   2690.28   2396.0   2731.5   26770   100
+
+autoplot(mb)
+#> Coordinate system already present. Adding new coordinate system, which will replace the existing one.
+```
+
+<img src="man/figures/README-unnamed-chunk-9-1.png" title="plot of chunk unnamed-chunk-9" alt="plot of chunk unnamed-chunk-9" width="100%" />
 
 ## New features
 

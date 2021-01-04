@@ -27,10 +27,10 @@ SEXP lotriToLstMat(SEXP lotri) {
   return ret;
 }
 
-lotriInfo assertCorrectMatrixProperties(SEXP lst_, SEXP format, SEXP startNum) {
+lotriInfo assertCorrectMatrixProperties(SEXP lst_, SEXP format, SEXP startNum, int *named) {
   int type = TYPEOF(lst_);
   if (type != VECSXP) {
-    if (isSymNameMat(lst_)) {
+    if (isSymNameMat(lst_, *named)) {
       lotriInfo li;
       li.sym = 1;
       li.lst = R_NilValue;
@@ -54,17 +54,18 @@ lotriInfo assertCorrectMatrixProperties(SEXP lst_, SEXP format, SEXP startNum) {
 
 SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum) {
   int type, totN, pro = 0;
-  lotriInfo li = assertCorrectMatrixProperties(lst_, format, startNum);
+  int named = 2;
+  lotriInfo li = assertCorrectMatrixProperties(lst_, format, startNum, &named);
   if (li.sym) return lst_;
   PROTECT(li.lst); pro++;
   int len = Rf_length(li.lst);
   int totdim = 0;
-  int i, j;
+  int i;
   if (len == 2) {
     int repN = isSingleInt(VECTOR_ELT(li.lst, 1), NA_INTEGER);
     if (repN == NA_INTEGER){
     } else if (repN > 0) {
-      if (isSymNameMat(VECTOR_ELT(li.lst, 0))){
+      if (isSymNameMat(VECTOR_ELT(li.lst, 0), named)){
 	SEXP new = PROTECT(Rf_allocVector(VECSXP, 1)); pro++;
 	SET_VECTOR_ELT(new, 0, li.lst);
 	SEXP ret = _lotriLstToMat(new, format, startNum);
@@ -74,7 +75,7 @@ SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum) {
     }
   }
   for (i = 0; i < len; ++i) {
-    totdim += getCheckDim(li.lst, i);
+    totdim += getCheckDim(li.lst, i, &named);
   }
   SEXP ret = PROTECT(Rf_allocMatrix(REALSXP, totdim, totdim)); pro++;
   SEXP retN = PROTECT(Rf_allocVector(STRSXP, totdim)); pro++;
@@ -83,8 +84,6 @@ SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum) {
   memset(retd, 0, sizeof(double)*totdim*totdim);
   // Now use memcpy/ integer conversion to c
   SEXP cur;
-  double *curd;
-  int *curi;
   int curBand = 0;
   SEXP dimnames, colnames, sameS;
   int nsame;
@@ -99,38 +98,19 @@ SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum) {
       type = TYPEOF(cur);
     }
     totN = Rf_ncols(cur);
-    dimnames = Rf_getAttrib(cur, R_DimNamesSymbol);
-    colnames = VECTOR_ELT(dimnames, 1);
-    for (int cursame = nsame; cursame--;){
-      if (type == REALSXP) {
-	curd = REAL(cur);
-	for (j = 0; j  < totN; ++j) {
-	  memcpy(&retd[totdim*(curBand+j)+curBand],
-		 &curd[totN*j], sizeof(double)*totN);
-	  // Repeats dim names of repeated matrices
-	  setStrElt(retN, colnames, curBand, j,
-		    li.fmt, li.doFormat, &li.counter, nsame);
-	}
-      } else {
-	curi = INTEGER(cur);
-	for (j = 0; j < totN; ++j) {
-	  double *to = &retd[totdim*(curBand+j)+curBand];
-	  double *last = to + totN; // N - count
-	  int *from = &curi[totN*j];
-	  while (to != last) {
-	    *(to++) = (double)(*(from++));
-	  }
-	  setStrElt(retN, colnames, curBand, j,
-		    li.fmt, li.doFormat, &li.counter, nsame);
-	}
-      }
-      curBand += totN;
+    if (named) {
+      dimnames = Rf_getAttrib(cur, R_DimNamesSymbol);
+      colnames = VECTOR_ELT(dimnames, 1);
     }
+    lotriLstToMatFillInMatrixBand(retd, nsame, type, named, totN, totdim,
+				  retN, colnames, &curBand, &li, cur);
   }
-  dimnames = PROTECT(Rf_allocVector(VECSXP, 2)); pro++;
-  SET_VECTOR_ELT(dimnames, 0, retN);
-  SET_VECTOR_ELT(dimnames, 1, retN);
-  Rf_setAttrib(ret, R_DimNamesSymbol, dimnames);
+  if (named) {
+    dimnames = PROTECT(Rf_allocVector(VECSXP, 2)); pro++;
+    SET_VECTOR_ELT(dimnames, 0, retN);
+    SET_VECTOR_ELT(dimnames, 1, retN);
+    Rf_setAttrib(ret, R_DimNamesSymbol, dimnames);
+  }
   UNPROTECT(pro);
   return ret;
 }

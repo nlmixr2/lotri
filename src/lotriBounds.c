@@ -48,9 +48,9 @@ SEXP _lotriGetBounds(SEXP lst_, SEXP format, SEXP startNum) {
     Rf_errorcall(R_NilValue, _("when format is specified, 'startNum' must be a single integer"));
   }
   int len = Rf_length(li.lst);
-  int totdim=0;
+  int totdim=0, named = 1;
   for (int i = 0; i < len; ++i) {
-    totdim += getCheckDim(li.lst, i);
+    totdim += getCheckDim(li.lst, i, &named);
   }
   SEXP retN = PROTECT(Rf_allocVector(STRSXP, totdim)); pro++;
   SEXP boundLower = PROTECT(Rf_allocVector(REALSXP, totdim)); pro++;
