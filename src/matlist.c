@@ -527,29 +527,7 @@ SEXP ampDefault(SEXP cur, SEXP dimn, double val, int pro0, const char * what) {
   return R_NilValue;
 }
 
-// put into C to allow calling from RxODE from C.
-SEXP _asLotriMat(SEXP x, SEXP extra, SEXP def){
-  if (TYPEOF(def) != STRSXP || Rf_length(def) != 1) {
-    Rf_errorcall(R_NilValue, _("'default' must be a 'string' of length 1"));
-  }
-  if (!Rf_isMatrix(x)) {
-    Rf_errorcall(R_NilValue, _("'x' needs to be a completely named matrix"));
-  }
-  SEXP dims = Rf_getAttrib(x, R_DimNamesSymbol);
-  if (Rf_isNull(dims)){
-    Rf_errorcall(R_NilValue, _("'x' needs to be a completely named matrix"));
-  }
-  SEXP dimn = VECTOR_ELT(dims, 0);
-  if (Rf_isNull(dimn)) {
-    Rf_errorcall(R_NilValue, _("'x' needs to be a completely named matrix"));
-  }
-  if (Rf_isNull(VECTOR_ELT(dims, 1))) {
-    Rf_errorcall(R_NilValue, _("'x' needs to be a completely named matrix"));
-  }
-  const char *defVal = CHAR(STRING_ELT(def, 0));
-  if (TYPEOF(extra) != VECSXP) {
-    Rf_errorcall(R_NilValue, _("'extra' must be a list"));
-  }
+SEXP _asLotriMatGen(SEXP x, SEXP extra, SEXP def, SEXP dims, SEXP dimn, const char *defVal) {
   int pro = 0;
   SEXP ret = PROTECT(Rf_allocVector(VECSXP, 1)); pro++;
   SET_VECTOR_ELT(ret, 0, x);
@@ -601,6 +579,31 @@ SEXP _asLotriMat(SEXP x, SEXP extra, SEXP def){
   Rf_setAttrib(ret, R_ClassSymbol, lotriClass);
   UNPROTECT(pro);
   return ret;
+}
+// put into C to allow calling from RxODE from C.
+SEXP _asLotriMat(SEXP x, SEXP extra, SEXP def){
+  if (TYPEOF(def) != STRSXP || Rf_length(def) != 1) {
+    Rf_errorcall(R_NilValue, _("'default' must be a 'string' of length 1"));
+  }
+  if (!Rf_isMatrix(x)) {
+    Rf_errorcall(R_NilValue, _("'x' needs to be a completely named matrix"));
+  }
+  SEXP dims = Rf_getAttrib(x, R_DimNamesSymbol);
+  if (Rf_isNull(dims)){
+    Rf_errorcall(R_NilValue, _("'x' needs to be a completely named matrix"));
+  }
+  SEXP dimn = VECTOR_ELT(dims, 0);
+  if (Rf_isNull(dimn)) {
+    Rf_errorcall(R_NilValue, _("'x' needs to be a completely named matrix"));
+  }
+  if (Rf_isNull(VECTOR_ELT(dims, 1))) {
+    Rf_errorcall(R_NilValue, _("'x' needs to be a completely named matrix"));
+  }
+  const char *defVal = CHAR(STRING_ELT(def, 0));
+  if (TYPEOF(extra) != VECSXP) {
+    Rf_errorcall(R_NilValue, _("'extra' must be a list"));
+  }
+  return _asLotriMatGen(x, extra, def, dims, dimn, defVal);
 }
 
 SEXP addLotriPropertyAtEnd(SEXP lotri0, int i, SEXP sameC, int *nestI, int extra) {
