@@ -146,7 +146,7 @@ To do this, you simply have to enclose the properties after the
 conditional variable.  That is `et1 ~ id(lower=3)`.
 
 
-## Combining symmetric named matrices
+## Combining symmetric (named) matrices
 
 Now there is even a faster way to do a similar banded matrix
 concatenation with `lotriMat`
@@ -168,6 +168,33 @@ matf <- function(.mats){
                         dimnames(.mats[[x]])[2]
                       }))
   dimnames(.omega) <- list(.d, .d)
+  return(.omega)
+}
+
+print(matf(testList))
+
+print(lotriMat(testList))
+
+mb <- microbenchmark(matf(testList),lotriMat(testList))
+
+print(mb)
+
+autoplot(mb)
+```
+
+You may also combine named and unnamed matrices, but the resulting
+matrix will be unnamed, and still be faster than `Matrix`:
+
+```{r}
+testList <- list(lotri({et2 + et3 + et4 ~ c(40,
+                            0.1, 20,
+                            0.1, 0.1, 30)}),
+                     lotri(et5 ~ 6),
+                     lotri(et1+et6 ~c(0.1, 0.01, 1)),
+                     matrix(c(1L, 0L, 0L, 1L), 2, 2))
+
+matf <- function(.mats){
+  .omega <- as.matrix(Matrix::bdiag(.mats))
   return(.omega)
 }
 
