@@ -57,8 +57,8 @@ lotri(et2 + et3 + et4 ~ c(40,
 
 lotri({et2 + et3 + et4 ~ c(40,
                            0.1, 20,
-                           0.1, 0.1, 30);
-          et5 ~ 6;
+                           0.1, 0.1, 30)
+          et5 ~ 6
           })
 
 ## You can also add lists or actual R matrices as in this example:
