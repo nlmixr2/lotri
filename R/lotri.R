@@ -54,6 +54,97 @@ NULL
   }
 }
 
+.fcallTildeLhsSum <- function(x, env) {
+  ## et1+et2+et3~NULL lower triangular matrix
+  ## Should fixed be allowed????
+  if (any(tolower(as.character(x[[3]][[1]])) == c("c", "fix", "fixed"))) {
+    if (any(tolower(as.character(x[[3]][[1]])) == c("fix", "fixed"))) {
+      stop("fix/fixed are not allowed with lotri matrix specifications", call. = FALSE)
+    }
+    .lotri1(x[[2]], x[[3]], env)
+  } else {
+    .val <- try(eval(x[[3]]), silent = TRUE)
+    if (is.numeric(.val) || is.integer(.val)) {
+      env$netas <- 1
+      env$eta1 <- env$eta1 + 1
+      env$names <- c(env$names, as.character(x[[2]]))
+      env$df <- rbind(
+        env$df,
+        data.frame(i = env$eta1, j = env$eta1, x = .val)
+      )
+    } else {
+      .cnd <- try(as.character(x[[3]][[1]]), silent = TRUE)
+      .didCnd <- FALSE
+      if (inherits(.cnd, "character")) {
+        if (.cnd == "|") {
+          .cnd <- x[[3]][[3]]
+          .cndFull <- .parseCondition(.cnd, envir = env)
+          .cnd <- .cndFull[[1]]
+          ## Each condition is parsed so this new environment
+          ## should not be elsewhere
+          .env2 <- new.env(parent = emptyenv())
+          .env2$df <- NULL
+          .env2$eta1 <- 0L
+          env$cnd <- unique(c(env$cnd, .cnd))
+          env[[.cnd]] <- .env2
+          env[[paste0(.cnd, ".extra")]] <- .cndFull[[2]]
+          .val <- try(eval(x[[3]][[2]]), silent = TRUE)
+          if ((length(.val) == 1) &&
+                (is.numeric(.val) || is.integer(.val))) {
+            .env2$netas <- 1
+            .env2$eta1 <- .env2$eta1 + 1
+            .env2$names <- c(.env2$names, as.character(x[[2]]))
+            .env2$df <- rbind(
+              .env2$df,
+              data.frame(
+                i = .env2$eta1, j = .env2$eta1,
+                x = .val
+              )
+            )
+          } else {
+            .lotri1(x[[2]], x[[3]][[2]], .env2)
+          }
+          .didCnd <- TRUE
+        }
+      }
+      if (!.didCnd) {
+        stop("matrix expression should be 'name ~ c(lower-tri)'", call. = FALSE)
+      }
+    }
+  }
+}
+
+.fCallTilde <- function(x, env) {
+  if (length(x[[3]]) == 1) {
+    ## et1 ~ 0.2
+    env$netas <- 1
+    env$eta1 <- env$eta1 + 1
+    env$names <- c(env$names, as.character(x[[2]]))
+    env$df <- rbind(
+      env$df,
+      data.frame(
+        i = env$eta1,
+        j = env$eta1,
+        x = as.numeric(eval(x[[3]]))
+      )
+    )
+  } else {
+    .fcallTildeLhsSum(x, env)
+  }
+}
+
+.fCall <- function(x, env) {
+  if (identical(x[[1]], quote(`~`))) {
+    .fCallTilde(x, env)
+  } else if (identical(x[[1]], quote(`{`))) {
+    lapply(x, .f, env = env)
+  } else if (identical(x[[1]], quote(`quote`))) {
+    lapply(x[[2]], .f, env = env)
+  } else {
+    stop("matrix expression should be 'name ~ c(lower-tri)'", call. = FALSE)
+  }
+}
+
 ##' DSL parsing function
 ##'
 ##' @param x Parsing tree
@@ -65,86 +156,7 @@ NULL
   if (is.name(x)) {
     return(character())
   } else if (is.call(x)) {
-    if (identical(x[[1]], quote(`~`))) {
-      if (length(x[[3]]) == 1) {
-        ## et1 ~ 0.2
-        env$netas <- 1
-        env$eta1 <- env$eta1 + 1
-        env$names <- c(env$names, as.character(x[[2]]))
-        env$df <- rbind(
-          env$df,
-          data.frame(
-            i = env$eta1,
-            j = env$eta1,
-            x = as.numeric(eval(x[[3]]))
-          )
-        )
-      } else {
-        ## et1+et2+et3~NULL lower triangular matrix
-        ## Should fixed be allowed????
-        if (any(tolower(as.character(x[[3]][[1]])) == c("c", "fix", "fixed"))) {
-          if (any(tolower(as.character(x[[3]][[1]])) == c("fix", "fixed"))) {
-            stop("fix/fixed are not allowed with lotri matrix specifications", call. = FALSE)
-          }
-          .lotri1(x[[2]], x[[3]], env)
-        } else {
-          .val <- try(eval(x[[3]]), silent = TRUE)
-          if (is.numeric(.val) || is.integer(.val)) {
-            env$netas <- 1
-            env$eta1 <- env$eta1 + 1
-            env$names <- c(env$names, as.character(x[[2]]))
-            env$df <- rbind(
-              env$df,
-              data.frame(i = env$eta1, j = env$eta1, x = .val)
-            )
-          } else {
-            .cnd <- try(as.character(x[[3]][[1]]), silent = TRUE)
-            .didCnd <- FALSE
-            if (inherits(.cnd, "character")) {
-              if (.cnd == "|") {
-                .cnd <- x[[3]][[3]]
-                .cndFull <- .parseCondition(.cnd, envir = env)
-                .cnd <- .cndFull[[1]]
-                ## Each condition is parsed so this new environment
-                ## should not be elsewhere
-                .env2 <- new.env(parent = emptyenv())
-                .env2$df <- NULL
-                .env2$eta1 <- 0L
-                env$cnd <- unique(c(env$cnd, .cnd))
-                env[[.cnd]] <- .env2
-                env[[paste0(.cnd, ".extra")]] <- .cndFull[[2]]
-                .val <- try(eval(x[[3]][[2]]), silent = TRUE)
-                if ((length(.val) == 1) &&
-                  (is.numeric(.val) || is.integer(.val))) {
-                  .env2$netas <- 1
-                  .env2$eta1 <- .env2$eta1 + 1
-                  .env2$names <- c(.env2$names, as.character(x[[2]]))
-                  .env2$df <- rbind(
-                    .env2$df,
-                    data.frame(
-                      i = .env2$eta1, j = .env2$eta1,
-                      x = .val
-                    )
-                  )
-                } else {
-                  .lotri1(x[[2]], x[[3]][[2]], .env2)
-                }
-                .didCnd <- TRUE
-              }
-            }
-            if (!.didCnd) {
-              stop("matrix expression should be 'name ~ c(lower-tri)'", call. = FALSE)
-            }
-          }
-        }
-      }
-    } else if (identical(x[[1]], quote(`{`))) {
-      lapply(x, .f, env = env)
-    } else if (identical(x[[1]], quote(`quote`))) {
-      lapply(x[[2]], .f, env = env)
-    } else {
-      stop("matrix expression should be 'name ~ c(lower-tri)'", call. = FALSE)
-    }
+    .fCall(x, env)
   } else {
     ## is.pairlist OR is.atomic OR unknown...
     stop("bad matrix specification", call. = FALSE)
