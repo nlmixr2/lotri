@@ -1,5 +1,7 @@
-# lotri XXX
+# lotri 0.3.1
 * Change errors/warnings to use `call.=FALSE` or equivalent. 
+* Refactor C code to reduce complexity
+* Change C code to play nicely with `rchk`
 # lotri 0.2.2
 * Bug fix for conditional matrices
 * Now accessing `$lower` and `$upper` gives default values even if it
