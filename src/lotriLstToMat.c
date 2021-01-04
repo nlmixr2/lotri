@@ -27,10 +27,10 @@ SEXP lotriToLstMat(SEXP lotri) {
   return ret;
 }
 
-lotriInfo assertCorrectMatrixProperties(SEXP lst_, SEXP format, SEXP startNum) {
+lotriInfo assertCorrectMatrixProperties(SEXP lst_, SEXP format, SEXP startNum, int *named) {
   int type = TYPEOF(lst_);
   if (type != VECSXP) {
-    if (isSymNameMat(lst_)) {
+    if (isSymNameMat(lst_, *named)) {
       lotriInfo li;
       li.sym = 1;
       li.lst = R_NilValue;
@@ -54,7 +54,8 @@ lotriInfo assertCorrectMatrixProperties(SEXP lst_, SEXP format, SEXP startNum) {
 
 SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum) {
   int type, totN, pro = 0;
-  lotriInfo li = assertCorrectMatrixProperties(lst_, format, startNum);
+  int named = 1;
+  lotriInfo li = assertCorrectMatrixProperties(lst_, format, startNum, &named);
   if (li.sym) return lst_;
   PROTECT(li.lst); pro++;
   int len = Rf_length(li.lst);
@@ -64,7 +65,7 @@ SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum) {
     int repN = isSingleInt(VECTOR_ELT(li.lst, 1), NA_INTEGER);
     if (repN == NA_INTEGER){
     } else if (repN > 0) {
-      if (isSymNameMat(VECTOR_ELT(li.lst, 0))){
+      if (isSymNameMat(VECTOR_ELT(li.lst, 0), named)){
 	SEXP new = PROTECT(Rf_allocVector(VECSXP, 1)); pro++;
 	SET_VECTOR_ELT(new, 0, li.lst);
 	SEXP ret = _lotriLstToMat(new, format, startNum);
@@ -74,7 +75,7 @@ SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum) {
     }
   }
   for (i = 0; i < len; ++i) {
-    totdim += getCheckDim(li.lst, i);
+    totdim += getCheckDim(li.lst, i, named);
   }
   SEXP ret = PROTECT(Rf_allocMatrix(REALSXP, totdim, totdim)); pro++;
   SEXP retN = PROTECT(Rf_allocVector(STRSXP, totdim)); pro++;

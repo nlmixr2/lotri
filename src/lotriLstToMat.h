@@ -13,7 +13,7 @@ typedef struct lotriInfo {
 
 SEXP lotriToLstMat(SEXP lotri);
 
-lotriInfo assertCorrectMatrixProperties(SEXP lst_, SEXP format, SEXP startNum);
+lotriInfo assertCorrectMatrixProperties(SEXP lst_, SEXP format, SEXP startNum, int *named);
 SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum);
 
 static inline lotriInfo _lotriLstToMat0(SEXP lst_, SEXP format, SEXP startNum) {

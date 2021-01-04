@@ -50,7 +50,7 @@ SEXP _lotriGetBounds(SEXP lst_, SEXP format, SEXP startNum) {
   int len = Rf_length(li.lst);
   int totdim=0;
   for (int i = 0; i < len; ++i) {
-    totdim += getCheckDim(li.lst, i);
+    totdim += getCheckDim(li.lst, i, 1);
   }
   SEXP retN = PROTECT(Rf_allocVector(STRSXP, totdim)); pro++;
   SEXP boundLower = PROTECT(Rf_allocVector(REALSXP, totdim)); pro++;
