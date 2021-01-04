@@ -158,12 +158,14 @@ typedef struct lotriInfo {
   const char *fmt;
   int counter;
   int err;
+  int sym;
 } lotriInfo;
 
 static inline lotriInfo _lotriLstToMat0(SEXP lst_, SEXP format, SEXP startNum) {
   lotriInfo ret;
   ret.err = 0;
   int pro = 0;
+  ret.sym = 0;
   ret.lst = PROTECT(lotriToLstMat(lst_)); pro++;
   int fmtType = TYPEOF(format);
   ret.doFormat = 0;
@@ -198,16 +200,19 @@ static inline lotriInfo _lotriLstToMat0(SEXP lst_, SEXP format, SEXP startNum) {
   return ret;
 }
 
-SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum) {
-  int type = TYPEOF(lst_), totN, pro = 0;
+lotriInfo assertCorrectMatrixProperties(SEXP lst_, SEXP format, SEXP startNum) {
+  int type = TYPEOF(lst_);
   if (type != VECSXP) {
     if (isSymNameMat(lst_)) {
-      return lst_;
+      lotriInfo li;
+      li.sym = 1;
+      li.lst = R_NilValue;
+      return li;
     }
     Rf_errorcall(R_NilValue, _("expects a list named symmetric matrices"));
   }
   lotriInfo li = _lotriLstToMat0(lst_, format, startNum);
-  PROTECT(li.lst); pro++;
+  PROTECT(li.lst); 
   if (li.err == 1) {
     UNPROTECT(1);
     Rf_errorcall(R_NilValue, _("'format' must be a single length string or NULL"));
@@ -216,6 +221,15 @@ SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum) {
     UNPROTECT(1);
     Rf_errorcall(R_NilValue, _("when format is specified, 'startNum' must be a single integer"));
   }
+  UNPROTECT(1);
+  return li;
+}
+
+SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum) {
+  int type, totN, pro = 0;
+  lotriInfo li = assertCorrectMatrixProperties(lst_, format, startNum);
+  if (li.sym) return lst_;
+  PROTECT(li.lst); pro++;
   int len = Rf_length(li.lst);
   int totdim = 0;
   int i, j;
