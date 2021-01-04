@@ -7,6 +7,7 @@
 [![Coverage status](https://codecov.io/gh/nlmixrdevelopment/lotri/branch/master/graph/badge.svg)](https://codecov.io/github/nlmixrdevelopment/lotri?branch=master) 
 [![CRAN status](https://www.r-pkg.org/badges/version/lotri)](https://cran.r-project.org/package=lotri)
 [![CRAN downloads](https://cranlogs.r-pkg.org/badges/lotri)](https://cran.r-project.org/package=lotri)
+[![CodeFactor](https://www.codefactor.io/repository/github/nlmixrdevelopment/lotri/badge/master)](https://www.codefactor.io/repository/github/nlmixrdevelopment/lotri/overview/master)
 <!-- badges: end -->
 
 # lotri
@@ -244,8 +245,8 @@ mb <- microbenchmark(matf(testList),lotriMat(testList))
 print(mb)
 #> Unit: microseconds
 #>                expr     min       lq      mean   median       uq      max neval
-#>      matf(testList) 566.836 581.1185 683.27433 600.7095 631.2865 6757.114   100
-#>  lotriMat(testList)   1.267   1.5335   3.57351   3.5980   5.3590    9.708   100
+#>      matf(testList) 464.486 470.1440 554.46817 474.5055 519.6730 6347.862   100
+#>  lotriMat(testList)   1.109   1.4095   2.59312   1.9420   2.5075   59.198   100
 
 autoplot(mb)
 #> Coordinate system already present. Adding new coordinate system, which will replace the existing one.
