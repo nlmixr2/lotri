@@ -52,40 +52,6 @@ lotriInfo assertCorrectMatrixProperties(SEXP lst_, SEXP format, SEXP startNum, i
   return li;
 }
 
-static inline void lotriLstToMatFillInMatrix(double *retd, int nsame, int type, int named, int totN, int totdim,
-					     SEXP retN, SEXP colnames, int *curBand, lotriInfo *li,
-					     SEXP cur) {
-  for (int cursame = nsame; cursame--;){
-    if (type == REALSXP) {
-      double *curd = REAL(cur);
-      for (int j = 0; j  < totN; ++j) {
-	memcpy(&retd[totdim*(*curBand+j)+(*curBand)],
-	       &curd[totN*j], sizeof(double)*totN);
-	// Repeats dim names of repeated matrices
-	if (named) {
-	  setStrElt(retN, colnames, (*curBand), j,
-		    li->fmt, li->doFormat, &(li->counter), nsame);
-	}
-      }
-    } else {
-      int *curi = INTEGER(cur);
-      for (int j = 0; j < totN; ++j) {
-	double *to = &retd[totdim*(*curBand+j)+(*curBand)];
-	double *last = to + totN; // N - count
-	int *from = &curi[totN*j];
-	while (to != last) {
-	  *(to++) = (double)(*(from++));
-	}
-	if (named) {
-	  setStrElt(retN, colnames, (*curBand), j,
-		    li->fmt, li->doFormat, &(li->counter), nsame);
-	}
-      }
-    }
-    *curBand += totN;
-  }
-}
-
 SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum) {
   int type, totN, pro = 0;
   int named = 2;
@@ -136,8 +102,8 @@ SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum) {
       dimnames = Rf_getAttrib(cur, R_DimNamesSymbol);
       colnames = VECTOR_ELT(dimnames, 1);
     }
-    lotriLstToMatFillInMatrix(retd, nsame, type, named, totN, totdim,
-			      retN, colnames, &curBand, &li, cur);
+    lotriLstToMatFillInMatrixBand(retd, nsame, type, named, totN, totdim,
+				  retN, colnames, &curBand, &li, cur);
   }
   if (named) {
     dimnames = PROTECT(Rf_allocVector(VECSXP, 2)); pro++;
