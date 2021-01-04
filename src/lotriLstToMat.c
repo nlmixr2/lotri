@@ -54,7 +54,7 @@ lotriInfo assertCorrectMatrixProperties(SEXP lst_, SEXP format, SEXP startNum, i
 
 SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum) {
   int type, totN, pro = 0;
-  int named = 1;
+  int named = 2;
   lotriInfo li = assertCorrectMatrixProperties(lst_, format, startNum, &named);
   if (li.sym) return lst_;
   PROTECT(li.lst); pro++;
@@ -75,7 +75,7 @@ SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum) {
     }
   }
   for (i = 0; i < len; ++i) {
-    totdim += getCheckDim(li.lst, i, named);
+    totdim += getCheckDim(li.lst, i, &named);
   }
   SEXP ret = PROTECT(Rf_allocMatrix(REALSXP, totdim, totdim)); pro++;
   SEXP retN = PROTECT(Rf_allocVector(STRSXP, totdim)); pro++;
@@ -100,8 +100,10 @@ SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum) {
       type = TYPEOF(cur);
     }
     totN = Rf_ncols(cur);
-    dimnames = Rf_getAttrib(cur, R_DimNamesSymbol);
-    colnames = VECTOR_ELT(dimnames, 1);
+    if (named) {
+      dimnames = Rf_getAttrib(cur, R_DimNamesSymbol);
+      colnames = VECTOR_ELT(dimnames, 1);
+    }
     for (int cursame = nsame; cursame--;){
       if (type == REALSXP) {
 	curd = REAL(cur);
@@ -109,8 +111,10 @@ SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum) {
 	  memcpy(&retd[totdim*(curBand+j)+curBand],
 		 &curd[totN*j], sizeof(double)*totN);
 	  // Repeats dim names of repeated matrices
-	  setStrElt(retN, colnames, curBand, j,
+	  if (named) {
+	    setStrElt(retN, colnames, curBand, j,
 		    li.fmt, li.doFormat, &li.counter, nsame);
+	  }
 	}
       } else {
 	curi = INTEGER(cur);
@@ -121,17 +125,21 @@ SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum) {
 	  while (to != last) {
 	    *(to++) = (double)(*(from++));
 	  }
-	  setStrElt(retN, colnames, curBand, j,
+	  if (named) {
+	    setStrElt(retN, colnames, curBand, j,
 		    li.fmt, li.doFormat, &li.counter, nsame);
+	  }
 	}
       }
       curBand += totN;
     }
   }
-  dimnames = PROTECT(Rf_allocVector(VECSXP, 2)); pro++;
-  SET_VECTOR_ELT(dimnames, 0, retN);
-  SET_VECTOR_ELT(dimnames, 1, retN);
-  Rf_setAttrib(ret, R_DimNamesSymbol, dimnames);
+  if (named) {
+    dimnames = PROTECT(Rf_allocVector(VECSXP, 2)); pro++;
+    SET_VECTOR_ELT(dimnames, 0, retN);
+    SET_VECTOR_ELT(dimnames, 1, retN);
+    Rf_setAttrib(ret, R_DimNamesSymbol, dimnames);
+  }
   UNPROTECT(pro);
   return ret;
 }
