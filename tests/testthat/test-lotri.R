@@ -232,8 +232,7 @@ test_that("lotri matrix parsing", {
 
   expect_equal(
     lotri({
-      et1 ~ c(40) | id
-    }), # nolint
+      et1 ~ c(40) | id }), # nolint
     list(id = structure(40,
       .Dim = c(1L, 1L),
       .Dimnames = list(
