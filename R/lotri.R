@@ -258,23 +258,6 @@ NULL
   }
   return(prop)
 }
-
-.mergePropList <- function(prop, id, new) {
-  for (.n in names(new)) {
-    if (any(.n == names(.defaultProperties))) {
-      new[[.n]] <- c(
-        new[[.n]],
-        setNames(rep(
-          .defaultProperties[.n],
-          length(prop)
-        ), prop)
-      )
-    }
-  }
-  .ret <- list()
-  .ret[[id]] <- new
-  .ret
-}
 ##' Merge properties between two matrices
 ##'
 ##' @param prop Initial property list or character vector of names to
@@ -292,7 +275,20 @@ NULL
     return(.ret)
   }
   if (!inherits(prop, "list")) {
-    return(.mergePropList(prop, id, new))
+    for (.n in names(new)) {
+      if (any(.n == names(.defaultProperties))) {
+        new[[.n]] <- c(
+          new[[.n]],
+          setNames(rep(
+            .defaultProperties[.n],
+            length(prop)
+          ), prop)
+        )
+      }
+    }
+    .ret <- list()
+    .ret[[id]] <- new
+    return(.ret)
   }
   .old <- prop[[id]]
   for (.n in names(.old)) {
@@ -705,29 +701,44 @@ str.lotri <- function(object, ...) {
   )
 }
 
-.lotriD <- function(x) {
-  UseMethod(".lotriD")
-}
-.lotriD..names <- function(x) {
-  #$.names
-  obj <- x$obj
-  arg <- ".names"
-  exact <- x$exact
+##' @export
+`$.lotri` <- function(obj, arg, exact = FALSE) {
   .lotri <- attr(obj, "lotri")
-  unique(unlist(lapply(
-    names(obj),
-    function(x) {
-      names(.lotri[[x]])
+  if (arg == ".maxNu") {
+    return(.Call(`_lotriMaxNu`, obj, PACKAGE = "lotri"))
+  }
+  if (any(names(obj) == arg)) {
+    .tmp <- obj
+    class(.tmp) <- NULL
+    return(.tmp[[arg]])
+  }
+  if (arg == ".names") {
+    return(unique(unlist(lapply(
+      names(obj),
+      function(x) {
+        names(.lotri[[x]])
+      }
+    ))))
+  }
+  if (arg == ".allNames") {
+    return(.Call(`_lotriAllNames`, obj, PACKAGE = "lotri"))
+  }
+  if (arg == ".bounds") {
+    return(.Call(`_lotriGetBounds`, obj, NULL, 1L, PACKAGE = "lotri"))
+  }
+  if (arg == ".list") {
+    .tmp <- obj
+    class(.tmp) <- NULL
+    attr(.tmp, "lotri") <- NULL
+    .names <- obj$.names
+    for (.n in .names) {
+      if (!any(.n == names(.tmp))) {
+        .tmp[[.n]] <- `$.lotri`(obj, .n)
+      }
     }
-  )))
-}
+    return(.tmp)
+  }
 
-.lotriD.default <- function(x) {
-  #$ default accessor
-  obj <- x$obj
-  arg <- x$arg
-  exact <- x$exact
-  .lotri <- attr(obj, "lotri")
   .env <- new.env(parent = emptyenv())
   .env$empty <- TRUE
   .ret <- setNames(lapply(names(obj), function(x) {
@@ -767,52 +778,6 @@ str.lotri <- function(object, ...) {
     return(NULL)
   }
   return(.ret)
-}
-
-.lotriD..maxNu <- function(x) {
-  obj <- x$obj
-  arg <- x$arg
-  exact <- x$exact
-  .Call(`_lotriMaxNu`, obj, PACKAGE = "lotri")
-}
-
-.lotriD..allNames <- function(x) {
-  obj <- x$obj
-  arg <- x$arg
-  exact <- x$exact
-  .Call(`_lotriMaxNu`, obj, PACKAGE = "lotri")
-      return(.Call(`_lotriAllNames`, obj, PACKAGE = "lotri"))
-
-}
-
-##' @export
-`$.lotri` <- function(obj, arg, exact = FALSE) {
-  if (any(names(obj) == arg)) {
-    .tmp <- obj
-    class(.tmp) <- NULL
-    return(.tmp[[arg]])
-  }
-  .ret <- list(obj=obj, exact=exact)
-  class(.ret) <- arg
-  .lotriD(.ret)
-  if (arg == ".allNames") {
-  }
-  if (arg == ".bounds") {
-    return(.Call(`_lotriGetBounds`, obj, NULL, 1L, PACKAGE = "lotri"))
-  }
-  if (arg == ".list") {
-    .tmp <- obj
-    class(.tmp) <- NULL
-    attr(.tmp, "lotri") <- NULL
-    .names <- obj$.names
-    for (.n in .names) {
-      if (!any(.n == names(.tmp))) {
-        .tmp[[.n]] <- `$.lotri`(obj, .n)
-      }
-    }
-    return(.tmp)
-  }
-  ..default(obj, arg, exact)
 }
 
 ##' As lower triangular matrix
