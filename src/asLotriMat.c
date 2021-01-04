@@ -20,7 +20,7 @@ SEXP _asLotriMatGen(SEXP x, SEXP extra, SEXP def, SEXP dims, SEXP dimn, const ch
     UNPROTECT(pro);
     Rf_errorcall(R_NilValue, "extra properties need default try 'lotri(matrix,x=3,default=\"id\")'");
   }
-  SEXP extraNames = Rf_getAttrib(extra, R_NamesSymbol);
+  SEXP extraNames = PROTECT(Rf_getAttrib(extra, R_NamesSymbol)); pro++;
   for (int i = lExtra; i--;) {
     if (Rf_isNull(VECTOR_ELT(extra, i))) {
       nNull++;
