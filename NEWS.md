@@ -2,6 +2,8 @@
 * Change errors/warnings to use `call.=FALSE` or equivalent. 
 * Refactor C code to reduce complexity
 * Change C code to play nicely with `rchk`
+* Allow `lotriMat` to mix named and unnamed matrices; When mixed, an
+  unnamed matrix will be returned.
 
 # lotri 0.2.2
 * Bug fix for conditional matrices
