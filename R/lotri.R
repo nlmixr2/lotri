@@ -115,6 +115,9 @@ NULL
 }
 
 .fCallTilde <- function(x, env) {
+  if (length(x) != 3) {
+    stop("matrix expression should be 'name ~ c(lower-tri)'", call. = FALSE)
+  }
   if (length(x[[3]]) == 1) {
     ## et1 ~ 0.2
     env$netas <- 1
