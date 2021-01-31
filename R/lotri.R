@@ -48,6 +48,9 @@ NULL
       .d <- sqrt(.d)
     }
     diag(.ret) <- 1
+    if (any(abs(.ret) > 1))
+      stop("correlations must be between -1 and 1",
+           call.=FALSE)
     .D <- diag(.d)
     return(.D %*% .ret %*% .D)
   }
@@ -119,6 +122,7 @@ NULL
           exists("var", envir=env)) {
       stop("'chol' has to only be with a single block", call.=FALSE)
     }
+    env$chol <- TRUE
   }
   if (length(x) == 2) {
     return(.lotriParseMat(x[[2]], env=env))
