@@ -1,3 +1,8 @@
+# lotri development version
+* Add `cov`, `cor`, `sd`, `var`, and `chol` options for matrix
+  specification.
+* Add error for `lotri(~c(40))`
+
 # lotri 0.3.1
 * Change errors/warnings to use `call.=FALSE` or equivalent. 
 * Refactor C code to reduce complexity
@@ -14,7 +19,8 @@
 * Dropped `Matrix` import and added `lotriMat` to create banded
   matrices (faster than `Matrix` for now included repeated matrices
   with `list(matrix, rep)`).
-* Bug fix for default properties when both `upper` and `lower` bounds are specified
+* Bug fix for default properties when both `upper` and `lower` bounds
+  are specified
 
 # lotri 0.2.1
 * Added conditional matrix specification `|`; Returns a list of matrices
