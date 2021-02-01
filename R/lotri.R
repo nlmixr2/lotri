@@ -1,6 +1,147 @@
 ##' @useDynLib lotri, .registration = TRUE
 NULL
 
+##' lotriMatrix convert numeric vector to matrix
+##'
+##' @param nv Numeric Vector
+##'
+##' @param chol boolean indicating if this matrix is a chol matrix
+##'
+##' @param sd boolean indicating if this is a standard deviation
+##'
+##' @param cor boolean indicting if this is a correlation matrix
+##'
+##' @return covariance matrix
+##'
+##' @author Matthew Fidler
+##'
+##' @noRd
+.lotriMatrix <- function(nv, chol=FALSE, sd=FALSE, cor=FALSE) {
+  .num <- length(nv)
+  .num <- sqrt(1 + .num * 8) / 2 - 1 / 2
+  if (round(.num) != .num) {
+    stop("lower triangular matrix not correct size", call. = FALSE)
+  }
+  .ret <- matrix(nrow=.num, ncol=.num)
+  .i <- 0
+  .j <- 1
+  for (.k in seq_along(nv)) {
+    .v <- nv[.k]
+    .i <- .i + 1
+    if (.i == .j) {
+      .ret[.i, .i] <- .v
+      .j <- .j + 1
+      .i <- 0
+    } else {
+      .ret[.i, .j] <- .ret[.j, .i] <- .v
+      if (chol) .ret[.i, .j] <- 0
+    }
+  }
+  if (chol){
+    .ret <- .ret %*% t(.ret)
+    return(.ret)
+  }
+  if (cor) {
+    .d <- diag(.ret)
+    if (!sd) {
+      ## cor + var
+      .d <- sqrt(.d)
+    }
+    diag(.ret) <- 1
+    if (any(abs(.ret) > 1))
+      stop("correlations must be between -1 and 1",
+           call.=FALSE)
+    .D <- diag(.d)
+    return(.D %*% .ret %*% .D)
+  }
+  if (sd) {
+    diag(.ret) <- diag(.ret) ^ 2
+  }
+  .ret
+}
+##' Convert to Matrix to lotri vector (internal)
+##'
+##' @param mat matrix to convert to lotri mat
+##'
+##' @return lotri numeric vector
+##'
+##' @author Matthew Fidler
+##'
+##' @noRd
+.lotriMatrixVec <- function(mat) {
+  .d <- dim(mat)[1]
+  .num <- ((2 * .d + 1)^2 - 1)/8
+  .ret <- numeric(.num)
+  .i <- 0
+  .j <- 1
+  for (.k in seq_along(.ret)) {
+    .i <- .i + 1
+    if (.i == .j) {
+      .ret[.k] <- mat[.i, .i]
+      .j <- .j + 1
+      .i <- 0
+    } else {
+      .ret[.k] <- mat[.i, .j]
+    }
+  }
+  .ret
+}
+
+.lotriParseMat <- function(x, env=NULL) {
+  if (is.null(env)) {
+    env <- new.env(parent = emptyenv())
+  }
+  if (identical(x[[1]], quote(`sd`))) {
+    if (exists("var", envir=env)) {
+      stop("cannot use both 'var' and 'sd' in a block", call.=FALSE)
+    }
+    env$sd <- TRUE
+  }
+  if (identical(x[[1]], quote(`var`))) {
+    if (exists("sd", envir=env)) {
+      stop("cannot use both 'var' and 'sd' in a block", call.=FALSE)
+    }
+    env$var <- TRUE
+  }
+  if (identical(x[[1]], quote(`cor`))) {
+    if (exists("cov", envir=env)) {
+      stop("cannot use both 'cov' and 'cor' in a block", call.=FALSE)
+    }
+    env$cor <- TRUE
+  }
+  if (identical(x[[1]], quote(`cov`))) {
+    if (exists("cor", envir=env)) {
+      stop("cannot use both 'cov' and 'cor' in a block", call.=FALSE)
+    }
+    env$cov <- TRUE
+  }
+  if (identical(x[[1]], quote(`chol`))) {
+    if (exists("cor", envir=env)   ||
+          exists("cov", envir=env) ||
+          exists("sd", envir=env)  ||
+          exists("var", envir=env)) {
+      stop("'chol' has to only be with a single block", call.=FALSE)
+    }
+    env$chol <- TRUE
+  }
+  if (length(x) == 2) {
+    return(.lotriParseMat(x[[2]], env=env))
+  } else if (length(x) == 1) {
+    .r <- x
+  } else {
+    .r <- x[-1]
+  }
+  ## chol=FALSE, sd=FALSE, cor=FALSE
+  if (!exists("chol", env)) env$chol <- FALSE
+  if (!exists("sd", env)) env$sd <- FALSE
+  if (!exists("cor", env)) env$cor <- FALSE
+  env$val <- unlist(lapply(.r, function(x) {
+    return(as.numeric(eval(x)))
+  }))
+  env$nv <- .lotriMatrixVec(.lotriMatrix(env$val, chol=env$chol, sd=env$sd, cor=env$cor))
+  return(env$nv)
+}
+
 ##' Parse lower triangular matrix list
 ##'
 ##' This is for x~c(1..) or x1+x2~c(...)
@@ -12,17 +153,14 @@ NULL
 ##' @author Matthew Fidler
 ##' @noRd
 .lotri1 <- function(x2, x3, env) {
-  env$netas <- length(x3) - 1
+  .r <- .lotriParseMat(x3)
+  env$netas <- length(.r)
   .num <- sqrt(1 + env$netas * 8) / 2 - 1 / 2
   if (round(.num) == .num) {
     .n <- unlist(strsplit(as.character(x2), " +[+] +"))
     .n <- .n[.n != "+"]
     if (length(.n) == .num) {
       env$names <- c(env$names, .n)
-      .r <- x3[-1]
-      .r <- unlist(lapply(.r, function(x) {
-        return(as.numeric(eval(x)))
-      }))
       .i <- 0
       .j <- 1
       for (.k in seq_along(.r)) {
@@ -57,7 +195,8 @@ NULL
 .fcallTildeLhsSum <- function(x, env) {
   ## et1+et2+et3~NULL lower triangular matrix
   ## Should fixed be allowed????
-  if (any(tolower(as.character(x[[3]][[1]])) == c("c", "fix", "fixed"))) {
+  if (any(tolower(as.character(x[[3]][[1]])) ==
+            c("c", "fix", "fixed", "var", "sd", "cor", "cov", "chol"))) {
     if (any(tolower(as.character(x[[3]][[1]])) == c("fix", "fixed"))) {
       stop("fix/fixed are not allowed with lotri matrix specifications", call. = FALSE)
     }
