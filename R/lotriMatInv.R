@@ -20,7 +20,7 @@
 #' @author Matthew Fidler
 #' @noRd
 .lotriIsBlock <- function(mat, i) {
-  return(all(mat[lotriBlockZeros(mat, i)] == 0))
+  return(all(mat[.lotriBlockZeros(mat, i)] == 0))
 }
 
 #' Converts a matrix into a list of block matrices
