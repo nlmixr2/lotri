@@ -2,6 +2,7 @@
 
 context("lotri -- easy matrix parsing")
 test_that("lotri matrix parsing", {
+
   omega9 <- lotri(
     lotri(
       eta.Cl ~ 0.1,
@@ -954,6 +955,10 @@ test_that("lotri matrix parsing", {
 
   tmp <- lotriMat(omega9)
 
+  expect_error(lotriMatInv(omega9))
+
+  tmp2 <- lotriMatInv(tmp)
+
   expect_equal(
     dimnames(tmp)[[1]],
     c(
@@ -961,6 +966,15 @@ test_that("lotri matrix parsing", {
       "iov.Ka", "inv.Cl", "inv.Ka"
     )
   )
+
+  expect_equal(vapply(seq_along(tmp2), function(i) {
+    dimnames(tmp2[[i]])[[1]]
+  }, character(1)), c(
+    "eta.Cl", "eta.Ka", "eye.Cl", "eye.Ka", "iov.Cl",
+    "iov.Ka", "inv.Cl", "inv.Ka"
+  ))
+
+
 
   expect_error(.Call(.lotri$`_asLotriMat`, "a", list(nu = 3), "id", PACKAGE = "lotri"))
 

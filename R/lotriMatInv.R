@@ -59,6 +59,8 @@
 #' print(mat3)
 #' @export
 lotriMatInv <- function(mat) {
+  if (!inherits(mat, "matrix"))
+    stop("'mat' must be a matrix", call.=FALSE)
   .ret <- list()
   .mat <- mat
   .i <- 1
