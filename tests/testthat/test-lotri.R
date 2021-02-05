@@ -189,7 +189,6 @@ test_that("lotri matrix parsing", {
 
   ## Parsing errors
   expect_error(lotri(~ c(40)))
-  expect_error(lotri(a ~ fix(3)))
   expect_error(lotri(a ~ c(3, 1, 3)))
   expect_error(lotri(a ~ c(3, 1)))
   expect_error(lotri({
