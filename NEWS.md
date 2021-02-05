@@ -1,6 +1,12 @@
 # lotri development version
+
 * Add `cov`, `cor`, `sd`, `var`, and `chol` options for matrix
   specification.
+  
+* Add function `lotriMatInv()` which takes a symmetric block matrix
+  and converts it into a list of matrices.  An sort of inverse
+  operation of `lotriMatInv()`
+
 * Add error for `lotri(~c(40))`
 
 # lotri 0.3.1
