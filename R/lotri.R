@@ -14,7 +14,6 @@ NULL
 ##' @return covariance matrix
 ##'
 ##' @author Matthew Fidler
-##'
 ##' @noRd
 .lotriMatrix <- function(nv, chol=FALSE, sd=FALSE, cor=FALSE) {
   .num <- length(nv)
@@ -124,6 +123,12 @@ NULL
     }
     env$chol <- TRUE
   }
+  if (identical(x[[1]], quote(`fix`)) ||
+        identical(x[[1]], quote(`fixed`)) ||
+        identical(x[[1]], quote(`FIX`)) ||
+        identical(x[[1]], quote(`FIX`))) {
+    env$globalFix <- TRUE
+  }
   if (length(x) == 2) {
     return(.lotriParseMat(x[[2]], env=env))
   } else if (length(x) == 1) {
@@ -138,8 +143,12 @@ NULL
   env$val <- unlist(lapply(.r, function(x) {
     return(as.numeric(eval(x)))
   }))
+  if (!exists("globalFix", env)) {
+    env$globalFix <- FALSE
+  }
   env$nv <- .lotriMatrixVec(.lotriMatrix(env$val, chol=env$chol, sd=env$sd, cor=env$cor))
-  return(env$nv)
+  .fix <- rep(env$globalFix, length(env$nv))
+  return(list(env$nv, .fix))
 }
 
 ##' Parse lower triangular matrix list
@@ -153,7 +162,9 @@ NULL
 ##' @author Matthew Fidler
 ##' @noRd
 .lotri1 <- function(x2, x3, env) {
-  .r <- .lotriParseMat(x3)
+  .rl <- .lotriParseMat(x3)
+  .r <- .rl[[1]]
+  .rf <- .rl[[2]]
   env$netas <- length(.r)
   .num <- sqrt(1 + env$netas * 8) / 2 - 1 / 2
   if (round(.num) == .num) {
@@ -165,11 +176,12 @@ NULL
       .j <- 1
       for (.k in seq_along(.r)) {
         .v <- .r[.k]
+        .f <- .rf[.k]
         .i <- .i + 1
         if (.i == .j) {
           env$df <- rbind(
             env$df,
-            data.frame(i = env$eta1 + .i, j = env$eta1 + .i, x = .v)
+            data.frame(i = env$eta1 + .i, j = env$eta1 + .i, x = .v, fix=.f)
           )
           .j <- .j + 1
           .i <- 0
@@ -178,7 +190,8 @@ NULL
             env$df,
             data.frame(
               i = c(env$eta1 + .i, env$eta1 + .j),
-              j = c(env$eta1 + .j, env$eta1 + .i), x = .v
+              j = c(env$eta1 + .j, env$eta1 + .i), x = .v,
+              fix=.f
             )
           )
         }
@@ -197,9 +210,9 @@ NULL
   ## Should fixed be allowed????
   if (any(tolower(as.character(x[[3]][[1]])) ==
             c("c", "fix", "fixed", "var", "sd", "cor", "cov", "chol"))) {
-    if (any(tolower(as.character(x[[3]][[1]])) == c("fix", "fixed"))) {
-      stop("fix/fixed are not allowed with lotri matrix specifications", call. = FALSE)
-    }
+    ## if (any(tolower(as.character(x[[3]][[1]])) == c("fix", "fixed"))) {
+    ##   stop("fix/fixed are not allowed with lotri matrix specifications", call. = FALSE)
+    ## }r
     .lotri1(x[[2]], x[[3]], env)
   } else {
     .val <- try(eval(x[[3]]), silent = TRUE)
@@ -209,7 +222,7 @@ NULL
       env$names <- c(env$names, as.character(x[[2]]))
       env$df <- rbind(
         env$df,
-        data.frame(i = env$eta1, j = env$eta1, x = .val)
+        data.frame(i = env$eta1, j = env$eta1, x = .val, fix=FALSE)
       )
     } else {
       .cnd <- try(as.character(x[[3]][[1]]), silent = TRUE)
@@ -237,7 +250,8 @@ NULL
               .env2$df,
               data.frame(
                 i = .env2$eta1, j = .env2$eta1,
-                x = .val
+                x = .val,
+                fix=FALSE
               )
             )
           } else {
@@ -267,7 +281,8 @@ NULL
       data.frame(
         i = env$eta1,
         j = env$eta1,
-        x = as.numeric(eval(x[[3]]))
+        x = as.numeric(eval(x[[3]])),
+        fix=FALSE
       )
     )
   } else {
@@ -664,10 +679,17 @@ lotri <- function(x, ..., envir = parent.frame()) {
     .f(.sX, .env)
     if (length(.env$cnd) == 0L) {
       .ret <- diag(.env$eta1)
+      .retF <- matrix(FALSE, dim(.ret)[1], dim(.ret)[1])
       for (.i in seq_along(.env$df$i)) {
         .ret[.env$df$i[.i], .env$df$j[.i]] <- .env$df$x[.i]
+        .retF[.env$df$i[.i], .env$df$j[.i]] <- .env$df$fix[.i]
       }
       dimnames(.ret) <- list(.env$names, .env$names)
+      dimnames(.retF) <- list(.env$names, .env$names)
+      if (any(.retF)) {
+          class(.ret) <- c("lotriFix", class(.ret))
+          attr(.ret, "lotriFix") <- .retF
+      }
     } else {
       .lstC <- list()
       .other <- NULL
@@ -683,10 +705,17 @@ lotri <- function(x, ..., envir = parent.frame()) {
       for (.j in .env$cnd) {
         .env2 <- .env[[.j]]
         .ret0 <- diag(.env2$eta1)
+        .ret0F <- matrix(FALSE, dim(.ret0)[1], dim(.ret0)[1])
         for (.i in seq_along(.env2$df$i)) {
           .ret0[.env2$df$i[.i], .env2$df$j[.i]] <- .env2$df$x[.i]
+          .ret0F[.env2$df$i[.i], .env2$df$j[.i]] <- .env2$df$fix[.i]
         }
         dimnames(.ret0) <- list(.env2$names, .env2$names)
+        dimnames(.ret0F) <- list(.env2$names, .env2$names)
+        if (any(.ret0F)) {
+          class(.ret0) <- c("lotriFix", class(.ret0))
+          attr(.ret0, "lotriFix") <- .ret0F
+        }
         .extra <- .env[[paste0(.j, ".extra")]]
         if (!is.null(.extra)) {
           if (is.null(.prop)) {
@@ -811,25 +840,6 @@ lotri <- function(x, ..., envir = parent.frame()) {
       return(.ret)
     }
   }
-}
-
-##' @export
-print.lotri <- function(x, ...) {
-  .tmp <- x
-  .lotri <- attr(.tmp, "lotri")
-  class(.tmp) <- NULL
-  attr(.tmp, "lotri") <- NULL
-  print(.tmp)
-  .names <- x$.names
-  if (length(.names) > 0) {
-    cat(paste0("Properties: ", paste(.names, collapse = ", ")), "\n")
-  }
-  return(invisible(x))
-}
-
-##' @export
-str.lotri <- function(object, ...) {
-  str(object$.list)
 }
 
 ##' @importFrom utils .DollarNames
