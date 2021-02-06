@@ -40,13 +40,26 @@ static inline int isSingleInt(SEXP in, int defaultVal) {
   return defaultVal;
 }
 
-static inline int isSymNameMat(SEXP cur, int named) {
+// returns number of rows if the matrix is a symmetric (named) matrix
+static inline int isSymNameMat(SEXP cur, int named, int *fixed) {
   int type = TYPEOF(cur);
   if (type == INTSXP || type == REALSXP) {
     if (Rf_isMatrix(cur)){
       int nrows = Rf_nrows(cur);
       int ncols = Rf_ncols(cur);
       if (nrows == ncols) {
+	if (*fixed != 1) {
+	  // Check for fixed if the flag is not already set
+	  SEXP hasFix = Rf_getAttrib(cur, Rf_install("lotriFix"));
+	  if (TYPEOF(hasFix) == LGLSXP && Rf_isMatrix(hasFix)) {
+	    // Dims need to match
+	    int nrows2 = Rf_nrows(hasFix);
+	    int ncols2 = Rf_ncols(hasFix);
+	    if (nrows == nrows2 && nrows2 == ncols2) {
+	      *fixed = 1; // There is a fixed matrix in this matrix
+	    }
+	  }
+	}
 	if (!named) return nrows;
 	SEXP dimn = Rf_getAttrib(cur, R_DimNamesSymbol);
 	if (dimn != R_NilValue) {
@@ -58,7 +71,7 @@ static inline int isSymNameMat(SEXP cur, int named) {
   return 0;
 }
 
-static inline int getCheckDim(SEXP lst, int i, int *named) {
+static inline int getCheckDim(SEXP lst, int i, int *named, int *fixed) {
   SEXP cur = VECTOR_ELT(lst, i);
   int type = TYPEOF(cur);
   int same=1;
@@ -76,13 +89,13 @@ static inline int getCheckDim(SEXP lst, int i, int *named) {
     cur = VECTOR_ELT(cur, 0);
     type = TYPEOF(cur);
   }
-  int ret = isSymNameMat(cur, *named);
+  int ret = isSymNameMat(cur, *named, fixed);
   if (ret){
     return ret*same;
   } else {
     // if named is 2, then reassign named to 0 and return the dimension, reset the named to 0
     if (*named == 2) {
-      ret = isSymNameMat(cur, 0);
+      ret = isSymNameMat(cur, 0, fixed);
       if (ret) {
 	*named = 0;
 	return ret*same;
