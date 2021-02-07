@@ -22,6 +22,7 @@ static inline lotriInfo _lotriLstToMat0(SEXP lst_, SEXP format, SEXP startNum) {
   ret.err = 0;
   int pro = 0;
   ret.sym = 0;
+  ret.fix = 0;
   ret.lst = PROTECT(lotriToLstMat(lst_)); pro++;
   int fmtType = TYPEOF(format);
   ret.doFormat = 0;
