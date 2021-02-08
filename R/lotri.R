@@ -293,7 +293,8 @@ NULL
 .fCall <- function(x, env) {
   if (identical(x[[1]], quote(`~`))) {
     .fCallTilde(x, env)
-  } else if (identical(x[[1]], quote(`{`))) {
+  } else if (identical(x[[1]], quote(`{`)) ||
+               identical(x[[1]], quote(`(`))) {
     lapply(x, .f, env = env)
   } else if (identical(x[[1]], quote(`quote`))) {
     lapply(x[[2]], .f, env = env)
