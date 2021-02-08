@@ -74,7 +74,7 @@ static inline void lotriLstToMatFillInFullMatrix(double *retd, int *retf, int *t
       colnames = VECTOR_ELT(dimnames, 1);
     }
     if (li->fix) {
-      curFixed = Rf_getAttrib(cur, Rf_install("lotriFixed"));
+      curFixed = Rf_getAttrib(cur, Rf_install("lotriFix"));
       if (!Rf_isMatrix(curFixed) || TYPEOF(curFixed) != LGLSXP) {
 	curFixed = R_NilValue;
       }
@@ -134,10 +134,10 @@ SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum) {
   if (li.fix) {
     // Use the R 4.0 definition of matrix; It should work fine on R 3.0.x
     SEXP cls = PROTECT(Rf_allocVector(STRSXP, 3)); pro++;
-    SET_STRING_ELT(cls, 0, Rf_mkChar("lotriFixed"));
+    SET_STRING_ELT(cls, 0, Rf_mkChar("lotriFix"));
     SET_STRING_ELT(cls, 1, Rf_mkChar("matrix"));
     SET_STRING_ELT(cls, 2, Rf_mkChar("array"));
-    Rf_setAttrib(ret, Rf_install("lotriFixed"), retF);
+    Rf_setAttrib(ret, Rf_install("lotriFix"), retF);
     Rf_classgets(ret, cls);
   }
   UNPROTECT(pro);
