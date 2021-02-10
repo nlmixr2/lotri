@@ -21,7 +21,7 @@ print.lotriFix <- function(x, ...) {
   .cls <- .cls[-.w]
   class(.tmp) <- NULL # Note that a matrix doesn't actually have a class
   print(.tmp)
-  cat("This matrix has fixed elements\n")
+  cat("this matrix has fixed elements\n")
 }
 
 ##' @export
