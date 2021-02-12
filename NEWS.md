@@ -1,5 +1,10 @@
 # lotri development version
 
+* Now within a `lotri()` matrix you can use `()` instead of `lotri()`
+  for each matrix
+
+* Allow specifying fixed components in `lotri()` matrices.
+
 * Add `cov`, `cor`, `sd`, `var`, and `chol` options for matrix
   specification.
   

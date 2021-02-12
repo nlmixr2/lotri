@@ -9,6 +9,7 @@ typedef struct lotriInfo {
   int counter;
   int err;
   int sym;
+  int fix;
 } lotriInfo;
 
 SEXP lotriToLstMat(SEXP lotri);
@@ -21,6 +22,7 @@ static inline lotriInfo _lotriLstToMat0(SEXP lst_, SEXP format, SEXP startNum) {
   ret.err = 0;
   int pro = 0;
   ret.sym = 0;
+  ret.fix = 0;
   ret.lst = PROTECT(lotriToLstMat(lst_)); pro++;
   int fmtType = TYPEOF(format);
   ret.doFormat = 0;
@@ -55,15 +57,24 @@ static inline lotriInfo _lotriLstToMat0(SEXP lst_, SEXP format, SEXP startNum) {
   return ret;
 }
 
-static inline void lotriLstToMatFillInMatrixBand(double *retd, int nsame, int type, int named, int totN, int totdim,
+static inline void lotriFillInFixedMatrix (int *reti, int *curBand, int *j, int *totdim,  int *totN, SEXP curFixed) {
+  if (!Rf_isNull(curFixed)) {
+    int *curi = INTEGER(curFixed);
+    memcpy(&reti[(totdim[0])*(curBand[0] + j[0])+(curBand[0])],
+	   &curi[totN[0]*j[0]], sizeof(int)*totN[0]);
+  }
+}
+
+static inline void lotriLstToMatFillInMatrixBand(double *retd, int *retf, int nsame, int type, int named, int totN, int totdim,
 						 SEXP retN, SEXP colnames, int *curBand, lotriInfo *li,
-						 SEXP cur) {
+						 SEXP cur, SEXP curFixed) {
   for (int cursame = nsame; cursame--;){
     if (type == REALSXP) {
       double *curd = REAL(cur);
       for (int j = 0; j  < totN; ++j) {
 	memcpy(&retd[totdim*(*curBand+j)+(*curBand)],
 	       &curd[totN*j], sizeof(double)*totN);
+	lotriFillInFixedMatrix (retf, curBand, &j, &totdim,  &totN, curFixed);
 	// Repeats dim names of repeated matrices
 	if (named) {
 	  setStrElt(retN, colnames, (*curBand), j,
@@ -79,6 +90,7 @@ static inline void lotriLstToMatFillInMatrixBand(double *retd, int nsame, int ty
 	while (to != last) {
 	  *(to++) = (double)(*(from++));
 	}
+	lotriFillInFixedMatrix (retf, curBand, &j, &totdim,  &totN, curFixed);
 	if (named) {
 	  setStrElt(retN, colnames, (*curBand), j,
 		    li->fmt, li->doFormat, &(li->counter), nsame);
