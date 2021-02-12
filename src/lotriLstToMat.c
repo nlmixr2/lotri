@@ -130,7 +130,7 @@ SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum) {
     SET_VECTOR_ELT(dimnames, 0, retN);
     SET_VECTOR_ELT(dimnames, 1, retN);
     Rf_setAttrib(ret, R_DimNamesSymbol, dimnames);
-    Rf_setAttrib(retF, R_DimNamesSymbol, dimnames);
+    if (li.fix) Rf_setAttrib(retF, R_DimNamesSymbol, dimnames);
   }
   if (li.fix) {
     // Use the R 4.0 definition of matrix; It should work fine on R 3.0.x
