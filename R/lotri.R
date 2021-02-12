@@ -86,6 +86,32 @@ NULL
   .ret
 }
 
+.repFixedWithC <- function(x, env=new.env(parent=emptyenv())) {
+  if (is.call(x)) {
+    if (identical(x[[1]], quote(`fix`)) ||
+          identical(x[[1]], quote(`fixed`)) ||
+          identical(x[[1]], quote(`Fixed`)) ||
+          identical(x[[1]], quote(`FIXED`)) ||
+          identical(x[[1]], quote(`Fix`)) ||
+          identical(x[[1]], quote(`FIX`))) {
+      env$fix <- TRUE
+      x[[1]] <- quote(`c`)
+      return(x)
+    } else {
+      return(as.call(lapply(x, .repFixedWithC, env=env)))
+    }
+  } else {
+    return(x)
+  }
+}
+
+.evalAsNumericCheckForFixed <- function(x) {
+  .env <- new.env(parent=emptyenv())
+  .env$fix <- NA
+  .num <- as.numeric(eval(.repFixedWithC(x, .env), envir=.lotriParentEnv))
+  return(list(.num, .env$fix))
+}
+
 .lotriParseMat <- function(x, env=NULL) {
   if (is.null(env)) {
     env <- new.env(parent = emptyenv())
@@ -140,14 +166,16 @@ NULL
   if (!exists("chol", env)) env$chol <- FALSE
   if (!exists("sd", env)) env$sd <- FALSE
   if (!exists("cor", env)) env$cor <- FALSE
-  env$val <- unlist(lapply(.r, function(x) {
-    return(as.numeric(eval(x, envir=.lotriParentEnv)))
-  }))
+  .tmp <- vapply(.r, .evalAsNumericCheckForFixed,
+                 list(numeric(1), logical(1)))
+  env$val <- unlist(.tmp[1, ])
+  env$fix <- unlist(.tmp[2, ])
+  env$nv <- .lotriMatrixVec(.lotriMatrix(env$val, chol=env$chol, sd=env$sd, cor=env$cor))
   if (!exists("globalFix", env)) {
     env$globalFix <- FALSE
   }
-  env$nv <- .lotriMatrixVec(.lotriMatrix(env$val, chol=env$chol, sd=env$sd, cor=env$cor))
-  .fix <- rep(env$globalFix, length(env$nv))
+  .fix <- vapply(env$fix, function(x){ifelse(is.na(x), env$globalFix, x)},
+                 logical(1))
   return(list(env$nv, .fix))
 }
 

@@ -1624,4 +1624,29 @@ test_that("lotri matrix parsing", {
   expect_error(lotri(s1 + s2 ~ cor(cov(2.2,
                                        0.4, 1.6))))
 
+  context("fixed tests")
+
+  tmp <- lotri(lotri(a + b ~ fix(0.1,
+                                 0.001, 0.1)),
+               lotri(c + d ~ c(0.1,
+                               0.001, 0.1)))
+
+  tmp <- lotri(a + b + c ~ c(
+    fix(40),
+    0.1, 20,
+    0.1, 0.1, 30
+  ))
+
+  tmp <- lotri(a + b + c ~ c(
+    40,
+    fixed(0.1), 20,
+    0.1, 0.1, 30
+  ))
+
+  tmp <- lotri(a + b + c ~ c(
+    40,
+    0.1, 20,
+    fix(0.1), 0.1, 30
+  ))
+
   })
