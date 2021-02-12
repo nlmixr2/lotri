@@ -544,6 +544,10 @@ test_that("lotri matrix parsing", {
 
   expect_error(lotri(et1 + et2 ~ c(1, 2, 3) | id(lower = c(et3 = 4))))
 
+  expect_error(lotri(et1 + et2 ~ c(1, 2, 3) | id(upper = c(2, 3))))
+
+  expect_error(lotri(et1 + et2 ~ c(1, 2, 3) | id(upper = c(et3 = 4))))
+
 
   tmp2 <- lotri(
     et1 + et2 ~ c(
@@ -950,6 +954,9 @@ test_that("lotri matrix parsing", {
 
   expect_error(as.lotri(lotri(et1 + et2 ~ c(0.1, 0.01, 1)), upper = c(3, 3), default = "id"))
   expect_error(as.lotri(lotri(et1 + et2 ~ c(0.1, 0.01, 1)), upper = 1L, default = "id"))
+
+  expect_error(as.lotri(lotri(et1 + et2 ~ c(0.1, 0.01, 1)), lower = c(3, 3), default = "id"))
+  expect_error(as.lotri(lotri(et1 + et2 ~ c(0.1, 0.01, 1)), lower = 1L, default = "id"))
 
   context("lotriMat")
 
