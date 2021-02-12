@@ -141,7 +141,7 @@ NULL
   if (!exists("sd", env)) env$sd <- FALSE
   if (!exists("cor", env)) env$cor <- FALSE
   env$val <- unlist(lapply(.r, function(x) {
-    return(as.numeric(eval(x)))
+    return(as.numeric(eval(x, envir=.lotriParentEnv)))
   }))
   if (!exists("globalFix", env)) {
     env$globalFix <- FALSE
@@ -215,7 +215,7 @@ NULL
     ## }r
     .lotri1(x[[2]], x[[3]], env)
   } else {
-    .val <- try(eval(x[[3]]), silent = TRUE)
+    .val <- try(eval(x[[3]], envir=.lotriParentEnv), silent = TRUE)
     if (is.numeric(.val) || is.integer(.val)) {
       env$netas <- 1
       env$eta1 <- env$eta1 + 1
@@ -240,7 +240,7 @@ NULL
           env$cnd <- unique(c(env$cnd, .cnd))
           env[[.cnd]] <- .env2
           env[[paste0(.cnd, ".extra")]] <- .cndFull[[2]]
-          .val <- try(eval(x[[3]][[2]]), silent = TRUE)
+          .val <- try(eval(x[[3]][[2]], envir=.lotriParentEnv), silent = TRUE)
           if ((length(.val) == 1) &&
                 (is.numeric(.val) || is.integer(.val))) {
             .env2$netas <- 1
@@ -281,7 +281,7 @@ NULL
       data.frame(
         i = env$eta1,
         j = env$eta1,
-        x = as.numeric(eval(x[[3]])),
+        x = as.numeric(eval(x[[3]], envir=.lotriParentEnv)),
         fix=FALSE
       )
     )
@@ -537,6 +537,8 @@ NULL
   omega
 }
 
+.lotriParentEnv <- NULL
+
 ##' Easily Specify block-diagonal matrices with lower triangular info
 ##'
 ##' @param x list, matrix or expression, see details
@@ -643,6 +645,10 @@ NULL
 ##' @importFrom utils str
 ##' @export
 lotri <- function(x, ..., envir = parent.frame()) {
+  if (is.null(.lotriParentEnv)) {
+    assignInMyNamespace(".lotriParentEnv", envir)
+    on.exit(assignInMyNamespace(".lotriParentEnv", NULL))
+  }
   .call <- as.list(match.call())[-1]
   .ncall <- names(.call)
   if (any(.ncall == "envir")) {
