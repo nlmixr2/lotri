@@ -1661,4 +1661,7 @@ test_that("lotri matrix parsing", {
   expect_equal(attr(tmp, "lotriFix"),
                structure(c(FALSE, FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, FALSE, FALSE), .Dim = c(3L, 3L), .Dimnames = list(c("a", "b", "c"),     c("a", "b", "c"))))
 
-  })
+  expect_error(print(tmp), NA)
+
+})
+
