@@ -327,7 +327,8 @@ NULL
     lapply(x[[2]], .f, env = env)
   } else if (identical(x[[1]], quote(`=`)) ||
                identical(x[[1]], quote(`<-`)) ||
-               identical(x[[1]], quote(`label`))) {
+               identical(x[[1]], quote(`label`)) ||
+               identical(x[[1]], quote(`backTransform`))) {
     ## these are handled in .parseThetaEst()
   } else {
     stop("matrix expression should be 'name ~ c(lower-tri)'", call. = FALSE)
