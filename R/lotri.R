@@ -705,6 +705,7 @@ lotri <- function(x, ..., envir = parent.frame()) {
       x <- eval(.call[[1]][[2]], envir = envir)
     }
   }
+  .est <- NULL
   if (is.null(x)) {
     .ret <- NULL
   } else if (is.list(x)) {
@@ -816,7 +817,7 @@ lotri <- function(x, ..., envir = parent.frame()) {
       class(.lst) <- "lotri"
     }
     if (length(.call) == 1L) {
-      return(.lst)
+      return(.amplifyRetWithDfEst(.lst, .est))
     }
     .call <- .call[-1]
     .tmp <- do.call("lotri", .call, envir = envir)
@@ -841,7 +842,7 @@ lotri <- function(x, ..., envir = parent.frame()) {
         .tmp2 <- list()
         .tmp2[[.fullCnd]] <- .ret
         .ret <- c(.tmp2, .tmp)
-        return(.ret)
+        return(.amplifyRetWithDfEst(.ret, .est))
       } else {
         .tmp <- list()
         .tmp[[.fullCnd]] <- .ret
@@ -849,7 +850,7 @@ lotri <- function(x, ..., envir = parent.frame()) {
           attr(.tmp, "lotri") <- .amplifyFinal(.tmp, .prop)
           class(.tmp) <- "lotri"
         }
-        return(.tmp)
+        return(.amplifyRetWithDfEst(.tmp, .est))
       }
     } else {
       .lst <- list()
@@ -860,11 +861,11 @@ lotri <- function(x, ..., envir = parent.frame()) {
         attr(.ret, "lotri") <- .amplifyFinal(.ret, .tmpCnd)
         class(.ret) <- "lotri"
       }
-      return(.ret)
+      return(.amplifyRetWithDfEst(.ret, .est))
     }
   } else {
     if (length(.call) == 1L) {
-      return(.ret)
+      return(.amplifyRetWithDfEst(.ret, .est))
     }
     .call <- .call[-1]
     .tmp <- do.call("lotri", .call, envir = envir)
@@ -873,10 +874,10 @@ lotri <- function(x, ..., envir = parent.frame()) {
         .w <- which(names(.tmp) == "")
         .lst <- list(.ret, .tmp[[.w]], envir = envir)
         .tmp[[.w]] <- do.call("lotri", .lst, envir = envir)
-        return(.tmp)
+        return(.amplifyRetWithDfEst(.tmp, .est))
       } else {
         .ret <- c(list(.ret), .tmp)
-        return(.ret)
+        return(.amplifyRetWithDfEst(.ret, .est))
       }
     } else {
       .ret <- lotri(c(list(.ret), list(.tmp)), envir = envir)
@@ -884,7 +885,7 @@ lotri <- function(x, ..., envir = parent.frame()) {
         attr(.ret, "lotri") <- .amplifyFinal(.ret, attr(.tmp, "lotri"))
         class(.ret) <- "lotri"
       }
-      return(.ret)
+      return(.amplifyRetWithDfEst(.ret, .est))
     }
   }
 }
