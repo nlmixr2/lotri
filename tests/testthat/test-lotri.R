@@ -192,9 +192,9 @@ test_that("lotri matrix parsing", {
   expect_error(lotri(~ 40))
   expect_error(lotri(a ~ c(3, 1, 3)))
   expect_error(lotri(a ~ c(3, 1)))
-  expect_error(lotri({
-    a <- c(3, 1)
-  }))
+  ## expect_error(lotri({
+  ##   a <- c(3, 1)
+  ## }))
 
   expect_equal(
     lotri({
@@ -1668,7 +1668,7 @@ test_that("lotri matrix parsing", {
   expect_equal(attr(tmp, "lotriFix"),
                structure(c(FALSE, FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, FALSE, FALSE), .Dim = c(3L, 3L), .Dimnames = list(c("a", "b", "c"),     c("a", "b", "c"))))
 
-  expect_error(print(tmp), NA)
+  expect_error(capture.output(print(tmp)), NA)
 
 })
 

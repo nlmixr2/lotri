@@ -72,6 +72,6 @@
   if (!is.null(.env$df)){
     .env$df <- do.call(rbind, .env$df)
   }
-  print(.env$err)
+  ## print(.env$err)
   return(.env$df)
 }
