@@ -37,7 +37,8 @@
   } else if (length(.ret) != 3) {
     return(deparse1(x))
   }
-  data.frame(lower=.ret[1], est=.ret[2], upper=.ret[3], fix=.env$fix)
+  data.frame(lower=.ret[1], est=.ret[2], upper=.ret[3], fix=.env$fix,
+             stringsAsFactors = FALSE)
 }
 
 
@@ -52,7 +53,8 @@
        .name <- as.character(x[[2]])
        .df <- .parseThetaEstFix(x[[3]], envir=envir)
        if (inherits(.df, "data.frame")) {
-         env$df <- c(env$df, list(data.frame(name=.name, .df, label="")))
+         env$df <- c(env$df, list(data.frame(name=.name, .df, label="",
+                                             stringsAsFactors = FALSE)))
        } else {
          env$err <- c(env$err, paste0("estimate syntax unsupported: ", .name, " ", deparse(x[[1]]), " ", .df))
        }

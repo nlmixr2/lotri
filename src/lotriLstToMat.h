@@ -10,6 +10,7 @@ typedef struct lotriInfo {
   int err;
   int sym;
   int fix;
+  int est;
 } lotriInfo;
 
 SEXP lotriToLstMat(SEXP lotri);
@@ -23,6 +24,7 @@ static inline lotriInfo _lotriLstToMat0(SEXP lst_, SEXP format, SEXP startNum) {
   int pro = 0;
   ret.sym = 0;
   ret.fix = 0;
+  ret.est = 0;
   ret.lst = PROTECT(lotriToLstMat(lst_)); pro++;
   int fmtType = TYPEOF(format);
   ret.doFormat = 0;
