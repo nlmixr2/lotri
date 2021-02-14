@@ -48,6 +48,18 @@
        lapply(x[-1],  .parseThetaEstQ, env=env, envir = envir)
      } else if (identical(x[[1]], quote(`quote`))) {
        lapply(x[[2]], .parseThetaEstQ, env=env, envir = envir)
+     } else if (identical(x[[1]], quote(`label`))) {
+       .lab <- ""
+       if (is.character(x[[2]])) {
+         .lab <- x[[2]]
+       } else {
+         .lab <- deparse1(x[[2]])
+       }
+       .lst <- env$df
+       .df0 <- .lst[[length(.lst)]]
+       .df0$label <- .lab
+       .lst[[length(.lst)]] <- .df0
+       env$df <- .lst
      } else if  (identical(x[[1]], quote(`<-`)) ||
                    identical(x[[1]], quote(`=`))) {
        .name <- as.character(x[[2]])

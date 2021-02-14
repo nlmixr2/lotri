@@ -326,7 +326,8 @@ NULL
   } else if (identical(x[[1]], quote(`quote`))) {
     lapply(x[[2]], .f, env = env)
   } else if (identical(x[[1]], quote(`=`)) ||
-               identical(x[[1]], quote(`<-`))) {
+               identical(x[[1]], quote(`<-`)) ||
+               identical(x[[1]], quote(`label`))) {
     ## these are handled in .parseThetaEst()
   } else {
     stop("matrix expression should be 'name ~ c(lower-tri)'", call. = FALSE)
@@ -690,6 +691,10 @@ lotri <- function(x, ..., envir = parent.frame()) {
     on.exit(assignInMyNamespace(".lotriParentEnv", NULL))
   }
   .call <- as.list(match.call())[-1]
+  if (inherits(substitute(x), "{")) {
+    x <- eval(parse(text=paste0("quote(", paste(deparse(substitute(x)), collapse="\n"), ")")))
+    .call[[1]] <- x
+  }
   .ncall <- names(.call)
   if (any(.ncall == "envir")) {
     .w <- which(.ncall == "envir")
