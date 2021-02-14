@@ -325,6 +325,9 @@ NULL
     lapply(x, .f, env = env)
   } else if (identical(x[[1]], quote(`quote`))) {
     lapply(x[[2]], .f, env = env)
+  } else if (identical(x[[1]], quote(`=`)) ||
+               identical(x[[1]], quote(`<-`))) {
+    ## these are handled in .parseThetaEst()
   } else {
     stop("matrix expression should be 'name ~ c(lower-tri)'", call. = FALSE)
   }
@@ -567,6 +570,15 @@ NULL
 
 .lotriParentEnv <- NULL
 
+.amplifyRetWithDfEst <- function(ret, df) {
+  if (is.null(df)) return(ret)
+  attr(ret, "lotriEst") <- df
+  if (inherits(ret, "matrix") & !inherits(ret, "lotriFix")) {
+    class(ret) <- c("lotriFix", class(ret))
+  }
+  return(ret)
+}
+
 ##' Easily Specify block-diagonal matrices with lower triangular info
 ##'
 ##' @param x list, matrix or expression, see details
@@ -710,6 +722,7 @@ lotri <- function(x, ..., envir = parent.frame()) {
         .sX <- x
       }
     }
+    .est <- .parseThetaEst(.sX, .lotriParentEnv)
     .f(.sX, .env)
     if (length(.env$cnd) == 0L) {
       .ret <- diag(.env$eta1)
@@ -784,7 +797,7 @@ lotri <- function(x, ..., envir = parent.frame()) {
         attr(.lstC, "lotri") <- .prop
         class(.lstC) <- "lotri"
       }
-      return(.lstC)
+      return(.amplifyRetWithDfEst(.lstC, .est))
     }
   }
   if (!is.null(.fullCnd)) {
@@ -803,7 +816,7 @@ lotri <- function(x, ..., envir = parent.frame()) {
       class(.lst) <- "lotri"
     }
     if (length(.call) == 1L) {
-      return(.lst)
+      return(.amplifyRetWithDfEst(.lst, .est))
     }
     .call <- .call[-1]
     .tmp <- do.call("lotri", .call, envir = envir)
@@ -828,7 +841,7 @@ lotri <- function(x, ..., envir = parent.frame()) {
         .tmp2 <- list()
         .tmp2[[.fullCnd]] <- .ret
         .ret <- c(.tmp2, .tmp)
-        return(.ret)
+        return(.amplifyRetWithDfEst(.ret, .est))
       } else {
         .tmp <- list()
         .tmp[[.fullCnd]] <- .ret
@@ -836,7 +849,7 @@ lotri <- function(x, ..., envir = parent.frame()) {
           attr(.tmp, "lotri") <- .amplifyFinal(.tmp, .prop)
           class(.tmp) <- "lotri"
         }
-        return(.tmp)
+        return(.amplifyRetWithDfEst(.tmp, .est))
       }
     } else {
       .lst <- list()
@@ -847,11 +860,11 @@ lotri <- function(x, ..., envir = parent.frame()) {
         attr(.ret, "lotri") <- .amplifyFinal(.ret, .tmpCnd)
         class(.ret) <- "lotri"
       }
-      return(.ret)
+      return(.amplifyRetWithDfEst(.ret, .est))
     }
   } else {
     if (length(.call) == 1L) {
-      return(.ret)
+      return(.amplifyRetWithDfEst(.ret, .est))
     }
     .call <- .call[-1]
     .tmp <- do.call("lotri", .call, envir = envir)
@@ -860,10 +873,10 @@ lotri <- function(x, ..., envir = parent.frame()) {
         .w <- which(names(.tmp) == "")
         .lst <- list(.ret, .tmp[[.w]], envir = envir)
         .tmp[[.w]] <- do.call("lotri", .lst, envir = envir)
-        return(.tmp)
+        return(.amplifyRetWithDfEst(.tmp, .est))
       } else {
         .ret <- c(list(.ret), .tmp)
-        return(.ret)
+        return(.amplifyRetWithDfEst(.ret, .est))
       }
     } else {
       .ret <- lotri(c(list(.ret), list(.tmp)), envir = envir)
@@ -871,7 +884,7 @@ lotri <- function(x, ..., envir = parent.frame()) {
         attr(.ret, "lotri") <- .amplifyFinal(.ret, attr(.tmp, "lotri"))
         class(.ret) <- "lotri"
       }
-      return(.ret)
+      return(.amplifyRetWithDfEst(.ret, .est))
     }
   }
 }

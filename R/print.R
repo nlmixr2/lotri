@@ -16,12 +16,22 @@ print.lotri <- function(x, ...) {
 print.lotriFix <- function(x, ...) {
   .tmp <- x
   .cls <- class(.tmp)
+  .lotriFix <- attr(.tmp, "lotriFix")
+  .lotriEst <- attr(.tmp, "lotriEst")
   attr(.tmp, "lotriFix") <- NULL
+  attr(.tmp, "lotriEst") <- NULL
   .w <- which(.cls == "lotriFix")
   .cls <- .cls[-.w]
   class(.tmp) <- NULL # Note that a matrix doesn't actually have a class
+  if (!is.null(.lotriEst)) {
+    cat("Estimates:\n")
+    print(.lotriEst)
+    cat("\nMatrix:\n")
+  }
   print(.tmp)
-  cat("this matrix has fixed elements\n")
+  if (!is.null(.lotriFix)) {
+    cat("this matrix has fixed elements\n")
+  }
 }
 
 ##' @export

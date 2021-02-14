@@ -52,7 +52,7 @@
        .name <- as.character(x[[2]])
        .df <- .parseThetaEstFix(x[[3]], envir=envir)
        if (inherits(.df, "data.frame")) {
-         env$df <- c(env$df, list(data.frame(name=.name, .df)))
+         env$df <- c(env$df, list(data.frame(name=.name, .df, label="")))
        } else {
          env$err <- c(env$err, paste0("estimate syntax unsupported: ", .name, " ", deparse(x[[1]]), " ", .df))
        }
