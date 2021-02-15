@@ -325,6 +325,11 @@ NULL
     lapply(x, .f, env = env)
   } else if (identical(x[[1]], quote(`quote`))) {
     lapply(x[[2]], .f, env = env)
+  } else if (identical(x[[1]], quote(`matrix`))) {
+    if (!is.null(env$matrix)) {
+      stop("only one matrix can be in an expression")
+    }
+    env$matrix <- eval(x, envir=.lotriParentEnv)
   } else if (identical(x[[1]], quote(`=`)) ||
                identical(x[[1]], quote(`<-`)) ||
                identical(x[[1]], quote(`label`)) ||
@@ -721,6 +726,7 @@ lotri <- function(x, ..., envir = parent.frame()) {
   } else {
     .env <- new.env(parent = emptyenv())
     .env$df <- NULL
+    .env$matrix <- NULL
     .env$eta1 <- 0L
     .env$cnd <- character()
     .sX <- substitute(x)
@@ -731,6 +737,9 @@ lotri <- function(x, ..., envir = parent.frame()) {
     }
     .est <- .parseThetaEst(.sX, .lotriParentEnv)
     .f(.sX, .env)
+    if (!is.null(.env$matrix)) {
+      return(.amplifyRetWithDfEst(.env$matrix, .est))
+    }
     if (length(.env$cnd) == 0L) {
       .ret <- diag(.env$eta1)
       .retF <- matrix(FALSE, dim(.ret)[1], dim(.ret)[1])

@@ -203,6 +203,11 @@ test_that("lotri matrix parsing", {
     structure(3, .Dim = c(1L, 1L), .Dimnames = list("a", "a"))
   )
 
+  expect_error(lotri({
+    matrix(3, dimnames = list("a", "a"))
+    matrix(3, dimnames = list("b", "b"))
+  }))
+
   expect_equal(
     lotri(matrix(3, dimnames = list("a", "a"))),
     structure(3, .Dim = c(1L, 1L), .Dimnames = list("a", "a"))
