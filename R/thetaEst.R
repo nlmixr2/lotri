@@ -98,6 +98,54 @@
   .parseThetaEstQ(x, .env, envir=envir)
   if (!is.null(.env$df)){
     .env$df <- do.call(rbind, .env$df)
+    .w <- which(is.na(.env$df$lower))
+    if (length(.w) > 0) {
+      .env$err <- c(.env$err, paste("lower bounds cannot be NA: '", paste(.env$df$name[.w], collapse="', '"), "'"))
+    }
+    .w <- which(is.na(.env$df$upper))
+    if (length(.w) > 0) {
+      .env$err <- c(.env$err, paste("upper bounds cannot be NA: '", paste(.env$df$name[.w], collapse="', '"), "'"))
+    }
+        .w <- which(is.na(.env$df$est))
+    if (length(.w) > 0) {
+      .env$err <- c(.env$err, paste("initial estimates cannot be NA: '", paste(.env$df$name[.w], collapse="', '"), "'"))
+    }
+
+    .w <- which(is.nan(.env$df$lower))
+    if (length(.w) > 0) {
+      .env$err <- c(.env$err, paste("lower bounds cannot be NaN: '", paste(.env$df$name[.w], collapse="', '"), "'"))
+    }
+    .w <- which(is.nan(.env$df$upper))
+    if (length(.w) > 0) {
+      .env$err <- c(.env$err, paste("upper bounds cannot be NaN: '", paste(.env$df$name[.w], collapse="', '"), "'"))
+    }
+    .w <- which(is.nan(.env$df$est))
+    if (length(.w) > 0) {
+      .env$err <- c(.env$err, paste("initial estimates cannot be NaN: '", paste(.env$df$name[.w], collapse="', '"), "'"))
+    }
+
+    .w <- which(!is.finite(.env$df$est))
+    if (length(.w) > 0) {
+      .env$err <- c(.env$err, paste("initial estimates cannot be infinite: '", paste(.env$df$name[.w], collapse="', '"), "'"))
+    }
+    .w <- which(.env$df$lower == Inf)
+    if (length(.w) > 0) {
+      .env$err <- c(.env$err, paste("lower bounds cannot be +Inf: '", paste(.env$df$name[.w], collapse="', '"), "'"))m
+    }
+    .w <- which(.env$df$upper == -Inf)
+    if (length(.w) > 0) {
+      .env$err <- c(.env$err, paste("upper bounds cannot be -Inf: '", paste(.env$df$name[.w], collapse="', '"), "'"))m
+    }
+
+    .w <- which(.env$df$upper == .env$df$est | .env$df$lower == .env$df$est)
+    if (length(.w) > 0) {
+      .env$err <- c(.env$err, paste("estimate cannot be equal upper or lower bounds: '", paste(.env$df$name[.w], collapse="', '"), "'"))
+    }
+
+    .w <- which(.env$df$upper < .env$df$est | .env$df$lower > .env$df$est)
+    if (length(.w) > 0) {
+      .env$err <- c(.env$err, paste("estimate and bounds need to be re-ordered: '", paste(.env$df$name[.w], collapse="', '"), "'"))
+    }
   }
   ## print(.env$err)
   return(.env$df)
