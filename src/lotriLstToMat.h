@@ -9,8 +9,8 @@ typedef struct lotriInfo {
   int counter;
   int err;
   int sym;
-  int fix;
-  int est;
+  int fix; // Is there a fixed matrix to store?
+  int est; // Stores # of estimated parameters to concatenate (if needed)
 } lotriInfo;
 
 SEXP lotriToLstMat(SEXP lotri);

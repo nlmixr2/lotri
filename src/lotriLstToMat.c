@@ -31,11 +31,13 @@ lotriInfo assertCorrectMatrixProperties(SEXP lst_, SEXP format, SEXP startNum, i
   int type = TYPEOF(lst_);
   if (type != VECSXP) {
     int fixed = 0;
-    if (isSymNameMat(lst_, *named, &fixed)) {
+    int estimate = 0;
+    if (isSymNameMat(lst_, *named, &fixed, &estimate)) {
       lotriInfo li;
       li.sym = 1;
       li.lst = R_NilValue;
       li.fix = fixed;
+      li.est = estimate;
       return li;
     }
     Rf_errorcall(R_NilValue, _("expects a list named symmetric matrices"));
@@ -96,7 +98,7 @@ SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum) {
   if (len == 2) {
     int repN = isSingleInt(VECTOR_ELT(li.lst, 1), NA_INTEGER);
     if (repN != NA_INTEGER && repN > 0) {
-      if (isSymNameMat(VECTOR_ELT(li.lst, 0), named, &(li.fix))){
+      if (isSymNameMat(VECTOR_ELT(li.lst, 0), named, &(li.fix), &(li.est))){
 	SEXP new = PROTECT(Rf_allocVector(VECSXP, 1)); pro++;
 	SET_VECTOR_ELT(new, 0, li.lst);
 	SEXP ret = _lotriLstToMat(new, format, startNum);
@@ -106,7 +108,7 @@ SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum) {
     }
   }
   for (i = 0; i < len; ++i) {
-    totdim += getCheckDim(li.lst, i, &named, &(li.fix));
+    totdim += getCheckDim(li.lst, i, &named, &(li.fix),  &(li.est));
   }
   SEXP ret = PROTECT(Rf_allocMatrix(REALSXP, totdim, totdim)); pro++;
   SEXP retN = PROTECT(Rf_allocVector(STRSXP, totdim)); pro++;
