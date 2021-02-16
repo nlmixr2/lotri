@@ -130,11 +130,11 @@
     }
     .w <- which(.env$df$lower == Inf)
     if (length(.w) > 0) {
-      .env$err <- c(.env$err, paste("lower bounds cannot be +Inf: '", paste(.env$df$name[.w], collapse="', '"), "'"))m
+      .env$err <- c(.env$err, paste("lower bounds cannot be +Inf: '", paste(.env$df$name[.w], collapse="', '"), "'"))
     }
     .w <- which(.env$df$upper == -Inf)
     if (length(.w) > 0) {
-      .env$err <- c(.env$err, paste("upper bounds cannot be -Inf: '", paste(.env$df$name[.w], collapse="', '"), "'"))m
+      .env$err <- c(.env$err, paste("upper bounds cannot be -Inf: '", paste(.env$df$name[.w], collapse="', '"), "'"))
     }
 
     .w <- which(.env$df$upper == .env$df$est | .env$df$lower == .env$df$est)

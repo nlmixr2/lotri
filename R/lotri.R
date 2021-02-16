@@ -1,3 +1,4 @@
+##' @importFrom utils assignInMyNamespace
 ##' @useDynLib lotri, .registration = TRUE
 NULL
 
