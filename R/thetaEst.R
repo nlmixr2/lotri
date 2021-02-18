@@ -147,6 +147,11 @@
       .env$err <- c(.env$err, paste("estimate and bounds need to be re-ordered: '", paste(.env$df$name[.w], collapse="', '"), "'"))
     }
   }
+  if (!is.null(.env$err)) {
+    stop("estimate error:\n",
+         paste(.env$err,collapse = "\n"),
+         call. = FALSE)
+  }
   ## print(.env$err)
   return(.env$df)
 }
