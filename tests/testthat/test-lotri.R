@@ -1702,6 +1702,8 @@ test_that("lotri matrix parsing", {
             0.5, 1)
   })
   
+  expect_error(capture.output(print(fix1)), NA)
+  
   expect_equal(attr(fix1, "lotriEst"),
                structure(list(name = c("a", "b", "c", "d", "e"), 
                               lower = c(0, 0, -Inf, 0, 0), 
