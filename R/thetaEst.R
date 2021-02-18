@@ -1,3 +1,7 @@
+.deparse1 <- function (expr, collapse = " ", width.cutoff = 500L, ...) { 
+  paste(deparse(expr, width.cutoff, ...), collapse = collapse)
+}
+
 .parseThetaEstFixQ <- function(x, env) {
   x  <- .repFixedWithC(x, env)
   if (is.call(x)) {
@@ -28,13 +32,13 @@
   .ret <- try(eval(.x, envir=envir), silent=TRUE)
   .numeric <- vapply(.ret, is.numeric, logical(1))
   if (!all(.numeric)) {
-    return(deparse1(x))
+    return(.deparse1(x))
   } else if (length(.ret) == 1) {
     .ret <- c(-Inf, .ret, Inf)
   } else if (length(.ret) == 2) {
     .ret <- c(.ret, Inf)
   } else if (length(.ret) != 3) {
-    return(deparse1(x))
+    return(.deparse1(x))
   }
   data.frame(lower=.ret[1], est=.ret[2], upper=.ret[3], fix=.env$fix,
              stringsAsFactors = FALSE)
@@ -52,7 +56,7 @@
        if (is.character(x[[2]])) {
          .lab <- x[[2]]
        } else {
-         .lab <- deparse1(x[[2]])
+         .lab <- .deparse1(x[[2]])
        }
        .lst <- env$df
        .df0 <- .lst[[length(.lst)]]
@@ -64,7 +68,7 @@
        if (is.character(x[[2]])) {
          .fun <- x[[2]]
        } else {
-         .fun <- deparse1(x[[2]])
+         .fun <- .deparse1(x[[2]])
        }
        .lst <- env$df
        .df0 <- .lst[[length(.lst)]]
