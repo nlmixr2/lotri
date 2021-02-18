@@ -26,7 +26,6 @@
   .env$fix <- FALSE
   .x <- .parseThetaEstFixQ(x, .env)
   .ret <- try(eval(.x, envir=envir), silent=TRUE)
-  if (inherits(.ret, "try-error")) return(deparse1(x))
   .numeric <- vapply(.ret, is.numeric, logical(1))
   if (!all(.numeric)) {
     return(deparse1(x))
@@ -100,51 +99,51 @@
     .env$df <- do.call(rbind, .env$df)
     .w <- which(is.na(.env$df$lower))
     if (length(.w) > 0) {
-      .env$err <- c(.env$err, paste("lower bounds cannot be NA: '", paste(.env$df$name[.w], collapse="', '"), "'"))
+      .env$err <- c(.env$err, paste0("lower bounds cannot be NA: '", paste(.env$df$name[.w], collapse="', '"), "'"))
     }
     .w <- which(is.na(.env$df$upper))
     if (length(.w) > 0) {
-      .env$err <- c(.env$err, paste("upper bounds cannot be NA: '", paste(.env$df$name[.w], collapse="', '"), "'"))
+      .env$err <- c(.env$err, paste0("upper bounds cannot be NA: '", paste(.env$df$name[.w], collapse="', '"), "'"))
     }
         .w <- which(is.na(.env$df$est))
     if (length(.w) > 0) {
-      .env$err <- c(.env$err, paste("initial estimates cannot be NA: '", paste(.env$df$name[.w], collapse="', '"), "'"))
+      .env$err <- c(.env$err, paste0("initial estimates cannot be NA: '", paste(.env$df$name[.w], collapse="', '"), "'"))
     }
 
     .w <- which(is.nan(.env$df$lower))
     if (length(.w) > 0) {
-      .env$err <- c(.env$err, paste("lower bounds cannot be NaN: '", paste(.env$df$name[.w], collapse="', '"), "'"))
+      .env$err <- c(.env$err, paste0("lower bounds cannot be NaN: '", paste(.env$df$name[.w], collapse="', '"), "'"))
     }
     .w <- which(is.nan(.env$df$upper))
     if (length(.w) > 0) {
-      .env$err <- c(.env$err, paste("upper bounds cannot be NaN: '", paste(.env$df$name[.w], collapse="', '"), "'"))
+      .env$err <- c(.env$err, paste0("upper bounds cannot be NaN: '", paste(.env$df$name[.w], collapse="', '"), "'"))
     }
     .w <- which(is.nan(.env$df$est))
     if (length(.w) > 0) {
-      .env$err <- c(.env$err, paste("initial estimates cannot be NaN: '", paste(.env$df$name[.w], collapse="', '"), "'"))
+      .env$err <- c(.env$err, paste0("initial estimates cannot be NaN: '", paste(.env$df$name[.w], collapse="', '"), "'"))
     }
 
     .w <- which(!is.finite(.env$df$est))
     if (length(.w) > 0) {
-      .env$err <- c(.env$err, paste("initial estimates cannot be infinite: '", paste(.env$df$name[.w], collapse="', '"), "'"))
+      .env$err <- c(.env$err, paste0("initial estimates cannot be infinite: '", paste(.env$df$name[.w], collapse="', '"), "'"))
     }
     .w <- which(.env$df$lower == Inf)
     if (length(.w) > 0) {
-      .env$err <- c(.env$err, paste("lower bounds cannot be +Inf: '", paste(.env$df$name[.w], collapse="', '"), "'"))
+      .env$err <- c(.env$err, paste0("lower bounds cannot be +Inf: '", paste(.env$df$name[.w], collapse="', '"), "'"))
     }
     .w <- which(.env$df$upper == -Inf)
     if (length(.w) > 0) {
-      .env$err <- c(.env$err, paste("upper bounds cannot be -Inf: '", paste(.env$df$name[.w], collapse="', '"), "'"))
+      .env$err <- c(.env$err, paste0("upper bounds cannot be -Inf: '", paste(.env$df$name[.w], collapse="', '"), "'"))
     }
 
     .w <- which(.env$df$upper == .env$df$est | .env$df$lower == .env$df$est)
     if (length(.w) > 0) {
-      .env$err <- c(.env$err, paste("estimate cannot be equal upper or lower bounds: '", paste(.env$df$name[.w], collapse="', '"), "'"))
+      .env$err <- c(.env$err, paste0("estimate cannot be equal upper or lower bounds: '", paste(.env$df$name[.w], collapse="', '"), "'"))
     }
 
     .w <- which(.env$df$upper < .env$df$est | .env$df$lower > .env$df$est)
     if (length(.w) > 0) {
-      .env$err <- c(.env$err, paste("estimate and bounds need to be re-ordered: '", paste(.env$df$name[.w], collapse="', '"), "'"))
+      .env$err <- c(.env$err, paste0("estimate and bounds need to be re-ordered: '", paste(.env$df$name[.w], collapse="', '"), "'"))
     }
   }
   if (!is.null(.env$err)) {
