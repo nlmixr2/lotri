@@ -1611,6 +1611,21 @@ test_that("lotri matrix parsing", {
                lotri(s1 + s2 + s3 ~ c(1,
                                       0.5, 4.0,
                                       2.7, 3.0, 9.0)))
+  
+  expect_error(lotri(s1 + s2 + s3 ~ cor(sd(1,
+                                           2, 4,
+                                           0.90, 0.50, 9))))
+  
+  
+  expect_error(lotri(s1 + s2 + s3 ~ sd(var(1,
+                                           0.5, 4,
+                                           0.90, 0.50, 9))))
+  
+  expect_equal(diag(lotri(s1 + s2 + s3 ~ var(1,
+                                             0.5, 4,
+                                             0.90, 0.50, 9))),
+               c(s1=1, s2=4, s3=9))
+  
 
   ## Cholesky
   m <- matrix(c(2.2,0.4,0,1.6),2,2)
@@ -1721,6 +1736,19 @@ test_that("lotri matrix parsing", {
                          class = "data.frame"))
   
   expect_error(lotri({a = "matt"}))
+  
+  expect_error(lotri({
+    a = c(1, 2, 3, 4)
+    b <- c(NA)
+    c <- c(NA, NA, NA)
+    d <- c(NaN)
+    e <- c(NaN, NaN, NaN)
+    f <- Inf
+    g <- c(Inf, 1, 2)
+    h <- c(0, 1, -Inf)
+    i <- c(1, 1, 1)
+    j <- c(3, 2, 1)
+  }))
   
 
 })
