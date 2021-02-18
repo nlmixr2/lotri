@@ -1723,7 +1723,7 @@ test_that("lotri matrix parsing", {
                          .Dimnames = list(c("f", "g"), c("f", "g"))))
   
   fix2 <- lotri({
-    a = c(3); label(matt); backTransform(exp)
+    a = c(3); label(matt); backTransform(exp) #nolint
   })
   
   expect_equal(attr(fix2, "lotriEst"),
@@ -1741,9 +1741,9 @@ test_that("lotri matrix parsing", {
   
   expect_error(lotri({
     a = c(1, 2, 3, 4)
-    b <- c(NA)
+    b <- c(NA) # nolint
     c <- c(NA, NA, NA)
-    d <- c(NaN)
+    d <- c(NaN) #nolint
     e <- c(NaN, NaN, NaN)
     f <- Inf
     g <- c(Inf, 1, 2)
