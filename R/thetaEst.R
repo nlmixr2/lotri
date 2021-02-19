@@ -157,3 +157,28 @@
   }
   return(.env$df)
 }
+
+##' Extract lotri estimate data frame from lotri object
+##'
+##' @param x lotri object
+##'
+##' @return data frame with estimates or NULL if there is not a data.frame attached
+##'
+##' @examples
+##'
+##' fix1 <- lotri({
+##'    a <- c(0, 1); backTransform("exp"); label("a label")
+##'    b <- c(0, 1, 2)
+##'    c <- fix(1)
+##'    d <- fix(0, 1, 2)
+##'    e <- c(0, 1, 2, fixed)
+##'    f+g ~ c(1,
+##'            0.5, 1)
+##'  })
+##'
+##' lotriEst(fix1)
+##'
+##' @export
+lotriEst <- function(x) {
+  attr(x, "lotriEst")
+}
