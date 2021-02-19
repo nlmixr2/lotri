@@ -1,5 +1,9 @@
 # lotri development version
 
+* Added the ability to add estimates to a lotri object.  These
+  estimates are an attached `data.frame` to the original lotri matrix.
+  You can extract them or drop them with the function `lotriEst()`
+
 * Allow specifying fixed components in `lotri()` matrices.
 
 * Add `cov`, `cor`, `sd`, `var`, and `chol` options for matrix
