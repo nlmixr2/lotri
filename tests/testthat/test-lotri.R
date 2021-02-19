@@ -1777,6 +1777,8 @@ test_that("lotri matrix parsing", {
 
   c1 <- lotriMat(list(fix1, fix2))
 
+  expect_error(lotriMatInv(c1))
+
   expect_equal(attr(c1, "lotriEst"),
                structure(list(name = c("a", "b", "c", "d", "e", "h", "i", "j", "k", "l"),
                               lower = c(0, 0, -Inf, 0, 0, 0, 0, -Inf, 0, 0),

@@ -158,9 +158,11 @@
   return(.env$df)
 }
 
-##' Extract lotri estimate data frame from lotri object
+##' Extract or remove lotri estimate data frame from lotri object
 ##'
 ##' @param x lotri object
+##'
+##' @param drop boolean indicating if the lotri estimate should be dropped
 ##'
 ##' @return data frame with estimates or NULL if there is not a data.frame attached
 ##'
@@ -176,9 +178,19 @@
 ##'            0.5, 1)
 ##'  })
 ##'
+##' # Extract the attached lotri estimate data frame
 ##' lotriEst(fix1)
 ##'
+##' # Remove the attached lotri estimate data frame
+##' lotriEst(fix1, drop=TRUE)
+##'
 ##' @export
-lotriEst <- function(x) {
-  attr(x, "lotriEst")
+lotriEst <- function(x, drop=FALSE) {
+  if (drop) {
+    y <- x
+    attr(y, "lotriEst") <- NULL
+    return(y)
+  } else {
+    attr(x, "lotriEst")
+  }
 }
