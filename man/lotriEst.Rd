@@ -2,18 +2,20 @@
 % Please edit documentation in R/thetaEst.R
 \name{lotriEst}
 \alias{lotriEst}
-\title{Extract lotri estimate data frame from lotri object}
+\title{Extract or remove lotri estimate data frame from lotri object}
 \usage{
-lotriEst(x)
+lotriEst(x, drop = FALSE)
 }
 \arguments{
 \item{x}{lotri object}
+
+\item{drop}{boolean indicating if the lotri estimate should be dropped}
 }
 \value{
 data frame with estimates or NULL if there is not a data.frame attached
 }
 \description{
-Extract lotri estimate data frame from lotri object
+Extract or remove lotri estimate data frame from lotri object
 }
 \examples{
 
@@ -27,6 +29,10 @@ fix1 <- lotri({
            0.5, 1)
  })
 
+# Extract the attached lotri estimate data frame
 lotriEst(fix1)
+
+# Remove the attached lotri estimate data frame
+lotriEst(fix1, drop=TRUE)
 
 }
