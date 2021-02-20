@@ -1752,6 +1752,10 @@ test_that("lotri matrix parsing", {
     j <- c(3, 2, 1)
   }))
 
+  # Don't allow dupliate parameters with a mixed matrix/estimate
+  expect_error(lotri({b=3;b~0.4}))
+
+
   context("combine fix1 and fix2")
 
   fix1 <- lotri({
@@ -1838,6 +1842,7 @@ test_that("lotri matrix parsing", {
     d <- fix(0, 1, 2)
     e <- c(0, 1, 2, fixed)
   })
+
 
 
 

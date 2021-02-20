@@ -581,6 +581,12 @@ NULL
 .amplifyRetWithDfEst <- function(ret, df) {
   if (is.null(df)) return(ret)
   attr(ret, "lotriEst") <- df
+  .allNames <- c(dimnames(ret)[[1]], df$name)
+  .dup <- unique(.allNames[duplicated(.allNames)])
+  if (length(.dup) > 0) {
+    stop("duplicated parameter(s): '",paste(.dup, collapse="', '"), "'", sep="",
+         call.=FALSE)
+  }
   if (inherits(ret, "matrix") & !inherits(ret, "lotriFix")) {
     class(ret) <- c("lotriFix", class(ret))
   }
