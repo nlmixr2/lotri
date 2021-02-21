@@ -3,6 +3,8 @@
 context("lotri -- easy matrix parsing")
 test_that("lotri matrix parsing", {
 
+  .cls <- c("lotriFix", class(matrix(0)))
+
   omega9 <- lotri(
     lotri(
       eta.Cl ~ 0.1,
@@ -1004,13 +1006,13 @@ test_that("lotri matrix parsing", {
                               lotriFix = structure(c(TRUE, TRUE, TRUE, TRUE),
                                                    .Dim = c(2L, 2L),
                                                    .Dimnames = list(c("f", "g"), c("f", "g"))),
-                              class = c("lotriFix", "matrix", "array")),
+                              class = .cls),
                     structure(c(1, 0.5, 0.5, 1), .Dim = c(2L, 2L),
                               .Dimnames = list(c("m", "n"), c("m", "n")),
                               lotriFix = structure(c(FALSE, FALSE, FALSE, FALSE),
                                                    .Dim = c(2L, 2L),
                                                    .Dimnames = list(c("m", "n"), c("m", "n"))),
-                              class = c("lotriFix", "matrix", "array"))))
+                              class = .cls)))
 
   expect_equal(vapply(seq_along(tmp2), function(i) {
     dimnames(tmp2[[i]])[[1]]
