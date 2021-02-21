@@ -1698,6 +1698,16 @@ test_that("lotri matrix parsing", {
     c <- fix(1)
     d <- fix(0, 1, 2)
     e <- c(0, 1, 2, fixed)
+  })
+
+  expect_error(utils::capture.output(print(fix1)), NA)
+
+  fix1 <- lotri({
+    a <- c(0, 1); backTransform("exp"); label("a label")
+    b <- c(0, 1, 2)
+    c <- fix(1)
+    d <- fix(0, 1, 2)
+    e <- c(0, 1, 2, fixed)
     f+g ~ c(1,
             0.5, 1)
   })
@@ -1828,12 +1838,10 @@ test_that("lotri matrix parsing", {
                               backTransform = c("exp", NA, NA, NA, NA)),
                          class = "data.frame", row.names = c(NA, 5L)))
 
-  class(c1) <- NULL
-  attr(c1, "lotriEst") <- NULL
-
-  expect_equal(c1, structure(c(1, 0.5, 0, 0, 0.5, 1, 0, 0, 0, 0, 1, 0.5, 0, 0, 0.5, 1),
-                             .Dim = c(4L, 4L),
-                             .Dimnames = list(c("f", "g", "m", "n"), c("f", "g", "m", "n"))))
+  expect_equal(lotriEst(c1, drop=TRUE),
+               structure(c(1, 0.5, 0, 0, 0.5, 1, 0, 0, 0, 0, 1, 0.5, 0, 0, 0.5, 1),
+                         .Dim = c(4L, 4L),
+                         .Dimnames = list(c("f", "g", "m", "n"), c("f", "g", "m", "n"))))
 
   fix1 <- lotri({
     a <- c(0, 1); backTransform("exp"); label("a label")
@@ -1843,8 +1851,24 @@ test_that("lotri matrix parsing", {
     e <- c(0, 1, 2, fixed)
   })
 
+  fix1 <- lotri({
+    a <- c(0, 1); backTransform("exp"); label("a label")
+    b <- c(0, 1, 2)
+    c <- fix(1)
+    d <- fix(0, 1, 2)
+    e <- c(0, 1, 2, fixed)
+    f+g ~ fix(1,
+              0.5, 1)
+  })
 
+  fix2 <- lotri({
+    m+n ~ c(1,
+            0.5, 1)
+  })
 
+  c1 <- lotriMat(list(fix1, fix2))
+
+  expect_true(inherits(lotriEst(c1, drop=TRUE), "lotriFix"))
 
 })
 

@@ -189,6 +189,10 @@ lotriEst <- function(x, drop=FALSE) {
   if (drop) {
     y <- x
     attr(y, "lotriEst") <- NULL
+    if (!is.null(attr(y, "lotriFix"))) {
+      return(y)
+    }
+    class(y) <- NULL
     return(y)
   } else {
     attr(x, "lotriEst")
