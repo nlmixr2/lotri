@@ -56,36 +56,6 @@ lotriInfo assertCorrectMatrixProperties(SEXP lst_, SEXP format, SEXP startNum, i
   return li;
 }
 
-static inline void lotriLstToMatFillInFullMatrix(double *retd, int *retf, int *totdim, SEXP retN,
-						 int *curBand, int *len, lotriInfo *li, int *named) {
-  SEXP sameS, dimnames, colnames, curFixed = R_NilValue;
-  int totN;
-  for (int i = 0; i < *len; ++i) {
-    SEXP cur = VECTOR_ELT(li->lst, i);
-    int type = TYPEOF(cur);
-    int nsame = 1;
-    if (type == VECSXP) {
-      sameS = VECTOR_ELT(cur, 1);
-      nsame = isSingleInt(sameS, 1);
-      cur = VECTOR_ELT(cur, 0);
-      type = TYPEOF(cur);
-    }
-    totN = Rf_ncols(cur);
-    if (*named) {
-      dimnames = Rf_getAttrib(cur, R_DimNamesSymbol);
-      colnames = VECTOR_ELT(dimnames, 1);
-    }
-    if (li->fix) {
-      curFixed = Rf_getAttrib(cur, Rf_install("lotriFix"));
-      if (!Rf_isMatrix(curFixed) || TYPEOF(curFixed) != LGLSXP) {
-	curFixed = R_NilValue;
-      }
-    }
-    lotriLstToMatFillInMatrixBand(retd, retf, nsame, type, *named, totN, *totdim,
-				  retN, colnames, curBand, li, cur, curFixed);
-  }
-}
-
 SEXP _lotriEstDf(SEXP lst_, int totNum) {
   int i0 = 0, pro = 0;
   int lstLen = Rf_length(lst_);
@@ -164,7 +134,7 @@ SEXP _lotriEstDf(SEXP lst_, int totNum) {
   return ret;
 }
 
-SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum) {
+SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum, SEXP matCls) {
   int type, totN, pro = 0;
   int named = 2;
   lotriInfo li = assertCorrectMatrixProperties(lst_, format, startNum, &named);
@@ -179,7 +149,7 @@ SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum) {
       if (isSymNameMat(VECTOR_ELT(li.lst, 0), named, &(li.fix), &(li.est))){
 	SEXP new = PROTECT(Rf_allocVector(VECSXP, 1)); pro++;
 	SET_VECTOR_ELT(new, 0, li.lst);
-	SEXP ret = _lotriLstToMat(new, format, startNum);
+	SEXP ret = _lotriLstToMat(new, format, startNum, matCls);
 	UNPROTECT(pro);
 	return ret;
       }
@@ -226,10 +196,12 @@ SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum) {
     Rf_setAttrib(ret, Rf_install("lotriEst"), liEstSEXP);
   }
   if (doCls) {
-    SEXP cls = PROTECT(Rf_allocVector(STRSXP, 3)); pro++;
+    int lenCls = Rf_length(matCls);
+    SEXP cls = PROTECT(Rf_allocVector(STRSXP, lenCls+1)); pro++;
     SET_STRING_ELT(cls, 0, Rf_mkChar("lotriFix"));
-    SET_STRING_ELT(cls, 1, Rf_mkChar("matrix"));
-    SET_STRING_ELT(cls, 2, Rf_mkChar("array"));
+    for (int mi = lenCls; mi--;) {
+      SET_STRING_ELT(cls, mi+1, STRING_ELT(matCls, mi));
+    }
     Rf_classgets(ret, cls);
   }
   UNPROTECT(pro);

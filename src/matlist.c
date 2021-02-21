@@ -160,7 +160,7 @@ SEXP _isLotri(SEXP lotri) {
 
 void R_init_lotri(DllInfo *info){
   R_CallMethodDef callMethods[]  = {
-    {"_lotriLstToMat", (DL_FUNC) &_lotriLstToMat, 3},
+    {"_lotriLstToMat", (DL_FUNC) &_lotriLstToMat, 4},
     {"_asLotriMat", (DL_FUNC) &_asLotriMat, 3},
     {"_lotriSep", (DL_FUNC) &_lotriSep, 5},
     {"_lotriAllNames", (DL_FUNC) &_lotriAllNames, 1},

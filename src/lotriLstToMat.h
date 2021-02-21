@@ -16,7 +16,7 @@ typedef struct lotriInfo {
 SEXP lotriToLstMat(SEXP lotri);
 
 lotriInfo assertCorrectMatrixProperties(SEXP lst_, SEXP format, SEXP startNum, int *named);
-SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum);
+SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum, SEXP matCls);
 
 static inline lotriInfo _lotriLstToMat0(SEXP lst_, SEXP format, SEXP startNum) {
   lotriInfo ret;
@@ -100,6 +100,36 @@ static inline void lotriLstToMatFillInMatrixBand(double *retd, int *retf, int ns
       }
     }
     *curBand += totN;
+  }
+}
+
+static inline void lotriLstToMatFillInFullMatrix(double *retd, int *retf, int *totdim, SEXP retN,
+						 int *curBand, int *len, lotriInfo *li, int *named) {
+  SEXP sameS, dimnames, colnames, curFixed = R_NilValue;
+  int totN;
+  for (int i = 0; i < *len; ++i) {
+    SEXP cur = VECTOR_ELT(li->lst, i);
+    int type = TYPEOF(cur);
+    int nsame = 1;
+    if (type == VECSXP) {
+      sameS = VECTOR_ELT(cur, 1);
+      nsame = isSingleInt(sameS, 1);
+      cur = VECTOR_ELT(cur, 0);
+      type = TYPEOF(cur);
+    }
+    totN = Rf_ncols(cur);
+    if (*named) {
+      dimnames = Rf_getAttrib(cur, R_DimNamesSymbol);
+      colnames = VECTOR_ELT(dimnames, 1);
+    }
+    if (li->fix) {
+      curFixed = Rf_getAttrib(cur, Rf_install("lotriFix"));
+      if (!Rf_isMatrix(curFixed) || TYPEOF(curFixed) != LGLSXP) {
+	curFixed = R_NilValue;
+      }
+    }
+    lotriLstToMatFillInMatrixBand(retd, retf, nsame, type, *named, totN, *totdim,
+				  retN, colnames, curBand, li, cur, curFixed);
   }
 }
 

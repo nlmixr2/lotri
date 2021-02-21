@@ -512,7 +512,7 @@ NULL
 ##' @author Matthew Fidler
 ##' @noRd
 .getMatrix <- function(env, val) {
-  return(.Call(`_lotriLstToMat`, env[[val]], NULL, 1L, PACKAGE = "lotri"))
+  return(.Call(`_lotriLstToMat`, env[[val]], NULL, 1L, class(matrix(0)), PACKAGE = "lotri"))
 }
 
 .lotriList <- function(x, ..., envir = parent.frame()) {
@@ -1106,7 +1106,7 @@ as.matrix.lotri <- function(x, ...) {
 ##' @author Matthew Fidler
 ##' @export
 lotriMat <- function(matList, format = NULL, start = 1L) {
-  .Call(`_lotriLstToMat`, matList, format, start, PACKAGE = "lotri")
+  .Call(`_lotriLstToMat`, matList, format, start, class(matrix(0)), PACKAGE = "lotri")
 }
 
 ##' Separate a lotri matrix into above and below lotri matrices
