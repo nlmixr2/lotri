@@ -9,13 +9,52 @@ as.data.frame.lotriFix <- function(x, row.names = NULL, optional = FALSE, ...) {
          call.=FALSE)
   }
   .df <- lotriEst(x, drop=FALSE)
-  .df$ntheta <- seq_along(.df$est)
-  .df$neta1 <- NA_integer_
-  .df$neta2 <- NA_integer_
-  .df$condition <- NA_character_
+  if (!is.null(.df)) {
+    .df$ntheta <- seq_along(.df$est)
+    .df$neta1 <- NA_integer_
+    .df$neta2 <- NA_integer_
+    .df$condition <- NA_character_
+  }
+  .df2 <- lotriEst(x, drop=TRUE)
+  .df3 <- NULL
+  if (!is.null(.df2)) {
+    .lst2 <- lotriMatInv(.df2)
+    .eta1 <- 1
+    .eta2 <- 1
+    for (.i in seq_along(.lst2)) {
+      .curMat <- .lst2[[.i]]
+      .curMatF <- attr(.curMat, "lotriFix")
+      .n <- dimnames(.curMat)[[1]]
+      for (.j in seq_along(.n)) {
+        for (.k in seq_len(.j)) {
+          if (.j == .k) {
+            .curName <- .n[.j]
+          } else {
+            .curName <- paste0("(", .n[.k], ",", .n[.j], ")")
+          }
+          .fix <- FALSE
+          if (!is.null(.curMatF)) {
+            .fix <- .curMatF[.j, .k]
+          }
+          .df3 <- rbind(.df3,
+                        data.frame(ntheta=NA_integer_,
+                                   neta1=.j, neta2=.k,
+                                   name=.curName,
+                                   lower= -Inf,
+                                   est=.curMat[.j, .k],
+                                   upper=Inf,
+                                   fix=.fix,
+                                   label=NA_integer_,
+                                   backTransform=NA_character_,
+                                   condition="ID"))
+        }
+      }
+    }
+  }
+
 
   .ord <- c("ntheta", "neta1", "neta2", "name", "lower", "est", "upper", "fix", "label", "backTransform", "condition")
-
+  .df <- rbind(.df, .df3)
   return(.df[, .ord])
 
   ##   ntheta neta1 neta2   name lower       est   upper   fix  err  label
