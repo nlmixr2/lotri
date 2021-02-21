@@ -22,7 +22,6 @@ test_that("lotri matrix parsing", {
     ) | inv
   )
 
-
   expect_equal(
     lotri({
       et2 + et3 + et4 ~ c(
@@ -979,6 +978,40 @@ test_that("lotri matrix parsing", {
     )
   )
 
+  fix1 <- lotri({
+    a <- c(0, 1); backTransform("exp"); label("a label")
+    b <- c(0, 1, 2)
+    c <- fix(1)
+    d <- fix(0, 1, 2)
+    e <- c(0, 1, 2, fixed)
+    f+g ~ fix(1,
+              0.5, 1)
+  })
+
+  fix2 <- lotri({
+    h <- c(0, 1); backTransform("expit"); label("b label")
+    i <- c(0, 1, 2)
+    j <- fix(1)
+    k <- fix(0, 1, 2)
+    l <- c(0, 1, 2, fixed)
+    m+n ~ c(1,
+            0.5, 1)
+  })
+
+  expect_equal(lotriMatInv(lotriEst(lotriMat(list(fix1, fix2)), drop=TRUE)),
+               list(structure(c(1, 0.5, 0.5, 1), .Dim = c(2L, 2L),
+                              .Dimnames = list(c("f", "g"), c("f", "g")),
+                              lotriFix = structure(c(TRUE, TRUE, TRUE, TRUE),
+                                                   .Dim = c(2L, 2L),
+                                                   .Dimnames = list(c("f", "g"), c("f", "g"))),
+                              class = c("lotriFix", "matrix", "array")),
+                    structure(c(1, 0.5, 0.5, 1), .Dim = c(2L, 2L),
+                              .Dimnames = list(c("m", "n"), c("m", "n")),
+                              lotriFix = structure(c(FALSE, FALSE, FALSE, FALSE),
+                                                   .Dim = c(2L, 2L),
+                                                   .Dimnames = list(c("m", "n"), c("m", "n"))),
+                              class = c("lotriFix", "matrix", "array"))))
+
   expect_equal(vapply(seq_along(tmp2), function(i) {
     dimnames(tmp2[[i]])[[1]]
   }, character(1)), c(
@@ -1869,6 +1902,31 @@ test_that("lotri matrix parsing", {
   c1 <- lotriMat(list(fix1, fix2))
 
   expect_true(inherits(lotriEst(c1, drop=TRUE), "lotriFix"))
+
+  context("as.data.frame")
+
+  fix1 <- lotri({
+    a <- c(0, 1); backTransform("exp"); label("a label")
+    b <- c(0, 1, 2)
+    c <- fix(1)
+    d <- fix(0, 1, 2)
+    e <- c(0, 1, 2, fixed)
+    f+g ~ fix(1,
+              0.5, 1)
+  })
+
+  fix2 <- lotri({
+    h <- c(0, 1); backTransform("expit"); label("b label")
+    i <- c(0, 1, 2)
+    j <- fix(1)
+    k <- fix(0, 1, 2)
+    l <- c(0, 1, 2, fixed)
+    m+n ~ c(1,
+            0.5, 1)
+  })
+
+
+  c1 <- lotriMat(list(fix1, fix2))
 
 })
 
