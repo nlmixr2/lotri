@@ -15,13 +15,30 @@ print.lotri <- function(x, ...) {
 ##' @export
 print.lotriFix <- function(x, ...) {
   .tmp <- x
+  .dim <- dim(x)
   .cls <- class(.tmp)
+  .lotriFix <- attr(.tmp, "lotriFix")
+  .lotriEst <- attr(.tmp, "lotriEst")
+  if (all(.dim == 0L) & !is.null(.lotriEst)) {
+    cat("Lotri Estimates (get with `lotriEst()`):\n")
+    print(.lotriEst)
+    return(invisible(x))
+  }
   attr(.tmp, "lotriFix") <- NULL
+  attr(.tmp, "lotriEst") <- NULL
   .w <- which(.cls == "lotriFix")
   .cls <- .cls[-.w]
   class(.tmp) <- NULL # Note that a matrix doesn't actually have a class
+  if (!is.null(.lotriEst)) {
+    cat("Lotri Estimates (get with `lotriEst()`):\n")
+    print(.lotriEst)
+    cat("\nMatrix:\n")
+  }
   print(.tmp)
-  cat("this matrix has fixed elements\n")
+  if (!is.null(.lotriFix)) {
+    cat("this matrix has fixed elements\n")
+  }
+  return(invisible(x))
 }
 
 ##' @export

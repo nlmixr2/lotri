@@ -61,6 +61,11 @@
 lotriMatInv <- function(mat) {
   if (!inherits(mat, "matrix"))
     stop("'mat' must be a matrix", call.=FALSE)
+  if (!is.null(attr(mat, "lotriEst"))) {
+    stop("a lotri matrix with attached estimates cannot be converted to a list matrix\n",
+         "drop with `lotriEst(x,drop=TRUE)",
+         call.=FALSE)
+  }
   .ret <- list()
   .mat <- mat
   .i <- 1

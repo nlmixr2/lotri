@@ -31,17 +31,19 @@ lotriInfo assertCorrectMatrixProperties(SEXP lst_, SEXP format, SEXP startNum, i
   int type = TYPEOF(lst_);
   if (type != VECSXP) {
     int fixed = 0;
-    if (isSymNameMat(lst_, *named, &fixed)) {
+    int estimate = 0;
+    if (isSymNameMat(lst_, *named, &fixed, &estimate)) {
       lotriInfo li;
       li.sym = 1;
       li.lst = R_NilValue;
       li.fix = fixed;
+      li.est = estimate;
       return li;
     }
     Rf_errorcall(R_NilValue, _("expects a list named symmetric matrices"));
   }
   lotriInfo li = _lotriLstToMat0(lst_, format, startNum);
-  PROTECT(li.lst); 
+  PROTECT(li.lst);
   if (li.err == 1) {
     UNPROTECT(1);
     Rf_errorcall(R_NilValue, _("'format' must be a single length string or NULL"));
@@ -54,37 +56,85 @@ lotriInfo assertCorrectMatrixProperties(SEXP lst_, SEXP format, SEXP startNum, i
   return li;
 }
 
-static inline void lotriLstToMatFillInFullMatrix(double *retd, int *retf, int *totdim, SEXP retN,
-						 int *curBand, int *len, lotriInfo *li, int *named) {
-  SEXP sameS, dimnames, colnames, curFixed = R_NilValue;
-  int totN;
-  for (int i = 0; i < *len; ++i) {
-    SEXP cur = VECTOR_ELT(li->lst, i);
-    int type = TYPEOF(cur);
-    int nsame = 1;
-    if (type == VECSXP) {
-      sameS = VECTOR_ELT(cur, 1);
-      nsame = isSingleInt(sameS, 1);
-      cur = VECTOR_ELT(cur, 0);
-      type = TYPEOF(cur);
-    }
-    totN = Rf_ncols(cur);
-    if (*named) {
-      dimnames = Rf_getAttrib(cur, R_DimNamesSymbol);
-      colnames = VECTOR_ELT(dimnames, 1);
-    }
-    if (li->fix) {
-      curFixed = Rf_getAttrib(cur, Rf_install("lotriFix"));
-      if (!Rf_isMatrix(curFixed) || TYPEOF(curFixed) != LGLSXP) {
-	curFixed = R_NilValue;
+SEXP _lotriEstDf(SEXP lst_, int totNum) {
+  int i0 = 0, pro = 0;
+  int lstLen = Rf_length(lst_);
+  SEXP ret  = PROTECT(Rf_allocVector(VECSXP, 7)); pro++;
+  SEXP retN = PROTECT(Rf_allocVector(STRSXP, 7)); pro++;
+
+  SET_STRING_ELT(retN, 0, Rf_mkChar("name"));
+  SEXP name = PROTECT(Rf_allocVector(STRSXP, totNum)); pro++;
+  SET_VECTOR_ELT(ret, 0, name);
+
+  SET_STRING_ELT(retN, 1, Rf_mkChar("lower"));
+  SEXP lowerS = PROTECT(Rf_allocVector(REALSXP, totNum)); pro++;
+  SET_VECTOR_ELT(ret, 1, lowerS);
+  double *lower = REAL(lowerS);
+
+  SET_STRING_ELT(retN, 2, Rf_mkChar("est"));
+  SEXP estS = PROTECT(Rf_allocVector(REALSXP, totNum)); pro++;
+  SET_VECTOR_ELT(ret, 2, estS);
+  double *est = REAL(estS);
+
+  SET_STRING_ELT(retN, 3, Rf_mkChar("upper"));
+  SEXP upperS = PROTECT(Rf_allocVector(REALSXP, totNum)); pro++;
+  SET_VECTOR_ELT(ret, 3, upperS);
+  double *upper = REAL(upperS);
+
+  SET_STRING_ELT(retN, 4, Rf_mkChar("fix"));
+  SEXP fixS = PROTECT(Rf_allocVector(LGLSXP, totNum)); pro++;
+  int *fix = INTEGER(fixS);
+  SET_VECTOR_ELT(ret, 4, fixS);
+
+  SET_STRING_ELT(retN, 5, Rf_mkChar("label"));
+  SEXP label = PROTECT(Rf_allocVector(STRSXP, totNum)); pro++;
+  SET_VECTOR_ELT(ret, 5, label);
+
+  SET_STRING_ELT(retN, 6, Rf_mkChar("backTransform"));
+  SEXP backTransform = PROTECT(Rf_allocVector(STRSXP, totNum)); pro++;
+  SET_VECTOR_ELT(ret, 6, backTransform);
+
+  for (int listCnt = 0; listCnt < lstLen; ++listCnt) {
+    SEXP curV = Rf_getAttrib(VECTOR_ELT(lst_, listCnt), Rf_install("lotriEst"));
+    if (!Rf_isNull(curV)) {
+      SEXP nameIn = VECTOR_ELT(curV, 0);
+      double *lowerIn = REAL(VECTOR_ELT(curV, 1));
+      double *estIn = REAL(VECTOR_ELT(curV, 2));
+      double *upperIn = REAL(VECTOR_ELT(curV, 3));
+      int *fixIn = INTEGER(VECTOR_ELT(curV, 4));
+      SEXP labelIn = VECTOR_ELT(curV, 5);
+      SEXP backTransformIn = VECTOR_ELT(curV, 6);
+      int inLen = Rf_length(nameIn);
+      for (int inCnt = 0; inCnt < inLen; ++inCnt) {
+	SET_STRING_ELT(name, i0, STRING_ELT(nameIn, inCnt));
+	lower[i0] = lowerIn[inCnt];
+	est[i0] = estIn[inCnt];
+	upper[i0] = upperIn[inCnt];
+	fix[i0] = fixIn[inCnt];
+	SET_STRING_ELT(label, i0, STRING_ELT(labelIn, inCnt));
+	SET_STRING_ELT(backTransform, i0, STRING_ELT(backTransformIn, inCnt));
+	i0++;
       }
     }
-    lotriLstToMatFillInMatrixBand(retd, retf, nsame, type, *named, totN, *totdim,
-				  retN, colnames, curBand, li, cur, curFixed);
   }
+
+  SEXP cls = PROTECT(Rf_allocVector(STRSXP, 1)); pro++;
+  SET_STRING_ELT(cls, 0, Rf_mkChar("data.frame"));
+  Rf_classgets(ret, cls);
+
+  SEXP rowNamesS = PROTECT(Rf_allocVector(INTSXP, 2)); pro++;
+  int *rowNames = INTEGER(rowNamesS);
+  rowNames[0] = NA_INTEGER;
+  rowNames[1] = totNum;
+
+  Rf_setAttrib(ret, R_NamesSymbol, retN);
+  Rf_setAttrib(ret, Rf_install("row.names"), rowNamesS);
+
+  UNPROTECT(pro);
+  return ret;
 }
 
-SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum) {
+SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum, SEXP matCls) {
   int type, totN, pro = 0;
   int named = 2;
   lotriInfo li = assertCorrectMatrixProperties(lst_, format, startNum, &named);
@@ -96,18 +146,20 @@ SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum) {
   if (len == 2) {
     int repN = isSingleInt(VECTOR_ELT(li.lst, 1), NA_INTEGER);
     if (repN != NA_INTEGER && repN > 0) {
-      if (isSymNameMat(VECTOR_ELT(li.lst, 0), named, &(li.fix))){
+      if (isSymNameMat(VECTOR_ELT(li.lst, 0), named, &(li.fix), &(li.est))){
 	SEXP new = PROTECT(Rf_allocVector(VECSXP, 1)); pro++;
 	SET_VECTOR_ELT(new, 0, li.lst);
-	SEXP ret = _lotriLstToMat(new, format, startNum);
+	SEXP ret = _lotriLstToMat(new, format, startNum, matCls);
 	UNPROTECT(pro);
 	return ret;
       }
     }
   }
+  li.est = 0;
   for (i = 0; i < len; ++i) {
-    totdim += getCheckDim(li.lst, i, &named, &(li.fix));
+    totdim += getCheckDim(li.lst, i, &named, &(li.fix),  &(li.est));
   }
+  int liEst = li.est;
   SEXP ret = PROTECT(Rf_allocMatrix(REALSXP, totdim, totdim)); pro++;
   SEXP retN = PROTECT(Rf_allocVector(STRSXP, totdim)); pro++;
   double *retd = REAL(ret);
@@ -132,13 +184,24 @@ SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum) {
     Rf_setAttrib(ret, R_DimNamesSymbol, dimnames);
     if (li.fix) Rf_setAttrib(retF, R_DimNamesSymbol, dimnames);
   }
+  int doCls = 0;
   if (li.fix) {
     // Use the R 4.0 definition of matrix; It should work fine on R 3.0.x
-    SEXP cls = PROTECT(Rf_allocVector(STRSXP, 3)); pro++;
-    SET_STRING_ELT(cls, 0, Rf_mkChar("lotriFix"));
-    SET_STRING_ELT(cls, 1, Rf_mkChar("matrix"));
-    SET_STRING_ELT(cls, 2, Rf_mkChar("array"));
+    doCls = 1;
     Rf_setAttrib(ret, Rf_install("lotriFix"), retF);
+  }
+  if (liEst) {
+    doCls = 1;
+    SEXP liEstSEXP = PROTECT(_lotriEstDf(lst_, liEst)); pro++;
+    Rf_setAttrib(ret, Rf_install("lotriEst"), liEstSEXP);
+  }
+  if (doCls) {
+    int lenCls = Rf_length(matCls);
+    SEXP cls = PROTECT(Rf_allocVector(STRSXP, lenCls+1)); pro++;
+    SET_STRING_ELT(cls, 0, Rf_mkChar("lotriFix"));
+    for (int mi = lenCls; mi--;) {
+      SET_STRING_ELT(cls, mi+1, STRING_ELT(matCls, mi));
+    }
     Rf_classgets(ret, cls);
   }
   UNPROTECT(pro);
