@@ -587,7 +587,8 @@ NULL
     stop("duplicated parameter(s): '",paste(.dup, collapse="', '"), "'", sep="",
          call.=FALSE)
   }
-  if (inherits(ret, "matrix") & !inherits(ret, "lotriFix")) {
+  if ((inherits(ret, "matrix") | inherits(ret, "list") | inherits(ret, "lotri")) &
+        !inherits(ret, "lotriFix")) {
     class(ret) <- c("lotriFix", class(ret))
   }
   return(ret)

@@ -1,11 +1,6 @@
 .lotri <- loadNamespace("lotri")
 
-context("lotri -- easy matrix parsing")
-test_that("lotri matrix parsing", {
-
-  .cls <- c("lotriFix", class(matrix(0)))
-
-  omega9 <- lotri(
+omega9 <- lotri(
     lotri(
       eta.Cl ~ 0.1,
       eta.Ka ~ 0.1
@@ -22,7 +17,32 @@ test_that("lotri matrix parsing", {
       inv.Cl ~ 0.02,
       inv.Ka ~ 0.02
     ) | inv
+)
+
+.cls <- c("lotriFix", class(matrix(0)))
+
+omega <- lotri(
+    lotri(
+      eta.Cl ~ 0.1,
+      eta.Ka ~ 0.1
+    ) | id(nu = 100),
+    lotri(
+      eye.Cl ~ 0.05,
+      eye.Ka ~ 0.05
+    ) | eye(nu = 50),
+    lotri(
+      iov.Cl ~ 0.01,
+      iov.Ka ~ 0.01
+    ) | occ(nu = 200),
+    lotri(
+      inv.Cl ~ 0.02,
+      inv.Ka ~ 0.02
+    ) | inv(nu = 10)
   )
+
+
+test_that("lotri matrix parsing", {
+
 
   expect_equal(
     lotri({
@@ -523,9 +543,9 @@ test_that("lotri matrix parsing", {
 
   expect_equal(tmp$.names, "df")
 
-  expect_warning(utils::capture.output(print(tmp)), NA)
+  expect_snapshot_output(print(tmp))
 
-  expect_warning(utils::capture.output(str(tmp)), NA)
+  expect_snapshot_output(str(tmp))
 
   expect_equal(.DollarNames(tmp, ""), c("id", "id2", ".allNames", ".bounds", ".names", ".list", ".maxNu", "df"))
 
@@ -901,8 +921,9 @@ test_that("lotri matrix parsing", {
       iov.Cl = 3
     ))), class = "lotri")
   )
+})
 
-  context("as.lotri")
+test_that("as.lotri", {
   tmp2 <- lotri(
     iov.Ka ~ 0.5,
     iov.Cl ~ 0.6
@@ -964,7 +985,9 @@ test_that("lotri matrix parsing", {
   expect_error(as.lotri(lotri(et1 + et2 ~ c(0.1, 0.01, 1)), lower = c(3, 3), default = "id"))
   expect_error(as.lotri(lotri(et1 + et2 ~ c(0.1, 0.01, 1)), lower = 1L, default = "id"))
 
-  context("lotriMat")
+})
+
+test_that("lotriMat", {
 
   tmp <- lotriMat(omega9)
 
@@ -1260,26 +1283,9 @@ test_that("lotri matrix parsing", {
   expect_equal(lotriMat(mat1, "ETA[%d]"), lotriMat(list(mat1), "ETA[%d]"))
   expect_equal(lotriMat(mat1, "ETA[%d]", 4), lotriMat(list(mat1), "ETA[%d]", 4L))
 
-  context("lotriSep")
+})
 
-  omega <- lotri(
-    lotri(
-      eta.Cl ~ 0.1,
-      eta.Ka ~ 0.1
-    ) | id(nu = 100),
-    lotri(
-      eye.Cl ~ 0.05,
-      eye.Ka ~ 0.05
-    ) | eye(nu = 50),
-    lotri(
-      iov.Cl ~ 0.01,
-      iov.Ka ~ 0.01
-    ) | occ(nu = 200),
-    lotri(
-      inv.Cl ~ 0.02,
-      inv.Ka ~ 0.02
-    ) | inv(nu = 10)
-  )
+test_that("lotriSep", {
 
   sep0 <- lotriSep(omega9, above = c(inv = 10L), below = c(eye = 2L, occ = 4L))
 
@@ -1395,7 +1401,8 @@ test_that("lotri matrix parsing", {
 
   expect_error(lotriSep(omega1, above = NULL, below = c(eye = 2L, occ = 4L)))
 
-  context("allNames")
+})
+test_that("allNames", {
 
   omega <- lotri(
     lotri(
@@ -1466,7 +1473,8 @@ test_that("lotri matrix parsing", {
     name9
   )
 
-  context("bounds C")
+})
+test_that("bounds C", {
 
   tmp <- .Call(.lotri$`_lotriGetBounds`, omega9, NULL, NULL, PACKAGE = "lotri")
   expect_true(all(!is.finite(tmp$lower)))
@@ -1585,7 +1593,8 @@ test_that("lotri matrix parsing", {
 
   expect_error(.Call(.lotri$`_lotriGetBounds`, "A", NULL, 1, PACKAGE = "lotri"))
 
-  context(".maxNu")
+})
+test_that(".maxNu", {
 
   omega <- lotri(
     lotri(
@@ -1611,7 +1620,8 @@ test_that("lotri matrix parsing", {
 
   expect_equal(.Call(.lotri$`_lotriMaxNu`, omega9, PACKAGE = "lotri"), 0)
 
-  context("isLotri C")
+})
+test_that("isLotri C", {
 
   expect_equal(.Call(.lotri$`_isLotri`, omega9, PACKAGE = "lotri"), TRUE)
   expect_equal(.Call(.lotri$`_isLotri`, omega, PACKAGE = "lotri"), TRUE)
@@ -1624,7 +1634,9 @@ test_that("lotri matrix parsing", {
 
   expect_equal(.Call(.lotri$`_isLotri`, "matt", PACKAGE = "lotri"), FALSE)
 
-  context("transformations")
+})
+
+test_that("transformations", {
 
   expect_equal(lotri(s1 + s2 + s3 ~ cor(sd(1,
                                            0.25, 4,
@@ -1686,7 +1698,8 @@ test_that("lotri matrix parsing", {
   expect_error(lotri(s1 + s2 ~ cor(cov(2.2,
                                        0.4, 1.6))))
 
-  context("fixed tests")
+})
+test_that("fixed tests", {
 
   tmp <- lotri(lotri(a + b ~ fix(0.1,
                                  0.001, 0.1)),
@@ -1723,7 +1736,7 @@ test_that("lotri matrix parsing", {
   expect_equal(attr(tmp, "lotriFix"),
                structure(c(FALSE, FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, FALSE, FALSE), .Dim = c(3L, 3L), .Dimnames = list(c("a", "b", "c"),     c("a", "b", "c"))))
 
-  expect_error(capture.output(print(tmp)), NA)
+  expect_snapshot_output(print(tmp))
 
   context("Combined estimates and matrix")
 
@@ -1735,7 +1748,7 @@ test_that("lotri matrix parsing", {
     e <- c(0, 1, 2, fixed)
   })
 
-  expect_error(utils::capture.output(print(fix1)), NA)
+  expect_snapshot_output(print(fix1))
 
   fix1 <- lotri({
     a <- c(0, 1); backTransform("exp"); label("a label")
@@ -1747,7 +1760,7 @@ test_that("lotri matrix parsing", {
             0.5, 1)
   })
 
-  expect_error(capture.output(print(fix1)), NA)
+  expect_snapshot_output(print(fix1))
 
   expect_equal(attr(fix1, "lotriEst"),
                structure(list(name = c("a", "b", "c", "d", "e"),
@@ -1929,6 +1942,42 @@ test_that("lotri matrix parsing", {
 
 
   c1 <- lotriMat(list(fix1, fix2))
+
+  expect_equal(as.data.frame(c1),
+               structure(list(ntheta = c(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, NA, NA, NA, NA, NA, NA),
+                              neta1 = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, 1L, 2L, 2L, 1L, 2L, 2L), neta2 = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, 1L, 1L, 2L, 1L, 1L, 2L),
+                              name = c("a", "b", "c", "d", "e", "h", "i", "j", "k", "l", "f", "(f,g)", "g", "m", "(m,n)", "n"),
+                              lower = c(0, 0, -Inf, 0, 0, 0, 0, -Inf, 0, 0, -Inf, -Inf, -Inf, -Inf, -Inf, -Inf), est = c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.5, 1, 1, 0.5, 1),
+                              upper = c(Inf, 2,  Inf, 2, 2, Inf, 2, Inf, 2, 2, Inf, Inf, Inf, Inf, Inf, Inf), fix = c(FALSE, FALSE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE),
+                              label = c("a label", NA, NA, NA, NA, "b label", NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
+                              backTransform = c("exp", NA, NA, NA, NA, "expit", NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
+                              condition = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, "ID", "ID", "ID", "ID", "ID", "ID")),
+                         class = "data.frame", row.names = c(NA, -16L)))
+
+
+  fix1 <- lotri({
+    a <- c(0, 1); backTransform("exp"); label("a label")
+    b <- c(0, 1, 2)
+    c <- fix(1)
+    d <- fix(0, 1, 2)
+    e <- c(0, 1, 2, fixed)
+    f+g ~ fix(1,
+              0.5, 1) | occ
+  })
+
+  expect_snapshot_output(print(fix1))
+
+  fix2 <- lotri({
+    h <- c(0, 1); backTransform("expit"); label("b label")
+    i <- c(0, 1, 2)
+    j <- fix(1)
+    k <- fix(0, 1, 2)
+    l <- c(0, 1, 2, fixed)
+    m+n ~ c(1,
+            0.5, 1)
+  })
+
+  ## c1 <- lotriMat(list(fix1, fix2))
 
 })
 
