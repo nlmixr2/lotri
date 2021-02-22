@@ -1986,7 +1986,6 @@ test_that("as.data.frame", {
 
   expect_snapshot_output(print(fix2))
 
-  ## c1 <- lotriMat(list(fix1, fix2))
 
 })
 
