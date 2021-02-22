@@ -614,6 +614,7 @@ NULL
 ##'     concatenated then reapplied to this function.
 ##'
 ##' @inheritParams base::eval
+##' @inheritParams as.lotri
 ##'
 ##' @return named symmetric matrix useful in RxODE simulations (and
 ##'     perhaps elsewhere)
@@ -702,7 +703,7 @@ NULL
 ##'
 ##' ## You can also change the default condition with `as.lotri`
 ##'
-##' mat <- as.lotri(mat,default="id")
+##' mat <- as.lotri(mat, default="id")
 ##'
 ##' mat
 ##'
@@ -711,7 +712,8 @@ NULL
 ##' @importFrom stats setNames
 ##' @importFrom utils str
 ##' @export
-lotri <- function(x, ..., envir = parent.frame()) {
+lotri <- function(x, ..., envir = parent.frame(),
+                  default = "id") {
   if (is.null(.lotriParentEnv)) {
     assignInMyNamespace(".lotriParentEnv", envir)
     on.exit(assignInMyNamespace(".lotriParentEnv", NULL))
@@ -773,6 +775,20 @@ lotri <- function(x, ..., envir = parent.frame()) {
           .prop <- attr(.other, "lotri")
           class(.other) <- NULL
         }
+      }
+      if (any(.env$cnd == default)) {
+        ## amplify with default
+        .env2 <- .env[[default]]
+        .env2$df <- rbind(.env2$df, .env$df)
+        .env2$names <- c(.env2$names, .env$names)
+        .env2$eta1 <- .env$eta1 + .env2$eta1
+      } else if (!is.null(.env$df)) {
+        .env[[default]] <- new.env(parent=emptyenv())
+        .env2 <- .env[[default]]
+        .env2$df <- .env$df
+        .env2$eta1 <- .env$eta1
+        .env2$names <- .env$names
+        .env$cnd <- c(default, .env$cnd)
       }
       for (.j in .env$cnd) {
         .env2 <- .env[[.j]]

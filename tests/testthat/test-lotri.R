@@ -1984,3 +1984,26 @@ test_that("as.data.frame", {
 
 })
 
+test_that("default conditioning", {
+
+  fix2 <- lotri({
+    f+g ~ fix(1,
+              0.5, 1) | occ
+    m+n ~ c(2,
+            0.5, 1)
+  })
+
+  expect_equal(fix2,
+               list(id = structure(c(2, 0.5, 0.5, 1),
+                                   .Dim = c(2L, 2L),
+                                   .Dimnames = list(c("m", "n"), c("m", "n"))),
+                    occ = structure(c(1, 0.5, 0.5, 1),
+                                    .Dim = c(2L, 2L),
+                                    .Dimnames = list(c("f", "g"), c("f", "g")),
+                                    class = .cls,
+                                    lotriFix = structure(c(TRUE, TRUE, TRUE, TRUE),
+                                                         .Dim = c(2L, 2L),
+                                                         .Dimnames = list(c("f", "g"), c("f", "g"))))))
+
+})
+

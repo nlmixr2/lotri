@@ -4,7 +4,7 @@
 \alias{lotri}
 \title{Easily Specify block-diagonal matrices with lower triangular info}
 \usage{
-lotri(x, ..., envir = parent.frame())
+lotri(x, ..., envir = parent.frame(), default = "id")
 }
 \arguments{
 \item{x}{list, matrix or expression, see details}
@@ -15,6 +15,9 @@ concatenated then reapplied to this function.}
 \item{envir}{the \code{\link[base]{environment}} in which \code{expr} is to
     be evaluated.  May also be \code{NULL}, a list, a data frame,
     a pairlist or an integer as specified to \code{\link[base]{sys.call}}.}
+
+\item{default}{Is the default factor when no conditioning is
+implemented.}
 }
 \value{
 named symmetric matrix useful in RxODE simulations (and
@@ -105,7 +108,7 @@ mat$nu$id
 
 ## You can also change the default condition with `as.lotri`
 
-mat <- as.lotri(mat,default="id")
+mat <- as.lotri(mat, default="id")
 
 mat
 

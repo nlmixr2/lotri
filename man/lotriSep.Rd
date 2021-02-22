@@ -30,6 +30,7 @@ This is used for creating nesting simulations in `RxODE` and may
 not be useful for external function calls.
 }
 \examples{
+
 omega <- lotri(lotri(eta.Cl ~ 0.1,
                         eta.Ka ~ 0.1) | id(nu=100),
                   lotri(eye.Cl ~ 0.05,
