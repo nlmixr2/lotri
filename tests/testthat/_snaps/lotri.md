@@ -32,7 +32,7 @@
     c  0.1  0.1 30.0
     this matrix has fixed elements
 
----
+# Combined estimates and matrix
 
     Lotri Estimates (get with `lotriEst()`):
       name lower est upper   fix   label backTransform
@@ -57,7 +57,7 @@
     f 1.0 0.5
     g 0.5 1.0
 
----
+# as.data.frame
 
     Lotri Estimates (get with `lotriEst()`):
       name lower est upper   fix   label backTransform
@@ -67,10 +67,9 @@
     4    d     0   1     2  TRUE    <NA>          <NA>
     5    e     0   1     2  TRUE    <NA>          <NA>
     
-    $occ
+    Matrix:
         f   g
     f 1.0 0.5
     g 0.5 1.0
     this matrix has fixed elements
-    
 

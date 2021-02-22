@@ -236,12 +236,8 @@ NULL
 
 .fcallTildeLhsSum <- function(x, env) {
   ## et1+et2+et3~NULL lower triangular matrix
-  ## Should fixed be allowed????
   if (any(tolower(as.character(x[[3]][[1]])) ==
             c("c", "fix", "fixed", "var", "sd", "cor", "cov", "chol"))) {
-    ## if (any(tolower(as.character(x[[3]][[1]])) == c("fix", "fixed"))) {
-    ##   stop("fix/fixed are not allowed with lotri matrix specifications", call. = FALSE)
-    ## }r
     .lotri1(x[[2]], x[[3]], env)
   } else {
     .val <- try(eval(x[[3]], envir=.lotriParentEnv), silent = TRUE)
@@ -594,6 +590,22 @@ NULL
   return(ret)
 }
 
+.lotriGetMatrixFromEnv <- function(env) {
+  .ret <- diag(env$eta1)
+  .retF <- matrix(FALSE, dim(.ret)[1], dim(.ret)[1])
+  for (.i in seq_along(env$df$i)) {
+    .ret[env$df$i[.i], env$df$j[.i]] <- env$df$x[.i]
+    .retF[env$df$i[.i], env$df$j[.i]] <- env$df$fix[.i]
+  }
+  dimnames(.ret) <- list(env$names, env$names)
+  dimnames(.retF) <- list(env$names, env$names)
+  if (any(.retF)) {
+    class(.ret) <- c("lotriFix", class(.ret))
+    attr(.ret, "lotriFix") <- .retF
+  }
+  return(.ret)
+}
+
 ##' Easily Specify block-diagonal matrices with lower triangular info
 ##'
 ##' @param x list, matrix or expression, see details
@@ -749,18 +761,7 @@ lotri <- function(x, ..., envir = parent.frame()) {
       return(.amplifyRetWithDfEst(.env$matrix, .est))
     }
     if (length(.env$cnd) == 0L) {
-      .ret <- diag(.env$eta1)
-      .retF <- matrix(FALSE, dim(.ret)[1], dim(.ret)[1])
-      for (.i in seq_along(.env$df$i)) {
-        .ret[.env$df$i[.i], .env$df$j[.i]] <- .env$df$x[.i]
-        .retF[.env$df$i[.i], .env$df$j[.i]] <- .env$df$fix[.i]
-      }
-      dimnames(.ret) <- list(.env$names, .env$names)
-      dimnames(.retF) <- list(.env$names, .env$names)
-      if (any(.retF)) {
-          class(.ret) <- c("lotriFix", class(.ret))
-          attr(.ret, "lotriFix") <- .retF
-      }
+      .ret <- .lotriGetMatrixFromEnv(.env)
     } else {
       .lstC <- list()
       .other <- NULL
@@ -775,18 +776,7 @@ lotri <- function(x, ..., envir = parent.frame()) {
       }
       for (.j in .env$cnd) {
         .env2 <- .env[[.j]]
-        .ret0 <- diag(.env2$eta1)
-        .ret0F <- matrix(FALSE, dim(.ret0)[1], dim(.ret0)[1])
-        for (.i in seq_along(.env2$df$i)) {
-          .ret0[.env2$df$i[.i], .env2$df$j[.i]] <- .env2$df$x[.i]
-          .ret0F[.env2$df$i[.i], .env2$df$j[.i]] <- .env2$df$fix[.i]
-        }
-        dimnames(.ret0) <- list(.env2$names, .env2$names)
-        dimnames(.ret0F) <- list(.env2$names, .env2$names)
-        if (any(.ret0F)) {
-          class(.ret0) <- c("lotriFix", class(.ret0))
-          attr(.ret0, "lotriFix") <- .ret0F
-        }
+        .ret0 <- .lotriGetMatrixFromEnv(.env2)
         .extra <- .env[[paste0(.j, ".extra")]]
         if (!is.null(.extra)) {
           if (is.null(.prop)) {
@@ -1116,19 +1106,28 @@ lotriMat <- function(matList, format = NULL, start = 1L) {
 ##' not be useful for external function calls.
 ##'
 ##' @param x lotri matrix
+##'
 ##' @param above Named integer vector listing variability above the id
 ##'   level.  Each element lists the number of population differences
 ##'   in the whole data-set (as integer)
+##'
 ##' @param below Named integer vector listing variability below the id
 ##'   level.  Each element lists the number of items below the
 ##'   individual level.  For example with 3 occasions per indivdiual
 ##'   you could use 'c(occ=3L)'
+##'
 ##' @param aboveStart Add the attribute of where THETA[#] will be added
+##'
 ##' @param belowStart Add the attribute of where ETA[#] will be added
+##'
 ##' @return List of two lotri matrices
+##'
 ##' @author Matthew Fidler
+##'
 ##' @export
+##'
 ##' @examples
+##'
 ##' omega <- lotri(lotri(eta.Cl ~ 0.1,
 ##'                         eta.Ka ~ 0.1) | id(nu=100),
 ##'                   lotri(eye.Cl ~ 0.05,

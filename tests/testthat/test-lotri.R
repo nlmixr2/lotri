@@ -1738,7 +1738,8 @@ test_that("fixed tests", {
 
   expect_snapshot_output(print(tmp))
 
-  context("Combined estimates and matrix")
+})
+test_that("Combined estimates and matrix", {
 
   fix1 <- lotri({
     a <- c(0, 1); backTransform("exp"); label("a label")
@@ -1814,7 +1815,8 @@ test_that("fixed tests", {
   expect_error(lotri({b=3;b~0.4}))
 
 
-  context("combine fix1 and fix2")
+})
+test_that("combine fix1 and fix2", {
 
   fix1 <- lotri({
     a <- c(0, 1); backTransform("exp"); label("a label")
@@ -1918,7 +1920,8 @@ test_that("fixed tests", {
 
   expect_true(inherits(lotriEst(c1, drop=TRUE), "lotriFix"))
 
-  context("as.data.frame")
+})
+test_that("as.data.frame", {
 
   fix1 <- lotri({
     a <- c(0, 1); backTransform("exp"); label("a label")
@@ -1955,7 +1958,11 @@ test_that("fixed tests", {
                          class = "data.frame", row.names = c(NA, -16L)))
 
 
-  fix1 <- lotri({
+  expect_snapshot_output(print(fix1))
+
+
+
+  fix2 <- lotri({
     a <- c(0, 1); backTransform("exp"); label("a label")
     b <- c(0, 1, 2)
     c <- fix(1)
@@ -1963,11 +1970,7 @@ test_that("fixed tests", {
     e <- c(0, 1, 2, fixed)
     f+g ~ fix(1,
               0.5, 1) | occ
-  })
 
-  expect_snapshot_output(print(fix1))
-
-  fix2 <- lotri({
     h <- c(0, 1); backTransform("expit"); label("b label")
     i <- c(0, 1, 2)
     j <- fix(1)

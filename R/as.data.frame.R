@@ -1,3 +1,41 @@
+.as.data.frame.lotriFix.mat <- function(mat, condition="ID") {
+  .df3 <- NULL
+  if (inherits(mat, "matrix")) {
+    .lst2 <- lotriMatInv(mat)
+    .eta1 <- 1
+    .eta2 <- 1
+    for (.i in seq_along(.lst2)) {
+      .curMat <- .lst2[[.i]]
+      .curMatF <- attr(.curMat, "lotriFix")
+      .n <- dimnames(.curMat)[[1]]
+      for (.j in seq_along(.n)) {
+        for (.k in seq_len(.j)) {
+          if (.j == .k) {
+            .curName <- .n[.j]
+          } else {
+            .curName <- paste0("(", .n[.k], ",", .n[.j], ")")
+          }
+          .fix <- FALSE
+          if (!is.null(.curMatF)) {
+            .fix <- .curMatF[.j, .k]
+          }
+          .df3 <- rbind(.df3,
+                        data.frame(ntheta=NA_integer_,
+                                   neta1=.j, neta2=.k,
+                                   name=.curName,
+                                   lower= -Inf,
+                                   est=.curMat[.j, .k],
+                                   upper=Inf,
+                                   fix=.fix,
+                                   label=NA_integer_,
+                                   backTransform=NA_character_,
+                                   condition=condition))
+        }
+      }
+    }
+  }
+}
+
 ##'@export
 as.data.frame.lotriFix <- function(x, row.names = NULL, optional = FALSE, ...) {
   if (!missing(row.names)) {
@@ -17,6 +55,9 @@ as.data.frame.lotriFix <- function(x, row.names = NULL, optional = FALSE, ...) {
   }
   .df2 <- lotriEst(x, drop=TRUE)
   .df3 <- NULL
+  if (inherits(.df2, "matrix")) {
+    .df3 <- .as.data.frame.lotriFix.mat(.df2)
+  }
   if (!is.null(.df2)) {
     .lst2 <- lotriMatInv(.df2)
     .eta1 <- 1
