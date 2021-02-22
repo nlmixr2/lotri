@@ -1946,6 +1946,10 @@ test_that("as.data.frame", {
 
   c1 <- lotriMat(list(fix1, fix2))
 
+  expect_error(as.data.frame(c1, row.names=FALSE))
+
+  expect_error(as.data.frame(c1, optional=FALSE))
+
   expect_equal(as.data.frame(c1),
                structure(list(ntheta = c(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, NA, NA, NA, NA, NA, NA),
                               neta1 = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, 1L, 2L, 2L, 1L, 2L, 2L), neta2 = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, 1L, 1L, 2L, 1L, 1L, 2L),
@@ -1979,6 +1983,8 @@ test_that("as.data.frame", {
     m+n ~ c(1,
             0.5, 1)
   })
+
+  expect_snapshot_output(print(fix2))
 
   ## c1 <- lotriMat(list(fix1, fix2))
 
