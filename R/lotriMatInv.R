@@ -66,6 +66,7 @@ lotriMatInv <- function(mat) {
          "drop with `lotriEst(x,drop=TRUE)",
          call.=FALSE)
   }
+  .matF <- attr(mat, "lotriFix")
   .ret <- list()
   .mat <- mat
   .i <- 1
@@ -73,8 +74,13 @@ lotriMatInv <- function(mat) {
   while (.i < .d) {
     if (.lotriIsBlock(.mat, .i)) {
       .s <- seq_len(.i)
-
       .mat1 <- .mat[.s, .s, drop = FALSE]
+      if (!is.null(.matF)) {
+        .mat1F <- .matF[.s, .s, drop = FALSE]
+        attr(.mat1, "lotriFix") <- .mat1F
+        class(.mat1) <- c("lotriFix", class(.mat1))
+        .matF <- .matF[-.s, -.s, drop = FALSE]
+      }
       .ret <- c(.ret, list(.mat1))
       .mat <- .mat[-.s, -.s, drop = FALSE]
       .d <- dim(.mat)[1]
@@ -84,6 +90,10 @@ lotriMatInv <- function(mat) {
     }
   }
   if (.d > 0){
+    if (!is.null(.matF)) {
+      attr(.mat, "lotriFix") <- .matF
+      class(.mat) <- c("lotriFix", class(.mat))
+    }
     .ret <- c(.ret, list(.mat))
   }
   .ret

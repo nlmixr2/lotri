@@ -2,6 +2,8 @@
 
 S3method("$",lotri)
 S3method(.DollarNames,lotri)
+S3method(as.data.frame,lotriFix)
+S3method(as.lotri,data.frame)
 S3method(as.lotri,default)
 S3method(as.lotri,matrix)
 S3method(as.matrix,lotri)
