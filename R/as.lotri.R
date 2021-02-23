@@ -25,14 +25,19 @@ as.lotri.matrix <- function(x, ..., default = "") {
 ##' @rdname as.lotri
 ##' @export
 as.lotri.default <- function(x, ..., default = "") {
-  .ret <- x
-  class(.ret) <- NULL
-  .n <- names(.ret)
-  .w <- which(names(.ret) == "")
-  if (length(.w) == 1) {
-    .n[.w] <- default
-    names(.ret) <- .n
+  if (inherits(x, "list") | inherits(x, "lotri")) {
+    .ret <- x
+    class(.ret) <- NULL
+    .n <- names(.ret)
+    .w <- which(names(.ret) == "")
+    if (length(.w) == 1) {
+      .n[.w] <- default
+      names(.ret) <- .n
+    }
+    class(.ret) <- "lotri"
+    return(.ret)
+  } else {
+    stop("unsupported object of class c('", paste(class(x), collapse="', '"), "') used with `as.lotri`",
+         call.=FALSE)
   }
-  class(.ret) <- "lotri"
-  return(.ret)
 }

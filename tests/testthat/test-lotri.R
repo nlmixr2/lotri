@@ -984,6 +984,7 @@ test_that("as.lotri", {
   expect_error(as.lotri(lotri(et1 + et2 ~ c(0.1, 0.01, 1)), lower = c(3, 3), default = "id"))
   expect_error(as.lotri(lotri(et1 + et2 ~ c(0.1, 0.01, 1)), lower = 1L, default = "id"))
 
+  expect_error(as.lotri("matt"))
 })
 
 test_that("lotriMat", {
