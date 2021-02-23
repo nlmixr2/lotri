@@ -1952,7 +1952,8 @@ test_that("as.data.frame", {
 
   expect_equal(as.data.frame(c1),
                structure(list(ntheta = c(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, NA, NA, NA, NA, NA, NA),
-                              neta1 = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, 1L, 2L, 2L, 1L, 2L, 2L), neta2 = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, 1L, 1L, 2L, 1L, 1L, 2L),
+                              neta1 = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, 1, 2, 2, 3, 4, 4),
+                              neta2 = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, 1, 1, 2, 3, 3, 4),
                               name = c("a", "b", "c", "d", "e", "h", "i", "j", "k", "l", "f", "(f,g)", "g", "m", "(m,n)", "n"),
                               lower = c(0, 0, -Inf, 0, 0, 0, 0, -Inf, 0, 0, -Inf, -Inf, -Inf, -Inf, -Inf, -Inf), est = c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.5, 1, 1, 0.5, 1),
                               upper = c(Inf, 2,  Inf, 2, 2, Inf, 2, Inf, 2, 2, Inf, Inf, Inf, Inf, Inf, Inf), fix = c(FALSE, FALSE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE),

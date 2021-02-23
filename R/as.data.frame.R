@@ -1,6 +1,8 @@
 .as.data.frame.lotriFix.mat <- function(mat, default="id",
                                         eta1=1) {
   .df3 <- NULL
+  .env <- new.env(parent=emptyenv())
+  .env$eta1 <- eta1
   if (inherits(mat, "matrix")) {
     .lst2 <- lotriMatInv(mat)
     for (.i in seq_along(.lst2)) {
@@ -20,8 +22,8 @@
           }
           .df3 <- rbind(.df3,
                         data.frame(ntheta=NA_integer_,
-                                   neta1=eta1 + .j - 1,
-                                   neta2=eta1 + .k - 1,
+                                   neta1=.env$eta1 + .j - 1,
+                                   neta2=.env$eta1 + .k - 1,
                                    name=.curName,
                                    lower= -Inf,
                                    est=.curMat[.j, .k],
@@ -32,6 +34,7 @@
                                    condition=default))
         }
       }
+      .env$eta1 <- max(.df3$neta1) + 1
     }
   }
   .df3
