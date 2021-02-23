@@ -25,7 +25,6 @@ as.lotri.matrix <- function(x, ..., default = "") {
 .as.lotri.data.frame.mat <- function(x) {
   .r <- range(x$neta1)
   .neta1 <- .r[2] - .r[1] + 1
-  print(.neta1)
   .min <- .r[1] - 1
   .mat <- diag(.neta1)
   .matF <- matrix(FALSE, dim(.mat)[1], dim(.mat)[1])
@@ -36,7 +35,6 @@ as.lotri.matrix <- function(x, ..., default = "") {
     .matF[x$neta2[.i] - .min, x$neta1[.i] - .min] <- x$fix[.i]
   }
   .n <- which(x$neta1 == x$neta2)
-  print(x$name)
   dimnames(.mat) <- list(x$name[.n], x$name[.n])
   dimnames(.matF) <- list(x$name[.n], x$name[.n])
   if(any(.matF)) {
@@ -50,20 +48,23 @@ as.lotri.matrix <- function(x, ..., default = "") {
 ##' @export
 as.lotri.data.frame <- function(x, ..., default="") {
   ## Get lotriEst
+  if (!all(c("name", "lower", "est", "upper", "fix", "label", "backTransform") %in% names(x))) {
+    stop("the required names in the data.frame are not present; This needs:\n",
+         "  name, lower, est, upper, fix, label, backTransform\n", call.=FALSE)
+  }
   .lotriEst <- x[which(!is.na(x$ntheta)), c("name", "lower", "est", "upper", "fix", "label", "backTransform")]
   .lotriMatDf <- x[which(is.na(x$ntheta)), ]
   .cnd <- unique(.lotriMatDf$condition)
   if (length(.cnd) == 1) {
     .mat <- .as.lotri.data.frame.mat(.lotriMatDf)
   } else {
-    .mat <- lapply(.cnd, function(.cur){
-      .x <- .lotriMatDf[.lotriMatDf$condition == .cnd, ]
+    .mat <- setNames(lapply(.cnd, function(.cur){
+      .x <- .lotriMatDf[which(.lotriMatDf$condition == .cur), ]
       .as.lotri.data.frame.mat(.x)
-    })
-    class(.mat) <- "lotri"
+    }), .cnd)
   }
   attr(.mat, "lotriEst") <- .lotriEst
-  class(.mat) <- c("lotriFix", class(.mat))
+  if (!inherits(.mat, "lotriFix")) class(.mat) <- c("lotriFix", class(.mat))
   .mat
 }
 

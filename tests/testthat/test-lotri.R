@@ -1950,7 +1950,9 @@ test_that("as.data.frame", {
 
   expect_error(as.data.frame(c1, optional=FALSE))
 
-  expect_equal(as.data.frame(c1),
+  c1df <- as.data.frame(c1)
+
+  expect_equal(c1df,
                structure(list(ntheta = c(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, NA, NA, NA, NA, NA, NA),
                               neta1 = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, 1, 2, 2, 3, 4, 4),
                               neta2 = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, 1, 1, 2, 3, 3, 4),
@@ -1962,6 +1964,9 @@ test_that("as.data.frame", {
                               condition = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, "id", "id", "id", "id", "id", "id")),
                          class = "data.frame", row.names = c(NA, -16L)))
 
+  expect_equal(as.lotri(c1df), c1)
+
+  expect_error(as.lotri(c1df[, names(c1df) != "name"]))
 
   expect_snapshot_output(print(fix1))
 
@@ -1984,6 +1989,8 @@ test_that("as.data.frame", {
 
   expect_snapshot_output(print(fix2))
 
+  df <- as.data.frame(fix2)
+
   expect_equal(as.data.frame(fix2),
                structure(list(ntheta = c(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, NA, NA, NA, NA, NA, NA),
                               neta1 = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, 1, 2, 2, 3, 4, 4), neta2 = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, 1, 1, 2, 3, 3, 4),
@@ -1995,6 +2002,9 @@ test_that("as.data.frame", {
                               condition = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, "id", "id", "id", "occ", "occ", "occ")),
                          class = "data.frame",
                          row.names = c(NA, -16L)))
+
+  expect_equal(as.lotri(df),
+               fix2)
 
 })
 
