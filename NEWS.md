@@ -1,7 +1,8 @@
 # lotri development version
 
 * Can convert lotri objects to data-frames similar to the internal
-  data frame used in `nlmixr()`
+  data frame used in `nlmixr()`; These can then be converted back with
+  `as.lotri()`
 
 * Added the ability to add estimates to a lotri object.  These
   estimates are an attached `data.frame` to the original lotri matrix.
