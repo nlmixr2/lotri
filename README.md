@@ -10,7 +10,7 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/nlmixrdevelopment/lotri/badge/master)](https://www.codefactor.io/repository/github/nlmixrdevelopment/lotri/overview/master)
 <!-- badges: end -->
 
-# lotri
+# lotri <img src='man/figures/logo.png' align="right" height="139" />
 
 The goal of lotri is to easily specify block-diagonal matrices with
 (lo)wer (tri)angular matrices.  Its as if you have won the (badly
@@ -244,9 +244,9 @@ mb <- microbenchmark(matf(testList),lotriMat(testList))
 
 print(mb)
 #> Unit: microseconds
-#>                expr     min      lq      mean  median       uq      max neval
-#>      matf(testList) 463.599 491.021 598.57232 521.231 585.1135 5710.686   100
-#>  lotriMat(testList)   1.297   1.646   2.56874   2.732   3.0105    7.734   100
+#>                expr     min       lq      mean  median       uq      max neval
+#>      matf(testList) 459.609 471.7575 543.02145 479.706 516.7105 4697.318   100
+#>  lotriMat(testList)   2.280   2.8195   4.21159   3.303   4.6460   46.721   100
 
 autoplot(mb)
 #> Coordinate system already present. Adding new coordinate system, which will replace the existing one.
@@ -296,10 +296,10 @@ print(lotriMat(testList))
 mb <- microbenchmark(matf(testList),lotriMat(testList))
 
 print(mb)
-#> Unit: nanoseconds
-#>                expr    min       lq      mean   median       uq     max neval
-#>      matf(testList) 448951 454581.5 535816.43 463802.5 528361.0 2228159   100
-#>  lotriMat(testList)    989   1281.5   2690.28   2396.0   2731.5   26770   100
+#> Unit: microseconds
+#>                expr     min       lq      mean   median       uq      max neval
+#>      matf(testList) 453.898 464.4790 511.40373 489.6425 517.6250 2004.861   100
+#>  lotriMat(testList)   2.254   2.7245   4.07269   4.0970   4.5285   11.251   100
 
 autoplot(mb)
 #> Coordinate system already present. Adding new coordinate system, which will replace the existing one.

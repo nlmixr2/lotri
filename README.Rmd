@@ -17,7 +17,7 @@ knitr::opts_chunk$set(
 [![CodeFactor](https://www.codefactor.io/repository/github/nlmixrdevelopment/lotri/badge/master)](https://www.codefactor.io/repository/github/nlmixrdevelopment/lotri/overview/master)
 <!-- badges: end -->
 
-# lotri
+# lotri <img src='man/figures/logo.png' align="right" height="139" />
 
 The goal of lotri is to easily specify block-diagonal matrices with
 (lo)wer (tri)angular matrices.  Its as if you have won the (badly
