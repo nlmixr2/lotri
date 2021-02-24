@@ -9,3 +9,5 @@
 ^pkgdown$
 ^\.github$
 ^\.lintr$
+^inst/lotri.svg$
+^inst/lotriHex.R$
