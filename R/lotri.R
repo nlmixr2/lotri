@@ -294,7 +294,12 @@ NULL
 
 .fCallTilde <- function(x, env) {
   if (length(x) != 3) {
-    stop("matrix expression should be 'name ~ c(lower-tri)'", call. = FALSE)
+    .possible <- try(deparse1(eval(parse(text=paste("quote(variableName", deparse1(x), ")")))), silent=TRUE)
+    .err <- "matrix expression should be 'name ~ c(lower-tri)'"
+    if (!inherits(.possible, "try-error")) {
+      .err <- paste0(.err, "\n  did you mean '", .possible, "'")
+    }
+    stop(.err, call. = FALSE)
   }
   if (length(x[[3]]) == 1) {
     ## et1 ~ 0.2
@@ -333,6 +338,7 @@ NULL
                identical(x[[1]], quote(`backTransform`))) {
     ## these are handled in .parseThetaEst()
   } else {
+    message("fcall")
     stop("matrix expression should be 'name ~ c(lower-tri)'", call. = FALSE)
   }
 }
