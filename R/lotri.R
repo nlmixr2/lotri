@@ -1,6 +1,35 @@
 ##' @importFrom utils assignInMyNamespace
 ##' @useDynLib lotri, .registration = TRUE
 NULL
+##' Paste inputNum in lower triangular format to input char
+##'
+##' @param inputChar Input character expression; ie 'a + b ~ '
+##' @param inputNum  Numerical vector to put in formatted lotri. This assumes that inputNum is the right length
+##' @return Formated string with lotri offeset
+##' @author Matthew Fidler
+##' @examples
+##'
+##' .pasteLotri("matt+ruth~",c(1,2,3))
+##'
+##' .pasteLotri("matt+ruth+kids~",c(1,2,3,4,5,6))
+##' @noRd
+.pasteLotri <- function(inputChar, inputNum) {
+  .ret <- paste0(inputChar, "c(")
+  .nchar0 <- nchar(.ret)
+  .line <- paste0("\n", strrep(" ", .nchar0))
+  .i <- 0
+  .j <- 1
+  for (.k in seq_along(inputNum)) {
+    .ret <- paste0(.ret, inputNum[.k], ifelse(.k == length(inputNum), ")", ", "))
+    .i <- .i + 1
+    if (.i == .j && .k != length(inputNum)) {
+      .ret <- paste0(.ret, .line)
+      .j <- .j + 1
+      .i <- 0
+    }
+  }
+  return(.ret)
+}
 
 ##' lotriMatrix convert numeric vector to matrix
 ##'
@@ -227,7 +256,11 @@ NULL
       }
       env$eta1 <- env$eta1 + .num
     } else {
-      stop("number of items and lower triangular matrix mismatch", call. = FALSE)
+      ## in this case
+      .expr <- deparse1(eval(parse(text=paste0("quote(", paste(c(.n, paste0("varName", length(.n) + seq_len(.num - length(.n)))), collapse="+"), "~ 0)"))))
+      .expr <- paste0("  '", substr(.expr, 1, nchar(.expr) - 1))
+      .expr <- .pasteLotri(.expr, .r)
+      stop(paste0("number named variables and lower triangular matrix size do not match\n  did you mean something like:\n", .expr, "'"), call. = FALSE)
     }
   } else {
     stop("matrix expression should be 'name ~ c(lower-tri)'", call. = FALSE)
