@@ -4,25 +4,25 @@ NULL
 ##' Paste inputNum in lower triangular format to input char
 ##'
 ##' @param inputChar Input character expression; ie 'a + b ~ '
-##' @param inputNum  Numerical vector to put in formatted lotri. This assumes that inputNum is the right length
+##' @param inputParse  Parsed expression to format, should be `c()`
 ##' @return Formated string with lotri offeset
 ##' @author Matthew Fidler
 ##' @examples
 ##'
-##' .pasteLotri("matt+ruth~",c(1,2,3))
+##' .pasteLotri("matt+ruth~",quote(c(1,2,3)))
 ##'
-##' .pasteLotri("matt+ruth+kids~",c(1,2,3,4,5,6))
+##' .pasteLotri("matt+ruth+kids~",quote(c(1,2,3,4,5,6)))
 ##' @noRd
-.pasteLotri <- function(inputChar, inputNum) {
-  .ret <- paste0(inputChar, "c(")
+.pasteLotri <- function(inputChar, inputParse) {
+  .ret <- paste0(inputChar, as.character(inputParse[[1]]), "(")
   .nchar0 <- nchar(.ret)
   .line <- paste0("\n", strrep(" ", .nchar0))
   .i <- 0
   .j <- 1
-  for (.k in seq_along(inputNum)) {
-    .ret <- paste0(.ret, inputNum[.k], ifelse(.k == length(inputNum), ")", ", "))
+  for (.k in seq_len(length(inputParse) - 1)) {
+    .ret <- paste0(.ret, .deparse1(inputParse[[.k + 1]]), ifelse(.k == length(inputParse) - 1, ")", ", "))
     .i <- .i + 1
-    if (.i == .j && .k != length(inputNum)) {
+    if (.i == .j && .k != length(inputParse) - 1) {
       .ret <- paste0(.ret, .line)
       .j <- .j + 1
       .i <- 0
@@ -257,9 +257,9 @@ NULL
       env$eta1 <- env$eta1 + .num
     } else {
       ## in this case
-      .expr <- deparse1(eval(parse(text=paste0("quote(", paste(c(.n, paste0("varName", length(.n) + seq_len(.num - length(.n)))), collapse="+"), "~ 0)"))))
+      .expr <- .deparse1(eval(parse(text=paste0("quote(", paste(c(.n, paste0("varName", length(.n) + seq_len(.num - length(.n)))), collapse="+"), "~ 0)"))))
       .expr <- paste0("  '", substr(.expr, 1, nchar(.expr) - 1))
-      .expr <- .pasteLotri(.expr, .r)
+      .expr <- .pasteLotri(.expr, x3)
       stop(paste0("number named variables and lower triangular matrix size do not match\n  did you mean something like:\n", .expr, "'"), call. = FALSE)
     }
   } else {
@@ -327,7 +327,7 @@ NULL
 
 .fCallTilde <- function(x, env) {
   if (length(x) != 3) {
-    .possible <- try(deparse1(eval(parse(text=paste("quote(variableName", deparse1(x), ")")))), silent=TRUE)
+    .possible <- try(.deparse1(eval(parse(text=paste("quote(variableName", .deparse1(x), ")")))), silent=TRUE)
     .err <- "matrix expression should be 'name ~ c(lower-tri)'"
     if (!inherits(.possible, "try-error")) {
       .err <- paste0(.err, "\n  did you mean '", .possible, "'")
