@@ -12,7 +12,6 @@ Description: Provides a simple mechanism to specify a symmetric block diagonal m
 Depends: R (>= 3.4.0)
 License: GPL (>=2)
 Encoding: UTF-8
-LazyData: true
 Imports: 
     methods,
     utils,
