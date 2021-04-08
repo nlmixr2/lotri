@@ -45,11 +45,22 @@ NULL
 ##'
 ##' @author Matthew Fidler
 ##' @noRd
-.lotriMatrix <- function(nv, chol=FALSE, sd=FALSE, cor=FALSE) {
+.lotriMatrix <- function(nv, chol=FALSE, sd=FALSE, cor=FALSE, lhs=NULL) {
   .num <- length(nv)
   .num <- sqrt(1 + .num * 8) / 2 - 1 / 2
   if (round(.num) != .num) {
-    stop("lower triangular matrix not correct size", call. = FALSE)
+    .dim <- ceiling(.num)
+    .newNum <- ((2 * .dim + 1)^2 - 1)/8
+    .extra <- paste(paste0("r", seq_len(.newNum - length(nv))), collapse=",")
+    .nv <- .deparse1(nv)
+    .nv <- paste0(substr(.nv, 1, nchar(.nv) - 1), ",", .extra, ")")
+    .lhs <- strsplit(.deparse1(lhs), "[+]")[[1]]
+    if (length(.lhs) < .dim) {
+      .lhs <- c(.lhs, paste0("v", seq_len(.dim - length(.lhs))))
+    }
+    .lhs <- paste0("  ", paste(.lhs, collapse="+"), "~")
+    .expr <- .pasteLotri(.lhs, eval(parse(text=paste0("quote(", .nv, ")"))))
+    stop("lower triangular matrix not correct size\n  did you mean something like:\n", .expr, call. = FALSE)
   }
   .ret <- matrix(nrow=.num, ncol=.num)
   .i <- 0
@@ -143,9 +154,6 @@ NULL
 }
 
 .lotriParseMat <- function(x, env=NULL) {
-  if (is.null(env)) {
-    env <- new.env(parent = emptyenv())
-  }
   if (identical(x[[1]], quote(`sd`))) {
     if (exists("var", envir=env)) {
       stop("cannot use both 'var' and 'sd' in a block", call.=FALSE)
@@ -200,7 +208,7 @@ NULL
                  list(numeric(1), logical(1)))
   env$val <- unlist(.tmp[1, ])
   env$fix <- unlist(.tmp[2, ])
-  env$nv <- .lotriMatrixVec(.lotriMatrix(env$val, chol=env$chol, sd=env$sd, cor=env$cor))
+  env$nv <- .lotriMatrixVec(.lotriMatrix(env$val, chol=env$chol, sd=env$sd, cor=env$cor, lhs=env$lhs))
   if (!exists("globalFix", env)) {
     env$globalFix <- FALSE
   }
@@ -220,7 +228,9 @@ NULL
 ##' @author Matthew Fidler
 ##' @noRd
 .lotri1 <- function(x2, x3, env) {
-  .rl <- .lotriParseMat(x3)
+  .envParse <- new.env(parent = emptyenv())
+  .envParse$lhs <- x2
+  .rl <- .lotriParseMat(x3, env=.envParse)
   .r <- .rl[[1]]
   .rf <- .rl[[2]]
   env$netas <- length(.r)
@@ -260,7 +270,7 @@ NULL
       .expr <- .deparse1(eval(parse(text=paste0("quote(", paste(c(.n, paste0("varName", length(.n) + seq_len(.num - length(.n)))), collapse="+"), "~ 0)"))))
       .expr <- paste0("  '", substr(.expr, 1, nchar(.expr) - 1))
       .expr <- .pasteLotri(.expr, x3)
-      stop(paste0("number named variables and lower triangular matrix size do not match\n  did you mean something like:\n", .expr, "'"), call. = FALSE)
+      stop("number named variables and lower triangular matrix size do not match\n  did you mean something like:\n", .expr, call. = FALSE)
     }
   } else {
     stop("matrix expression should be 'name ~ c(lower-tri)'", call. = FALSE)
@@ -319,7 +329,7 @@ NULL
         }
       }
       if (!.didCnd) {
-        stop("matrix expression should be 'name ~ c(lower-tri)'", call. = FALSE)
+        stop("bad matrix expression: '", .deparse1(x), "'\n  matrix expression should be 'name ~ c(lower-tri)'", call. = FALSE)
       }
     }
   }
