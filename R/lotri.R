@@ -418,7 +418,9 @@ NULL
   }
   .fullCnd <- as.character(cond[[1]])
   if (regexpr("^[a-zA-Z][a-zA-Z0-9_.]*$", .fullCnd) == -1) {
-    stop("unsupported conditional statement", call. = FALSE)
+    .cnd <- .deparse1(cond)
+    stop("unsupported conditional statement: '", .deparse1(cond), "'",
+         call. = FALSE)
   }
   .env <- list2env(as.list(envir), parent = globalenv())
   .env[[.fullCnd]] <- function(...) {
