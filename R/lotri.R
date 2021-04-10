@@ -381,7 +381,6 @@ NULL
                identical(x[[1]], quote(`backTransform`))) {
     ## these are handled in .parseThetaEst()
   } else {
-    message("fcall")
     stop("matrix expression should be 'name ~ c(lower-tri)'", call. = FALSE)
   }
 }
