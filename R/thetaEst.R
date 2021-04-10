@@ -52,7 +52,6 @@
       .len <- length(.x)
       env$.lines <- character(.len)
       env$.err <- vector("list", .len)
-      env$.hasErr <- FALSE
       env$.dfToLine <- NULL
       .lastDfLen <- 0
       for (.i in seq_along(.x)) {
@@ -122,6 +121,7 @@
 
 .parseThetaEst <- function(x, envir=parent.frame()) {
   .env <- new.env(parent=emptyenv())
+  .env$.hasErr <- FALSE
   .env$df <- NULL
   .env$err <- NULL
   .parseThetaEstQ(x, .env, envir=envir)
