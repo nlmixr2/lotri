@@ -367,7 +367,14 @@ NULL
   if (identical(x[[1]], quote(`~`))) {
     .fCallTilde(x, env)
   } else if (identical(x[[1]], quote(`{`))) {
-    lapply(x, .f, env = env)
+    .x <- x[-1]
+    for (.i in seq_along(.x)) {
+      .curLine <- try(.f(.x[[.i]], env=env), silent=TRUE)
+      if (inherits(.curLine, "try-error")) {
+        env$.hasErr <- TRUE
+        env$.err[[.i]] <- paste(c(env$.err[[.i]], attr(.curLine, "condition")$message), collapse="\n")
+      }
+    }
   } else if (identical(x[[1]], quote(`quote`))) {
     lapply(x[[2]], .f, env = env)
   } else if (identical(x[[1]], quote(`matrix`))) {
@@ -807,8 +814,13 @@ lotri <- function(x, ..., envir = parent.frame(),
         .sX <- x
       }
     }
-    .est <- .parseThetaEst(.sX, .lotriParentEnv)
+    .envT <- .parseThetaEst(.sX, .lotriParentEnv)
+    .est <- .envT$df
+    .env$.hasErr <- .envT$.hasErr
+    .env$.err <- .envT$.err
+    .env$.lines <- .envT$.lines
     .f(.sX, .env)
+    .printErr(.env)
     if (!is.null(.env$matrix)) {
       return(.amplifyRetWithDfEst(.env$matrix, .est))
     }
