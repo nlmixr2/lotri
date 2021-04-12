@@ -115,7 +115,7 @@
 
 .parseThetaEstBadEsts <- function(env, lines, text) {
   for (i in seq_along(lines)) {
-    env$.err[[lines[i]]] <- paste(c(env$err[[lines[i]]], text[i]), collapse="\n")
+    env$.err[[lines[i]]] <- paste(c(env$.err[[lines[i]]], text[i]), collapse="\n")
   }
 }
 
@@ -159,7 +159,7 @@
                             paste0("initial estimates cannot be NaN: '", .env$df$name[.w], "'"))
     }
 
-    .w <- which(!is.finite(.env$df$est))
+    .w <- which(is.infinite(.env$df$est))
     if (length(.w) > 0) {
       .parseThetaEstBadEsts(.env, .env$.dfToLine[.w],
                             paste0("initial estimates cannot be infinite: '", .env$df$name[.w], "'"))
