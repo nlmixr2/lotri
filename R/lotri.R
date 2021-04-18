@@ -1,6 +1,35 @@
 ##' @importFrom utils assignInMyNamespace
 ##' @useDynLib lotri, .registration = TRUE
 NULL
+##' Paste inputNum in lower triangular format to input char
+##'
+##' @param inputChar Input character expression; ie 'a + b ~ '
+##' @param inputParse  Parsed expression to format, should be `c()`
+##' @return Formated string with lotri offeset
+##' @author Matthew Fidler
+##' @examples
+##'
+##' .pasteLotri("matt+ruth~",quote(c(1,2,3)))
+##'
+##' .pasteLotri("matt+ruth+kids~",quote(c(1,2,3,4,5,6)))
+##' @noRd
+.pasteLotri <- function(inputChar, inputParse) {
+  .ret <- paste0(inputChar, as.character(inputParse[[1]]), "(")
+  .nchar0 <- nchar(.ret)
+  .line <- paste0("\n", strrep(" ", .nchar0))
+  .i <- 0
+  .j <- 1
+  for (.k in seq_len(length(inputParse) - 1)) {
+    .ret <- paste0(.ret, .deparse1(inputParse[[.k + 1]]), ifelse(.k == length(inputParse) - 1, ")", ", "))
+    .i <- .i + 1
+    if (.i == .j && .k != length(inputParse) - 1) {
+      .ret <- paste0(.ret, .line)
+      .j <- .j + 1
+      .i <- 0
+    }
+  }
+  return(.ret)
+}
 
 ##' lotriMatrix convert numeric vector to matrix
 ##'
@@ -16,11 +45,22 @@ NULL
 ##'
 ##' @author Matthew Fidler
 ##' @noRd
-.lotriMatrix <- function(nv, chol=FALSE, sd=FALSE, cor=FALSE) {
+.lotriMatrix <- function(nv, chol=FALSE, sd=FALSE, cor=FALSE, lhs=NULL) {
   .num <- length(nv)
   .num <- sqrt(1 + .num * 8) / 2 - 1 / 2
   if (round(.num) != .num) {
-    stop("lower triangular matrix not correct size", call. = FALSE)
+    .dim <- ceiling(.num)
+    .newNum <- ((2 * .dim + 1)^2 - 1)/8
+    .extra <- paste(paste0("r", seq_len(.newNum - length(nv))), collapse=",")
+    .nv <- .deparse1(nv)
+    .nv <- paste0(substr(.nv, 1, nchar(.nv) - 1), ",", .extra, ")")
+    .lhs <- strsplit(.deparse1(lhs), "[+]")[[1]]
+    if (length(.lhs) < .dim) {
+      .lhs <- c(.lhs, paste0("v", seq_len(.dim - length(.lhs))))
+    }
+    .lhs <- paste0("  ", paste(.lhs, collapse="+"), "~")
+    .expr <- .pasteLotri(.lhs, eval(parse(text=paste0("quote(", .nv, ")"))))
+    stop("lower triangular matrix not correct size\n  did you mean something like:\n", .expr, call. = FALSE)
   }
   .ret <- matrix(nrow=.num, ncol=.num)
   .i <- 0
@@ -114,9 +154,6 @@ NULL
 }
 
 .lotriParseMat <- function(x, env=NULL) {
-  if (is.null(env)) {
-    env <- new.env(parent = emptyenv())
-  }
   if (identical(x[[1]], quote(`sd`))) {
     if (exists("var", envir=env)) {
       stop("cannot use both 'var' and 'sd' in a block", call.=FALSE)
@@ -171,7 +208,7 @@ NULL
                  list(numeric(1), logical(1)))
   env$val <- unlist(.tmp[1, ])
   env$fix <- unlist(.tmp[2, ])
-  env$nv <- .lotriMatrixVec(.lotriMatrix(env$val, chol=env$chol, sd=env$sd, cor=env$cor))
+  env$nv <- .lotriMatrixVec(.lotriMatrix(env$val, chol=env$chol, sd=env$sd, cor=env$cor, lhs=env$lhs))
   if (!exists("globalFix", env)) {
     env$globalFix <- FALSE
   }
@@ -191,7 +228,9 @@ NULL
 ##' @author Matthew Fidler
 ##' @noRd
 .lotri1 <- function(x2, x3, env) {
-  .rl <- .lotriParseMat(x3)
+  .envParse <- new.env(parent = emptyenv())
+  .envParse$lhs <- x2
+  .rl <- .lotriParseMat(x3, env=.envParse)
   .r <- .rl[[1]]
   .rf <- .rl[[2]]
   env$netas <- length(.r)
@@ -227,7 +266,11 @@ NULL
       }
       env$eta1 <- env$eta1 + .num
     } else {
-      stop("number of items and lower triangular matrix mismatch", call. = FALSE)
+      ## in this case
+      .expr <- .deparse1(eval(parse(text=paste0("quote(", paste(c(.n, paste0("varName", length(.n) + seq_len(.num - length(.n)))), collapse="+"), "~ 0)"))))
+      .expr <- paste0("  '", substr(.expr, 1, nchar(.expr) - 1))
+      .expr <- .pasteLotri(.expr, x3)
+      stop("number named variables and lower triangular matrix size do not match\n  did you mean something like:\n", .expr, call. = FALSE)
     }
   } else {
     stop("matrix expression should be 'name ~ c(lower-tri)'", call. = FALSE)
@@ -286,7 +329,7 @@ NULL
         }
       }
       if (!.didCnd) {
-        stop("matrix expression should be 'name ~ c(lower-tri)'", call. = FALSE)
+        stop("bad matrix expression: '", .deparse1(x), "'\n  matrix expression should be 'name ~ c(lower-tri)'", call. = FALSE)
       }
     }
   }
@@ -294,7 +337,12 @@ NULL
 
 .fCallTilde <- function(x, env) {
   if (length(x) != 3) {
-    stop("matrix expression should be 'name ~ c(lower-tri)'", call. = FALSE)
+    .possible <- try(.deparse1(eval(parse(text=paste("quote(variableName", .deparse1(x), ")")))), silent=TRUE)
+    .err <- "matrix expression should be 'name ~ c(lower-tri)'"
+    if (!inherits(.possible, "try-error")) {
+      .err <- paste0(.err, "\n  did you mean '", .possible, "'")
+    }
+    stop(.err, call. = FALSE)
   }
   if (length(x[[3]]) == 1) {
     ## et1 ~ 0.2
@@ -319,7 +367,14 @@ NULL
   if (identical(x[[1]], quote(`~`))) {
     .fCallTilde(x, env)
   } else if (identical(x[[1]], quote(`{`))) {
-    lapply(x, .f, env = env)
+    .x <- x[-1]
+    for (.i in seq_along(.x)) {
+      .curLine <- try(.f(.x[[.i]], env=env), silent=TRUE)
+      if (inherits(.curLine, "try-error")) {
+        env$.hasErr <- TRUE
+        env$.err[[.i]] <- paste(c(env$.err[[.i]], attr(.curLine, "condition")$message), collapse="\n")
+      }
+    }
   } else if (identical(x[[1]], quote(`quote`))) {
     lapply(x[[2]], .f, env = env)
   } else if (identical(x[[1]], quote(`matrix`))) {
@@ -369,7 +424,9 @@ NULL
   }
   .fullCnd <- as.character(cond[[1]])
   if (regexpr("^[a-zA-Z][a-zA-Z0-9_.]*$", .fullCnd) == -1) {
-    stop("unsupported conditional statement", call. = FALSE)
+    .cnd <- .deparse1(cond)
+    stop("unsupported conditional statement: '", .deparse1(cond), "'",
+         call. = FALSE)
   }
   .env <- list2env(as.list(envir), parent = globalenv())
   .env[[.fullCnd]] <- function(...) {
@@ -757,8 +814,13 @@ lotri <- function(x, ..., envir = parent.frame(),
         .sX <- x
       }
     }
-    .est <- .parseThetaEst(.sX, .lotriParentEnv)
+    .envT <- .parseThetaEst(.sX, .lotriParentEnv)
+    .est <- .envT$df
+    .env$.hasErr <- .envT$.hasErr
+    .env$.err <- .envT$.err
+    .env$.lines <- .envT$.lines
     .f(.sX, .env)
+    .printErr(.env)
     if (!is.null(.env$matrix)) {
       return(.amplifyRetWithDfEst(.env$matrix, .est))
     }

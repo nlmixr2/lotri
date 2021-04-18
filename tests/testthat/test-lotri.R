@@ -212,9 +212,6 @@ test_that("lotri matrix parsing", {
   expect_error(lotri(~ 40))
   expect_error(lotri(a ~ c(3, 1, 3)))
   expect_error(lotri(a ~ c(3, 1)))
-  ## expect_error(lotri({
-  ##   a <- c(3, 1)
-  ## }))
 
   expect_equal(
     lotri({
@@ -527,7 +524,8 @@ test_that("lotri matrix parsing", {
   )
 
 
-  expect_error(lotri(et1 ~ c(1) | id + matt)) # nolint
+  expect_error(
+    lotri(et1 ~ c(1) | id + matt)) # nolint
   expect_error(lotri(et1 ~ 1 | id + matt))
 
   tmp <- lotri(et1 ~ 1 | id(df = 3), et2 ~ 3 | id2)
