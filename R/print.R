@@ -19,6 +19,7 @@ print.lotriFix <- function(x, ...) {
     .dim <- dim(x)
     .cls <- class(.tmp)
     .lotriFix <- attr(.tmp, "lotriFix")
+    .lotriUnfix <- attr(.tmp, "lotriUnfix")
     .lotriEst <- attr(.tmp, "lotriEst")
     if (all(.dim == 0L) & !is.null(.lotriEst)) {
       cat("Lotri Estimates (get with `lotriEst()`):\n")
@@ -27,6 +28,7 @@ print.lotriFix <- function(x, ...) {
     }
     attr(.tmp, "lotriFix") <- NULL
     attr(.tmp, "lotriEst") <- NULL
+    attr(.tmp, "lotriUnfix") <- NULL
     .w <- which(.cls == "lotriFix")
     .cls <- .cls[-.w]
     class(.tmp) <- NULL # Note that a matrix doesn't actually have a class
@@ -38,6 +40,8 @@ print.lotriFix <- function(x, ...) {
     print(.tmp)
     if (!is.null(.lotriFix)) {
       cat("this matrix has fixed elements\n")
+    } else if (!is.null(.lotriUnfix)) {
+      cat("this matrix elements that will be unfixed\n")
     }
   } else {
     ## lotri or list

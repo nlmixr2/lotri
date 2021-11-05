@@ -138,6 +138,15 @@ NULL
       env$fix <- TRUE
       x[[1]] <- quote(`c`)
       return(x)
+    } else if (identical(x[[1]], quote(`unfix`)) ||
+                 identical(x[[1]], quote(`unfixed`)) ||
+                 identical(x[[1]], quote(`Unfixed`)) ||
+                 identical(x[[1]], quote(`UNFIXED`)) ||
+                 identical(x[[1]], quote(`Unfix`)) ||
+                 identical(x[[1]], quote(`UNFIX`))) {
+      env$unfix <- TRUE
+      x[[1]] <- quote(`c`)
+      return(x)
     } else {
       return(as.call(lapply(x, .repFixedWithC, env=env)))
     }
@@ -149,8 +158,9 @@ NULL
 .evalAsNumericCheckForFixed <- function(x) {
   .env <- new.env(parent=emptyenv())
   .env$fix <- NA
+  .env$unfix <- NA
   .num <- as.numeric(eval(.repFixedWithC(x, .env), envir=.lotriParentEnv))
-  return(list(.num, .env$fix))
+  return(list(.num, .env$fix, .env$unfix))
 }
 
 .lotriParseMat <- function(x, env=NULL) {
@@ -193,6 +203,12 @@ NULL
         identical(x[[1]], quote(`FIX`))) {
     env$globalFix <- TRUE
   }
+  if (identical(x[[1]], quote(`unfix`)) ||
+        identical(x[[1]], quote(`unfixed`)) ||
+        identical(x[[1]], quote(`UNFIX`)) ||
+        identical(x[[1]], quote(`UNFIX`))) {
+    env$globalUnfix <- TRUE
+  }
   if (length(x) == 2) {
     return(.lotriParseMat(x[[2]], env=env))
   } else if (length(x) == 1) {
@@ -205,16 +221,22 @@ NULL
   if (!exists("sd", env)) env$sd <- FALSE
   if (!exists("cor", env)) env$cor <- FALSE
   .tmp <- vapply(.r, .evalAsNumericCheckForFixed,
-                 list(numeric(1), logical(1)))
+                 list(numeric(1), logical(1), logical(1)))
   env$val <- unlist(.tmp[1, ])
   env$fix <- unlist(.tmp[2, ])
+  env$unfix <- unlist(.tmp[3, ])
   env$nv <- .lotriMatrixVec(.lotriMatrix(env$val, chol=env$chol, sd=env$sd, cor=env$cor, lhs=env$lhs))
   if (!exists("globalFix", env)) {
     env$globalFix <- FALSE
   }
+  if (!exists("globalUnfix", env)) {
+    env$globalUnfix <- FALSE
+  }
   .fix <- vapply(env$fix, function(x){ifelse(is.na(x), env$globalFix, x)},
                  logical(1))
-  return(list(env$nv, .fix))
+  .unfix <- vapply(env$unfix, function(x){ifelse(is.na(x), env$globalUnfix, x)},
+                   logical(1))
+  return(list(env$nv, .fix, .unfix))
 }
 
 ##' Parse lower triangular matrix list
@@ -233,6 +255,7 @@ NULL
   .rl <- .lotriParseMat(x3, env=.envParse)
   .r <- .rl[[1]]
   .rf <- .rl[[2]]
+  .ru <- .rl[[3]]
   env$netas <- length(.r)
   .num <- sqrt(1 + env$netas * 8) / 2 - 1 / 2
   if (round(.num) == .num) {
@@ -245,11 +268,12 @@ NULL
       for (.k in seq_along(.r)) {
         .v <- .r[.k]
         .f <- .rf[.k]
+        .u <- .ru[.k]
         .i <- .i + 1
         if (.i == .j) {
           env$df <- rbind(
             env$df,
-            data.frame(i = env$eta1 + .i, j = env$eta1 + .i, x = .v, fix=.f)
+            data.frame(i = env$eta1 + .i, j = env$eta1 + .i, x = .v, fix=.f, unfix=.u)
           )
           .j <- .j + 1
           .i <- 0
@@ -259,7 +283,7 @@ NULL
             data.frame(
               i = c(env$eta1 + .i, env$eta1 + .j),
               j = c(env$eta1 + .j, env$eta1 + .i), x = .v,
-              fix=.f
+              fix=.f, unfix=.u
             )
           )
         }
@@ -280,7 +304,7 @@ NULL
 .fcallTildeLhsSum <- function(x, env) {
   ## et1+et2+et3~NULL lower triangular matrix
   if (any(tolower(as.character(x[[3]][[1]])) ==
-            c("c", "fix", "fixed", "var", "sd", "cor", "cov", "chol"))) {
+            c("c", "fix", "fixed", "unfix", "unfixed", "var", "sd", "cor", "cov", "chol"))) {
     .lotri1(x[[2]], x[[3]], env)
   } else {
     .val <- try(eval(x[[3]], envir=.lotriParentEnv), silent = TRUE)
@@ -290,7 +314,7 @@ NULL
       env$names <- c(env$names, as.character(x[[2]]))
       env$df <- rbind(
         env$df,
-        data.frame(i = env$eta1, j = env$eta1, x = .val, fix=FALSE)
+        data.frame(i = env$eta1, j = env$eta1, x = .val, fix=FALSE, unfix=FALSE)
       )
     } else {
       .cnd <- try(as.character(x[[3]][[1]]), silent = TRUE)
@@ -319,8 +343,7 @@ NULL
               data.frame(
                 i = .env2$eta1, j = .env2$eta1,
                 x = .val,
-                fix=FALSE
-              )
+                fix=FALSE, unfix=FALSE)
             )
           } else {
             .lotri1(x[[2]], x[[3]][[2]], .env2)
@@ -355,9 +378,7 @@ NULL
         i = env$eta1,
         j = env$eta1,
         x = as.numeric(eval(x[[3]], envir=.lotriParentEnv)),
-        fix=FALSE
-      )
-    )
+        fix=FALSE, unfix=FALSE))
   } else {
     .fcallTildeLhsSum(x, env)
   }
@@ -650,15 +671,21 @@ NULL
 .lotriGetMatrixFromEnv <- function(env) {
   .ret <- diag(env$eta1)
   .retF <- matrix(FALSE, dim(.ret)[1], dim(.ret)[1])
+  .retU <- matrix(FALSE, dim(.ret)[1], dim(.ret)[1])
   for (.i in seq_along(env$df$i)) {
     .ret[env$df$i[.i], env$df$j[.i]] <- env$df$x[.i]
     .retF[env$df$i[.i], env$df$j[.i]] <- env$df$fix[.i]
+    .retU[env$df$i[.i], env$df$j[.i]] <- env$df$unfix[.i]
   }
   dimnames(.ret) <- list(env$names, env$names)
   dimnames(.retF) <- list(env$names, env$names)
+  dimnames(.retU) <- list(env$names, env$names)
   if (any(.retF)) {
     class(.ret) <- c("lotriFix", class(.ret))
     attr(.ret, "lotriFix") <- .retF
+  } else if (any(.retU)) {
+    class(.ret) <- c("lotriFix", class(.ret))
+    attr(.ret, "lotriUnfix") <- .retU
   }
   return(.ret)
 }

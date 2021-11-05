@@ -1011,6 +1011,17 @@ test_that("lotriMat", {
               0.5, 1)
   })
 
+  unfix1 <- lotri({
+    a <- c(0, 1); backTransform("exp"); label("a label")
+    b <- c(0, 1, 2)
+    c <- fix(1)
+    d <- fix(0, 1, 2)
+    e <- c(0, 1, 2, fixed)
+    f+g ~ unfix(1,
+                0.5, 1)
+  })
+
+
   fix2 <- lotri({
     h <- c(0, 1); backTransform("expit"); label("b label")
     i <- c(0, 1, 2)
