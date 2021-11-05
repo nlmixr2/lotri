@@ -11,13 +11,16 @@
 * Allow specifying fixed components in `lotri()` matrices.
 
 * Add `cov`, `cor`, `sd`, `var`, and `chol` options for matrix
-  specification.
+  specification.  The final matrix will always be the covariance matrix
   
 * Add function `lotriMatInv()` which takes a symmetric block matrix
   and converts it into a list of matrices.  An sort of inverse
-  operation of `lotriMatInv()`
+  operation of `lotriMat()`
 
 * Add error for `lotri(~c(40))`
+
+* Added ability to flag `fixed` and `unfixed` components in a
+  matrix. Currently `lotri` only supports one type.
 
 # lotri 0.3.1
 
