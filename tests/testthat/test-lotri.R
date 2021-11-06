@@ -2076,8 +2076,52 @@ test_that("as.expression handling; lhs of theta parameters", {
 
   x1$upper <- 1
   expect_equal(.lotri$.lotriLhsExpressionFromDf1(x1), quote(fix(0, 0.45, 1)))
+  expect_equal(.lotri$.lotriAssignmentExpressionFromDf1(x1), quote(tka <- fix(0, 0.45, 1)))
 
   x1$fix <- FALSE
   expect_equal(.lotri$.lotriLhsExpressionFromDf1(x1), quote(c(0, 0.45, 1)))
+  expect_equal(.lotri$.lotriAssignmentExpressionFromDf1(x1), quote(tka <- c(0, 0.45, 1)))
+
+  expect_equal(.lotri$.lotriBackTransformFromDf1(x1), NULL)
+
+  expect_equal(.lotriExpressionLinesFromDf1(x1),
+               list(quote(tka <- c(0, 0.45, 1)),
+                    quote(label("Log Ka"))))
+
+  x1$backTransform <- "exp"
+  expect_equal(.lotri$.lotriBackTransformFromDf1(x1), list(quote(backTransform("exp"))))
+
+  expect_equal(.lotriExpressionLinesFromDf1(x1),
+               list(quote(tka <- c(0, 0.45, 1)),
+                    quote(backTransform("exp")),
+                    quote(label("Log Ka"))))
+
+  expect_equal(.lotri$.lotriLabelFromDf1(x1), list(quote(label("Log Ka"))))
+
+
+  x1$label <- "This is a fun label\"'"
+  expect_equal(.lotri$.lotriLabelFromDf1(x1), list(quote(label("This is a fun label\"'"))))
+
+  x1$label <- NA_character_
+  expect_equal(.lotri$.lotriLabelFromDf1(x1), NULL)
+
+  expect_equal(.lotriExpressionLinesFromDf1(x1),
+               list(quote(tka <- c(0, 0.45, 1)),
+                    quote(backTransform("exp"))))
+
+  x1$backTransform <- NA_character_
+  expect_equal(.lotriExpressionLinesFromDf1(x1),
+               list(quote(tka <- c(0, 0.45, 1))))
+
+  expect_equal(.lotriGetPopLinesFromDf(xdf),
+               list(
+                 quote(tka <- 0.45),
+                 quote(label("Log Ka")),
+                 quote(tcl <- 1),
+                 quote(label("Log Cl")),
+                 quote(tv <- 3.45),
+                 quote(label("Log V")),
+                 quote(add.err <- 0.7)))
+
 
 })
