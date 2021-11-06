@@ -2040,3 +2040,44 @@ test_that("default conditioning", {
 
 })
 
+
+test_that("as.expression handling; lhs of theta parameters", {
+
+  x <- lotri({
+    tka <- 0.45; label("Log Ka")
+    tcl <- 1; label("Log Cl")
+    tv <- 3.45; label("Log V")
+    eta.ka ~ 0.6
+    eta.cl ~ 0.3
+    eta.v ~ 0.1
+    add.err <- 0.7
+  })
+
+  xdf <- as.data.frame(x)
+  x1 <- xdf[1, ]
+
+  expect_equal(.lotri$.lotriLhsExpressionFromDf1(x1), quote(0.45))
+
+  x1$fix <- TRUE
+  expect_equal(.lotri$.lotriLhsExpressionFromDf1(x1),quote(fix(0.45)))
+
+  x1$upper <- 1
+  expect_equal(.lotri$.lotriLhsExpressionFromDf1(x1), quote(fix(-Inf, 0.45, 1)))
+
+  x1$fix <- FALSE
+  expect_equal(.lotri$.lotriLhsExpressionFromDf1(x1), quote(c(-Inf, 0.45, 1)))
+
+  x1$upper <- Inf
+  x1$lower <- 0
+  expect_equal(.lotri$.lotriLhsExpressionFromDf1(x1), quote(c(0, 0.45)))
+
+  x1$fix <- TRUE
+  expect_equal(.lotri$.lotriLhsExpressionFromDf1(x1), quote(fix(0, 0.45)))
+
+  x1$upper <- 1
+  expect_equal(.lotri$.lotriLhsExpressionFromDf1(x1), quote(fix(0, 0.45, 1)))
+
+  x1$fix <- FALSE
+  expect_equal(.lotri$.lotriLhsExpressionFromDf1(x1), quote(c(0, 0.45, 1)))
+
+})
