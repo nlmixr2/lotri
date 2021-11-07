@@ -78,7 +78,9 @@
   if (missing(lines)) lines <- seq_along(df$name)
   do.call("c", lapply(lines, function(i){
     df1 <- df[i, ]
-    if (is.na(df1$ntheta)) return(NULL)
+    if (any(names(df1) == "ntheta")){
+      if (is.na(df1$ntheta)) return(NULL)
+    }
     .lotriExpressionLinesFromDf1(df1)
   }))
 }
@@ -128,4 +130,51 @@
   }
  }
 
+#' Convert a lotri data frame to a lotri expression
+#'
+#' @param data lotri data frame
+#' @param useIni Use `ini` instead of `lotri` in the expression
+#' @return expression of the lotri syntax equivalent to the data.frame provided
+#' @author Matthew L. Fidler
+#' @examples
+#'
+#'  x <- lotri({
+#'   tka <- 0.45; label("Log Ka")
+#'   tcl <- 1; label("Log Cl")
+#'   tv <- 3.45; label("Log V")
+#'   eta.ka ~ 0.6
+#'   eta.cl ~ 0.3
+#'   eta.v ~ 0.1
+#'   add.err <- 0.7
+#' })
+#'
+#' df <- as.data.frame(x)
+#'
+#' lotriDataFrameToLotriExpression(df)
+#'
+#' # You may also call as.expression directly from the lotri object
+#'
+#' as.expression(x)
+#'
+#' @export
+lotriDataFrameToLotriExpression <- function(data, useIni=FALSE) {
+  if (!inherits(data, "data.frame")) stop("input must be lotri data.frame", call.=FALSE)
+  .l <- as.lotri(data)
+  as.expression(.l, useIni=useIni)
+}
 
+#' @export
+as.expression.lotriFix <- function(x, ...) {
+  .lst <- list(...)
+  if (!any(names(.lst) == "useIni")) {
+    .lst$useIni <- FALSE
+  }
+  .l <- x
+  .est <- attr(.l, "lotriEst")
+  .mat <- .l
+  attr(.mat, "lotriEst") <- NULL
+  class(.mat) <- NULL
+  as.call(list(ifelse(.lst$useIni, quote(`ini`), quote(`lotri`)),
+               as.call(c(list(quote(`{`)), .lotriGetPopLinesFromDf(.est),
+                          .lotriGetEtaMatrixElements(.mat)))))
+}
