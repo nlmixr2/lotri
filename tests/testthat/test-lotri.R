@@ -2148,4 +2148,77 @@ test_that("as.expression handling; lhs of theta parameters", {
                list(quote(m + n ~ c(2, 0.5, 1)),
                     quote(f + g ~ fix(1, 0.5, 1) | occ)))
 
+  x <- lotri({
+    tka <- 0.45; label("Log Ka")
+    tcl <- 1; label("Log Cl")
+    tv <- 3.45; label("Log V")
+    eta.ka ~ 0.6
+    eta.cl ~ 0.3
+    eta.v ~ 0.1
+    add.err <- 0.7
+  })
+
+  df <- as.data.frame(x)
+
+  expect_equal(lotriDataFrameToLotriExpression(df),
+               quote(lotri({
+                 tka <- 0.45
+                 label("Log Ka")
+                 tcl <- 1
+                 label("Log Cl")
+                 tv <- 3.45
+                 label("Log V")
+                 add.err <- 0.7
+                 eta.ka ~ 0.6
+                 eta.cl ~ 0.3
+                 eta.v ~ 0.1
+               })))
+
+
+    expect_equal(lotriDataFrameToLotriExpression(df, useIni=TRUE),
+               quote(ini({
+                 tka <- 0.45
+                 label("Log Ka")
+                 tcl <- 1
+                 label("Log Cl")
+                 tv <- 3.45
+                 label("Log V")
+                 add.err <- 0.7
+                 eta.ka ~ 0.6
+                 eta.cl ~ 0.3
+                 eta.v ~ 0.1
+               })))
+
+  # You may also call as.expression directly from the lotri object
+
+  expect_equal(as.expression(x),
+               quote(lotri({
+                 tka <- 0.45
+                 label("Log Ka")
+                 tcl <- 1
+                 label("Log Cl")
+                 tv <- 3.45
+                 label("Log V")
+                 add.err <- 0.7
+                 eta.ka ~ 0.6
+                 eta.cl ~ 0.3
+                 eta.v ~ 0.1
+               })))
+
+    expect_equal(as.expression(x, useIni=TRUE),
+               quote(ini({
+                 tka <- 0.45
+                 label("Log Ka")
+                 tcl <- 1
+                 label("Log Cl")
+                 tv <- 3.45
+                 label("Log V")
+                 add.err <- 0.7
+                 eta.ka ~ 0.6
+                 eta.cl ~ 0.3
+                 eta.v ~ 0.1
+               })))
+
+
+
 })

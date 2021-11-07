@@ -21,6 +21,11 @@
 
 * Added ability to flag `fixed` and `unfixed` components in a
   matrix. Currently `lotri` only supports one type.
+  
+* For the `lotriFix` objects, ie those created with population types
+  of estimates and covariance estimates, allow them to be converted to
+  an equivalent expression with `as.expression()` for the lotri object
+  and `lotriDataFrameToLotriExpression()` for the `data.frame`
 
 # lotri 0.3.1
 
