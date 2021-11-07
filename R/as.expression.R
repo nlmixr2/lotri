@@ -109,7 +109,11 @@
       .lotriFix <- attr(.mat, "lotriFix")
       if (!is.null(.lotriFix)) {
         if (all(.lotriFix)) {
-          .v0 <- paste0("fix", substr(.v0, 2, nchar(.v0)))
+          if (length(.v) > 1) {
+            .v0 <- paste0("fix", substr(.v0, 2, nchar(.v0)))
+          } else {
+            .v0 <- paste0("fix(", .v0, ")")
+          }
         }
       }
       eval(expr=parse(text=paste0("quote(", paste(.nme, collapse="+"), "~", .v0,
@@ -123,3 +127,5 @@
     }))
   }
  }
+
+

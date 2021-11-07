@@ -2129,13 +2129,13 @@ test_that("as.expression handling; lhs of theta parameters", {
       1,
       2, 3
     )
-    et1 ~ 3
+    et1 ~ fix(3)
   })
 
   expect_equal(.lotri$.lotriGetEtaMatrixElements(x1),
                list(quote(et5 ~ 1),
                     quote(et2 + et3 ~ c(1, 2, 3)),
-                    quote(et1 ~ 3)))
+                    quote(et1 ~ fix(3))))
 
   fix2 <- lotri({
     f+g ~ fix(1,
