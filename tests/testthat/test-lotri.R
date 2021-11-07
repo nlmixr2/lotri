@@ -2219,6 +2219,6 @@ test_that("as.expression handling; lhs of theta parameters", {
                  eta.v ~ 0.1
                })))
 
-
+    expect_error(lotriDataFrameToLotriExpression(rnorm))
 
 })
