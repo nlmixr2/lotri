@@ -2105,15 +2105,15 @@ test_that("as.expression handling; lhs of theta parameters", {
   x1$label <- NA_character_
   expect_equal(.lotri$.lotriLabelFromDf1(x1), NULL)
 
-  expect_equal(.lotriExpressionLinesFromDf1(x1),
+  expect_equal(.lotri$.lotriExpressionLinesFromDf1(x1),
                list(quote(tka <- c(0, 0.45, 1)),
                     quote(backTransform("exp"))))
 
   x1$backTransform <- NA_character_
-  expect_equal(.lotriExpressionLinesFromDf1(x1),
+  expect_equal(.lotri$.lotriExpressionLinesFromDf1(x1),
                list(quote(tka <- c(0, 0.45, 1))))
 
-  expect_equal(.lotriGetPopLinesFromDf(xdf),
+  expect_equal(.lotri$.lotriGetPopLinesFromDf(xdf),
                list(
                  quote(tka <- 0.45),
                  quote(label("Log Ka")),
@@ -2123,5 +2123,29 @@ test_that("as.expression handling; lhs of theta parameters", {
                  quote(label("Log V")),
                  quote(add.err <- 0.7)))
 
+  x1 <- lotri({
+    et5 ~ 1
+    et2 + et3 ~ c(
+      1,
+      2, 3
+    )
+    et1 ~ 3
+  })
+
+  expect_equal(.lotri$.lotriGetEtaMatrixElements(x1),
+               list(quote(et5 ~ 1),
+                    quote(et2 + et3 ~ c(1, 2, 3)),
+                    quote(et1 ~ 3)))
+
+  fix2 <- lotri({
+    f+g ~ fix(1,
+              0.5, 1) | occ
+    m+n ~ c(2,
+            0.5, 1)
+  })
+
+  expect_equal(.lotri$.lotriGetEtaMatrixElements(fix2),
+               list(quote(m + n ~ c(2, 0.5, 1)),
+                    quote(f + g ~ fix(1, 0.5, 1) | occ)))
 
 })

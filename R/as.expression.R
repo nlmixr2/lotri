@@ -10,7 +10,6 @@
 
 #' Turn a single lotri estimate data frame estimate into lhs expression
 #'
-#'
 #' @param df1 Single Left hand side data row
 #' @return normalized left handed expression
 #' @author Matthew L. Fidler
@@ -28,7 +27,6 @@
   eval(parse(text=paste0("quote(", deparse1(as.call(.ret)), ")")))
 }
 #' This returns the current initial estimate assigment based on df1
-#'
 #'
 #' @param df1 Single row of a parameter estimation statement
 #' @return Quoted assignment expression
@@ -60,7 +58,6 @@
 }
 #'  This produces a list of quoted lines baesd on df1
 #'
-#'
 #' @param df1 Single row of an estimate data.frame
 #' @return List of expression(s) equivalent to this line
 #' @author Matthew L. Fidler
@@ -86,4 +83,43 @@
   }))
 }
 
-
+#' Get the eta matrix elements for a lotri matrix
+#'
+#' @param x lotri matrix
+#' @param condition Condition, if neeeded
+#' @return list expression
+#' @author Matthew L. Fidler
+#' @noRd
+.lotriGetEtaMatrixElements <- function(x, condition="id") {
+  if (inherits(x, "matrix")) {
+    .x <- lotriMatInv(x)
+    .l <- lapply(seq_along(.x), function(i) {
+      .mat <- .x[[i]]
+      .nme <- dimnames(.mat)[[1]]
+      .n <- length(.nme)
+      .v <- vector("numeric", .n * (.n + 1) / 2)
+      .k <- 1
+      for (.i in seq(1, .n)) {
+        for (.j in seq(1, .i)) {
+          .v[.k] <- .mat[.i, .j]
+          .k <- .k + 1
+        }
+      }
+      .v0 <- deparse1(.v)
+      .lotriFix <- attr(.mat, "lotriFix")
+      if (!is.null(.lotriFix)) {
+        if (all(.lotriFix)) {
+          .v0 <- paste0("fix", substr(.v0, 2, nchar(.v0)))
+        }
+      }
+      eval(expr=parse(text=paste0("quote(", paste(.nme, collapse="+"), "~", .v0,
+                                ifelse(condition == "id", "", paste0("| ", condition)), ")")))
+    })
+    .l
+  } else if (inherits(x, "list")) {
+    .n <- names(x)
+    do.call("c", lapply(.n, function(nme){
+      .lotriGetEtaMatrixElements(x[[nme]], condition=nme)
+    }))
+  }
+ }
