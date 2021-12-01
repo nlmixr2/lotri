@@ -8,6 +8,7 @@
     for (.i in seq_along(.lst2)) {
       .curMat <- .lst2[[.i]]
       .curMatF <- attr(.curMat, "lotriFix")
+      .curMatU <- attr(.curMat, "lotriUnfix")
       .n <- dimnames(.curMat)[[1]]
       for (.j in seq_along(.n)) {
         for (.k in seq_len(.j)) {
@@ -16,9 +17,12 @@
           } else {
             .curName <- paste0("(", .n[.k], ",", .n[.j], ")")
           }
-          .fix <- FALSE
           if (!is.null(.curMatF)) {
             .fix <- .curMatF[.j, .k]
+          } else if (!is.null(.curMatU)) {
+            .fix <- !.curMatU[.j, .k]
+          } else {
+            .fix <- FALSE
           }
           .df3 <- rbind(.df3,
                         data.frame(ntheta=NA_integer_,

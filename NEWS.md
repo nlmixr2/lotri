@@ -11,13 +11,21 @@
 * Allow specifying fixed components in `lotri()` matrices.
 
 * Add `cov`, `cor`, `sd`, `var`, and `chol` options for matrix
-  specification.
+  specification.  The final matrix will always be the covariance matrix
   
 * Add function `lotriMatInv()` which takes a symmetric block matrix
   and converts it into a list of matrices.  An sort of inverse
-  operation of `lotriMatInv()`
+  operation of `lotriMat()`
 
 * Add error for `lotri(~c(40))`
+
+* Added ability to flag `fixed` and `unfixed` components in a
+  matrix. Currently `lotri` only supports one type.
+  
+* For the `lotriFix` objects, ie those created with population types
+  of estimates and covariance estimates, allow them to be converted to
+  an equivalent expression with `as.expression()` for the lotri object
+  and `lotriDataFrameToLotriExpression()` for the `data.frame`
 
 # lotri 0.3.1
 

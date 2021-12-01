@@ -67,6 +67,7 @@ lotriMatInv <- function(mat) {
          call.=FALSE)
   }
   .matF <- attr(mat, "lotriFix")
+  .matU <- attr(mat, "lotriUnfix")
   .ret <- list()
   .mat <- mat
   .i <- 1
@@ -80,6 +81,11 @@ lotriMatInv <- function(mat) {
         attr(.mat1, "lotriFix") <- .mat1F
         class(.mat1) <- c("lotriFix", class(.mat1))
         .matF <- .matF[-.s, -.s, drop = FALSE]
+      } else if (!is.null(.matU)) {
+        .mat1U <- .matU[.s, .s, drop = FALSE]
+        attr(.mat1, "lotriUnfix") <- .mat1F
+        class(.mat1) <- c("lotriFix", class(.mat1))
+        .matU <- .matU[-.s, -.s, drop = FALSE]
       }
       .ret <- c(.ret, list(.mat1))
       .mat <- .mat[-.s, -.s, drop = FALSE]
@@ -92,6 +98,9 @@ lotriMatInv <- function(mat) {
   if (.d > 0){
     if (!is.null(.matF)) {
       attr(.mat, "lotriFix") <- .matF
+      class(.mat) <- c("lotriFix", class(.mat))
+    } else if (!is.null(.matU)) {
+      attr(.mat, "lotriUnfix") <- .matU
       class(.mat) <- c("lotriFix", class(.mat))
     }
     .ret <- c(.ret, list(.mat))
