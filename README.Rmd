@@ -10,11 +10,11 @@ knitr::opts_chunk$set(
 ```
 
 <!-- badges: start -->
-[![R-CMD-check](https://github.com/nlmixrdevelopment/lotri/workflows/R-CMD-check/badge.svg)](https://github.com/nlmixrdevelopment/lotri/actions)
-[![Coverage status](https://codecov.io/gh/nlmixrdevelopment/lotri/branch/master/graph/badge.svg)](https://codecov.io/github/nlmixrdevelopment/lotri?branch=master) 
+[![R-CMD-check](https://github.com/nlmixr2/lotri/workflows/R-CMD-check/badge.svg)](https://github.com/nlmixr2/lotri/actions)
+[![Coverage status](https://codecov.io/gh/nlmixr2/lotri/branch/master/graph/badge.svg)](https://codecov.io/github/nlmixr2/lotri?branch=master) 
 [![CRAN status](https://www.r-pkg.org/badges/version/lotri)](https://cran.r-project.org/package=lotri)
 [![CRAN downloads](https://cranlogs.r-pkg.org/badges/lotri)](https://cran.r-project.org/package=lotri)
-[![CodeFactor](https://www.codefactor.io/repository/github/nlmixrdevelopment/lotri/badge/master)](https://www.codefactor.io/repository/github/nlmixrdevelopment/lotri/overview/master)
+[![CodeFactor](https://www.codefactor.io/repository/github/nlmixr2/lotri/badge/master)](https://www.codefactor.io/repository/github/nlmixr2/lotri/overview/master)
 <!-- badges: end -->
 
 # lotri <img src='man/figures/logo.png' align="right" height="139" />
@@ -25,7 +25,7 @@ spelled) lotri (or lottery).
 
 This was made to allow people (like me) to specify lower triangular
 matrices similar to the domain specific language implemented in
-`nlmixr`.  Originally I had it included in `RxODE`, but thought it may
+`nlmixr2`.  Originally I had it included in `RxODE`, but thought it may
 have more general applicability, so I separated it into a new
 package. 
 
@@ -42,7 +42,7 @@ And the development version from [GitHub](https://github.com/) with:
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("nlmixrdevelopment/lotri")
+devtools::install_github("nlmixr2/lotri")
 ```
 ## Example
 
@@ -213,5 +213,5 @@ autoplot(mb)
 
 A new feature is the ability to condition on variables by `|`.  This
 will be useful when simulating nested random effects using the
-upcoming `RxODE`
+upcoming `RxODE2`
 
