@@ -71,7 +71,7 @@
       </ul>
 <ul class="nav navbar-nav navbar-right">
 <li>
-  <a href="https://github.com/nlmixrdevelopment/lotri/">
+  <a href="https://github.com/nlmixr2/lotri/">
     <span class="fab fa-github fa-lg"></span>
      
   </a>
@@ -94,7 +94,7 @@
             
             <h4 class="date">2021-12-01</h4>
       
-      <small class="dont-index">Source: <a href="https://github.com/nlmixrdevelopment/lotri/blob/master/vignettes/lotri-motivation.Rmd"><code>vignettes/lotri-motivation.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/nlmixr2/lotri/blob/master/vignettes/lotri-motivation.Rmd"><code>vignettes/lotri-motivation.Rmd</code></a></small>
       <div class="hidden name"><code>lotri-motivation.Rmd</code></div>
 
     </div>
@@ -110,7 +110,7 @@
 <code class="sourceCode R"><span class="va">mat</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">0.5</span>, <span class="fl">0.5</span>, <span class="fl">1</span><span class="op">)</span>,nrow<span class="op">=</span><span class="fl">2</span>,ncol<span class="op">=</span><span class="fl">2</span>,dimnames<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"a"</span>, <span class="st">"b"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"a"</span>, <span class="st">"b"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></code></pre></div>
 <p>With <code>lotri</code>, you simply specify:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/nlmixrdevelopment/lotri">lotri</a></span><span class="op">)</span>
+<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/nlmixr2/lotri">lotri</a></span><span class="op">)</span>
 <span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/joshuaulrich/microbenchmark/">microbenchmark</a></span><span class="op">)</span>
 <span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org">ggplot2</a></span><span class="op">)</span>
 
@@ -242,9 +242,9 @@
 
 <span class="fu"><a href="https://rdrr.io/r/base/print.html">print</a></span><span class="op">(</span><span class="va">mb</span><span class="op">)</span>
 <span class="co">#&gt; Unit: microseconds</span>
-<span class="co">#&gt;                expr      min        lq       mean    median       uq       max</span>
-<span class="co">#&gt;      matf(testList) 1379.479 1396.3130 1520.90640 1408.1970 1424.059 11344.542</span>
-<span class="co">#&gt;  lotriMat(testList)    6.242    8.0265   12.19864   14.4165   15.093    39.157</span>
+<span class="co">#&gt;                expr      min       lq       mean    median       uq      max</span>
+<span class="co">#&gt;      matf(testList) 1064.751 1087.997 1174.66856 1095.9860 1102.676 8780.531</span>
+<span class="co">#&gt;  lotriMat(testList)    5.344    6.682    9.26141   11.0605   11.474   23.730</span>
 <span class="co">#&gt;  neval</span>
 <span class="co">#&gt;    100</span>
 <span class="co">#&gt;    100</span>

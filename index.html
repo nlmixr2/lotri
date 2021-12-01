@@ -74,7 +74,7 @@
       </ul>
 <ul class="nav navbar-nav navbar-right">
 <li>
-  <a href="https://github.com/nlmixrdevelopment/lotri/">
+  <a href="https://github.com/nlmixr2/lotri/">
     <span class="fab fa-github fa-lg"></span>
      
   </a>
@@ -98,7 +98,7 @@
 <a href="#lotri-" class="anchor"></a>lotri <img src="reference/figures/logo.png" align="right" height="139">
 </h1></div>
 <p>The goal of lotri is to easily specify block-diagonal matrices with (lo)wer (tri)angular matrices. Its as if you have won the (badly spelled) lotri (or lottery).</p>
-<p>This was made to allow people (like me) to specify lower triangular matrices similar to the domain specific language implemented in <code>nlmixr</code>. Originally I had it included in <code>RxODE</code>, but thought it may have more general applicability, so I separated it into a new package.</p>
+<p>This was made to allow people (like me) to specify lower triangular matrices similar to the domain specific language implemented in <code>nlmixr2</code>. Originally I had it included in <code>RxODE</code>, but thought it may have more general applicability, so I separated it into a new package.</p>
 <div id="installation" class="section level2">
 <h2 class="hasAnchor">
 <a href="#installation" class="anchor"></a>Installation</h2>
@@ -108,7 +108,7 @@
 <p>And the development version from <a href="https://github.com/">GitHub</a> with:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co"># install.packages("devtools")</span>
-<span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"nlmixrdevelopment/lotri"</span><span class="op">)</span></code></pre></div>
+<span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"nlmixr2/lotri"</span><span class="op">)</span></code></pre></div>
 </div>
 <div id="example" class="section level2">
 <h2 class="hasAnchor">
@@ -118,7 +118,7 @@
 <code class="sourceCode R"><span class="va">mat</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">0.5</span>, <span class="fl">0.5</span>, <span class="fl">1</span><span class="op">)</span>,nrow<span class="op">=</span><span class="fl">2</span>,ncol<span class="op">=</span><span class="fl">2</span>,dimnames<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"a"</span>, <span class="st">"b"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"a"</span>, <span class="st">"b"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></code></pre></div>
 <p>With <code>lotri</code>, you simply specify:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/nlmixrdevelopment/lotri">lotri</a></span><span class="op">)</span>
+<code class="sourceCode R"><span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/nlmixr2/lotri">lotri</a></span><span class="op">)</span>
 <span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/joshuaulrich/microbenchmark/">microbenchmark</a></span><span class="op">)</span>
 <span class="kw"><a href="https://rdrr.io/r/base/library.html">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org">ggplot2</a></span><span class="op">)</span>
 
@@ -283,9 +283,9 @@
 
 <span class="fu"><a href="https://rdrr.io/r/base/print.html">print</a></span><span class="op">(</span><span class="va">mb</span><span class="op">)</span>
 <span class="co">#&gt; Unit: microseconds</span>
-<span class="co">#&gt;                expr     min       lq      mean  median       uq      max neval</span>
-<span class="co">#&gt;      matf(testList) 459.609 471.7575 543.02145 479.706 516.7105 4697.318   100</span>
-<span class="co">#&gt;  lotriMat(testList)   2.280   2.8195   4.21159   3.303   4.6460   46.721   100</span>
+<span class="co">#&gt;                expr     min      lq      mean   median       uq      max neval</span>
+<span class="co">#&gt;      matf(testList) 446.984 449.756 504.54416 452.1795 458.9225 4122.251   100</span>
+<span class="co">#&gt;  lotriMat(testList)   2.320   2.881   4.10299   4.2620   4.6875   16.685   100</span>
 
 <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html">autoplot</a></span><span class="op">(</span><span class="va">mb</span><span class="op">)</span>
 <span class="co">#&gt; Coordinate system already present. Adding new coordinate system, which will replace the existing one.</span></code></pre></div>
@@ -330,9 +330,9 @@
 
 <span class="fu"><a href="https://rdrr.io/r/base/print.html">print</a></span><span class="op">(</span><span class="va">mb</span><span class="op">)</span>
 <span class="co">#&gt; Unit: microseconds</span>
-<span class="co">#&gt;                expr     min       lq      mean   median       uq      max neval</span>
-<span class="co">#&gt;      matf(testList) 453.898 464.4790 511.40373 489.6425 517.6250 2004.861   100</span>
-<span class="co">#&gt;  lotriMat(testList)   2.254   2.7245   4.07269   4.0970   4.5285   11.251   100</span>
+<span class="co">#&gt;                expr     min       lq      mean   median      uq      max neval</span>
+<span class="co">#&gt;      matf(testList) 439.816 443.8420 466.58670 446.5405 451.958 2178.322   100</span>
+<span class="co">#&gt;  lotriMat(testList)   2.205   2.6635   3.84998   3.8595   4.486   14.803   100</span>
 
 <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html">autoplot</a></span><span class="op">(</span><span class="va">mb</span><span class="op">)</span>
 <span class="co">#&gt; Coordinate system already present. Adding new coordinate system, which will replace the existing one.</span></code></pre></div>
@@ -341,7 +341,7 @@
 <div id="new-features" class="section level2">
 <h2 class="hasAnchor">
 <a href="#new-features" class="anchor"></a>New features</h2>
-<p>A new feature is the ability to condition on variables by <code>|</code>. This will be useful when simulating nested random effects using the upcoming <code>RxODE</code></p>
+<p>A new feature is the ability to condition on variables by <code>|</code>. This will be useful when simulating nested random effects using the upcoming <code>RxODE2</code></p>
 </div>
 </div>
 
@@ -353,9 +353,9 @@
 <ul class="list-unstyled">
 <li>Download from CRAN at <br><a href="https://cloud.r-project.org/package=lotri">https://​cloud.r-project.org/​package=lotri</a>
 </li>
-<li>Browse source code at <br><a href="https://github.com/nlmixrdevelopment/lotri/">https://​github.com/​nlmixrdevelopment/​lotri/​</a>
+<li>Browse source code at <br><a href="https://github.com/nlmixr2/lotri/">https://​github.com/​nlmixr2/​lotri/​</a>
 </li>
-<li>Report a bug at <br><a href="https://github.com/nlmixrdevelopment/lotri/issues">https://​github.com/​nlmixrdevelopment/​lotri/​issues</a>
+<li>Report a bug at <br><a href="https://github.com/nlmixr2/lotri/issues">https://​github.com/​nlmixr2/​lotri/​issues</a>
 </li>
 </ul>
 </div>
@@ -375,11 +375,11 @@
   <div class="dev-status">
 <h2>Dev status</h2>
 <ul class="list-unstyled">
-<li><a href="https://github.com/nlmixrdevelopment/lotri/actions"><img src="https://github.com/nlmixrdevelopment/lotri/workflows/R-CMD-check/badge.svg" alt="R-CMD-check"></a></li>
-<li><a href="https://codecov.io/github/nlmixrdevelopment/lotri?branch=master"><img src="https://codecov.io/gh/nlmixrdevelopment/lotri/branch/master/graph/badge.svg" alt="Coverage status"></a></li>
+<li><a href="https://github.com/nlmixr2/lotri/actions"><img src="https://github.com/nlmixr2/lotri/workflows/R-CMD-check/badge.svg" alt="R-CMD-check"></a></li>
+<li><a href="https://codecov.io/github/nlmixr2/lotri?branch=master"><img src="https://codecov.io/gh/nlmixr2/lotri/branch/master/graph/badge.svg" alt="Coverage status"></a></li>
 <li><a href="https://cran.r-project.org/package=lotri"><img src="https://www.r-pkg.org/badges/version/lotri" alt="CRAN status"></a></li>
 <li><a href="https://cran.r-project.org/package=lotri"><img src="https://cranlogs.r-pkg.org/badges/lotri" alt="CRAN downloads"></a></li>
-<li><a href="https://www.codefactor.io/repository/github/nlmixrdevelopment/lotri/overview/master"><img src="https://www.codefactor.io/repository/github/nlmixrdevelopment/lotri/badge/master" alt="CodeFactor"></a></li>
+<li><a href="https://www.codefactor.io/repository/github/nlmixr2/lotri/overview/master"><img src="https://www.codefactor.io/repository/github/nlmixr2/lotri/badge/master" alt="CodeFactor"></a></li>
 </ul>
 </div>
 </div>
