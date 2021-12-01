@@ -17,7 +17,7 @@ output:
 [![Coverage status](https://codecov.io/gh/nlmixr2/lotri/branch/master/graph/badge.svg)](https://codecov.io/github/nlmixr2/lotri?branch=master) 
 [![CRAN status](https://www.r-pkg.org/badges/version/lotri)](https://cran.r-project.org/package=lotri)
 [![CRAN downloads](https://cranlogs.r-pkg.org/badges/lotri)](https://cran.r-project.org/package=lotri)
-[![CodeFactor](https://www.codefactor.io/repository/github/nlmixr2/lotri/badge/master)](https://www.codefactor.io/repository/github/nlmixr2/lotri/overview/master)
+[![CodeFactor](https://www.codefactor.io/repository/github/nlmixr2/lotri/badge)](https://www.codefactor.io/repository/github/nlmixr2/lotri)
 <!-- badges: end -->
 
 # lotri <img src='man/figures/logo.png' align="right" height="139" />
@@ -254,9 +254,9 @@ mb <- microbenchmark(matf(testList),lotriMat(testList))
 
 print(mb)
 #> Unit: microseconds
-#>                expr     min      lq      mean   median       uq      max neval
-#>      matf(testList) 446.984 449.756 504.54416 452.1795 458.9225 4122.251   100
-#>  lotriMat(testList)   2.320   2.881   4.10299   4.2620   4.6875   16.685   100
+#>                expr     min      lq      mean  median      uq      max neval
+#>      matf(testList) 452.985 456.413 526.98507 465.214 502.185 4499.546   100
+#>  lotriMat(testList)   2.517   2.954   4.27569   4.445   4.986   19.496   100
 
 autoplot(mb)
 #> Coordinate system already present. Adding new coordinate system, which will replace the existing one.
@@ -307,9 +307,9 @@ mb <- microbenchmark(matf(testList),lotriMat(testList))
 
 print(mb)
 #> Unit: microseconds
-#>                expr     min       lq      mean   median      uq      max neval
-#>      matf(testList) 439.816 443.8420 466.58670 446.5405 451.958 2178.322   100
-#>  lotriMat(testList)   2.205   2.6635   3.84998   3.8595   4.486   14.803   100
+#>                expr     min       lq      mean   median       uq      max neval
+#>      matf(testList) 438.772 445.3890 482.13594 448.0000 457.9930 1903.768   100
+#>  lotriMat(testList)   2.359   2.6305   3.87626   3.0155   4.6315   20.582   100
 
 autoplot(mb)
 #> Coordinate system already present. Adding new coordinate system, which will replace the existing one.
