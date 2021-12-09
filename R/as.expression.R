@@ -24,7 +24,7 @@
       if (!df1$fix) return(.ret[[2]])
     }
   }
-  eval(parse(text=paste0("quote(", deparse1(as.call(.ret)), ")")))
+  eval(parse(text=paste0("quote(", .deparse1(as.call(.ret)), ")")))
 }
 #' This returns the current initial estimate assigment based on df1
 #'
@@ -107,7 +107,7 @@
           .k <- .k + 1
         }
       }
-      .v0 <- deparse1(.v)
+      .v0 <- .deparse1(.v)
       .lotriFix <- attr(.mat, "lotriFix")
       if (!is.null(.lotriFix)) {
         if (all(.lotriFix)) {
