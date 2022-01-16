@@ -55,20 +55,22 @@ test_that("Combined estimates and matrix", {
                          row.names = c(NA, -1L),
                          class = "data.frame"))
   
-  expect_error(lotri({a = "matt"}))
+  expect_error(expect_message(lotri({a = "matt"})))
   
-  expect_error(lotri({
-    a = c(1, 2, 3, 4)
-    b <- c(NA) # nolint
-    c <- c(NA, NA, NA)
-    d <- c(NaN) #nolint
-    e <- c(NaN, NaN, NaN)
-    f <- Inf
-    g <- c(Inf, 1, 2)
-    h <- c(0, 1, -Inf)
-    i <- c(1, 1, 1)
-    j <- c(3, 2, 1)
-  }))
+  expect_error(expect_message(
+    lotri({
+      a = c(1, 2, 3, 4)
+      b <- c(NA) # nolint
+      c <- c(NA, NA, NA)
+      d <- c(NaN) #nolint
+      e <- c(NaN, NaN, NaN)
+      f <- Inf
+      g <- c(Inf, 1, 2)
+      h <- c(0, 1, -Inf)
+      i <- c(1, 1, 1)
+      j <- c(3, 2, 1)
+    })
+  ))
   
   # Don't allow dupliate parameters with a mixed matrix/estimate
   expect_error(lotri({b=3;b~0.4}))
