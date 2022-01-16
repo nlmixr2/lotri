@@ -88,7 +88,7 @@
       <h1 data-toc-skip>Lotri Motivation</h1>
                         <h4 data-toc-skip class="author">Matthew Fidler</h4>
             
-            <h4 data-toc-skip class="date">2021-12-09</h4>
+            <h4 data-toc-skip class="date">2022-01-16</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/nlmixr2/lotri/blob/HEAD/vignettes/lotri-motivation.Rmd" class="external-link"><code>vignettes/lotri-motivation.Rmd</code></a></small>
       <div class="hidden name"><code>lotri-motivation.Rmd</code></div>
@@ -97,9 +97,9 @@
 
     
     
-<div class="section level1">
-<h1 id="motivation">Motivation<a class="anchor" aria-label="anchor" href="#motivation"></a>
-</h1>
+<div class="section level2">
+<h2 id="motivation">Motivation<a class="anchor" aria-label="anchor" href="#motivation"></a>
+</h2>
 <p>This was made to allow people (like me) to specify lower triangular matrices similar to the domain specific language implemented in nlmixr. Originally I had it included in <code>RxODE</code>, but thought it may have more general applicability, so I separated it into a new package.</p>
 <p>For me, specifying the matrices in this way is easier than specifying them using R’s default matrix. For instance to fully specify a simple 2x2 matrix, in R you specify:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
@@ -141,9 +141,9 @@
 <span class="fu"><a href="https://rdrr.io/r/base/dimnames.html" class="external-link">dimnames</a></span><span class="op">(</span><span class="va">mat</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"a"</span>, <span class="st">"b"</span>, <span class="st">"c"</span>, <span class="st">"d"</span>, <span class="st">"e"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"a"</span>, <span class="st">"b"</span>, <span class="st">"c"</span>, <span class="st">"d"</span>, <span class="st">"e"</span><span class="op">)</span><span class="op">)</span></code></pre></div>
 <p>Regardless, I think <code>lotri</code> is a bit easier to use.</p>
 </div>
-<div class="section level1">
-<h1 id="creating-lists-of-matricies-with-attached-properties">Creating lists of matricies with attached properties<a class="anchor" aria-label="anchor" href="#creating-lists-of-matricies-with-attached-properties"></a>
-</h1>
+<div class="section level2">
+<h2 id="creating-lists-of-matricies-with-attached-properties">Creating lists of matricies with attached properties<a class="anchor" aria-label="anchor" href="#creating-lists-of-matricies-with-attached-properties"></a>
+</h2>
 <p><code>lotri</code> also allows lists of matrices to be created by conditioning on an <code>id</code> with the <code>|</code> syntax.</p>
 <p>For example:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
@@ -187,9 +187,9 @@
 <span class="co">#&gt; $id</span>
 <span class="co">#&gt; [1] FALSE</span></code></pre></div>
 <p>This gives a list of matrix(es) conditioned on the variable after the <code>|</code>. It also can add properties to each list that can be accessible after the list of matrices is returned, as shown in the above example. To do this, you simply have to enclose the properties after the conditional variable. That is <code>et1 ~ id(lower=3)</code>.</p>
-<div class="section level2">
-<h2 id="combining-symmetric-named-matrices">Combining symmetric named matrices<a class="anchor" aria-label="anchor" href="#combining-symmetric-named-matrices"></a>
-</h2>
+<div class="section level3">
+<h3 id="combining-symmetric-named-matrices">Combining symmetric named matrices<a class="anchor" aria-label="anchor" href="#combining-symmetric-named-matrices"></a>
+</h3>
 <p>Now there is even a faster way to do a similar banded matrix concatenation with <code>lotriMat</code></p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">testList</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span><span class="va">et2</span> <span class="op">+</span> <span class="va">et3</span> <span class="op">+</span> <span class="va">et4</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">40</span>,
@@ -238,9 +238,9 @@
 
 <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">mb</span><span class="op">)</span>
 <span class="co">#&gt; Unit: microseconds</span>
-<span class="co">#&gt;                expr      min       lq       mean   median        uq       max</span>
-<span class="co">#&gt;      matf(testList) 1039.905 1102.814 1604.52473 1132.763 1255.4760 17909.929</span>
-<span class="co">#&gt;  lotriMat(testList)    5.229    6.444   10.46595    7.130   12.4975    66.784</span>
+<span class="co">#&gt;                expr      min        lq       mean    median        uq      max</span>
+<span class="co">#&gt;      matf(testList) 1001.286 1045.2370 1154.17892 1068.7865 1081.9475 9796.808</span>
+<span class="co">#&gt;  lotriMat(testList)    5.249    6.2175    8.72972   10.1035   10.7425   30.913</span>
 <span class="co">#&gt;  neval</span>
 <span class="co">#&gt;    100</span>
 <span class="co">#&gt;    100</span>
@@ -268,7 +268,7 @@
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.1.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.2.</p>
 </div>
 
       </footer>
