@@ -51,6 +51,17 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.4.0" id="lotri-040">lotri 0.4.0<a class="anchor" aria-label="anchor" href="#lotri-040"></a></h2><p class="text-muted">CRAN release: 2022-04-15</p>
+<ul><li><p>Can convert lotri objects to data-frames similar to the internal data frame used in <code>nlmixr()</code>; These can then be converted back with <code><a href="../reference/as.lotri.html">as.lotri()</a></code></p></li>
+<li><p>Added the ability to add estimates to a lotri object. These estimates are an attached <code>data.frame</code> to the original lotri matrix. You can extract them or drop them with the function <code><a href="../reference/lotriEst.html">lotriEst()</a></code></p></li>
+<li><p>Allow specifying fixed components in <code><a href="../reference/lotri.html">lotri()</a></code> matrices.</p></li>
+<li><p>Add <code>cov</code>, <code>cor</code>, <code>sd</code>, <code>var</code>, and <code>chol</code> options for matrix specification. The final matrix will always be the covariance matrix</p></li>
+<li><p>Add function <code><a href="../reference/lotriMatInv.html">lotriMatInv()</a></code> which takes a symmetric block matrix and converts it into a list of matrices. An sort of inverse operation of <code><a href="../reference/lotriMat.html">lotriMat()</a></code></p></li>
+<li><p>Add error for <code>lotri(~c(40))</code></p></li>
+<li><p>Added ability to flag <code>fixed</code> and <code>unfixed</code> components in a matrix. Currently <code>lotri</code> only supports one type.</p></li>
+<li><p>For the <code>lotriFix</code> objects, ie those created with population types of estimates and covariance estimates, allow them to be converted to an equivalent expression with <code><a href="https://rdrr.io/r/base/expression.html" class="external-link">as.expression()</a></code> for the lotri object and <code><a href="../reference/lotriDataFrameToLotriExpression.html">lotriDataFrameToLotriExpression()</a></code> for the <code>data.frame</code></p></li>
+</ul></div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.1" id="lotri-031">lotri 0.3.1<a class="anchor" aria-label="anchor" href="#lotri-031"></a></h2><p class="text-muted">CRAN release: 2021-01-05</p>
 <ul><li>Change errors/warnings to use <code>call.=FALSE</code> or equivalent.</li>
 <li>Refactor C code to reduce complexity</li>
