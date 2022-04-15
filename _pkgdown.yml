@@ -1,1 +1,5 @@
-destination: docs
+url: https://nlmixr2.github.io/lotri
+template:
+  bootstrap: 5
+  params:
+    bootswatch: flatly
