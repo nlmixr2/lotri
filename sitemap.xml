@@ -1,45 +1,45 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>/404.html</loc>
+    <loc>https://nlmixr2.github.io/lotri/404.html</loc>
   </url>
   <url>
-    <loc>/articles/index.html</loc>
+    <loc>https://nlmixr2.github.io/lotri/articles/index.html</loc>
   </url>
   <url>
-    <loc>/articles/lotri-motivation.html</loc>
+    <loc>https://nlmixr2.github.io/lotri/articles/lotri-motivation.html</loc>
   </url>
   <url>
-    <loc>/authors.html</loc>
+    <loc>https://nlmixr2.github.io/lotri/authors.html</loc>
   </url>
   <url>
-    <loc>/index.html</loc>
+    <loc>https://nlmixr2.github.io/lotri/index.html</loc>
   </url>
   <url>
-    <loc>/news/index.html</loc>
+    <loc>https://nlmixr2.github.io/lotri/news/index.html</loc>
   </url>
   <url>
-    <loc>/reference/as.lotri.html</loc>
+    <loc>https://nlmixr2.github.io/lotri/reference/as.lotri.html</loc>
   </url>
   <url>
-    <loc>/reference/index.html</loc>
+    <loc>https://nlmixr2.github.io/lotri/reference/index.html</loc>
   </url>
   <url>
-    <loc>/reference/lotri.html</loc>
+    <loc>https://nlmixr2.github.io/lotri/reference/lotri.html</loc>
   </url>
   <url>
-    <loc>/reference/lotriDataFrameToLotriExpression.html</loc>
+    <loc>https://nlmixr2.github.io/lotri/reference/lotriDataFrameToLotriExpression.html</loc>
   </url>
   <url>
-    <loc>/reference/lotriEst.html</loc>
+    <loc>https://nlmixr2.github.io/lotri/reference/lotriEst.html</loc>
   </url>
   <url>
-    <loc>/reference/lotriMat.html</loc>
+    <loc>https://nlmixr2.github.io/lotri/reference/lotriMat.html</loc>
   </url>
   <url>
-    <loc>/reference/lotriMatInv.html</loc>
+    <loc>https://nlmixr2.github.io/lotri/reference/lotriMatInv.html</loc>
   </url>
   <url>
-    <loc>/reference/lotriSep.html</loc>
+    <loc>https://nlmixr2.github.io/lotri/reference/lotriSep.html</loc>
   </url>
 </urlset>
