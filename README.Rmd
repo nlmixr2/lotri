@@ -7,8 +7,8 @@ output:
     toc_depth: 3
 ---
 -->
-
 <!-- README.md is generated from README.Rmd. Please edit that file -->
+<!-- https://blog.r-hub.io/2019/12/03/readmes/ -->
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
@@ -21,7 +21,7 @@ knitr::opts_chunk$set(
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/nlmixr2/lotri/workflows/R-CMD-check/badge.svg)](https://github.com/nlmixr2/lotri/actions)
-[![Coverage status](https://codecov.io/gh/nlmixr2/lotri/branch/master/graph/badge.svg)](https://codecov.io/github/nlmixr2/lotri?branch=master) 
+[![codecov](https://codecov.io/gh/nlmixr2/lotri/branch/main/graph/badge.svg?token=4G0TI1NKEG)](https://codecov.io/gh/nlmixr2/lotri)
 [![CRAN status](https://www.r-pkg.org/badges/version/lotri)](https://cran.r-project.org/package=lotri)
 [![CRAN downloads](https://cranlogs.r-pkg.org/badges/lotri)](https://cran.r-project.org/package=lotri)
 [![CodeFactor](https://www.codefactor.io/repository/github/nlmixr2/lotri/badge)](https://www.codefactor.io/repository/github/nlmixr2/lotri)

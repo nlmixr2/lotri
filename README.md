@@ -7,14 +7,14 @@ output:
     toc_depth: 3
 ---
 -->
-
 <!-- README.md is generated from README.Rmd. Please edit that file -->
+<!-- https://blog.r-hub.io/2019/12/03/readmes/ -->
 
 
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/nlmixr2/lotri/workflows/R-CMD-check/badge.svg)](https://github.com/nlmixr2/lotri/actions)
-[![Coverage status](https://codecov.io/gh/nlmixr2/lotri/branch/master/graph/badge.svg)](https://codecov.io/github/nlmixr2/lotri?branch=master) 
+[![codecov](https://codecov.io/gh/nlmixr2/lotri/branch/main/graph/badge.svg?token=4G0TI1NKEG)](https://codecov.io/gh/nlmixr2/lotri)
 [![CRAN status](https://www.r-pkg.org/badges/version/lotri)](https://cran.r-project.org/package=lotri)
 [![CRAN downloads](https://cranlogs.r-pkg.org/badges/lotri)](https://cran.r-project.org/package=lotri)
 [![CodeFactor](https://www.codefactor.io/repository/github/nlmixr2/lotri/badge)](https://www.codefactor.io/repository/github/nlmixr2/lotri)
@@ -254,9 +254,9 @@ mb <- microbenchmark(matf(testList),lotriMat(testList))
 
 print(mb)
 #> Unit: microseconds
-#>                expr     min      lq      mean  median      uq      max neval
-#>      matf(testList) 452.985 456.413 526.98507 465.214 502.185 4499.546   100
-#>  lotriMat(testList)   2.517   2.954   4.27569   4.445   4.986   19.496   100
+#>                expr     min      lq      mean   median       uq      max neval
+#>      matf(testList) 453.785 460.990 514.82789 466.0235 487.5730 4274.104   100
+#>  lotriMat(testList)   2.498   3.007   4.06825   3.6065   4.7155   15.320   100
 
 autoplot(mb)
 #> Coordinate system already present. Adding new coordinate system, which will replace the existing one.
@@ -307,9 +307,9 @@ mb <- microbenchmark(matf(testList),lotriMat(testList))
 
 print(mb)
 #> Unit: microseconds
-#>                expr     min       lq      mean   median       uq      max neval
-#>      matf(testList) 438.772 445.3890 482.13594 448.0000 457.9930 1903.768   100
-#>  lotriMat(testList)   2.359   2.6305   3.87626   3.0155   4.6315   20.582   100
+#>                expr     min      lq      mean   median       uq      max neval
+#>      matf(testList) 443.017 447.513 468.47994 449.3875 452.4655 1962.699   100
+#>  lotriMat(testList)   2.189   2.642   3.89398   4.1275   4.4975   19.509   100
 
 autoplot(mb)
 #> Coordinate system already present. Adding new coordinate system, which will replace the existing one.
