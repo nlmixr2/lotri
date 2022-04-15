@@ -1,4 +1,4 @@
-# lotri development version
+# lotri 0.4.0
 
 * Can convert lotri objects to data-frames similar to the internal
   data frame used in `nlmixr()`; These can then be converted back with
