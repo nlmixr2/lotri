@@ -27,7 +27,7 @@ Suggests:
     ggplot2
 NeedsCompilation: yes
 Biarch: true
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2
 VignetteBuilder: knitr
 BugReports: https://github.com/nlmixr2/lotri/issues
 URL: https://github.com/nlmixr2/lotri
