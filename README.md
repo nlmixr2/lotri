@@ -14,7 +14,7 @@ output:
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/nlmixr2/lotri/workflows/R-CMD-check/badge.svg)](https://github.com/nlmixr2/lotri/actions)
-[![codecov](https://codecov.io/gh/nlmixr2/lotri/branch/main/graph/badge.svg?token=4G0TI1NKEG)](https://codecov.io/gh/nlmixr2/lotri)
+[![codecov](https://codecov.io/gh/nlmixr2/lotri/branch/main/graph/badge.svg?token=4G0TI1NKEG)](https://app.codecov.io/gh/nlmixr2/lotri)
 [![CRAN status](https://www.r-pkg.org/badges/version/lotri)](https://cran.r-project.org/package=lotri)
 [![CRAN downloads](https://cranlogs.r-pkg.org/badges/lotri)](https://cran.r-project.org/package=lotri)
 [![CodeFactor](https://www.codefactor.io/repository/github/nlmixr2/lotri/badge)](https://www.codefactor.io/repository/github/nlmixr2/lotri)
@@ -254,9 +254,9 @@ mb <- microbenchmark(matf(testList),lotriMat(testList))
 
 print(mb)
 #> Unit: microseconds
-#>                expr     min      lq      mean   median       uq      max neval
-#>      matf(testList) 453.785 460.990 514.82789 466.0235 487.5730 4274.104   100
-#>  lotriMat(testList)   2.498   3.007   4.06825   3.6065   4.7155   15.320   100
+#>                expr     min       lq      mean   median       uq      max neval
+#>      matf(testList) 459.374 475.9100 547.68401 482.1740 508.6945 4345.639   100
+#>  lotriMat(testList)   2.389   2.9465   4.41056   4.0895   4.6875   37.409   100
 
 autoplot(mb)
 #> Coordinate system already present. Adding new coordinate system, which will replace the existing one.
@@ -307,9 +307,9 @@ mb <- microbenchmark(matf(testList),lotriMat(testList))
 
 print(mb)
 #> Unit: microseconds
-#>                expr     min      lq      mean   median       uq      max neval
-#>      matf(testList) 443.017 447.513 468.47994 449.3875 452.4655 1962.699   100
-#>  lotriMat(testList)   2.189   2.642   3.89398   4.1275   4.4975   19.509   100
+#>                expr     min       lq      mean   median       uq      max neval
+#>      matf(testList) 447.031 451.5255 499.31518 453.3915 459.6865 2698.522   100
+#>  lotriMat(testList)   2.117   2.6030   3.72343   3.8030   4.2030   13.860   100
 
 autoplot(mb)
 #> Coordinate system already present. Adding new coordinate system, which will replace the existing one.
