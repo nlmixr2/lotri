@@ -135,7 +135,7 @@ SEXP _lotriEstDf(SEXP lst_, int totNum) {
 }
 
 SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum, SEXP matCls) {
-  int type, totN, pro = 0;
+  int pro = 0;
   int named = 2;
   lotriInfo li = assertCorrectMatrixProperties(lst_, format, startNum, &named);
   if (li.sym) return lst_;
@@ -163,8 +163,8 @@ SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum, SEXP matCls) {
   SEXP ret = PROTECT(Rf_allocMatrix(REALSXP, totdim, totdim)); pro++;
   SEXP retN = PROTECT(Rf_allocVector(STRSXP, totdim)); pro++;
   double *retd = REAL(ret);
-  int *retf;
-  SEXP retF;
+  int *retf = NULL;
+  SEXP retF = R_NilValue;
   // Initialize to zero
   memset(retd, 0, sizeof(double)*totdim*totdim);
   if (li.fix) {
