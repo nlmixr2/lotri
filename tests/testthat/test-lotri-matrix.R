@@ -1,5 +1,6 @@
+skip_on_cran()
 test_that("lotri matrix parsing", {
-  
+
   expect_equal(
     lotri({
       et2 + et3 + et4 ~ c(
@@ -16,7 +17,7 @@ test_that("lotri matrix parsing", {
               )
     )
   )
-  
+
   expect_equal(
     lotri(list(
       et2 + et3 + et4 ~ c(
@@ -37,7 +38,7 @@ test_that("lotri matrix parsing", {
     )
     )
   )
-  
+
   expect_equal(
     lotri(list(
       et2 + et3 + et4 ~ c(
@@ -58,7 +59,7 @@ test_that("lotri matrix parsing", {
     )
     )
   )
-  
+
   expect_equal(
     lotri({
       et2 + et3 + et4 ~ c(
@@ -158,7 +159,7 @@ test_that("lotri matrix parsing", {
   expect_equal(.mat, lotri(.mat))
   ## Test for NULL
   expect_equal(NULL, lotri(NULL))
-  
+
   expect_equal(
     lotri(eta.Cl ~ 0.4^2),
     structure(0.16,
@@ -186,16 +187,16 @@ test_that("lotri matrix parsing", {
       matrix(3, dimnames = list("b", "b"))
     })
   ))
-  
+
   expect_equal(
     lotri(matrix(3, dimnames = list("a", "a"))),
     structure(3, .Dim = c(1L, 1L), .Dimnames = list("a", "a"))
   )
-  
+
   expect_error(lotri(quote(matrix(3, dimnames = list("a", "a")))))
-  
+
   expect_error(lotri(lotri(a ~ paste(1))))
-  
+
   expect_equal(
     lotri({
       et2 + et3 + et4 ~ c(
@@ -215,7 +216,7 @@ test_that("lotri matrix parsing", {
     )
     ))
   )
-  
+
   expect_equal(
     lotri({
       et1 ~ c(40) | id }), # nolint
@@ -227,7 +228,7 @@ test_that("lotri matrix parsing", {
                         )
     ))
   )
-  
+
   expect_equal(
     lotri({
       et1 ~ 40 | id
@@ -240,7 +241,7 @@ test_that("lotri matrix parsing", {
                         )
     ))
   )
-  
+
   expect_equal(
     lotri({
       eta.Cl ~ 0.4^2 | id
@@ -250,8 +251,8 @@ test_that("lotri matrix parsing", {
                         .Dimnames = list("eta.Cl", "eta.Cl")
     ))
   )
-  
-  
+
+
   expect_equal(
     lotri(matrix(1, dimnames = list("et5", "et5")) | id),
     list(id = structure(1,
@@ -259,7 +260,7 @@ test_that("lotri matrix parsing", {
                         .Dimnames = list("et5", "et5")
     ))
   )
-  
+
   expect_equal(
     lotri(
       matrix(1, dimnames = list("et5", "et5")) | id,
@@ -273,7 +274,7 @@ test_that("lotri matrix parsing", {
                         )
     ))
   )
-  
+
   expect_equal(
     lotri(
       matrix(1, dimnames = list("et5", "et5")) | id,
@@ -294,8 +295,8 @@ test_that("lotri matrix parsing", {
       )
     )
   )
-  
-  
+
+
   expect_equal(
     lotri(
       matrix(1, dimnames = list("et5", "et5")) | id1,
@@ -311,8 +312,8 @@ test_that("lotri matrix parsing", {
       "et1", "et1"
     )))
   )
-  
-  
+
+
   expect_equal(
     lotri(
       et2 + et3 + et4 ~ c(
@@ -338,7 +339,7 @@ test_that("lotri matrix parsing", {
     )
     )
   )
-  
+
   expect_equal(
     lotri(list(et5 ~ 1, et6 ~ 3) | id),
     list(id = structure(c(1, 0, 0, 3),
@@ -349,7 +350,7 @@ test_that("lotri matrix parsing", {
                         )
     ))
   )
-  
+
   expect_equal(
     lotri(
       et5 ~ 1 | id1,
@@ -377,7 +378,7 @@ test_that("lotri matrix parsing", {
       )
     )
   )
-  
+
   expect_equal(
     lotri(
       et5 ~ 1 | id1,
@@ -405,7 +406,7 @@ test_that("lotri matrix parsing", {
       )
     )
   )
-  
+
   expect_equal(
     lotri(
       et5 ~ 1 | id1,
@@ -433,8 +434,8 @@ test_that("lotri matrix parsing", {
       )
     )
   )
-  
-  
+
+
   expect_equal(
     lotri(
       et5 ~ 1 | id1,
@@ -461,7 +462,7 @@ test_that("lotri matrix parsing", {
       )
     )
   )
-  
+
   expect_equal(
     lotri(
       et5 ~ 1,
@@ -484,55 +485,55 @@ test_that("lotri matrix parsing", {
     )
     )
   )
-  
-  
+
+
   expect_error(
     lotri(et1 ~ c(1) | id + matt)) # nolint
   expect_error(lotri(et1 ~ 1 | id + matt))
-  
+
   tmp <- lotri(et1 ~ 1 | id(df = 3), et2 ~ 3 | id2)
-  
+
   expect_equal(tmp$df, list(id = 3))
   expect_equal(tmp$matt, NULL)
-  
+
   expect_equal(tmp$id, structure(1,
                                  .Dim = c(1L, 1L),
                                  .Dimnames = list("et1", "et1")
   ))
-  
+
   expect_equal(tmp$.names, "df")
-  
+
   expect_snapshot_output(print(tmp))
-  
+
   expect_snapshot_output(str(tmp))
-  
+
   expect_equal(.DollarNames(tmp, ""), c("id", "id2", ".allNames", ".bounds", ".names", ".list", ".maxNu", "df"))
-  
+
   expect_equal(.DollarNames(tmp, "i"), c("id", "id2", ".list"))
-  
+
   expect_error(lotri(et1 ~ 1 | id(df = 3), et2 ~ 3 | id(df = 4)))
-  
+
   tmp2 <- lotri(et1 ~ 1 | id(df = 3), et2 ~ 3 | id(df2 = 4))
-  
+
   expect_equal(tmp2$df, list(id = 3))
   expect_equal(tmp2$df2, list(id = 4))
-  
+
   tmp2 <- lotri(et1 ~ 1 | id(lower = 3))
-  
+
   expect_equal(tmp2$lower, list(id = c(et1 = 3)))
-  
+
   tmp2 <- lotri(et1 + et2 ~ c(1, 2, 3) | id(lower = 3))
-  
+
   expect_equal(tmp2$lower, list(id = c(et1 = 3, et2 = 3)))
-  
+
   expect_error(lotri(et1 + et2 ~ c(1, 2, 3) | id(lower = c(2, 3))))
-  
+
   expect_error(lotri(et1 + et2 ~ c(1, 2, 3) | id(lower = c(et3 = 4))))
-  
+
   expect_error(lotri(et1 + et2 ~ c(1, 2, 3) | id(upper = c(2, 3))))
-  
+
   expect_error(lotri(et1 + et2 ~ c(1, 2, 3) | id(upper = c(et3 = 4))))
-  
+
   tmp2 <- lotri(
     et1 + et2 ~ c(
       1,
@@ -540,9 +541,9 @@ test_that("lotri matrix parsing", {
     ) | id(lower = 3),
     et3 ~ 3 | id(lower = 4)
   )
-  
+
   expect_equal(tmp2$lower, list(id = c(et1 = 3, et2 = 3, et3 = 4)))
-  
+
   tmp2 <- lotri(
     et1 + et2 ~ c(
       1,
@@ -550,9 +551,9 @@ test_that("lotri matrix parsing", {
     ) | id(lower = 3),
     et3 ~ 3 | id
   )
-  
+
   expect_equal(tmp2$lower, list(id = c(et1 = 3, et2 = 3, et3 = -Inf)))
-  
+
   tmp2 <- lotri(
     et1 + et2 ~ c(
       1,
@@ -560,11 +561,11 @@ test_that("lotri matrix parsing", {
     ) | id(upper = 3),
     et3 ~ 3 | id
   )
-  
+
   expect_equal(tmp2$upper, list(id = c(et1 = 3, et2 = 3, et3 = Inf)))
-  
+
   expect_equal(tmp2$lower, list(id = c(et1 = -Inf, et2 = -Inf, et3 = -Inf)))
-  
+
   tmp2 <- lotri(
     et1 + et2 ~ c(
       1,
@@ -572,12 +573,12 @@ test_that("lotri matrix parsing", {
     ) | id(lower = c(et2 = 3)),
     et3 ~ 3 | id
   )
-  
+
   expect_equal(
     tmp2$lower,
     list(id = c(et1 = -Inf, et2 = 3, et3 = -Inf))
   )
-  
+
   tmp2 <- lotri(
     et1 + et2 ~ c(
       1,
@@ -585,12 +586,12 @@ test_that("lotri matrix parsing", {
     ) | id(upper = c(et2 = 3)),
     et3 ~ 3 | id
   )
-  
+
   expect_equal(
     tmp2$upper,
     list(id = c(et1 = Inf, et2 = 3, et3 = Inf))
   )
-  
+
   tmp2 <- lotri(
     eta.Cl ~ 0.1,
     eta.Ka ~ 0.2,
@@ -599,7 +600,7 @@ test_that("lotri matrix parsing", {
     iov.Ka ~ 0.5,
     iov.Cl ~ 0.6 | occ(lower = 3)
   )
-  
+
   expect_equal(
     tmp2,
     structure(list(structure(c(
@@ -636,24 +637,24 @@ test_that("lotri matrix parsing", {
     lotri = list(occ = list(lower = c(iov.Cl = 3))), class = "lotri"
     )
   )
-  
+
   tmp2 <- lotri(
     inv.Ka ~ 0.4,
     iov.Ka ~ 0.5 | occ,
     iov.Cl ~ 0.6 | occ(lower = 3)
   )
-  
+
   expect_equal(tmp2$lower$occ, c(iov.Ka = -Inf, iov.Cl = 3))
-  
-  
+
+
   tmp2 <- lotri(
     inv.Ka ~ 0.4,
     iov.Ka ~ 0.5 | occ(lower = 3),
     iov.Cl ~ 0.6 | occ
   )
-  
+
   expect_equal(tmp2$lower$occ, c(iov.Ka = 3, iov.Cl = -Inf))
-  
+
   tmp2 <- lotri(
     eta.Cl ~ 0.1,
     eta.Ka ~ 0.2,
@@ -662,9 +663,9 @@ test_that("lotri matrix parsing", {
     iov.Ka ~ 0.5,
     iov.Cl ~ 0.6 | occ(lower = 3)
   )
-  
+
   expect_equal(tmp2$lower$occ, c(inv.Ka = -Inf, iov.Cl = 3))
-  
+
   tmp2 <- lotri(
     eta.Cl ~ 0.1,
     eta.Ka ~ 0.2,
@@ -673,16 +674,16 @@ test_that("lotri matrix parsing", {
     iov.Ka ~ 0.5,
     iov.Cl ~ 0.6 | occ
   )
-  
+
   expect_equal(tmp2$lower$occ, c(inv.Ka = 3, iov.Cl = -Inf))
-  
+
   tmp2 <- lotri(lotri(
     iov.Ka ~ 0.5,
     iov.Cl ~ 0.6
   ) | occ(lower = 3))
-  
+
   expect_equal(tmp2$lower, list(occ = c(iov.Ka = 3, iov.Cl = 3)))
-  
+
   tmp2 <- lotri(
     lotri(
       iov.Ka ~ 0.5,
@@ -693,7 +694,7 @@ test_that("lotri matrix parsing", {
       occ.Cl ~ 0.6
     ) | occ(lower = 4)
   )
-  
+
   expect_equal(
     tmp2$lower,
     list(
@@ -701,7 +702,7 @@ test_that("lotri matrix parsing", {
       occ = c(occ.Ka = 4, occ.Cl = 4)
     )
   )
-  
+
   tmp2 <- lotri(
     lotri(
       iov.Ka ~ 0.5,
@@ -712,7 +713,7 @@ test_that("lotri matrix parsing", {
       occ.Cl ~ 0.6
     ) | iov(lower = 4)
   )
-  
+
   expect_equal(
     tmp2$lower,
     list(iov = c(
@@ -720,8 +721,8 @@ test_that("lotri matrix parsing", {
       occ.Ka = 4, occ.Cl = 4
     ))
   )
-  
-  
+
+
   tmp2 <- lotri(
     lotri(
       eta.Cl ~ 0.1,
@@ -736,7 +737,7 @@ test_that("lotri matrix parsing", {
       iov.Cl ~ 0.6
     ) | occ(lower = 3)
   )
-  
+
   expect_equal(
     tmp2$lower,
     list(c(eta.Cl = -Inf, eta.Ka = -Inf),
@@ -744,12 +745,12 @@ test_that("lotri matrix parsing", {
          occ = c(iov.Ka = 3, iov.Cl = 3)
     )
   )
-  
+
   tmp2 <- lotri(lotri(
     iov.Ka ~ 0.5,
     iov.Cl ~ 0.6
   ) | occ)
-  
+
   expect_equal(
     tmp2,
     list(occ = structure(c(0.5, 0, 0, 0.6),
@@ -766,7 +767,7 @@ test_that("lotri matrix parsing", {
                          )
     ))
   )
-  
+
   tmp2 <- lotri(
     lotri(
       iov.Ka ~ 0.5,
@@ -777,7 +778,7 @@ test_that("lotri matrix parsing", {
       occ.Cl ~ 0.6
     ) | occ(lower = 4)
   )
-  
+
   expect_equal(
     tmp2,
     structure(list(iov = structure(c(0.5, 0, 0, 0.6), .Dim = c(
@@ -789,8 +790,8 @@ test_that("lotri matrix parsing", {
       occ = list(lower = c(occ.Ka = 4, occ.Cl = 4))
     ), class = "lotri")
   )
-  
-  
+
+
   tmp2 <- lotri(
     lotri(
       iov.Ka ~ 0.5,
@@ -801,7 +802,7 @@ test_that("lotri matrix parsing", {
       occ.Cl ~ 0.6
     ) | occ
   )
-  
+
   expect_equal(
     tmp2,
     structure(list(iov = structure(c(0.5, 0, 0, 0.6), .Dim = c(
@@ -813,7 +814,7 @@ test_that("lotri matrix parsing", {
       iov = list(lower = c(iov.Ka = 3, iov.Cl = 3))
     ), class = "lotri")
   )
-  
+
   tmp2 <- lotri(
     lotri(
       iov.Ka ~ 0.5,
@@ -824,7 +825,7 @@ test_that("lotri matrix parsing", {
       occ.Cl ~ 0.6
     ) | occ
   )
-  
+
   expect_equal(
     tmp2,
     list(iov = structure(c(0.5, 0, 0, 0.6), .Dim = c(2L, 2L), .Dimnames = list(
@@ -834,7 +835,7 @@ test_that("lotri matrix parsing", {
       0, 0, 0.6
     ), .Dim = c(2L, 2L), .Dimnames = list(c("occ.Ka", "occ.Cl"), c("occ.Ka", "occ.Cl"))))
   )
-  
+
   tmp2 <- lotri(
     lotri(
       iov.Ka ~ 0.5,
@@ -845,7 +846,7 @@ test_that("lotri matrix parsing", {
       occ.Cl ~ 0.6
     ) | occ(lower = 4)
   )
-  
+
   expect_equal(tmp2, structure(list(structure(c(0.5, 0, 0, 0.6), .Dim = c(2L, 2L), .Dimnames = list(
     c("iov.Ka", "iov.Cl"), c("iov.Ka", "iov.Cl")
   )), occ = structure(c(
@@ -855,7 +856,7 @@ test_that("lotri matrix parsing", {
     occ.Ka = 4,
     occ.Cl = 4
   ))), class = "lotri"))
-  
+
   tmp2 <- lotri(
     lotri(
       iov.Ka ~ 0.5,
@@ -866,7 +867,7 @@ test_that("lotri matrix parsing", {
       occ.Cl ~ 0.6
     )
   )
-  
+
   expect_equal(
     tmp2,
     structure(list(iov = structure(c(0.5, 0, 0, 0.6), .Dim = c(
