@@ -47,6 +47,10 @@
 
 .parseThetaEstQ <- function(x, env, envir=parent.frame()) {
   if (is.call(x)) {
+    .doAssign <- FALSE
+    if (exists("assign", env)) {
+      .doAssign <- env$assign
+    }
     if (identical(x[[1]], quote(`{`))) {
       .x <- x[-1]
       .len <- length(.x)
@@ -71,31 +75,36 @@
     } else if (identical(x[[1]], quote(`quote`))) {
       lapply(x[[2]], .parseThetaEstQ, env=env, envir = envir)
     } else if (identical(x[[1]], quote(`label`))) {
-      .lab <- ""
-      if (is.character(x[[2]])) {
-        .lab <- x[[2]]
-      } else {
-        .lab <- .deparse1(x[[2]])
+      if (.doAssign) {
+        .lab <- ""
+        if (is.character(x[[2]])) {
+          .lab <- x[[2]]
+        } else {
+          .lab <- .deparse1(x[[2]])
+        }
+        .lst <- env$df
+        .df0 <- .lst[[length(.lst)]]
+        .df0$label <- .lab
+        .lst[[length(.lst)]] <- .df0
+        env$df <- .lst
       }
-      .lst <- env$df
-      .df0 <- .lst[[length(.lst)]]
-      .df0$label <- .lab
-      .lst[[length(.lst)]] <- .df0
-      env$df <- .lst
     } else if (identical(x[[1]], quote(`backTransform`))) {
-      .fun <- ""
-      if (is.character(x[[2]])) {
-        .fun <- x[[2]]
-      } else {
-        .fun <- .deparse1(x[[2]])
+      if (.doAssign) {
+        .fun <- ""
+        if (is.character(x[[2]])) {
+          .fun <- x[[2]]
+        } else {
+          .fun <- .deparse1(x[[2]])
+        }
+        .lst <- env$df
+        .df0 <- .lst[[length(.lst)]]
+        .df0$backTransform <- .fun
+        .lst[[length(.lst)]] <- .df0
+        env$df <- .lst
       }
-      .lst <- env$df
-      .df0 <- .lst[[length(.lst)]]
-      .df0$backTransform <- .fun
-      .lst[[length(.lst)]] <- .df0
-      env$df <- .lst
     } else if  (identical(x[[1]], quote(`<-`)) ||
                   identical(x[[1]], quote(`=`))) {
+      env$assign <- TRUE
       .name <- as.character(x[[2]])
       .df <- .parseThetaEstFix(x[[3]], envir=envir)
       if (inherits(.df, "data.frame")) {
@@ -106,6 +115,9 @@
         env$err <- c(env$err, paste0("estimate syntax unsupported: ", .name, " ", deparse(x[[1]]), " ", .df))
       }
     } else {
+      if (identical(x[[1]], quote(`~`))) {
+        env$assign <- FALSE
+      }
       return(as.call(lapply(x, .parseThetaEstQ, env=env, envir=envir)))
     }
   } else {
