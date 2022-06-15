@@ -1,18 +1,18 @@
-##' @importFrom utils assignInMyNamespace
-##' @useDynLib lotri, .registration = TRUE
+#' @importFrom utils assignInMyNamespace
+#' @useDynLib lotri, .registration = TRUE
 NULL
-##' Paste inputNum in lower triangular format to input char
-##'
-##' @param inputChar Input character expression; ie 'a + b ~ '
-##' @param inputParse  Parsed expression to format, should be `c()`
-##' @return Formated string with lotri offeset
-##' @author Matthew Fidler
-##' @examples
-##'
-##' .pasteLotri("matt+ruth~",quote(c(1,2,3)))
-##'
-##' .pasteLotri("matt+ruth+kids~",quote(c(1,2,3,4,5,6)))
-##' @noRd
+#' Paste inputNum in lower triangular format to input char
+#'
+#' @param inputChar Input character expression; ie 'a + b ~ '
+#' @param inputParse  Parsed expression to format, should be `c()`
+#' @return Formated string with lotri offeset
+#' @author Matthew Fidler
+#' @examples
+#'
+#' .pasteLotri("matt+ruth~",quote(c(1,2,3)))
+#'
+#' .pasteLotri("matt+ruth+kids~",quote(c(1,2,3,4,5,6)))
+#' @noRd
 .pasteLotri <- function(inputChar, inputParse) {
   .ret <- paste0(inputChar, as.character(inputParse[[1]]), "(")
   .nchar0 <- nchar(.ret)
@@ -31,20 +31,20 @@ NULL
   return(.ret)
 }
 
-##' lotriMatrix convert numeric vector to matrix
-##'
-##' @param nv Numeric Vector
-##'
-##' @param chol boolean indicating if this matrix is a chol matrix
-##'
-##' @param sd boolean indicating if this is a standard deviation
-##'
-##' @param cor boolean indicting if this is a correlation matrix
-##'
-##' @return covariance matrix
-##'
-##' @author Matthew Fidler
-##' @noRd
+#' lotriMatrix convert numeric vector to matrix
+#'
+#' @param nv Numeric Vector
+#'
+#' @param chol boolean indicating if this matrix is a chol matrix
+#'
+#' @param sd boolean indicating if this is a standard deviation
+#'
+#' @param cor boolean indicting if this is a correlation matrix
+#'
+#' @return covariance matrix
+#'
+#' @author Matthew Fidler
+#' @noRd
 .lotriMatrix <- function(nv, chol=FALSE, sd=FALSE, cor=FALSE, lhs=NULL) {
   .num <- length(nv)
   .num <- sqrt(1 + .num * 8) / 2 - 1 / 2
@@ -99,15 +99,15 @@ NULL
   }
   .ret
 }
-##' Convert to Matrix to lotri vector (internal)
-##'
-##' @param mat matrix to convert to lotri mat
-##'
-##' @return lotri numeric vector
-##'
-##' @author Matthew Fidler
-##'
-##' @noRd
+#' Convert to Matrix to lotri vector (internal)
+#'
+#' @param mat matrix to convert to lotri mat
+#'
+#' @return lotri numeric vector
+#'
+#' @author Matthew Fidler
+#'
+#' @noRd
 .lotriMatrixVec <- function(mat) {
   .d <- dim(mat)[1]
   .num <- ((2 * .d + 1)^2 - 1)/8
@@ -239,16 +239,16 @@ NULL
   return(list(env$nv, .fix, .unfix))
 }
 
-##' Parse lower triangular matrix list
-##'
-##' This is for x~c(1..) or x1+x2~c(...)
-##' @title
-##' @param x2 Second element of parsing list ie  `x` or `x1+x2`
-##' @param x3 Third element of list; ie c(...)
-##' @param env  environment to update
-##' @return Nothing; updates environment
-##' @author Matthew Fidler
-##' @noRd
+#' Parse lower triangular matrix list
+#'
+#' This is for x~c(1..) or x1+x2~c(...)
+#' @title
+#' @param x2 Second element of parsing list ie  `x` or `x1+x2`
+#' @param x3 Third element of list; ie c(...)
+#' @param env  environment to update
+#' @return Nothing; updates environment
+#' @author Matthew Fidler
+#' @noRd
 .lotri1 <- function(x2, x3, env) {
   .envParse <- new.env(parent = emptyenv())
   .envParse$lhs <- x2
@@ -413,13 +413,13 @@ NULL
   }
 }
 
-##' DSL parsing function
-##'
-##' @param x Parsing tree
-##' @param env environment to update
-##' @return Nothing
-##' @author Matthew Fidler
-##' @noRd
+#' DSL parsing function
+#'
+#' @param x Parsing tree
+#' @param env environment to update
+#' @return Nothing
+#' @author Matthew Fidler
+#' @noRd
 .f <- function(x, env) {
   if (is.name(x)) {
     return(character())
@@ -430,14 +430,14 @@ NULL
     stop("bad matrix specification", call. = FALSE)
   }
 }
-##' Parses condition
-##'
-##' @param cond Condition parsing tree
-##' @param envir Environment to parse condition in.
-##'
-##' @return list with 2 elements: - First element is the name of the condition - Second element is extra information
-##' @author Matthew Fidler
-##' @noRd
+#' Parses condition
+#'
+#' @param cond Condition parsing tree
+#' @param envir Environment to parse condition in.
+#'
+#' @return list with 2 elements: - First element is the name of the condition - Second element is extra information
+#' @author Matthew Fidler
+#' @noRd
 .parseCondition <- function(cond, envir = parent.frame()) {
   if (length(cond) == 1) {
     .fullCnd <- as.character(cond)
@@ -459,13 +459,13 @@ NULL
 
 .defaultProperties <- c(lower = -Inf, upper = Inf)
 
-##' Amplify Default properties
-##'
-##' @param prop proprety list where `.defaultProperties` will be amplified
-##' @param names names of matrix components to check against
-##' @return Amplified property list
-##' @author Matthew Fidler
-##' @noRd
+#' Amplify Default properties
+#'
+#' @param prop proprety list where `.defaultProperties` will be amplified
+#' @param names names of matrix components to check against
+#' @return Amplified property list
+#' @author Matthew Fidler
+#' @noRd
 .amplifyDefault <- function(prop, names) {
   .nD <- names(.defaultProperties)
   .newProp <- prop
@@ -503,13 +503,13 @@ NULL
   }
   return(.newProp)
 }
-##' Amplifies final lotri list with defaults in .defaultProperties
-##'
-##' @param finalList Final List before return
-##' @param prop current properties
-##' @return lotri amplified with defaults for all parameters
-##' @author Matthew Fidler
-##' @noRd
+#' Amplifies final lotri list with defaults in .defaultProperties
+#'
+#' @param finalList Final List before return
+#' @param prop current properties
+#' @return lotri amplified with defaults for all parameters
+#' @author Matthew Fidler
+#' @noRd
 .amplifyFinal <- function(finalList, prop) {
   for (.p in names(prop)) {
     .cur <- prop[[.p]]
@@ -528,16 +528,16 @@ NULL
   }
   return(prop)
 }
-##' Merge properties between two matrices
-##'
-##' @param prop Initial property list or character vector of names to
-##'   apply default properties on...
-##' @param id ID of the matrix with more properites
-##' @param new new properites of the matrix
-##' @return A merged property that will be used for lotri composite
-##'   matrices
-##' @author Matthew Fidler
-##' @noRd
+#' Merge properties between two matrices
+#'
+#' @param prop Initial property list or character vector of names to
+#'   apply default properties on...
+#' @param id ID of the matrix with more properites
+#' @param new new properites of the matrix
+#' @return A merged property that will be used for lotri composite
+#'   matrices
+#' @author Matthew Fidler
+#' @noRd
 .mergeProp <- function(prop, id, new) {
   if (is.null(prop)) {
     .ret <- list()
@@ -578,13 +578,13 @@ NULL
   return(.ret)
 }
 
-##' Extract a matrix saved in the environment
-##'
-##' @param env Environment where matrix is saved
-##' @param val value where the matrix is saved in
-##' @return named matrix
-##' @author Matthew Fidler
-##' @noRd
+#' Extract a matrix saved in the environment
+#'
+#' @param env Environment where matrix is saved
+#' @param val value where the matrix is saved in
+#' @return named matrix
+#' @author Matthew Fidler
+#' @noRd
 .getMatrix <- function(env, val) {
   return(.Call(`_lotriLstToMat`, env[[val]], NULL, 1L, class(matrix(0)), PACKAGE = "lotri"))
 }
@@ -690,112 +690,112 @@ NULL
   return(.ret)
 }
 
-##' Easily Specify block-diagonal matrices with lower triangular info
-##'
-##' @param x list, matrix or expression, see details
-##'
-##' @param ... Other arguments treated as a list that will be
-##'     concatenated then reapplied to this function.
-##'
-##' @inheritParams base::eval
-##' @inheritParams as.lotri
-##'
-##' @return named symmetric matrix useful in RxODE simulations (and
-##'     perhaps elsewhere)
-##'
-##' @details
-##'
-##'  This can take an R matrix, a list including matrices or
-##'  expressions, or expressions
-##'
-##'  Expressions can take the form
-##'
-##'  name ~ estimate
-##'
-##'  Or the lower triangular matrix when "adding" the names
-##'
-##'  name1 + name2 ~ c(est1,
-##'                    est2, est3)
-##'
-##'  The matricies are concatenated into a block diagonal matrix, like
-##'  \code{\link[Matrix]{bdiag}}, but allows expressions to specify
-##'  matrices easier.
-##'
-##'
-##' @examples
-##'
-##' ## A few ways to specify the same matrix
-##' lotri({et2 + et3 + et4 ~ c(40,
-##'                            0.1, 20,
-##'                            0.1, 0.1, 30)})
-##'
-##' ## You  do not need to enclose in {}
-##' lotri(et2 + et3 + et4 ~ c(40,
-##'                           0.1, 20,
-##'                           0.1, 0.1, 30),
-##'           et5 ~ 6)
-##' ## But if you do enclose in {}, you can use
-##' ## multi-line matrix specifications:
-##'
-##' lotri({et2 + et3 + et4 ~ c(40,
-##'                            0.1, 20,
-##'                            0.1, 0.1, 30)
-##'           et5 ~ 6
-##'           })
-##'
-##' ## You can also add lists or actual R matrices as in this example:
-##' lotri(list(et2 + et3 + et4 ~ c(40,
-##'                                0.1, 20,
-##'                                0.1, 0.1, 30),
-##'               matrix(1,dimnames=list("et5","et5"))))
-##'
-##' ## Overall this is a flexible way to specify symmetric block
-##' ## diagonal matrices.
-##'
-##' ## For RxODE, you may also condition based on different levels of
-##' ## nesting with lotri;  Here is an example:
-##'
-##' mat <- lotri(lotri(iov.Ka ~ 0.5,
-##'                     iov.Cl ~ 0.6),
-##'               lotri(occ.Ka ~ 0.5,
-##'                     occ.Cl ~ 0.6) | occ(lower=4,nu=3))
-##'
-##' mat
-##'
-##' ## you may access features of the matrix simply by `$` that is
-##'
-##' mat$lower # Shows the lower bound for each condition
-##'
-##' mat$lower$occ # shows the lower bound for the occasion variable
-##'
-##' ## Note that `lower` fills in defaults for parameters.  This is true
-##' ## for `upper` true;  In fact when accessing this the defaults
-##' ## are put into the list
-##'
-##' mat$upper
-##'
-##' ## However all other values return NULL if they are not present like
-##'
-##' mat$lotri
-##'
-##' ## And values that are specified once are only returned on one list:
-##'
-##' mat$nu
-##'
-##' mat$nu$occ
-##' mat$nu$id
-##'
-##' ## You can also change the default condition with `as.lotri`
-##'
-##' mat <- as.lotri(mat, default="id")
-##'
-##' mat
-##'
-##' @author Matthew L Fidler
-##' @importFrom methods is
-##' @importFrom stats setNames
-##' @importFrom utils str
-##' @export
+#' Easily Specify block-diagonal matrices with lower triangular info
+#'
+#' @param x list, matrix or expression, see details
+#'
+#' @param ... Other arguments treated as a list that will be
+#'     concatenated then reapplied to this function.
+#'
+#' @inheritParams base::eval
+#' @inheritParams as.lotri
+#'
+#' @return named symmetric matrix useful in RxODE simulations (and
+#'     perhaps elsewhere)
+#'
+#' @details
+#'
+#'  This can take an R matrix, a list including matrices or
+#'  expressions, or expressions
+#'
+#'  Expressions can take the form
+#'
+#'  name ~ estimate
+#'
+#'  Or the lower triangular matrix when "adding" the names
+#'
+#'  name1 + name2 ~ c(est1,
+#'                    est2, est3)
+#'
+#'  The matricies are concatenated into a block diagonal matrix, like
+#'  \code{\link[Matrix]{bdiag}}, but allows expressions to specify
+#'  matrices easier.
+#'
+#'
+#' @examples
+#'
+#' ## A few ways to specify the same matrix
+#' lotri({et2 + et3 + et4 ~ c(40,
+#'                            0.1, 20,
+#'                            0.1, 0.1, 30)})
+#'
+#' ## You  do not need to enclose in {}
+#' lotri(et2 + et3 + et4 ~ c(40,
+#'                           0.1, 20,
+#'                           0.1, 0.1, 30),
+#'           et5 ~ 6)
+#' ## But if you do enclose in {}, you can use
+#' ## multi-line matrix specifications:
+#'
+#' lotri({et2 + et3 + et4 ~ c(40,
+#'                            0.1, 20,
+#'                            0.1, 0.1, 30)
+#'           et5 ~ 6
+#'           })
+#'
+#' ## You can also add lists or actual R matrices as in this example:
+#' lotri(list(et2 + et3 + et4 ~ c(40,
+#'                                0.1, 20,
+#'                                0.1, 0.1, 30),
+#'               matrix(1,dimnames=list("et5","et5"))))
+#'
+#' ## Overall this is a flexible way to specify symmetric block
+#' ## diagonal matrices.
+#'
+#' ## For RxODE, you may also condition based on different levels of
+#' ## nesting with lotri;  Here is an example:
+#'
+#' mat <- lotri(lotri(iov.Ka ~ 0.5,
+#'                     iov.Cl ~ 0.6),
+#'               lotri(occ.Ka ~ 0.5,
+#'                     occ.Cl ~ 0.6) | occ(lower=4,nu=3))
+#'
+#' mat
+#'
+#' ## you may access features of the matrix simply by `$` that is
+#'
+#' mat$lower # Shows the lower bound for each condition
+#'
+#' mat$lower$occ # shows the lower bound for the occasion variable
+#'
+#' ## Note that `lower` fills in defaults for parameters.  This is true
+#' ## for `upper` true;  In fact when accessing this the defaults
+#' ## are put into the list
+#'
+#' mat$upper
+#'
+#' ## However all other values return NULL if they are not present like
+#'
+#' mat$lotri
+#'
+#' ## And values that are specified once are only returned on one list:
+#'
+#' mat$nu
+#'
+#' mat$nu$occ
+#' mat$nu$id
+#'
+#' ## You can also change the default condition with `as.lotri`
+#'
+#' mat <- as.lotri(mat, default="id")
+#'
+#' mat
+#'
+#' @author Matthew L Fidler
+#' @importFrom methods is
+#' @importFrom stats setNames
+#' @importFrom utils str
+#' @export
 lotri <- function(x, ..., envir = parent.frame(),
                   default = "id") {
   if (is.null(.lotriParentEnv)) {
@@ -1008,8 +1008,8 @@ lotri <- function(x, ..., envir = parent.frame(),
   }
 }
 
-##' @importFrom utils .DollarNames
-##' @export
+#' @importFrom utils .DollarNames
+#' @export
 .DollarNames.lotri <- function(x, pattern) {
   grep(pattern, unique(c(
     names(x), ".allNames", ".bounds",
@@ -1019,7 +1019,7 @@ lotri <- function(x, ..., envir = parent.frame(),
   )
 }
 
-##' @export
+#' @export
 `$.lotri` <- function(obj, arg, exact = FALSE) {
   .lotri <- attr(obj, "lotri")
   if (arg == ".maxNu") {
@@ -1098,7 +1098,7 @@ lotri <- function(x, ..., envir = parent.frame(),
   return(.ret)
 }
 
-##' @export
+#' @export
 as.matrix.lotri <- function(x, ...) {
   .ret <- x
   class(.ret) <- NULL
@@ -1108,102 +1108,102 @@ as.matrix.lotri <- function(x, ...) {
     stop("cannot convert multiple level lotri matrix to simple matrix", call. = FALSE)
   }
 }
-##' Create a matrix from a list of matrices
-##'
-##' This creates a named banded symmetric matrix from a list of named
-##' symmetric matrices.
-##'
-##' @param matList list of symmetric named matrices
-##'
-##' @param format The format of dimension names when a sub-matrix is
-##'   repeated. The format will be called with the dimension number,
-##'   so "ETA[\%d]" would represent "ETA[1]", "ETA[2]", etc
-##'
-##' @param start The number the counter of each repeated dimension
-##'   should start.
-##'
-##' @return Named symmetric block diagonal matrix based on
-##'   concatenating the list of matrices together
-##'
-##' @examples
-##'
-##' testList <- list(lotri({et2 + et3 + et4 ~ c(40,
-##'                            0.1, 20,
-##'                            0.1, 0.1, 30)}),
-##'                  lotri(et5 ~ 6))
-##'
-##' testList
-##'
-##' lotriMat(testList)
-##'
-##'
-##' # Another option is to repeat a matrix a number of times.  This
-##' # can be done with list(matrix, # times to repeat).
-##'
-##' # In the example below, the first matrix is repeated 3 times
-##' testList <- list(list(lotri({et2 + et3 + et4 ~ c(40,
-##'                            0.1, 20,
-##'                            0.1, 0.1, 30)}), 3),
-##'                  lotri(et5 ~ 6))
-##'
-##' lotriMat(testList)
-##'
-##' # Notice that the dimension names `et2`, `et3` and `et4` are
-##' # repeated.
-##'
-##' # Another option is to name the dimensions.  For example it could
-##' # be `ETA[1]`, `ETA[2]`, etc by using the 'format' option:
-##'
-##' lotriMat(testList, "ETA[%d]")
-##'
-##' # Or could start with ETA[2]:
-##'
-##' lotriMat(testList, "ETA[%d]", 2)
-##'
-##' @author Matthew Fidler
-##' @export
+#' Create a matrix from a list of matrices
+#'
+#' This creates a named banded symmetric matrix from a list of named
+#' symmetric matrices.
+#'
+#' @param matList list of symmetric named matrices
+#'
+#' @param format The format of dimension names when a sub-matrix is
+#'   repeated. The format will be called with the dimension number,
+#'   so "ETA[\%d]" would represent "ETA[1]", "ETA[2]", etc
+#'
+#' @param start The number the counter of each repeated dimension
+#'   should start.
+#'
+#' @return Named symmetric block diagonal matrix based on
+#'   concatenating the list of matrices together
+#'
+#' @examples
+#'
+#' testList <- list(lotri({et2 + et3 + et4 ~ c(40,
+#'                            0.1, 20,
+#'                            0.1, 0.1, 30)}),
+#'                  lotri(et5 ~ 6))
+#'
+#' testList
+#'
+#' lotriMat(testList)
+#'
+#'
+#' # Another option is to repeat a matrix a number of times.  This
+#' # can be done with list(matrix, # times to repeat).
+#'
+#' # In the example below, the first matrix is repeated 3 times
+#' testList <- list(list(lotri({et2 + et3 + et4 ~ c(40,
+#'                            0.1, 20,
+#'                            0.1, 0.1, 30)}), 3),
+#'                  lotri(et5 ~ 6))
+#'
+#' lotriMat(testList)
+#'
+#' # Notice that the dimension names `et2`, `et3` and `et4` are
+#' # repeated.
+#'
+#' # Another option is to name the dimensions.  For example it could
+#' # be `ETA[1]`, `ETA[2]`, etc by using the 'format' option:
+#'
+#' lotriMat(testList, "ETA[%d]")
+#'
+#' # Or could start with ETA[2]:
+#'
+#' lotriMat(testList, "ETA[%d]", 2)
+#'
+#' @author Matthew Fidler
+#' @export
 lotriMat <- function(matList, format = NULL, start = 1L) {
   .Call(`_lotriLstToMat`, matList, format, start, class(matrix(0)), PACKAGE = "lotri")
 }
 
-##' Separate a lotri matrix into above and below lotri matrices
-##'
-##' This is used for creating nesting simulations in `RxODE` and may
-##' not be useful for external function calls.
-##'
-##' @param x lotri matrix
-##'
-##' @param above Named integer vector listing variability above the id
-##'   level.  Each element lists the number of population differences
-##'   in the whole data-set (as integer)
-##'
-##' @param below Named integer vector listing variability below the id
-##'   level.  Each element lists the number of items below the
-##'   individual level.  For example with 3 occasions per indivdiual
-##'   you could use 'c(occ=3L)'
-##'
-##' @param aboveStart Add the attribute of where THETA[#] will be added
-##'
-##' @param belowStart Add the attribute of where ETA[#] will be added
-##'
-##' @return List of two lotri matrices
-##'
-##' @author Matthew Fidler
-##'
-##' @export
-##'
-##' @examples
-##'
-##' omega <- lotri(lotri(eta.Cl ~ 0.1,
-##'                         eta.Ka ~ 0.1) | id(nu=100),
-##'                   lotri(eye.Cl ~ 0.05,
-##'                         eye.Ka ~ 0.05) | eye(nu=50),
-##'                   lotri(iov.Cl ~ 0.01,
-##'                         iov.Ka ~ 0.01) | occ(nu=200),
-##'                   lotri(inv.Cl ~ 0.02,
-##'                         inv.Ka ~ 0.02) | inv(nu=10))
-##'
-##' lotriSep(omega, above=c(inv=10L), below=c(eye=2L, occ=4L))
+#' Separate a lotri matrix into above and below lotri matrices
+#'
+#' This is used for creating nesting simulations in `RxODE` and may
+#' not be useful for external function calls.
+#'
+#' @param x lotri matrix
+#'
+#' @param above Named integer vector listing variability above the id
+#'   level.  Each element lists the number of population differences
+#'   in the whole data-set (as integer)
+#'
+#' @param below Named integer vector listing variability below the id
+#'   level.  Each element lists the number of items below the
+#'   individual level.  For example with 3 occasions per indivdiual
+#'   you could use 'c(occ=3L)'
+#'
+#' @param aboveStart Add the attribute of where THETA[#] will be added
+#'
+#' @param belowStart Add the attribute of where ETA[#] will be added
+#'
+#' @return List of two lotri matrices
+#'
+#' @author Matthew Fidler
+#'
+#' @export
+#'
+#' @examples
+#'
+#' omega <- lotri(lotri(eta.Cl ~ 0.1,
+#'                         eta.Ka ~ 0.1) | id(nu=100),
+#'                   lotri(eye.Cl ~ 0.05,
+#'                         eye.Ka ~ 0.05) | eye(nu=50),
+#'                   lotri(iov.Cl ~ 0.01,
+#'                         iov.Ka ~ 0.01) | occ(nu=200),
+#'                   lotri(inv.Cl ~ 0.02,
+#'                         inv.Ka ~ 0.02) | inv(nu=10))
+#'
+#' lotriSep(omega, above=c(inv=10L), below=c(eye=2L, occ=4L))
 lotriSep <- function(x, above, below,
                      aboveStart = 1L, belowStart = 1L) {
   .Call(`_lotriSep`, x, above, below,
