@@ -1,3 +1,7 @@
+# lotri 0.4.2
+
+* Bug fix for etas that are inconsistently numbered
+
 # lotri 0.4.0
 
 * Can convert lotri objects to data-frames similar to the internal

@@ -63,4 +63,9 @@ test_that("as.lotri", {
   expect_error(as.lotri(lotri(et1 + et2 ~ c(0.1, 0.01, 1)), lower = 1L, default = "id"))
 
   expect_error(as.lotri("matt"))
+
+  df <- structure(list(ntheta = c(NA_integer_, NA_integer_, NA_integer_, NA_integer_, NA_integer_), neta1 = c(1, 2, 4, 5, 6), neta2 = c(1, 2, 4, 5, 6), name = c("eta.cl", "eta.v", "eta.ec50", "eta.kout", "eta.e0"), lower = c(-Inf, -Inf, -Inf, -Inf, -Inf), est = c(2, 1, 0.5, 0.5, 0.5), upper = c(Inf, Inf, Inf, Inf, Inf), fix = c(FALSE, FALSE, FALSE, FALSE, FALSE), label = c(NA_character_, NA_character_, NA_character_, NA_character_, NA_character_), backTransform = c(NA_character_, NA_character_, NA_character_,  NA_character_, NA_character_), condition = c("id", "id", "id", "id", "id"), err = c(NA_character_, NA_character_, NA_character_, NA_character_, NA_character_)), row.names = c(12L, 13L, 15L, 16L, 17L), class = "data.frame")
+
+  expect_error(as.lotri(df), NA)
+
 })
