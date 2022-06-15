@@ -1,6 +1,7 @@
 # lotri 0.4.2
 
 * Bug fix for etas that are inconsistently numbered
+* Add case for empty initialization block
 
 # lotri 0.4.0
 

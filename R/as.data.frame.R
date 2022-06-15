@@ -57,10 +57,12 @@ as.data.frame.lotriFix <- function(x, row.names = NULL, optional = FALSE, ...,
   }
   .df <- lotriEst(x, drop=FALSE)
   if (!is.null(.df)) {
-    .df$ntheta <- seq_along(.df$est)
-    .df$neta1 <- NA_integer_
-    .df$neta2 <- NA_integer_
-    .df$condition <- NA_character_
+    if (length(.df$est) > 0) {
+      .df$ntheta <- seq_along(.df$est)
+      .df$neta1 <- NA_integer_
+      .df$neta2 <- NA_integer_
+      .df$condition <- NA_character_
+    }
   }
   .df2 <- lotriEst(x, drop=TRUE)
   .df3 <- NULL
@@ -80,6 +82,19 @@ as.data.frame.lotriFix <- function(x, row.names = NULL, optional = FALSE, ...,
   }
   .ord <- c("ntheta", "neta1", "neta2", "name", "lower", "est", "upper", "fix", "label", "backTransform", "condition")
   .df <- rbind(.df, .df3)
+  if (length(.df) == 0) {
+    return(data.frame(ntheta=integer(0),
+                      neta1=numeric(0),
+                      neta2=numeric(0),
+                      name=character(0),
+                      lower=numeric(0),
+                      est=numeric(0),
+                      upper=numeric(0),
+                      fix=numeric(0),
+                      label=character(0),
+                      backTransform=character(0),
+                      condition=character(0)))
+  }
   return(.df[, .ord])
 
   ##   ntheta neta1 neta2   name lower       est   upper   fix  err  label
