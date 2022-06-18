@@ -12,3 +12,4 @@
 ^inst/lotri.svg$
 ^inst/lotriHex.R$
 ^cran-comments\.md$
+^CRAN-SUBMISSION$
