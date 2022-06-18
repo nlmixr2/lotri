@@ -86,7 +86,7 @@ implemented.</p></dd>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     
 
-<p>named symmetric matrix useful in RxODE simulations (and
+<p>named symmetric matrix useful in `rxode2()` simulations (and
     perhaps elsewhere)</p>
     </div>
     <div class="section level2">
@@ -98,7 +98,7 @@ implemented.</p></dd>
 <p>Or the lower triangular matrix when "adding" the names</p>
 <p>name1 + name2 ~ c(est1,
                    est2, est3)</p>
-<p>The matricies are concatenated into a block diagonal matrix, like
+<p>The matrices are concatenated into a block diagonal matrix, like
  <code><a href="https://rdrr.io/pkg/Matrix/man/bdiag.html" class="external-link">bdiag</a></code>, but allows expressions to specify
  matrices easier.</p>
     </div>
@@ -157,7 +157,7 @@ implemented.</p></dd>
 <span class="r-in"><span class="co">## Overall this is a flexible way to specify symmetric block</span></span>
 <span class="r-in"><span class="co">## diagonal matrices.</span></span>
 <span class="r-in"></span>
-<span class="r-in"><span class="co">## For RxODE, you may also condition based on different levels of</span></span>
+<span class="r-in"><span class="co">## For rxode2, you may also condition based on different levels of</span></span>
 <span class="r-in"><span class="co">## nesting with lotri;  Here is an example:</span></span>
 <span class="r-in"></span>
 <span class="r-in"><span class="va">mat</span> <span class="op">&lt;-</span> <span class="fu">lotri</span><span class="op">(</span><span class="fu">lotri</span><span class="op">(</span><span class="va">iov.Ka</span> <span class="op">~</span> <span class="fl">0.5</span>,</span>

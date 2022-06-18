@@ -80,7 +80,7 @@
       <img src="../logo.png" class="logo" alt=""><h1>Lotri Motivation</h1>
                         <h4 data-toc-skip class="author">Matthew Fidler</h4>
             
-            <h4 data-toc-skip class="date">2022-06-17</h4>
+            <h4 data-toc-skip class="date">2022-06-18</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/nlmixr2/lotri/blob/HEAD/vignettes/lotri-motivation.Rmd" class="external-link"><code>vignettes/lotri-motivation.Rmd</code></a></small>
       <div class="d-none name"><code>lotri-motivation.Rmd</code></div>
@@ -133,7 +133,7 @@
 <p>Regardless, I think <code>lotri</code> is a bit easier to use.</p>
 </div>
 <div class="section level2">
-<h2 id="creating-lists-of-matricies-with-attached-properties">Creating lists of matricies with attached properties<a class="anchor" aria-label="anchor" href="#creating-lists-of-matricies-with-attached-properties"></a>
+<h2 id="creating-lists-of-matrices-with-attached-properties">Creating lists of matrices with attached properties<a class="anchor" aria-label="anchor" href="#creating-lists-of-matrices-with-attached-properties"></a>
 </h2>
 <p><code>lotri</code> also allows lists of matrices to be created by conditioning on an <code>id</code> with the <code>|</code> syntax.</p>
 <p>For example:</p>
@@ -229,9 +229,9 @@
 
 <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">mb</span><span class="op">)</span>
 <span class="co">#&gt; Unit: microseconds</span>
-<span class="co">#&gt;                expr      min        lq       mean   median        uq       max</span>
-<span class="co">#&gt;      matf(testList) 1519.705 1559.8905 1685.96827 1583.441 1608.0630 10640.677</span>
-<span class="co">#&gt;  lotriMat(testList)    6.492    7.8625   12.00036   14.067   14.6385    40.392</span>
+<span class="co">#&gt;                expr      min       lq       mean    median       uq      max</span>
+<span class="co">#&gt;      matf(testList) 1210.320 1261.657 1402.51671 1282.7940 1332.503 9278.533</span>
+<span class="co">#&gt;  lotriMat(testList)    5.344    6.771   11.46681   11.8665   15.278   34.246</span>
 <span class="co">#&gt;  neval</span>
 <span class="co">#&gt;    100</span>
 <span class="co">#&gt;    100</span>
