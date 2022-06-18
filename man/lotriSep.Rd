@@ -15,7 +15,7 @@ in the whole data-set (as integer)}
 
 \item{below}{Named integer vector listing variability below the id
 level.  Each element lists the number of items below the
-individual level.  For example with 3 occasions per indivdiual
+individual level.  For example with 3 occasions per individual
 you could use 'c(occ=3L)'}
 
 \item{aboveStart}{Add the attribute of where THETA[#] will be added}
@@ -26,7 +26,7 @@ you could use 'c(occ=3L)'}
 List of two lotri matrices
 }
 \description{
-This is used for creating nesting simulations in `RxODE` and may
+This is used for creating nesting simulations in `rxode2()` and may
 not be useful for external function calls.
 }
 \examples{

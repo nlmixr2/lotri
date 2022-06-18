@@ -20,7 +20,7 @@ concatenated then reapplied to this function.}
 implemented.}
 }
 \value{
-named symmetric matrix useful in RxODE simulations (and
+named symmetric matrix useful in `rxode2()` simulations (and
     perhaps elsewhere)
 }
 \description{
@@ -39,7 +39,7 @@ This can take an R matrix, a list including matrices or
  name1 + name2 ~ c(est1,
                    est2, est3)
 
- The matricies are concatenated into a block diagonal matrix, like
+ The matrices are concatenated into a block diagonal matrix, like
  \code{\link[Matrix]{bdiag}}, but allows expressions to specify
  matrices easier.
 }
@@ -73,7 +73,7 @@ lotri(list(et2 + et3 + et4 ~ c(40,
 ## Overall this is a flexible way to specify symmetric block
 ## diagonal matrices.
 
-## For RxODE, you may also condition based on different levels of
+## For rxode2, you may also condition based on different levels of
 ## nesting with lotri;  Here is an example:
 
 mat <- lotri(lotri(iov.Ka ~ 0.5,

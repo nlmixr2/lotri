@@ -80,7 +80,7 @@ dimnames(mat) <- list(c("a", "b", "c", "d", "e"), c("a", "b", "c", "d", "e"))
 
 Regardless, I think `lotri` is a bit easier to use.
 
-# Creating lists of matricies with attached properties
+# Creating lists of matrices with attached properties
 
 `lotri` also allows lists of matrices to be created by conditioning on
 an `id` with the `|` syntax.

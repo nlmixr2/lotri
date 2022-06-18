@@ -242,11 +242,15 @@ NULL
 #' Parse lower triangular matrix list
 #'
 #' This is for x~c(1..) or x1+x2~c(...)
-#' @title
+#'
 #' @param x2 Second element of parsing list ie  `x` or `x1+x2`
+#'
 #' @param x3 Third element of list; ie c(...)
+#'
 #' @param env  environment to update
+#'
 #' @return Nothing; updates environment
+#'
 #' @author Matthew Fidler
 #' @noRd
 .lotri1 <- function(x2, x3, env) {
@@ -700,7 +704,7 @@ NULL
 #' @inheritParams base::eval
 #' @inheritParams as.lotri
 #'
-#' @return named symmetric matrix useful in RxODE simulations (and
+#' @return named symmetric matrix useful in `rxode2()` simulations (and
 #'     perhaps elsewhere)
 #'
 #' @details
@@ -717,7 +721,7 @@ NULL
 #'  name1 + name2 ~ c(est1,
 #'                    est2, est3)
 #'
-#'  The matricies are concatenated into a block diagonal matrix, like
+#'  The matrices are concatenated into a block diagonal matrix, like
 #'  \code{\link[Matrix]{bdiag}}, but allows expressions to specify
 #'  matrices easier.
 #'
@@ -752,7 +756,7 @@ NULL
 #' ## Overall this is a flexible way to specify symmetric block
 #' ## diagonal matrices.
 #'
-#' ## For RxODE, you may also condition based on different levels of
+#' ## For rxode2, you may also condition based on different levels of
 #' ## nesting with lotri;  Here is an example:
 #'
 #' mat <- lotri(lotri(iov.Ka ~ 0.5,
@@ -1168,7 +1172,7 @@ lotriMat <- function(matList, format = NULL, start = 1L) {
 
 #' Separate a lotri matrix into above and below lotri matrices
 #'
-#' This is used for creating nesting simulations in `RxODE` and may
+#' This is used for creating nesting simulations in `rxode2()` and may
 #' not be useful for external function calls.
 #'
 #' @param x lotri matrix
@@ -1179,7 +1183,7 @@ lotriMat <- function(matList, format = NULL, start = 1L) {
 #'
 #' @param below Named integer vector listing variability below the id
 #'   level.  Each element lists the number of items below the
-#'   individual level.  For example with 3 occasions per indivdiual
+#'   individual level.  For example with 3 occasions per individual
 #'   you could use 'c(occ=3L)'
 #'
 #' @param aboveStart Add the attribute of where THETA[#] will be added

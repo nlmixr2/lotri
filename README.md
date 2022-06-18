@@ -144,7 +144,7 @@ print(mat)
 
 Regardless, I think `lotri` is a bit easier to use.
 
-# Creating lists of matricies with attached properties
+# Creating lists of matrices with attached properties
 
 `lotri` also allows lists of matrices to be created by conditioning on
 an `id` with the `|` syntax.
@@ -255,8 +255,8 @@ mb <- microbenchmark(matf(testList),lotriMat(testList))
 print(mb)
 #> Unit: microseconds
 #>                expr     min       lq      mean   median       uq      max neval
-#>      matf(testList) 459.374 475.9100 547.68401 482.1740 508.6945 4345.639   100
-#>  lotriMat(testList)   2.389   2.9465   4.41056   4.0895   4.6875   37.409   100
+#>      matf(testList) 497.401 504.1625 580.13382 507.6385 542.7125 4434.403   100
+#>  lotriMat(testList)   2.574   2.9750   4.54131   4.1585   4.6635   40.652   100
 
 autoplot(mb)
 #> Coordinate system already present. Adding new coordinate system, which will replace the existing one.
@@ -308,8 +308,8 @@ mb <- microbenchmark(matf(testList),lotriMat(testList))
 print(mb)
 #> Unit: microseconds
 #>                expr     min       lq      mean   median       uq      max neval
-#>      matf(testList) 447.031 451.5255 499.31518 453.3915 459.6865 2698.522   100
-#>  lotriMat(testList)   2.117   2.6030   3.72343   3.8030   4.2030   13.860   100
+#>      matf(testList) 490.549 496.1515 539.12199 500.1220 519.4200 2044.815   100
+#>  lotriMat(testList)   2.416   2.7915   4.16718   3.3725   4.5615   22.020   100
 
 autoplot(mb)
 #> Coordinate system already present. Adding new coordinate system, which will replace the existing one.

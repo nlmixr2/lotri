@@ -46,7 +46,7 @@
 * Now accessing `$lower` and `$upper` gives default values even if it
   wasn't specified.
 * Can change the default conditional matrix to some other value like "id"
-* Can add properties to matrx->lotri by as.lotri(matrix, lower=3, default="id")
+* Can add properties to matrix->lotri by as.lotri(matrix, lower=3, default="id")
 * Dropped `Matrix` import and added `lotriMat` to create banded
   matrices (faster than `Matrix` for now included repeated matrices
   with `list(matrix, rep)`).

@@ -11,3 +11,4 @@
 ^\.lintr$
 ^inst/lotri.svg$
 ^inst/lotriHex.R$
+^cran-comments\.md$
