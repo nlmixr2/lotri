@@ -77,7 +77,7 @@ NULL
       if (chol) .ret[.i, .j] <- 0
     }
   }
-  if (chol){
+  if (chol) {
     .ret <- .ret %*% t(.ret)
     return(.ret)
   }
@@ -232,10 +232,12 @@ NULL
   if (!exists("globalUnfix", env)) {
     env$globalUnfix <- FALSE
   }
-  .fix <- vapply(env$fix, function(x){ifelse(is.na(x), env$globalFix, x)},
-                 logical(1))
-  .unfix <- vapply(env$unfix, function(x){ifelse(is.na(x), env$globalUnfix, x)},
-                   logical(1))
+  .fix <- vapply(env$fix, function(x) {
+    ifelse(is.na(x), env$globalFix, x)
+  }, logical(1))
+  .unfix <- vapply(env$unfix, function(x) {
+    ifelse(is.na(x), env$globalUnfix, x)
+  }, logical(1))
   return(list(env$nv, .fix, .unfix))
 }
 
@@ -669,7 +671,7 @@ NULL
     stop("duplicated parameter(s): '",paste(.dup, collapse="', '"), "'", sep="",
          call.=FALSE)
   }
-  if ((inherits(ret, "matrix") | inherits(ret, "list") | inherits(ret, "lotri")) &
+  if ((inherits(ret, "matrix") || inherits(ret, "list") || inherits(ret, "lotri")) &&
         !inherits(ret, "lotriFix")) {
     class(ret) <- c("lotriFix", class(ret))
   }
