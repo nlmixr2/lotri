@@ -162,8 +162,15 @@ NULL
   .num <- as.numeric(eval(.repFixedWithC(x, .env), envir=.lotriParentEnv))
   return(list(.num, .env$fix, .env$unfix))
 }
-
-.lotriParseMat <- function(x, env=NULL) {
+#' Assert the proper properties of a lotri matrix (cant mix var, sd ) etc
+#'
+#' 
+#' @param x expression
+#' @param env environment
+#' @return Nothing called for side effects
+#' @author Matthew L. Fidler
+#' @noRd
+.lotriParseMatAssertGoodProps <- function(x, env=NULL) {
   if (identical(x[[1]], quote(`sd`))) {
     if (exists("var", envir=env)) {
       stop("cannot use both 'var' and 'sd' in a block", call.=FALSE)
@@ -197,6 +204,15 @@ NULL
     }
     env$chol <- TRUE
   }
+}
+#' Calculate fixed properties
+#' 
+#' @param x expression 
+#' @param env environment
+#' @return nothing called for side effects
+#' @author Matthew L. Fidler
+#' @noRd
+.lotriParseMatCalculateFixedProps <- function(x, env=NULL) {
   if (identical(x[[1]], quote(`fix`)) ||
         identical(x[[1]], quote(`fixed`)) ||
         identical(x[[1]], quote(`FIX`)) ||
@@ -209,6 +225,11 @@ NULL
         identical(x[[1]], quote(`UNFIX`))) {
     env$globalUnfix <- TRUE
   }
+}
+
+.lotriParseMat <- function(x, env=NULL) {
+  .lotriParseMatAssertGoodProps(x, env)
+  .lotriParseMatCalculateFixedProps(x, env)
   if (length(x) == 2) {
     return(.lotriParseMat(x[[2]], env=env))
   } else if (length(x) == 1) {
