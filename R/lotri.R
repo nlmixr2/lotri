@@ -293,6 +293,10 @@ NULL
         }
       }
       env$eta1 <- env$eta1 + .num
+    } else if (.num - length(.n) < 0) {
+      .expr <- paste(.deparse1(x2), "~", .deparse1(x3))
+      stop("number named variables and lower triangular matrix size do not match:\n",
+           .expr)
     } else {
       ## in this case
       .expr <- .deparse1(eval(parse(text=paste0("quote(", paste(c(.n, paste0("varName", length(.n) + seq_len(.num - length(.n)))), collapse="+"), "~ 0)"))))
