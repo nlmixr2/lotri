@@ -70,7 +70,6 @@ test_that(".maxNu", {
 
 test_that("isLotri C", {
 
-  expect_equal(.Call(.lotri$`_isLotri`, NULL, PACKAGE = "lotri"), FALSE)
   expect_equal(.Call(.lotri$`_isLotri`, omega9, PACKAGE = "lotri"), TRUE)
   expect_equal(.Call(.lotri$`_isLotri`, omega, PACKAGE = "lotri"), TRUE)
 

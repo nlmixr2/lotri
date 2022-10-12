@@ -129,13 +129,8 @@ SEXP _lotriAllNames(SEXP lotri) {
 
 
 SEXP _isLotri(SEXP lotri) {
-  SEXP ret = PROTECT(Rf_allocVector(LGLSXP, 1));
-  if (Rf_isNull(lotri)) {
-    INTEGER(ret)[0] = 0;
-    UNPROTECT(1);
-    return ret;
-  }
   SEXP lotriProp = Rf_getAttrib(lotri, Rf_install("lotri"));
+  SEXP ret = PROTECT(Rf_allocVector(LGLSXP, 1));
   if (Rf_isNull(lotriProp)) {
     if (TYPEOF(lotri) == VECSXP){
       int isL = 1;
