@@ -66,7 +66,7 @@ as.lotri.data.frame <- function(x, ..., default="") {
   if (length(.cnd) == 1) {
     .mat <- .as.lotri.data.frame.mat(.lotriMatDf)
   } else {
-    .mat <- setNames(lapply(.cnd, function(.cur){
+    .mat <- setNames(lapply(.cnd, function(.cur) {
       .x <- .lotriMatDf[which(.lotriMatDf$condition == .cur), ]
       .as.lotri.data.frame.mat(.x)
     }), .cnd)
@@ -79,7 +79,7 @@ as.lotri.data.frame <- function(x, ..., default="") {
 ##' @rdname as.lotri
 ##' @export
 as.lotri.default <- function(x, ..., default = "") {
-  if (inherits(x, "list") | inherits(x, "lotri")) {
+  if (inherits(x, "list") || inherits(x, "lotri")) {
     .ret <- x
     class(.ret) <- NULL
     .n <- names(.ret)
