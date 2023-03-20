@@ -39,9 +39,12 @@ as.lotri.matrix <- function(x, ..., default = "") {
     .matF[x$neta1[.i] - .min, x$neta2[.i] - .min] <- x$fix[.i]
     .matF[x$neta2[.i] - .min, x$neta1[.i] - .min] <- x$fix[.i]
   }
-  .n <- which(x$neta1 == x$neta2)
-  dimnames(.mat) <- list(x$name[.n], x$name[.n])
-  dimnames(.matF) <- list(x$name[.n], x$name[.n])
+  .names <- vapply(seq_len(dim(.mat)[1]),
+                   function(.i) {
+                     x$name[x$neta1==.i & x$neta2 == .i]
+                   }, character(1), USE.NAMES = FALSE)
+  dimnames(.mat) <- list(.names, .names)
+  dimnames(.matF) <- list(.names, .names)
   if(any(.matF)) {
     attr(.mat, "lotriFix") <- .matF
     class(.mat) <- c("lotriFix", class(.mat))
