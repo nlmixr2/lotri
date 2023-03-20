@@ -24,7 +24,7 @@ as.lotri.matrix <- function(x, ..., default = "") {
 
 .as.lotri.data.frame.mat <- function(x) {
   x <- x[order(x$neta1, x$neta2), ]
-  x$neta1 <- factor(paste(x$neta1))
+  x$neta1 <- factor(paste(x$neta1), levels=paste(sort(unique(x$neta1))))
   x$neta2 <- factor(paste(x$neta2), levels=levels(x$neta1))
   x$neta1 <- as.integer(x$neta1)
   x$neta2 <- as.integer(x$neta2)
