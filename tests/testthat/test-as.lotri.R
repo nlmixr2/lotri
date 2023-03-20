@@ -69,3 +69,71 @@ test_that("as.lotri", {
   expect_error(as.lotri(df), NA)
 
 })
+
+test_that("no mangling of etas #",{
+  
+  m <- lotri({
+    Ktr_pop = 0.1
+    MTT_pop = 0.2
+    KA_pop = 0.3
+    CL_pop = 0.4
+    V1_pop = 0.5
+    beta_WT_V1 = 0.6
+    WT = 70
+    DRUG = 2
+    TLAG_pop = 0
+    Q_pop = 0
+    V2_pop = 1
+    FU_pop = 1
+    PLTZ_pop = 0.7
+    MMT_pop = 0.8
+    SPW_pop = 0.9
+    EMAX_PLT_pop = 1.0
+    EC50_PLT_pop = 0
+    SG_pop = 1.1
+    KOUT_pop = 1.2
+    GDFZ_pop = 1.3
+    KIN_pop = 1.4
+    KPRO_pop = -1
+    KP5_pop = 1
+    KP1_pop = 0
+    TRTPLT = 0
+    TRTGDF = 0
+    SLPD_pop = 0
+    SLPI_pop = 0
+    KE0_pop = 0
+    SEP_pop = 0
+    CFR_pop = 0
+    LPW_pop = 0
+    etaKtr ~ sd(0.1)
+    etaMTT ~ sd(0.2)
+    etaKA ~  sd(0.3)
+    etaV1 + etaCL ~ sd(cor(0.4,
+                           0.5, 0.6))
+    etaPLTZ ~ sd(0.7)
+    etaMMT  ~ sd(0.8)
+    etaSPW  ~ sd(0.9)
+    etaEMAX ~ sd(1.1)
+    etaV2 ~ 1e-8
+    etaQ ~ 1e-8
+    etaKE0 ~ 1e-8
+    etaSLPD ~ 1e-8
+    etaSLPI ~ 1e-8
+    etaCFR  ~ 1e-8
+    etaLPW  ~ 1e-8
+    etaEC50 ~ 1e-8
+    etaKPRO ~ 1e-8
+    etaKP5 ~ 1e-8
+    etaSG   ~ sd(1.1)
+    etaKOUT ~ sd(1.2)
+    etaGDFZ ~ sd(1.3)
+    etaKIN  ~ sd(1.4)
+  })
+
+  expect_equal(m["etaMTT", "etaMTT"], 0.2^2)
+
+  m2 <- as.lotri(as.data.frame(m))
+
+  expect_equal(m, m2)
+
+})

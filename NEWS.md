@@ -1,3 +1,7 @@
+# lotri 0.4.3
+
+* Bug fix for etas that were not named correctly for large order problems
+
 # lotri 0.4.2
 
 * Bug fix for etas that are inconsistently numbered

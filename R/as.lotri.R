@@ -24,7 +24,7 @@ as.lotri.matrix <- function(x, ..., default = "") {
 
 .as.lotri.data.frame.mat <- function(x) {
   x <- x[order(x$neta1, x$neta2), ]
-  x$neta1 <- factor(paste(x$neta1))
+  x$neta1 <- factor(paste(x$neta1), levels=paste(sort(unique(x$neta1))))
   x$neta2 <- factor(paste(x$neta2), levels=levels(x$neta1))
   x$neta1 <- as.integer(x$neta1)
   x$neta2 <- as.integer(x$neta2)
@@ -39,9 +39,12 @@ as.lotri.matrix <- function(x, ..., default = "") {
     .matF[x$neta1[.i] - .min, x$neta2[.i] - .min] <- x$fix[.i]
     .matF[x$neta2[.i] - .min, x$neta1[.i] - .min] <- x$fix[.i]
   }
-  .n <- which(x$neta1 == x$neta2)
-  dimnames(.mat) <- list(x$name[.n], x$name[.n])
-  dimnames(.matF) <- list(x$name[.n], x$name[.n])
+  .names <- vapply(seq_len(dim(.mat)[1]),
+                   function(.i) {
+                     x$name[x$neta1==.i & x$neta2 == .i]
+                   }, character(1), USE.NAMES = FALSE)
+  dimnames(.mat) <- list(.names, .names)
+  dimnames(.matF) <- list(.names, .names)
   if(any(.matF)) {
     attr(.mat, "lotriFix") <- .matF
     class(.mat) <- c("lotriFix", class(.mat))
@@ -63,7 +66,7 @@ as.lotri.data.frame <- function(x, ..., default="") {
   if (length(.cnd) == 1) {
     .mat <- .as.lotri.data.frame.mat(.lotriMatDf)
   } else {
-    .mat <- setNames(lapply(.cnd, function(.cur){
+    .mat <- setNames(lapply(.cnd, function(.cur) {
       .x <- .lotriMatDf[which(.lotriMatDf$condition == .cur), ]
       .as.lotri.data.frame.mat(.x)
     }), .cnd)
@@ -76,7 +79,7 @@ as.lotri.data.frame <- function(x, ..., default="") {
 ##' @rdname as.lotri
 ##' @export
 as.lotri.default <- function(x, ..., default = "") {
-  if (inherits(x, "list") | inherits(x, "lotri")) {
+  if (inherits(x, "list") || inherits(x, "lotri")) {
     .ret <- x
     class(.ret) <- NULL
     .n <- names(.ret)
