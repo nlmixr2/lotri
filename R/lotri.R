@@ -164,7 +164,7 @@ NULL
 }
 #' Assert the proper properties of a lotri matrix (cant mix var, sd ) etc
 #'
-#' 
+#'
 #' @param x expression
 #' @param env environment
 #' @return Nothing called for side effects
@@ -206,8 +206,8 @@ NULL
   }
 }
 #' Calculate fixed properties
-#' 
-#' @param x expression 
+#'
+#' @param x expression
 #' @param env environment
 #' @return nothing called for side effects
 #' @author Matthew L. Fidler
@@ -398,18 +398,27 @@ NULL
     }
     stop(.err, call. = FALSE)
   }
+  if (length(x[[3]]) == 1L &&
+        is.name(x[[3]]) &&
+        exists(as.character(x[[3]]), envir=.lotriParentEnv)) {
+    x[[3]] <- str2lang(deparse1(get(as.character(x[[3]]), envir=.lotriParentEnv)))
+  }
   if (length(x[[3]]) == 1) {
     ## et1 ~ 0.2
-    env$netas <- 1
-    env$eta1 <- env$eta1 + 1
-    env$names <- c(env$names, as.character(x[[2]]))
-    env$df <- rbind(
-      env$df,
-      data.frame(
-        i = env$eta1,
-        j = env$eta1,
-        x = as.numeric(eval(x[[3]], envir=.lotriParentEnv)),
-        fix=FALSE, unfix=FALSE))
+    if (is.numeric(x[[3]])) {
+      env$netas <- 1
+      env$eta1 <- env$eta1 + 1
+      env$names <- c(env$names, as.character(x[[2]]))
+      env$df <- rbind(
+        env$df,
+        data.frame(
+          i = env$eta1,
+          j = env$eta1,
+          x = eval(x[[3]], envir=.lotriParentEnv),
+          fix=FALSE, unfix=FALSE))
+    } else {
+      stop("cannot figure out expression `", deparse1(x), "` in lotri while handling `~`")
+    }
   } else {
     .fcallTildeLhsSum(x, env)
   }
@@ -928,10 +937,10 @@ lotri <- function(x, ..., envir = parent.frame(),
         if (inherits(.other, "list")) {
           if (any(names(.other) == .j)) {
             .ret0 <- do.call("lotri", list(.ret0, .other[[.j]],
-              envir = envir
-            ),
-            envir = envir
-            )
+                                           envir = envir
+                                           ),
+                             envir = envir
+                             )
             .other <- .other[names(.other) != .j]
           }
         }
@@ -1238,7 +1247,7 @@ lotriMat <- function(matList, format = NULL, start = 1L) {
 lotriSep <- function(x, above, below,
                      aboveStart = 1L, belowStart = 1L) {
   .Call(`_lotriSep`, x, above, below,
-    aboveStart = as.integer(aboveStart), belowStart = as.integer(belowStart),
-    PACKAGE = "lotri"
-  )
+        aboveStart = as.integer(aboveStart), belowStart = as.integer(belowStart),
+        PACKAGE = "lotri"
+        )
 }
