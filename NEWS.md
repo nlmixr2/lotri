@@ -1,3 +1,8 @@
+# lotri 0.4.4
+
+* Bug fix for non-standard evaluation where you take the numeric vector from
+  the evaluating environment when using `lotri(n1+n2~omega)`
+
 # lotri 0.4.3
 
 * Bug fix for etas that were not named correctly for large order problems
@@ -21,7 +26,7 @@
 
 * Add `cov`, `cor`, `sd`, `var`, and `chol` options for matrix
   specification.  The final matrix will always be the covariance matrix
-  
+
 * Add function `lotriMatInv()` which takes a symmetric block matrix
   and converts it into a list of matrices.  An sort of inverse
   operation of `lotriMat()`
@@ -30,7 +35,7 @@
 
 * Added ability to flag `fixed` and `unfixed` components in a
   matrix. Currently `lotri` only supports one type.
-  
+
 * For the `lotriFix` objects, ie those created with population types
   of estimates and covariance estimates, allow them to be converted to
   an equivalent expression with `as.expression()` for the lotri object
@@ -38,7 +43,7 @@
 
 # lotri 0.3.1
 
-* Change errors/warnings to use `call.=FALSE` or equivalent. 
+* Change errors/warnings to use `call.=FALSE` or equivalent.
 * Refactor C code to reduce complexity
 * Change C code to play nicely with `rchk`
 * Allow `lotriMat` to mix named and unnamed matrices; When mixed, an
@@ -67,4 +72,3 @@
 # lotri 0.1.1
 
 * Initial Release
-
