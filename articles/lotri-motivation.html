@@ -33,7 +33,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">lotri</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.4</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -75,12 +75,14 @@
 
 
 
-<script src="lotri-motivation_files/accessible-code-block-0.0.1/empty-anchor.js"></script><div class="row">
+
+<div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Lotri Motivation</h1>
-                        <h4 data-toc-skip class="author">Matthew Fidler</h4>
+                        <h4 data-toc-skip class="author">Matthew
+Fidler</h4>
             
-            <h4 data-toc-skip class="date">2023-03-20</h4>
+            <h4 data-toc-skip class="date">2023-09-30</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/nlmixr2/lotri/blob/HEAD/vignettes/lotri-motivation.Rmd" class="external-link"><code>vignettes/lotri-motivation.Rmd</code></a></small>
       <div class="d-none name"><code>lotri-motivation.Rmd</code></div>
@@ -91,8 +93,14 @@
 <div class="section level2">
 <h2 id="motivation">Motivation<a class="anchor" aria-label="anchor" href="#motivation"></a>
 </h2>
-<p>This was made to allow people (like me) to specify lower triangular matrices similar to the domain specific language implemented in nlmixr. Originally I had it included in <code>RxODE</code>, but thought it may have more general applicability, so I separated it into a new package.</p>
-<p>For me, specifying the matrices in this way is easier than specifying them using R’s default matrix. For instance to fully specify a simple 2x2 matrix, in R you specify:</p>
+<p>This was made to allow people (like me) to specify lower triangular
+matrices similar to the domain specific language implemented in nlmixr.
+Originally I had it included in <code>RxODE</code>, but thought it may
+have more general applicability, so I separated it into a new
+package.</p>
+<p>For me, specifying the matrices in this way is easier than specifying
+them using R’s default matrix. For instance to fully specify a simple
+2x2 matrix, in R you specify:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mat</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">0.5</span>, <span class="fl">0.5</span>, <span class="fl">1</span><span class="op">)</span>,nrow<span class="op">=</span><span class="fl">2</span>,ncol<span class="op">=</span><span class="fl">2</span>,dimnames<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"a"</span>, <span class="st">"b"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"a"</span>, <span class="st">"b"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>With <code>lotri</code>, you simply specify:</p>
@@ -103,7 +111,8 @@
 <span></span>
 <span><span class="va">mat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="va">a</span><span class="op">+</span><span class="va">b</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,</span>
 <span>                     <span class="fl">0.5</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p>I find it more legible and easier to specify, especially if you have a more complex matrix. For instance with the more complex matrix:</p>
+<p>I find it more legible and easier to specify, especially if you have
+a more complex matrix. For instance with the more complex matrix:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>    <span class="va">a</span><span class="op">+</span><span class="va">b</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,</span>
@@ -121,9 +130,10 @@
 <span>                <span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">0</span>, <span class="fl">0.5</span>, <span class="fl">1</span><span class="op">)</span>,</span>
 <span>              nrow<span class="op">=</span><span class="fl">5</span>, ncol<span class="op">=</span><span class="fl">5</span>,</span>
 <span>              dimnames<span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"a"</span>, <span class="st">"b"</span>, <span class="st">"c"</span>, <span class="st">"d"</span>, <span class="st">"e"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"a"</span>, <span class="st">"b"</span>, <span class="st">"c"</span>, <span class="st">"d"</span>, <span class="st">"e"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p>Of course with the excellent <code>Matrix</code> package this is a bit easier:</p>
+<p>Of course with the excellent <code>Matrix</code> package this is a
+bit easier:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://Matrix.R-forge.R-project.org/" class="external-link">Matrix</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://Matrix.R-forge.R-project.org" class="external-link">Matrix</a></span><span class="op">)</span></span>
 <span><span class="va">mat</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">0.5</span>, <span class="fl">0.5</span>, <span class="fl">1</span><span class="op">)</span>,nrow<span class="op">=</span><span class="fl">2</span>,ncol<span class="op">=</span><span class="fl">2</span>,dimnames<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"a"</span>, <span class="st">"b"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"a"</span>, <span class="st">"b"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">mat</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/Matrix/man/bdiag.html" class="external-link">bdiag</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">mat</span>, <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span>, <span class="va">mat</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">## Convert back to standard matrix</span></span>
@@ -135,7 +145,8 @@
 <div class="section level2">
 <h2 id="creating-lists-of-matrices-with-attached-properties">Creating lists of matrices with attached properties<a class="anchor" aria-label="anchor" href="#creating-lists-of-matrices-with-attached-properties"></a>
 </h2>
-<p><code>lotri</code> also allows lists of matrices to be created by conditioning on an <code>id</code> with the <code>|</code> syntax.</p>
+<p><code>lotri</code> also allows lists of matrices to be created by
+conditioning on an <code>id</code> with the <code>|</code> syntax.</p>
 <p>For example:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span></span>
@@ -177,11 +188,16 @@
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">mat</span><span class="op">$</span><span class="va">omegaIsChol</span><span class="op">)</span></span>
 <span><span class="co">#&gt; $id</span></span>
 <span><span class="co">#&gt; [1] FALSE</span></span></code></pre></div>
-<p>This gives a list of matrix(es) conditioned on the variable after the <code>|</code>. It also can add properties to each list that can be accessible after the list of matrices is returned, as shown in the above example. To do this, you simply have to enclose the properties after the conditional variable. That is <code>et1 ~ id(lower=3)</code>.</p>
+<p>This gives a list of matrix(es) conditioned on the variable after the
+<code>|</code>. It also can add properties to each list that can be
+accessible after the list of matrices is returned, as shown in the above
+example. To do this, you simply have to enclose the properties after the
+conditional variable. That is <code>et1 ~ id(lower=3)</code>.</p>
 <div class="section level3">
 <h3 id="combining-symmetric-named-matrices">Combining symmetric named matrices<a class="anchor" aria-label="anchor" href="#combining-symmetric-named-matrices"></a>
 </h3>
-<p>Now there is even a faster way to do a similar banded matrix concatenation with <code>lotriMat</code></p>
+<p>Now there is even a faster way to do a similar banded matrix
+concatenation with <code>lotriMat</code></p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">testList</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span><span class="va">et2</span> <span class="op">+</span> <span class="va">et3</span> <span class="op">+</span> <span class="va">et4</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">40</span>,</span>
 <span>                            <span class="fl">0.1</span>, <span class="fl">20</span>,</span>
@@ -229,15 +245,10 @@
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">mb</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Unit: microseconds</span></span>
-<span><span class="co">#&gt;                expr      min        lq       mean   median       uq       max</span></span>
-<span><span class="co">#&gt;      matf(testList) 2533.753 2961.1665 5364.37760 3754.348 5391.472 42018.836</span></span>
-<span><span class="co">#&gt;  lotriMat(testList)    5.438    6.6245   16.38802   18.738   20.818    82.273</span></span>
-<span><span class="co">#&gt;  neval</span></span>
-<span><span class="co">#&gt;    100</span></span>
-<span><span class="co">#&gt;    100</span></span>
-<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">mb</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Coordinate system already present. Adding new coordinate system, which will</span></span>
-<span><span class="co">#&gt; replace the existing one.</span></span></code></pre></div>
+<span><span class="co">#&gt;                expr    min     lq     mean median     uq    max neval</span></span>
+<span><span class="co">#&gt;      matf(testList) 1722.5 1800.5 2038.086 1860.9 2327.5 7829.7   100</span></span>
+<span><span class="co">#&gt;  lotriMat(testList)    4.2    5.0    8.559    9.8   10.6   20.2   100</span></span>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">mb</span><span class="op">)</span></span></code></pre></div>
 <p><img src="lotri-motivation_files/figure-html/unnamed-chunk-7-1.png" width="700"></p>
 </div>
 </div>
