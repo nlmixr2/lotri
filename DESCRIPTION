@@ -11,7 +11,7 @@ Description: Provides a simple mechanism to specify a symmetric block
     to create matrices in R generally instead of specifying parts of
     matrices to estimate.
 License: GPL (>=2)
-URL: https://github.com/nlmixr2/lotri
+URL: https://nlmixr2.github.io/lotri/, https://github.com/nlmixr2/lotri
 BugReports: https://github.com/nlmixr2/lotri/issues
 Depends:
     R (>= 3.4.0)
