@@ -727,7 +727,29 @@ NULL
     class(.ret) <- c("lotriFix", class(.ret))
     attr(.ret, "lotriUnfix") <- .retU
   }
-  return(.ret)
+  # Verify that zero diagonals have zero off diagonals (rxode2#481)
+  for (idx1 in seq_len(nrow(.ret))) {
+    .zeroDiag <- .ret[idx1, idx1] == 0
+    if (.zeroDiag) {
+      .nonDiagidx <- setdiff(seq_len(ncol(.ret)), idx1)
+      for (idx2 in .nonDiagidx) {
+        .badValue <- FALSE
+        if (.ret[idx1, idx2] != 0) {
+          .idxRow <- idx1
+          .idxCol <- idx2
+          .badValue <- TRUE
+        } else if (.ret[idx2, idx1] != 0) {
+          .idxRow <- idx2
+          .idxCol <- idx1
+          .badValue <- TRUE
+        }
+        if (.badValue) {
+          stop("if diagonals are zero, off-diagonals must be zero for covariance matrices (row ", .idxRow, ", column ", .idxCol, ")")
+        }
+      }
+    }
+  }
+  .ret
 }
 
 #' Easily Specify block-diagonal matrices with lower triangular info

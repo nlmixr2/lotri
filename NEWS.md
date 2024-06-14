@@ -1,3 +1,8 @@
+# lotri 0.4.4.9000
+
+* Off-diagonal elements in covariance matrices may no longer be nonzero if the
+  diagonal value is zero (rxode2#481)
+
 # lotri 0.4.4
 
 * Bug fix for non-standard evaluation where you take the numeric vector from
