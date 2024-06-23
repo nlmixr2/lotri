@@ -358,6 +358,7 @@ NULL
           ## Each condition is parsed so this new environment
           ## should not be elsewhere
           .env2 <- new.env(parent = emptyenv())
+          .env2$cov <- env$cov
           .env2$df <- NULL
           .env2$eta1 <- 0L
           env$cnd <- unique(c(env$cnd, .cnd))
@@ -728,23 +729,26 @@ NULL
     attr(.ret, "lotriUnfix") <- .retU
   }
   # Verify that zero diagonals have zero off diagonals (rxode2#481)
-  for (idx1 in seq_len(nrow(.ret))) {
-    .zeroDiag <- .ret[idx1, idx1] == 0
-    if (.zeroDiag) {
-      .nonDiagidx <- setdiff(seq_len(ncol(.ret)), idx1)
-      for (idx2 in .nonDiagidx) {
-        .badValue <- FALSE
-        if (.ret[idx1, idx2] != 0) {
-          .idxRow <- idx1
-          .idxCol <- idx2
-          .badValue <- TRUE
-        } else if (.ret[idx2, idx1] != 0) {
-          .idxRow <- idx2
-          .idxCol <- idx1
-          .badValue <- TRUE
-        }
-        if (.badValue) {
-          stop("if diagonals are zero, off-diagonals must be zero for covariance matrices (row ", .idxRow, ", column ", .idxCol, ")")
+  if (env$cov) {
+    for (idx1 in seq_len(nrow(.ret))) {
+      .zeroDiag <- .ret[idx1, idx1] == 0
+      if (.zeroDiag) {
+        .nonDiagidx <- setdiff(seq_len(ncol(.ret)), idx1)
+        for (idx2 in .nonDiagidx) {
+          .badValue <- FALSE
+          if (.ret[idx1, idx2] != 0) {
+            .idxRow <- idx1
+            .idxCol <- idx2
+            .badValue <- TRUE
+          } else if (.ret[idx2, idx1] != 0) {
+            .idxRow <- idx2
+            .idxCol <- idx1
+            .badValue <- TRUE
+          }
+          if (.badValue) {
+            stop("if diagonals are zero, off-diagonals must be zero for covariance matrices (row ", .idxRow, ", column ", .idxCol, ")",
+                 call.=FALSE)
+          }
         }
       }
     }
@@ -758,6 +762,9 @@ NULL
 #'
 #' @param ... Other arguments treated as a list that will be
 #'     concatenated then reapplied to this function.
+#'
+#' @param cov boolean describing if this is a covariance matrix.  If
+#'   so, `lotri()` will enforce certain regularity conditions.
 #'
 #' @inheritParams base::eval
 #' @inheritParams as.lotri
@@ -858,8 +865,13 @@ NULL
 #' @importFrom stats setNames
 #' @importFrom utils str
 #' @export
-lotri <- function(x, ..., envir = parent.frame(),
+lotri <- function(x, ..., cov=FALSE,
+                  envir = parent.frame(),
                   default = "id") {
+  if (length(cov) != 1 || !is.logical(cov) || is.na(cov)) {
+    stop("'cov' must be a length 1 non-NA logical",
+         call.=FALSE)
+  }
   if (is.null(.lotriParentEnv)) {
     assignInMyNamespace(".lotriParentEnv", envir)
     on.exit(assignInMyNamespace(".lotriParentEnv", NULL))
@@ -893,6 +905,7 @@ lotri <- function(x, ..., envir = parent.frame(),
     .ret <- x
   } else {
     .env <- new.env(parent = emptyenv())
+    .env$cov <- cov
     .env$df <- NULL
     .env$matrix <- NULL
     .env$eta1 <- 0L
@@ -930,6 +943,7 @@ lotri <- function(x, ..., envir = parent.frame(),
       if (any(.env$cnd == default)) {
         ## amplify with default
         .env2 <- .env[[default]]
+        .env2$cov <- .env$cov
         .env2$df <- rbind(.env2$df, .env$df)
         .env2$names <- c(.env2$names, .env$names)
         .env2$eta1 <- .env$eta1 + .env2$eta1
@@ -937,6 +951,7 @@ lotri <- function(x, ..., envir = parent.frame(),
         .env[[default]] <- new.env(parent=emptyenv())
         .env2 <- .env[[default]]
         .env2$df <- .env$df
+        .env2$cov <- .env$cov
         .env2$eta1 <- .env$eta1
         .env2$names <- .env$names
         .env$cnd <- c(default, .env$cnd)
@@ -1044,7 +1059,8 @@ lotri <- function(x, ..., envir = parent.frame(),
       return(.amplifyRetWithDfEst(.ret, .est))
     }
   } else {
-    if (length(.call) == 1L) {
+    .ndef <- sum(names(.call) %in% c("cov", "default", "envir"))
+    if (length(.call) - .ndef == 1L) {
       return(.amplifyRetWithDfEst(.ret, .est))
     }
     .call <- .call[-1]
