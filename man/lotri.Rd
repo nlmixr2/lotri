@@ -4,13 +4,16 @@
 \alias{lotri}
 \title{Easily Specify block-diagonal matrices with lower triangular info}
 \usage{
-lotri(x, ..., envir = parent.frame(), default = "id")
+lotri(x, ..., cov = FALSE, envir = parent.frame(), default = "id")
 }
 \arguments{
 \item{x}{list, matrix or expression, see details}
 
 \item{...}{Other arguments treated as a list that will be
 concatenated then reapplied to this function.}
+
+\item{cov}{boolean describing if this is a covariance matrix.  If
+so, `lotri()` will enforce certain regularity conditions.}
 
 \item{envir}{the \code{\link[base]{environment}} in which \code{expr} is to
     be evaluated.  May also be \code{NULL}, a list, a data frame,
