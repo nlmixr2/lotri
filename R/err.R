@@ -7,7 +7,7 @@
 .printErr <- function(.env) {
   if (.env$.hasErr) {
     messageText <-
-      "\033[1mlotri syntax error:\n================================================================================\033[0m"
+      "\033[1mlotri syntax error:\n=================================================================================\033[0m"
     for (i in seq_along(.env$.err)) {
       if (!is.null(.env$.err[[i]])) {
         messageText <-
@@ -22,7 +22,7 @@
     messageText <-
       c(
         messageText,
-        "\033[1m================================================================================\033[0m"
+        "\033[1m=================================================================================\033[0m"
       )
     message(paste(messageText, collapse="\n"))
     stop("lotri syntax errors above", call. = FALSE)
