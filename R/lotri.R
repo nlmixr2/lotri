@@ -708,8 +708,14 @@ NULL
   }
   return(ret)
 }
-
-.lotriGetMatrixFromEnv <- function(env) {
+#' Create the matrix from the lotri environment
+#'
+#' @param env lotri environment
+#' @param cnd current condition
+#' @return matrix
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriGetMatrixFromEnv <- function(env, cnd=NULL) {
   .ret <- diag(env$eta1)
   .retF <- matrix(FALSE, dim(.ret)[1], dim(.ret)[1])
   .retU <- matrix(FALSE, dim(.ret)[1], dim(.ret)[1])
@@ -730,6 +736,10 @@ NULL
   }
   # Verify that zero diagonals have zero off diagonals (rxode2#481)
   if (env$cov) {
+    .cnd <- ""
+    if (!is.null(cnd)) {
+      .cnd <- paste0(", level ", cnd)
+    }
     for (idx1 in seq_len(nrow(.ret))) {
       .zeroDiag <- .ret[idx1, idx1] == 0
       if (.zeroDiag) {
@@ -746,7 +756,7 @@ NULL
             .badValue <- TRUE
           }
           if (.badValue) {
-            stop("if diagonals are zero, off-diagonals must be zero for covariance matrices (row ", .idxRow, ", column ", .idxCol, ")",
+            stop("if diagonals are zero, off-diagonals must be zero for covariance matrices (row ", .idxRow, ", column ", .idxCol, .cnd, ")",
                  call.=FALSE)
           }
         }
@@ -989,7 +999,7 @@ lotri <- function(x, ..., cov=FALSE,
       }
       for (.j in .env$cnd) {
         .env2 <- .env[[.j]]
-        .ret0 <- .lotriGetMatrixFromEnv(.env2)
+        .ret0 <- .lotriGetMatrixFromEnv(.env2, cnd=.j)
         .extra <- .env[[paste0(.j, ".extra")]]
         if (!is.null(.extra)) {
           if (is.null(.prop)) {
