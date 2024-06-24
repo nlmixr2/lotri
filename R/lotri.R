@@ -755,6 +755,30 @@ NULL
   }
   .ret
 }
+#' This modifies the call information to include the default arguments explicitly
+#'
+#' @param call call list to modify
+#' @param cov Is this a covariance matrix (boolean)
+#' @param envir environment where lotri is evaluated
+#' @param default default level of variability (id=default)
+#' @return calling list incluing cov, envir and default
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriGetFullCall <- function(call, cov=FALSE,
+                              envir = parent.frame(),
+                             default = "id") {
+  .fullCall <- call
+  if (!any(names(.fullCall) %in% "cov")) {
+    .fullCall <- c(.fullCall, list(cov=cov))
+  }
+  if (!any(names(.fullCall) %in% "default")) {
+    .fullCall <- c(.fullCall, list(default=default))
+  }
+  if (!any(names(.fullCall) %in% "envir")) {
+    .fullCall <- c(.fullCall, list(envir=envir))
+  }
+  .fullCall
+}
 
 #' Easily Specify block-diagonal matrices with lower triangular info
 #'
@@ -872,6 +896,9 @@ lotri <- function(x, ..., cov=FALSE,
     stop("'cov' must be a length 1 non-NA logical",
          call.=FALSE)
   }
+  if (missing(x)) {
+    return(lotri({}, cov=cov, envir=envir, default=default))
+  }
   if (is.null(.lotriParentEnv)) {
     assignInMyNamespace(".lotriParentEnv", envir)
     on.exit(assignInMyNamespace(".lotriParentEnv", NULL))
@@ -932,9 +959,13 @@ lotri <- function(x, ..., cov=FALSE,
       .lstC <- list()
       .other <- NULL
       .prop <- NULL
-      if (length(.call) > 1) {
+      .ndef <- sum(names(.call) %in% c("cov", "default", "envir"))
+      if (length(.call) - .ndef > 1) {
         .call <- .call[-1]
-        .other <- do.call("lotri", .call, envir = envir)
+        .other <- do.call("lotri",
+                          .lotriGetFullCall(.call, cov=cov,
+                                            default=default, envir=envir),
+                          envir=envir)
         if (inherits(.other, "lotri")) {
           .prop <- attr(.other, "lotri")
           class(.other) <- NULL
@@ -973,11 +1004,12 @@ lotri <- function(x, ..., cov=FALSE,
         }
         if (inherits(.other, "list")) {
           if (any(names(.other) == .j)) {
-            .ret0 <- do.call("lotri", list(.ret0, .other[[.j]],
-                                           envir = envir
-                                           ),
-                             envir = envir
-                             )
+            .fullCall <- .lotriGetFullCall(list(.ret0, .other[[.j]]),
+                                           cov=cov,
+                                           default=default,
+                                           envir=envir)
+            .ret0 <- do.call("lotri", .fullCall,
+                             envir = envir)
             .other <- .other[names(.other) != .j]
           }
         }
@@ -1015,7 +1047,11 @@ lotri <- function(x, ..., cov=FALSE,
       return(.amplifyRetWithDfEst(.lst, .est))
     }
     .call <- .call[-1]
-    .tmp <- do.call("lotri", .call, envir = envir)
+    .fullCall <- .lotriGetFullCall(.call,
+                                   cov=cov,
+                                   default=default,
+                                   envir=envir)
+    .tmp <- do.call("lotri", .fullCall, envir=envir)
     if (any(names(.tmp) == .fullCnd)) {
       if (!is.null(.prop)) {
         .tmpL <- attr(.tmp, "lotri")
@@ -1030,7 +1066,8 @@ lotri <- function(x, ..., cov=FALSE,
         )
         .prop <- c(.prop, .tmp1)
       }
-      .ret <- lotri(list(.ret, .tmp[[.fullCnd]]), envir = envir)
+      .ret <- lotri(list(.ret, .tmp[[.fullCnd]]),
+                    cov=cov, default=default, envir = envir)
       .w <- which(names(.tmp) != .fullCnd)
       if (length(.w) > 0L) {
         .tmp <- .tmp[.w]
@@ -1064,19 +1101,29 @@ lotri <- function(x, ..., cov=FALSE,
       return(.amplifyRetWithDfEst(.ret, .est))
     }
     .call <- .call[-1]
-    .tmp <- do.call("lotri", .call, envir = envir)
+    .fullCall <- .lotriGetFullCall(.call,
+                                   cov=cov,
+                                   default=default,
+                                   envir=envir)
+    .tmp <- do.call("lotri", .fullCall, envir=envir)
     if (inherits(.tmp, "list")) {
       if (any(names(.tmp) == "")) {
         .w <- which(names(.tmp) == "")
-        .lst <- list(.ret, .tmp[[.w]], envir = envir)
-        .tmp[[.w]] <- do.call("lotri", .lst, envir = envir)
+        .lst <- list(.ret, .tmp[[.w]])
+        .fullCall <- .lotriGetFullCall(.lst,
+                                       cov=cov,
+                                       default=default,
+                                       envir=envir)
+        .tmp[[.w]] <- do.call("lotri", .fullCall, envir = envir)
         return(.amplifyRetWithDfEst(.tmp, .est))
       } else {
         .ret <- c(list(.ret), .tmp)
         return(.amplifyRetWithDfEst(.ret, .est))
       }
     } else {
-      .ret <- lotri(c(list(.ret), list(.tmp)), envir = envir)
+      .ret <- lotri(c(list(.ret), list(.tmp)),
+                    cov=cov, default=default,
+                    envir = envir)
       if (inherits(.tmp, "lotri")) {
         attr(.ret, "lotri") <- .amplifyFinal(.ret, attr(.tmp, "lotri"))
         class(.ret) <- "lotri"
