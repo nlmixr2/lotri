@@ -755,14 +755,14 @@ NULL
 #' @author Matthew L. Fidler
 .assertPositiveDefinite <- function(mat, zd, fun, cnd) {
   .d <- dim(mat)
-  if (length(.d[1]) == length(zd)) {
+  if (.d[1] == length(zd)) {
     # all are diagonal zeros
     return(mat)
   }
   if (length(zd) == 0) {
     .mat <- mat
   } else {
-    .mat <- mat[-zd, -zd, drop = FALSE]
+    .mat <- mat[zd, zd, drop = FALSE]
   }
   .e <- eigen(.mat)
   if (all(.e$values > 0)) return(mat)
@@ -779,7 +779,7 @@ NULL
       if (length(zd) == 0) {
         .mat2 <- .mat
       } else {
-        .mat2[-zd, -zd] <- .mat
+        .mat2[zd, zd] <- .mat
       }
       warning(paste0("corrected matrix to be non-positive definite", .cnd),
               call.=FALSE)

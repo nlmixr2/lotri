@@ -104,4 +104,9 @@ test_that("non-positive definite matrix", {
                regexp="non-positive definite matrix covariance matrix even after correction",
                fixed=TRUE)
 
+
+  expect_error(lotri({et1 + et2 ~ c(0.1, 10, 0.1);et3 ~ 0}, cov=TRUE),
+               regexp="non-positive definite matrix covariance matrix",
+               fixed=TRUE)
+
 })
