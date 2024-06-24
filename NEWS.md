@@ -1,7 +1,10 @@
 # lotri 0.4.4.9000
 
-* Off-diagonal elements in covariance matrices may no longer be nonzero if the
-  diagonal value is zero (rxode2#481)
+* New option of `cov` added which check for matrix suitability for
+  covariance matrix. When `cov=TRUE`, off-diagonal elements in
+  covariance matrices may no longer be nonzero if the diagonal value
+  is zero (rxode2#481). This will also check tht the matrix is
+  non-positive definite on the non-diagonal terms.
 
 # lotri 0.4.4
 

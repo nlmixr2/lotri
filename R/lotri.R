@@ -708,13 +708,52 @@ NULL
   }
   return(ret)
 }
+#' This asserts the covariance values are zero when variances are zero
+#'
+#' @param ret matrix to consider
+#' @param cnd level currently being examined
+#' @return the negative indexes of the zero diagonals
+#' @noRd
+#' @author Matthew L. Fidler
+.assertErrZeroDiag <- function(ret, cnd) {
+  .cnd <- ""
+  if (!is.null(cnd)) {
+    .cnd <- paste0(", level ", cnd)
+  }
+  .zd <- integer(0)
+  for (idx1 in seq_len(nrow(ret))) {
+    .zeroDiag <- ret[idx1, idx1] == 0
+    if (.zeroDiag) {
+      .zd <- c(.zd, -idx1)
+      .nonDiagidx <- setdiff(seq_len(ncol(ret)), idx1)
+      for (idx2 in .nonDiagidx) {
+        .badValue <- FALSE
+        if (ret[idx1, idx2] != 0) {
+          .idxRow <- idx1
+          .idxCol <- idx2
+          .badValue <- TRUE
+        } else if (ret[idx2, idx1] != 0) {
+          .idxRow <- idx2
+          .idxCol <- idx1
+          .badValue <- TRUE
+        }
+        if (.badValue) {
+          stop("if diagonals are zero, off-diagonals must be zero for covariance matrices (row ", .idxRow, ", column ", .idxCol, .cnd, ")",
+               call.=FALSE)
+        }
+      }
+    }
+  }
+  return(.zd)
+}
+
 #' Create the matrix from the lotri environment
 #'
 #' @param env lotri environment
 #' @param cnd current condition
 #' @return matrix
 #' @noRd
-#' @author Matthew L. Fidler
+#' @author Bill Denney & Matthew L. Fidler
 .lotriGetMatrixFromEnv <- function(env, cnd=NULL) {
   .ret <- diag(env$eta1)
   .retF <- matrix(FALSE, dim(.ret)[1], dim(.ret)[1])
@@ -736,32 +775,7 @@ NULL
   }
   # Verify that zero diagonals have zero off diagonals (rxode2#481)
   if (env$cov) {
-    .cnd <- ""
-    if (!is.null(cnd)) {
-      .cnd <- paste0(", level ", cnd)
-    }
-    for (idx1 in seq_len(nrow(.ret))) {
-      .zeroDiag <- .ret[idx1, idx1] == 0
-      if (.zeroDiag) {
-        .nonDiagidx <- setdiff(seq_len(ncol(.ret)), idx1)
-        for (idx2 in .nonDiagidx) {
-          .badValue <- FALSE
-          if (.ret[idx1, idx2] != 0) {
-            .idxRow <- idx1
-            .idxCol <- idx2
-            .badValue <- TRUE
-          } else if (.ret[idx2, idx1] != 0) {
-            .idxRow <- idx2
-            .idxCol <- idx1
-            .badValue <- TRUE
-          }
-          if (.badValue) {
-            stop("if diagonals are zero, off-diagonals must be zero for covariance matrices (row ", .idxRow, ", column ", .idxCol, .cnd, ")",
-                 call.=FALSE)
-          }
-        }
-      }
-    }
+    .zd <- .assertErrZeroDiag(.ret, cnd)
   }
   .ret
 }
