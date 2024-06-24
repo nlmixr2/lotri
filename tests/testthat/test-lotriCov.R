@@ -95,6 +95,10 @@ test_that("non-positive definite matrix", {
                  regexp="corrected matrix to be non-positive definite",
                  fixed=TRUE)
 
+  expect_warning(lotri({et1 + et2 ~ c(0.1, 10, 0.1);et3 ~ 0}, cov=f),
+                 regexp="corrected matrix to be non-positive definite",
+                 fixed=TRUE)
+
 
   f <- function(mat) {
     mat
@@ -108,5 +112,9 @@ test_that("non-positive definite matrix", {
   expect_error(lotri({et1 + et2 ~ c(0.1, 10, 0.1);et3 ~ 0}, cov=TRUE),
                regexp="non-positive definite matrix covariance matrix",
                fixed=TRUE)
+
+  expect_error(lotri({et1 + et2 ~ c(0.1, 10, 0.1) | occ}, cov=TRUE),
+                 regexp="non-positive definite matrix covariance matrix for level occ",
+                 fixed=TRUE)
 
 })
