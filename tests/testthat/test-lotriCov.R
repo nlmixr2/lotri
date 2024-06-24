@@ -115,6 +115,14 @@ test_that("non-positive definite matrix", {
 
   expect_error(lotri({et1 + et2 ~ c(0.1, 10, 0.1) | occ}, cov=TRUE),
                  regexp="non-positive definite matrix covariance matrix for level occ",
-                 fixed=TRUE)
+               fixed=TRUE)
+
+  expect_error(lotri({et1 ~ 0;et2 ~ 0}, cov=TRUE), NA)
+
+  expect_error(lotri({et1 ~ 1;et2 ~ 1}, cov=TRUE), NA)
+
+  expect_error(lotri({et1 ~ 1;et2 ~ 1}, cov="fun"),
+               regexp="'cov' must be a length 1 non-NA logical or function",
+               fixed=TRUE)
 
 })
