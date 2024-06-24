@@ -730,12 +730,9 @@ NULL
       for (idx2 in .nonDiagidx) {
         .badValue <- FALSE
         if (ret[idx1, idx2] != 0) {
+          # already symmetric no need to check idx2, idx1
           .idxRow <- idx1
           .idxCol <- idx2
-          .badValue <- TRUE
-        } else if (ret[idx2, idx1] != 0) {
-          .idxRow <- idx2
-          .idxCol <- idx1
           .badValue <- TRUE
         }
         if (.badValue) {
