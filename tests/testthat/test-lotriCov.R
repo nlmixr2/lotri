@@ -79,3 +79,29 @@ test_that("zero diagonal etas must have zero off-diagonals (rxode2#481)", {
 
 
 })
+
+
+test_that("non-positive definite matrix", {
+
+  expect_error(lotri({et1 + et2 ~ c(0.1, 10, 0.1)}, cov=TRUE),
+               regexp="non-positive definite matrix covariance matrix",
+               fixed=TRUE)
+
+  f <- function(mat) {
+    as.matrix(Matrix::nearPD(mat)$mat)
+  }
+
+  expect_warning(lotri({et1 + et2 ~ c(0.1, 10, 0.1)}, cov=f),
+                 regexp="corrected matrix to be non-positive definite",
+                 fixed=TRUE)
+
+
+  f <- function(mat) {
+    mat
+  }
+
+  expect_error(lotri({et1 + et2 ~ c(0.1, 10, 0.1)}, cov=f),
+               regexp="non-positive definite matrix covariance matrix even after correction",
+               fixed=TRUE)
+
+})

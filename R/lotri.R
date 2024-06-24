@@ -358,7 +358,7 @@ NULL
           ## Each condition is parsed so this new environment
           ## should not be elsewhere
           .env2 <- new.env(parent = emptyenv())
-          .env2$cov <- env$cov
+          .env2$isCov <- env$isCov
           .env2$df <- NULL
           .env2$eta1 <- 0L
           env$cnd <- unique(c(env$cnd, .cnd))
@@ -708,6 +708,7 @@ NULL
   }
   return(ret)
 }
+
 #' This asserts the covariance values are zero when variances are zero
 #'
 #' @param ret matrix to consider
@@ -746,7 +747,51 @@ NULL
   }
   return(.zd)
 }
-
+#' This asserts that the matrix is positive definite (in cov matrices)
+#'
+#' @param mat matrix to check
+#' @param zd which diagonals are zero
+#' @param fun function to apply to get a positive definite matix
+#' @param cnd condition that is currently being processed
+#' @return positive definite matrix, if successful
+#' @noRd
+#' @author Matthew L. Fidler
+.assertPositiveDefinite <- function(mat, zd, fun, cnd) {
+  .d <- dim(mat)
+  if (length(.d[1]) == length(zd)) {
+    # all are diagonal zeros
+    return(mat)
+  }
+  if (length(zd) == 0) {
+    .mat <- mat
+  } else {
+    .mat <- mat[-zd, -zd, drop = FALSE]
+  }
+  .e <- eigen(.mat)
+  if (all(.e$values > 0)) return(mat)
+  .cnd <- ""
+  if (!is.null(cnd)) {
+    .cnd <- paste0(" for level ", cnd)
+  }
+  .stp <- paste0("non-positive definite matrix covariance matrix", .cnd)
+  if (is.function(fun)) {
+    .mat <- fun(.mat)
+    .e <- eigen(.mat)
+    if (all(.e$values > 0)) {
+      .mat2 <- mat
+      if (length(zd) == 0) {
+        .mat2 <- .mat
+      } else {
+        .mat2[-zd, -zd] <- .mat
+      }
+      warning(paste0("corrected matrix to be non-positive definite", .cnd),
+              call.=FALSE)
+      return(.mat2)
+    }
+    .stp <- paste0(.stp, " even after correction")
+  }
+  stop(.stp, call.=FALSE)
+}
 #' Create the matrix from the lotri environment
 #'
 #' @param env lotri environment
@@ -754,7 +799,7 @@ NULL
 #' @return matrix
 #' @noRd
 #' @author Bill Denney & Matthew L. Fidler
-.lotriGetMatrixFromEnv <- function(env, cnd=NULL) {
+.lotriGetMatrixFromEnv <- function(env, cnd=NULL, fun=NULL) {
   .ret <- diag(env$eta1)
   .retF <- matrix(FALSE, dim(.ret)[1], dim(.ret)[1])
   .retU <- matrix(FALSE, dim(.ret)[1], dim(.ret)[1])
@@ -774,8 +819,9 @@ NULL
     attr(.ret, "lotriUnfix") <- .retU
   }
   # Verify that zero diagonals have zero off diagonals (rxode2#481)
-  if (env$cov) {
+  if (env$isCov) {
     .zd <- .assertErrZeroDiag(.ret, cnd)
+    .ret <- .assertPositiveDefinite(mat=.ret, zd=.zd, fun=fun, cnd=cnd)
   }
   .ret
 }
@@ -916,9 +962,15 @@ NULL
 lotri <- function(x, ..., cov=FALSE,
                   envir = parent.frame(),
                   default = "id") {
+  .fun <- NULL
   if (length(cov) != 1 || !is.logical(cov) || is.na(cov)) {
-    stop("'cov' must be a length 1 non-NA logical",
-         call.=FALSE)
+    if (is.function(cov)) {
+      .fun <- cov
+      cov <- TRUE
+    } else {
+      stop("'cov' must be a length 1 non-NA logical or function",
+           call.=FALSE)
+    }
   }
   if (missing(x)) {
     return(lotri({}, cov=cov, envir=envir, default=default))
@@ -956,7 +1008,8 @@ lotri <- function(x, ..., cov=FALSE,
     .ret <- x
   } else {
     .env <- new.env(parent = emptyenv())
-    .env$cov <- cov
+    .env$isCov <- cov
+    .env$fun <- .fun
     .env$df <- NULL
     .env$matrix <- NULL
     .env$eta1 <- 0L
@@ -978,7 +1031,7 @@ lotri <- function(x, ..., cov=FALSE,
       return(.amplifyRetWithDfEst(.env$matrix, .est))
     }
     if (length(.env$cnd) == 0L) {
-      .ret <- .lotriGetMatrixFromEnv(.env)
+      .ret <- .lotriGetMatrixFromEnv(.env, fun=.env$fun)
     } else {
       .lstC <- list()
       .other <- NULL
@@ -998,7 +1051,8 @@ lotri <- function(x, ..., cov=FALSE,
       if (any(.env$cnd == default)) {
         ## amplify with default
         .env2 <- .env[[default]]
-        .env2$cov <- .env$cov
+        .env2$isCov <- .env$isCov
+        .env2$fun <- .env$fun
         .env2$df <- rbind(.env2$df, .env$df)
         .env2$names <- c(.env2$names, .env$names)
         .env2$eta1 <- .env$eta1 + .env2$eta1
@@ -1006,14 +1060,15 @@ lotri <- function(x, ..., cov=FALSE,
         .env[[default]] <- new.env(parent=emptyenv())
         .env2 <- .env[[default]]
         .env2$df <- .env$df
-        .env2$cov <- .env$cov
+        .env2$isCov <- .env$isCov
+        .env2$fun <- .env$fun
         .env2$eta1 <- .env$eta1
         .env2$names <- .env$names
         .env$cnd <- c(default, .env$cnd)
       }
       for (.j in .env$cnd) {
         .env2 <- .env[[.j]]
-        .ret0 <- .lotriGetMatrixFromEnv(.env2, cnd=.j)
+        .ret0 <- .lotriGetMatrixFromEnv(.env2, cnd=.j, fun=.env2$fun)
         .extra <- .env[[paste0(.j, ".extra")]]
         if (!is.null(.extra)) {
           if (is.null(.prop)) {
