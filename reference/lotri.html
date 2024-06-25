@@ -10,7 +10,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">lotri</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.4.9000</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -57,7 +57,7 @@
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">lotri</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span>, envir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sys.parent.html" class="external-link">parent.frame</a></span><span class="op">(</span><span class="op">)</span>, default <span class="op">=</span> <span class="st">"id"</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">lotri</span><span class="op">(</span><span class="va">x</span>, <span class="va">...</span>, cov <span class="op">=</span> <span class="cn">FALSE</span>, envir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sys.parent.html" class="external-link">parent.frame</a></span><span class="op">(</span><span class="op">)</span>, default <span class="op">=</span> <span class="st">"id"</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -69,6 +69,25 @@
 <dt>...</dt>
 <dd><p>Other arguments treated as a list that will be
 concatenated then reapplied to this function.</p></dd>
+
+
+<dt>cov</dt>
+<dd><p>either a boolean or a function accepting a matrix input.</p>
+<p>When a boolean, `cov` describes if this matrix definition is
+  actually a rxode2/nlmixr2-style covariance matrix.
+  If so, `lotri()` will enforce certain regularity conditions:</p>
+<p>- When diagonal elements are zero, the off-diagonal elements are
+    zero. This means the covariance element is fixed to zero and
+    not truly part of the covariance matrix in general.</p>
+<p>- For the rest of the matrix, `lotri` will check that it is
+    non-positive definite (which is required for covariance matrix in
+    general)</p>
+<p>It is sometimes difficult to adjust covariance matrices to be
+  non-positive definite.  For this reason `cov` may also be a
+  function accepting a matrix input and returning a non-positive
+  definite matrix from this matrix input.  When this is a function,
+  it is equivalent to `cov=TRUE` with the additional ability to
+  correct the matrix to be non-positive definite if needed.</p></dd>
 
 
 <dt>envir</dt>
