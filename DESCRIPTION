@@ -1,9 +1,10 @@
 Package: lotri
 Title: A Simple Way to Specify Symmetric, Block Diagonal Matrices
-Version: 0.4.4
+Version: 0.4.4.9000
 Authors@R:
-    person("Matthew L.", "Fidler", , "matthew.fidler@gmail.com", role = c("aut", "cre"),
-           comment = c(ORCID = "0000-0001-8538-6691"))
+    c(person("Matthew L.", "Fidler", , "matthew.fidler@gmail.com", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0001-8538-6691")),
+           person("Bill", "Denney", email="wdenney@humanpredictions.com", role="ctb", comment=c(ORCID="0000-0002-5759-428X")))
 Maintainer: Matthew L. Fidler <matthew.fidler@gmail.com>
 Description: Provides a simple mechanism to specify a symmetric block
     diagonal matrices (often used for covariance matrices).  This is based
@@ -33,5 +34,5 @@ Biarch: true
 Config/testthat/edition: 3
 Encoding: UTF-8
 NeedsCompilation: yes
-RoxygenNote: 7.2.0
+RoxygenNote: 7.3.1
 Language: en-US

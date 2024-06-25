@@ -358,6 +358,7 @@ NULL
           ## Each condition is parsed so this new environment
           ## should not be elsewhere
           .env2 <- new.env(parent = emptyenv())
+          .env2$isCov <- env$isCov
           .env2$df <- NULL
           .env2$eta1 <- 0L
           env$cnd <- unique(c(env$cnd, .cnd))
@@ -708,7 +709,94 @@ NULL
   return(ret)
 }
 
-.lotriGetMatrixFromEnv <- function(env) {
+#' This asserts the covariance values are zero when variances are zero
+#'
+#' @param ret matrix to consider
+#' @param cnd level currently being examined
+#' @return the negative indexes of the zero diagonals
+#' @noRd
+#' @author Matthew L. Fidler
+.assertErrZeroDiag <- function(ret, cnd) {
+  .cnd <- ""
+  if (!is.null(cnd)) {
+    .cnd <- paste0(", level ", cnd)
+  }
+  .zd <- integer(0)
+  for (idx1 in seq_len(nrow(ret))) {
+    .zeroDiag <- ret[idx1, idx1] == 0
+    if (.zeroDiag) {
+      .zd <- c(.zd, -idx1)
+      .nonDiagidx <- setdiff(seq_len(ncol(ret)), idx1)
+      for (idx2 in .nonDiagidx) {
+        .badValue <- FALSE
+        if (ret[idx1, idx2] != 0) {
+          # already symmetric no need to check idx2, idx1
+          .idxRow <- idx1
+          .idxCol <- idx2
+          .badValue <- TRUE
+        }
+        if (.badValue) {
+          stop("if diagonals are zero, off-diagonals must be zero for covariance matrices (row ", .idxRow, ", column ", .idxCol, .cnd, ")",
+               call.=FALSE)
+        }
+      }
+    }
+  }
+  return(.zd)
+}
+#' This asserts that the matrix is positive definite (in cov matrices)
+#'
+#' @param mat matrix to check
+#' @param zd which diagonals are zero
+#' @param fun function to apply to get a positive definite matix
+#' @param cnd condition that is currently being processed
+#' @return positive definite matrix, if successful
+#' @noRd
+#' @author Matthew L. Fidler
+.assertPositiveDefinite <- function(mat, zd, fun, cnd) {
+  .d <- dim(mat)
+  if (.d[1] == length(zd)) {
+    # all are diagonal zeros
+    return(mat)
+  }
+  if (length(zd) == 0) {
+    .mat <- mat
+  } else {
+    .mat <- mat[zd, zd, drop = FALSE]
+  }
+  .e <- eigen(.mat)
+  if (all(.e$values > 0)) return(mat)
+  .cnd <- ""
+  if (!is.null(cnd)) {
+    .cnd <- paste0(" for level ", cnd)
+  }
+  .stp <- paste0("non-positive definite matrix covariance matrix", .cnd)
+  if (is.function(fun)) {
+    .mat <- fun(.mat)
+    .e <- eigen(.mat)
+    if (all(.e$values > 0)) {
+      .mat2 <- mat
+      if (length(zd) == 0) {
+        .mat2 <- .mat
+      } else {
+        .mat2[zd, zd] <- .mat
+      }
+      warning(paste0("corrected matrix to be non-positive definite", .cnd),
+              call.=FALSE)
+      return(.mat2)
+    }
+    .stp <- paste0(.stp, " even after correction")
+  }
+  stop(.stp, call.=FALSE)
+}
+#' Create the matrix from the lotri environment
+#'
+#' @param env lotri environment
+#' @param cnd current condition
+#' @return matrix
+#' @noRd
+#' @author Bill Denney & Matthew L. Fidler
+.lotriGetMatrixFromEnv <- function(env, cnd=NULL, fun=NULL) {
   .ret <- diag(env$eta1)
   .retF <- matrix(FALSE, dim(.ret)[1], dim(.ret)[1])
   .retU <- matrix(FALSE, dim(.ret)[1], dim(.ret)[1])
@@ -727,7 +815,36 @@ NULL
     class(.ret) <- c("lotriFix", class(.ret))
     attr(.ret, "lotriUnfix") <- .retU
   }
-  return(.ret)
+  # Verify that zero diagonals have zero off diagonals (rxode2#481)
+  if (env$isCov) {
+    .zd <- .assertErrZeroDiag(.ret, cnd)
+    .ret <- .assertPositiveDefinite(mat=.ret, zd=.zd, fun=fun, cnd=cnd)
+  }
+  .ret
+}
+#' This modifies the call information to include the default arguments explicitly
+#'
+#' @param call call list to modify
+#' @param cov Is this a covariance matrix (boolean/function; default=`FALSE`).
+#' @param envir environment where lotri is evaluated
+#' @param default default level of variability (id=default)
+#' @return calling list incluing cov, envir and default
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriGetFullCall <- function(call, cov=FALSE,
+                              envir = parent.frame(),
+                             default = "id") {
+  .fullCall <- call
+  if (!any(names(.fullCall) %in% "cov")) {
+    .fullCall <- c(.fullCall, list(cov=cov))
+  }
+  if (!any(names(.fullCall) %in% "default")) {
+    .fullCall <- c(.fullCall, list(default=default))
+  }
+  if (!any(names(.fullCall) %in% "envir")) {
+    .fullCall <- c(.fullCall, list(envir=envir))
+  }
+  .fullCall
 }
 
 #' Easily Specify block-diagonal matrices with lower triangular info
@@ -736,6 +853,27 @@ NULL
 #'
 #' @param ... Other arguments treated as a list that will be
 #'     concatenated then reapplied to this function.
+#'
+#' @param cov either a boolean or a function accepting a matrix input.
+#'
+#'   When a boolean, `cov` describes if this matrix definition is
+#'   actually a rxode2/nlmixr2-style covariance matrix.
+#'   If so, `lotri()` will enforce certain regularity conditions:
+#'
+#'   - When diagonal elements are zero, the off-diagonal elements are
+#'     zero. This means the covariance element is fixed to zero and
+#'     not truly part of the covariance matrix in general.
+#'
+#'   - For the rest of the matrix, `lotri` will check that it is
+#'     non-positive definite (which is required for covariance matrix in
+#'     general)
+#'
+#'   It is sometimes difficult to adjust covariance matrices to be
+#'   non-positive definite.  For this reason `cov` may also be a
+#'   function accepting a matrix input and returning a non-positive
+#'   definite matrix from this matrix input.  When this is a function,
+#'   it is equivalent to `cov=TRUE` with the additional ability to
+#'   correct the matrix to be non-positive definite if needed.
 #'
 #' @inheritParams base::eval
 #' @inheritParams as.lotri
@@ -836,8 +974,22 @@ NULL
 #' @importFrom stats setNames
 #' @importFrom utils str
 #' @export
-lotri <- function(x, ..., envir = parent.frame(),
+lotri <- function(x, ..., cov=FALSE,
+                  envir = parent.frame(),
                   default = "id") {
+  .fun <- NULL
+  if (length(cov) != 1 || !is.logical(cov) || is.na(cov)) {
+    if (is.function(cov)) {
+      .fun <- cov
+      cov <- TRUE
+    } else {
+      stop("'cov' must be a length 1 non-NA logical or function",
+           call.=FALSE)
+    }
+  }
+  if (missing(x)) {
+    return(lotri({}, cov=cov, envir=envir, default=default))
+  }
   if (is.null(.lotriParentEnv)) {
     assignInMyNamespace(".lotriParentEnv", envir)
     on.exit(assignInMyNamespace(".lotriParentEnv", NULL))
@@ -871,6 +1023,8 @@ lotri <- function(x, ..., envir = parent.frame(),
     .ret <- x
   } else {
     .env <- new.env(parent = emptyenv())
+    .env$isCov <- cov
+    .env$fun <- .fun
     .env$df <- NULL
     .env$matrix <- NULL
     .env$eta1 <- 0L
@@ -892,14 +1046,18 @@ lotri <- function(x, ..., envir = parent.frame(),
       return(.amplifyRetWithDfEst(.env$matrix, .est))
     }
     if (length(.env$cnd) == 0L) {
-      .ret <- .lotriGetMatrixFromEnv(.env)
+      .ret <- .lotriGetMatrixFromEnv(.env, fun=.env$fun)
     } else {
       .lstC <- list()
       .other <- NULL
       .prop <- NULL
-      if (length(.call) > 1) {
+      .ndef <- sum(names(.call) %in% c("cov", "default", "envir"))
+      if (length(.call) - .ndef > 1) {
         .call <- .call[-1]
-        .other <- do.call("lotri", .call, envir = envir)
+        .other <- do.call("lotri",
+                          .lotriGetFullCall(.call, cov=cov,
+                                            default=default, envir=envir),
+                          envir=envir)
         if (inherits(.other, "lotri")) {
           .prop <- attr(.other, "lotri")
           class(.other) <- NULL
@@ -908,6 +1066,8 @@ lotri <- function(x, ..., envir = parent.frame(),
       if (any(.env$cnd == default)) {
         ## amplify with default
         .env2 <- .env[[default]]
+        .env2$isCov <- .env$isCov
+        .env2$fun <- .env$fun
         .env2$df <- rbind(.env2$df, .env$df)
         .env2$names <- c(.env2$names, .env$names)
         .env2$eta1 <- .env$eta1 + .env2$eta1
@@ -915,13 +1075,15 @@ lotri <- function(x, ..., envir = parent.frame(),
         .env[[default]] <- new.env(parent=emptyenv())
         .env2 <- .env[[default]]
         .env2$df <- .env$df
+        .env2$isCov <- .env$isCov
+        .env2$fun <- .env$fun
         .env2$eta1 <- .env$eta1
         .env2$names <- .env$names
         .env$cnd <- c(default, .env$cnd)
       }
       for (.j in .env$cnd) {
         .env2 <- .env[[.j]]
-        .ret0 <- .lotriGetMatrixFromEnv(.env2)
+        .ret0 <- .lotriGetMatrixFromEnv(.env2, cnd=.j, fun=.env2$fun)
         .extra <- .env[[paste0(.j, ".extra")]]
         if (!is.null(.extra)) {
           if (is.null(.prop)) {
@@ -936,11 +1098,12 @@ lotri <- function(x, ..., envir = parent.frame(),
         }
         if (inherits(.other, "list")) {
           if (any(names(.other) == .j)) {
-            .ret0 <- do.call("lotri", list(.ret0, .other[[.j]],
-                                           envir = envir
-                                           ),
-                             envir = envir
-                             )
+            .fullCall <- .lotriGetFullCall(list(.ret0, .other[[.j]]),
+                                           cov=cov,
+                                           default=default,
+                                           envir=envir)
+            .ret0 <- do.call("lotri", .fullCall,
+                             envir = envir)
             .other <- .other[names(.other) != .j]
           }
         }
@@ -978,7 +1141,11 @@ lotri <- function(x, ..., envir = parent.frame(),
       return(.amplifyRetWithDfEst(.lst, .est))
     }
     .call <- .call[-1]
-    .tmp <- do.call("lotri", .call, envir = envir)
+    .fullCall <- .lotriGetFullCall(.call,
+                                   cov=cov,
+                                   default=default,
+                                   envir=envir)
+    .tmp <- do.call("lotri", .fullCall, envir=envir)
     if (any(names(.tmp) == .fullCnd)) {
       if (!is.null(.prop)) {
         .tmpL <- attr(.tmp, "lotri")
@@ -993,7 +1160,8 @@ lotri <- function(x, ..., envir = parent.frame(),
         )
         .prop <- c(.prop, .tmp1)
       }
-      .ret <- lotri(list(.ret, .tmp[[.fullCnd]]), envir = envir)
+      .ret <- lotri(list(.ret, .tmp[[.fullCnd]]),
+                    cov=cov, default=default, envir = envir)
       .w <- which(names(.tmp) != .fullCnd)
       if (length(.w) > 0L) {
         .tmp <- .tmp[.w]
@@ -1022,23 +1190,34 @@ lotri <- function(x, ..., envir = parent.frame(),
       return(.amplifyRetWithDfEst(.ret, .est))
     }
   } else {
-    if (length(.call) == 1L) {
+    .ndef <- sum(names(.call) %in% c("cov", "default", "envir"))
+    if (length(.call) - .ndef == 1L) {
       return(.amplifyRetWithDfEst(.ret, .est))
     }
     .call <- .call[-1]
-    .tmp <- do.call("lotri", .call, envir = envir)
+    .fullCall <- .lotriGetFullCall(.call,
+                                   cov=cov,
+                                   default=default,
+                                   envir=envir)
+    .tmp <- do.call("lotri", .fullCall, envir=envir)
     if (inherits(.tmp, "list")) {
       if (any(names(.tmp) == "")) {
         .w <- which(names(.tmp) == "")
-        .lst <- list(.ret, .tmp[[.w]], envir = envir)
-        .tmp[[.w]] <- do.call("lotri", .lst, envir = envir)
+        .lst <- list(.ret, .tmp[[.w]])
+        .fullCall <- .lotriGetFullCall(.lst,
+                                       cov=cov,
+                                       default=default,
+                                       envir=envir)
+        .tmp[[.w]] <- do.call("lotri", .fullCall, envir = envir)
         return(.amplifyRetWithDfEst(.tmp, .est))
       } else {
         .ret <- c(list(.ret), .tmp)
         return(.amplifyRetWithDfEst(.ret, .est))
       }
     } else {
-      .ret <- lotri(c(list(.ret), list(.tmp)), envir = envir)
+      .ret <- lotri(c(list(.ret), list(.tmp)),
+                    cov=cov, default=default,
+                    envir = envir)
       if (inherits(.tmp, "lotri")) {
         attr(.ret, "lotri") <- .amplifyFinal(.ret, attr(.tmp, "lotri"))
         class(.ret) <- "lotri"
