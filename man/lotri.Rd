@@ -12,8 +12,26 @@ lotri(x, ..., cov = FALSE, envir = parent.frame(), default = "id")
 \item{...}{Other arguments treated as a list that will be
 concatenated then reapplied to this function.}
 
-\item{cov}{boolean describing if this is a covariance matrix.  If
-so, `lotri()` will enforce certain regularity conditions.}
+\item{cov}{either a boolean or a function accepting a matrix input.
+
+  When a boolean, `cov` describes if this matrix definition is
+  actually a rxode2/nlmixr2-style covariance matrix.
+  If so, `lotri()` will enforce certain regularity conditions:
+
+  - When diagonal elements are zero, the off-diagonal elements are
+    zero. This means the covariance element is fixed to zero and
+    not truly part of the covariance matrix in general.
+
+  - For the rest of the matrix, `lotri` will check that it is
+    non-positive definite (which is required for covariance matrix in
+    general)
+
+  It is sometimes difficult to adjust covariance matrices to be
+  non-positive definite.  For this reason `cov` may also be a
+  function accepting a matrix input and returning a non-positive
+  definite matrix from this matrix input.  When this is a function,
+  it is equivalent to `cov=TRUE` with the additional ability to
+  correct the matrix to be non-positive definite if needed.}
 
 \item{envir}{the \code{\link[base]{environment}} in which \code{expr} is to
     be evaluated.  May also be \code{NULL}, a list, a data frame,
