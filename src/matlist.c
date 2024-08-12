@@ -181,19 +181,24 @@ SEXP _getLotriPointers(void) {
   SEXP asLotriMatPtr = PROTECT(R_MakeExternalPtrFn((DL_FUNC)&_asLotriMat, R_NilValue, R_NilValue)); pro++;
 
   // Create an external pointer for _lotriSep
-  SEXP lotriSepPtr = PROTECT(R_MakeExternalPtrFn((DL_FUNC)&_lotriSep, R_NilValue, R_NilValue)); pro++;
+  SEXP lotriSepPtr = PROTECT(R_MakeExternalPtrFn((DL_FUNC)&_lotriSep,
+                                                 R_NilValue, R_NilValue)); pro++;
 
   // Create an external pointer for _lotriAllNames
-  SEXP lotriAllNamesPtr = PROTECT(R_MakeExternalPtrFn((DL_FUNC)&_lotriAllNames, R_NilValue, R_NilValue)); pro++;
+  SEXP lotriAllNamesPtr = PROTECT(R_MakeExternalPtrFn((DL_FUNC)&_lotriAllNames,
+                                                      R_NilValue, R_NilValue)); pro++;
 
   // Create an external pointer for _lotriGetBounds
-  SEXP lotriGetBoundsPtr = PROTECT(R_MakeExternalPtrFn((DL_FUNC)&_lotriGetBounds, R_NilValue, R_NilValue)); pro++;
+  SEXP lotriGetBoundsPtr = PROTECT(R_MakeExternalPtrFn((DL_FUNC)&_lotriGetBounds,
+                                                       R_NilValue, R_NilValue)); pro++;
 
   // Create an external pointer for _lotriMaxNu
-  SEXP lotriMaxNuPtr = PROTECT(R_MakeExternalPtrFn((DL_FUNC)&_lotriMaxNu, R_NilValue, R_NilValue)); pro++;
+  SEXP lotriMaxNuPtr = PROTECT(R_MakeExternalPtrFn((DL_FUNC)&_lotriMaxNu,
+                                                   R_NilValue, R_NilValue)); pro++;
 
   // Create an external pointer for _isLotri
-  SEXP isLotriPtr = PROTECT(R_MakeExternalPtrFn((DL_FUNC)&_isLotri, R_NilValue, R_NilValue)); pro++;
+  SEXP isLotriPtr = PROTECT(R_MakeExternalPtrFn((DL_FUNC)&_isLotri,
+                                                R_NilValue, R_NilValue)); pro++;
 
   // Create an R list to hold the external pointers
   SEXP ret = PROTECT(Rf_allocVector(VECSXP, 7)); pro++;

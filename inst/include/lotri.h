@@ -21,25 +21,28 @@ extern "C" {
   extern isLotri_type isLotri;
   typedef SEXP (*lotriMaxNu_type) (SEXP);
   extern lotriMaxNu_type lotriMaxNu;
+  extern SEXP _lotridefaultMatrixClass;
+
+#define lotriMat(lst, format, startNum) lotriLstToMat(lst, format, startNum, _lotridefaultMatrixClass)
 
   extern int _lotriLoaded;
 
-  static inline void iniLotriPtr0(SEXP ptrLst) {
+  static inline void iniLotriPtr0(SEXP ptrLst, SEXP matCls) {
     //SEXP lotriLstToMatPtr = PROTECT(R_MakeExternalPtrFn((DL_FUNC)&_lotriLstToMat, R_NilValue, R_NilValue)); pro++;
     if (_lotriLoaded == 0) {
       lotriLstToMat = (lotriLstToMat_type) R_ExternalPtrAddr(VECTOR_ELT(ptrLst, 0));
-      lotriMat = (lotriMat_type) R_ExternalPtrAddr(VECTOR_ELT(ptrLst, 1));
+      asLotriMat = (lotriMat_type) R_ExternalPtrAddr(VECTOR_ELT(ptrLst, 1));
       lotriSep = (lotriSep_type) R_ExternalPtrAddr(VECTOR_ELT(ptrLst, 2));
       lotriAllNames = (lotriAllNames_type) R_ExternalPtrAddr(VECTOR_ELT(ptrLst, 3));
       lotriGetBounds = (lotriGetBounds_type) R_ExternalPtrAddr(VECTOR_ELT(ptrLst, 4));
       lotriMaxNu = (lotriMaxNu_type) R_ExternalPtrAddr(VECTOR_ELT(ptrLst, 5));
       isLotri = (isLotri_type) R_ExternalPtrAddr(VECTOR_ELT(ptrLst, 6));
+      _lotridefaultMatrixClass = matCls;
       _lotriLoaded = 1;
     }
   }
 
   #define iniLotri \
-    lotriMat_type lotriMat; \
     asLotriMat_type asLotriMat; \
     lotriSep_type lotriSep; \
     lotriAllNames_type lotriAllNames; \
