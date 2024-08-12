@@ -51,8 +51,9 @@ extern "C" {
     isLotri_type isLotri; \
     lotriLstToMat_type lotriLstToMat;
     int _lotriLoaded = 0; \
-    SEXP iniLotriPtr(SEXP ptr) { \
-      iniLotriPtr0(ptr);  \
+    SEXP _lotridefaultMatrixClass;                            \
+    SEXP iniLotriPtr(SEXP ptr, SEXP mc) {                     \
+       iniLotriPtr0(ptr, mc);                                 \
     }
 
 #if defined(__cplusplus)
