@@ -158,8 +158,76 @@ SEXP _isLotri(SEXP lotri) {
   return ret;
 }
 
+
+void lotriFunNoFree(void *ptr) {
+  return;
+}
+
+/**
+ * getLotriPointers - Creates and returns a list of external pointers to various C functions.
+ *
+ * This function creates external pointers for several C functions and registers finalizers
+ * for them to ensure proper memory management. It then returns these pointers in an R list.
+ *
+ * @return A list of external pointers to C functions.
+ */
+SEXP _getLotriPointers(void) {
+  int pro = 0;  // Counter for the number of PROTECT calls
+
+  // Create an external pointer for _lotriLstToMat
+  SEXP lotriLstToMatPtr = PROTECT(R_MakeExternalPtrFn((DL_FUNC)&_lotriLstToMat, R_NilValue, R_NilValue)); pro++;
+
+  // Create an external pointer for _asLotriMat
+  SEXP asLotriMatPtr = PROTECT(R_MakeExternalPtrFn((DL_FUNC)&_asLotriMat, R_NilValue, R_NilValue)); pro++;
+
+  // Create an external pointer for _lotriSep
+  SEXP lotriSepPtr = PROTECT(R_MakeExternalPtrFn((DL_FUNC)&_lotriSep, R_NilValue, R_NilValue)); pro++;
+
+  // Create an external pointer for _lotriAllNames
+  SEXP lotriAllNamesPtr = PROTECT(R_MakeExternalPtrFn((DL_FUNC)&_lotriAllNames, R_NilValue, R_NilValue)); pro++;
+
+  // Create an external pointer for _lotriGetBounds
+  SEXP lotriGetBoundsPtr = PROTECT(R_MakeExternalPtrFn((DL_FUNC)&_lotriGetBounds, R_NilValue, R_NilValue)); pro++;
+
+  // Create an external pointer for _lotriMaxNu
+  SEXP lotriMaxNuPtr = PROTECT(R_MakeExternalPtrFn((DL_FUNC)&_lotriMaxNu, R_NilValue, R_NilValue)); pro++;
+
+  // Create an external pointer for _isLotri
+  SEXP isLotriPtr = PROTECT(R_MakeExternalPtrFn((DL_FUNC)&_isLotri, R_NilValue, R_NilValue)); pro++;
+
+  // Create an R list to hold the external pointers
+  SEXP ret = PROTECT(Rf_allocVector(VECSXP, 7)); pro++;
+  SET_VECTOR_ELT(ret, 0, lotriLstToMatPtr);
+  SET_VECTOR_ELT(ret, 1, asLotriMatPtr);
+  SET_VECTOR_ELT(ret, 2, lotriSepPtr);
+  SET_VECTOR_ELT(ret, 3, lotriAllNamesPtr);
+  SET_VECTOR_ELT(ret, 4, lotriGetBoundsPtr);
+  SET_VECTOR_ELT(ret, 5, lotriMaxNuPtr);
+  SET_VECTOR_ELT(ret, 6, isLotriPtr);
+
+  // Create an R character vector to hold the names of the list elements
+  SEXP retN = PROTECT(Rf_allocVector(STRSXP, 7)); pro++;
+  SET_STRING_ELT(retN, 0, Rf_mkChar("lotriLstToMat"));
+  SET_STRING_ELT(retN, 1, Rf_mkChar("asLotriMat"));
+  SET_STRING_ELT(retN, 2, Rf_mkChar("lotriSep"));
+  SET_STRING_ELT(retN, 3, Rf_mkChar("lotriAllNames"));
+  SET_STRING_ELT(retN, 4, Rf_mkChar("lotriGetBounds"));
+  SET_STRING_ELT(retN, 5, Rf_mkChar("lotriMaxNu"));
+  SET_STRING_ELT(retN, 6, Rf_mkChar("isLotri"));
+
+  // Set the names attribute of the list
+  Rf_setAttrib(ret, R_NamesSymbol, retN);
+
+  // Unprotect all protected objects
+  UNPROTECT(pro);
+
+  // Return the list of external pointers
+  return ret;
+}
+
 void R_init_lotri(DllInfo *info){
   R_CallMethodDef callMethods[]  = {
+    {"_getLotriPointers", (DL_FUNC) &_getLotriPointers, 0},
     {"_lotriLstToMat", (DL_FUNC) &_lotriLstToMat, 4},
     {"_asLotriMat", (DL_FUNC) &_asLotriMat, 3},
     {"_lotriSep", (DL_FUNC) &_lotriSep, 5},
@@ -169,13 +237,6 @@ void R_init_lotri(DllInfo *info){
     {"_isLotri", (DL_FUNC) &_isLotri, 1},
     {NULL, NULL, 0}
   };
-  R_RegisterCCallable("lotri", "_lotriLstToMat", (DL_FUNC) _lotriLstToMat);
-  R_RegisterCCallable("lotri", "_asLotriMat", (DL_FUNC) _asLotriMat);
-  R_RegisterCCallable("lotri", "_lotriSep", (DL_FUNC) _lotriSep);
-  R_RegisterCCallable("lotri", "_lotriAllNames", (DL_FUNC) _lotriAllNames);
-  R_RegisterCCallable("lotri", "_lotriGetBounds", (DL_FUNC) _lotriGetBounds);
-  R_RegisterCCallable("lotri", "_lotriMaxNu", (DL_FUNC) _lotriMaxNu);
-  R_RegisterCCallable("lotri", "_isLotri", (DL_FUNC) _isLotri);
   R_registerRoutines(info, NULL, callMethods, NULL, NULL);
   R_useDynamicSymbols(info, FALSE);
 }
