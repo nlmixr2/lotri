@@ -8,6 +8,9 @@
   function to allow correction of the matrix to a positive definite
   matrix automatically.
 
+* Change internals for `lotri` so that new `rxode2` is no longer
+  required to be binary linked to `lotri`.
+
 # lotri 0.4.4
 
 * Bug fix for non-standard evaluation where you take the numeric vector from
