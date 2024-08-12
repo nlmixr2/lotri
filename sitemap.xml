@@ -1,45 +1,18 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://nlmixr2.github.io/lotri/404.html</loc>
-  </url>
-  <url>
-    <loc>https://nlmixr2.github.io/lotri/articles/index.html</loc>
-  </url>
-  <url>
-    <loc>https://nlmixr2.github.io/lotri/articles/lotri-motivation.html</loc>
-  </url>
-  <url>
-    <loc>https://nlmixr2.github.io/lotri/authors.html</loc>
-  </url>
-  <url>
-    <loc>https://nlmixr2.github.io/lotri/index.html</loc>
-  </url>
-  <url>
-    <loc>https://nlmixr2.github.io/lotri/news/index.html</loc>
-  </url>
-  <url>
-    <loc>https://nlmixr2.github.io/lotri/reference/as.lotri.html</loc>
-  </url>
-  <url>
-    <loc>https://nlmixr2.github.io/lotri/reference/index.html</loc>
-  </url>
-  <url>
-    <loc>https://nlmixr2.github.io/lotri/reference/lotri.html</loc>
-  </url>
-  <url>
-    <loc>https://nlmixr2.github.io/lotri/reference/lotriDataFrameToLotriExpression.html</loc>
-  </url>
-  <url>
-    <loc>https://nlmixr2.github.io/lotri/reference/lotriEst.html</loc>
-  </url>
-  <url>
-    <loc>https://nlmixr2.github.io/lotri/reference/lotriMat.html</loc>
-  </url>
-  <url>
-    <loc>https://nlmixr2.github.io/lotri/reference/lotriMatInv.html</loc>
-  </url>
-  <url>
-    <loc>https://nlmixr2.github.io/lotri/reference/lotriSep.html</loc>
-  </url>
+<urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
+<url><loc>https://nlmixr2.github.io/lotri/404.html</loc></url>
+<url><loc>https://nlmixr2.github.io/lotri/articles/index.html</loc></url>
+<url><loc>https://nlmixr2.github.io/lotri/articles/lotri-motivation.html</loc></url>
+<url><loc>https://nlmixr2.github.io/lotri/authors.html</loc></url>
+<url><loc>https://nlmixr2.github.io/lotri/index.html</loc></url>
+<url><loc>https://nlmixr2.github.io/lotri/news/index.html</loc></url>
+<url><loc>https://nlmixr2.github.io/lotri/reference/as.lotri.html</loc></url>
+<url><loc>https://nlmixr2.github.io/lotri/reference/dot-lotriPointers.html</loc></url>
+<url><loc>https://nlmixr2.github.io/lotri/reference/index.html</loc></url>
+<url><loc>https://nlmixr2.github.io/lotri/reference/lotri.html</loc></url>
+<url><loc>https://nlmixr2.github.io/lotri/reference/lotriDataFrameToLotriExpression.html</loc></url>
+<url><loc>https://nlmixr2.github.io/lotri/reference/lotriEst.html</loc></url>
+<url><loc>https://nlmixr2.github.io/lotri/reference/lotriMat.html</loc></url>
+<url><loc>https://nlmixr2.github.io/lotri/reference/lotriMatInv.html</loc></url>
+<url><loc>https://nlmixr2.github.io/lotri/reference/lotriSep.html</loc></url>
 </urlset>
+
