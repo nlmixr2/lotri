@@ -49,21 +49,21 @@ extern "C" {
     }
   }
 
-  #define iniLotri \
-    asLotriMat_type asLotriMat; \
-    lotriSep_type lotriSep; \
-    lotriAllNames_type lotriAllNames; \
-    lotriGetBounds_type lotriGetBounds; \
-    lotriMaxNu_type lotriMaxNu; \
-    isLotri_type isLotri; \
-    lotriLstToMat_type lotriLstToMat; \
-    lotriRcm_type lotriRcm; \
-    lotriNearPDc_type lotriNearPDc; \
-    lotriNearPDsexp_type lotriNearPDsexp; \
-    SEXP iniLotriPtr(SEXP ptr) {                     \
-      iniLotriPtr0(ptr);                             \
-      return R_NilValue;                             \
-    }
+#define iniLotri                                \
+  asLotriMat_type asLotriMat;                   \
+  lotriSep_type lotriSep;                       \
+  lotriAllNames_type lotriAllNames;             \
+  lotriGetBounds_type lotriGetBounds;           \
+  lotriMaxNu_type lotriMaxNu;                   \
+  isLotri_type isLotri;                         \
+  lotriLstToMat_type lotriLstToMat;             \
+  lotriRcm_type lotriRcm;                       \
+  lotriNearPDc_type lotriNearPDc;               \
+  lotriNearPDsexp_type lotriNearPDsexp;         \
+  SEXP iniLotriPtr(SEXP ptr) {                  \
+    iniLotriPtr0(ptr);                          \
+    return R_NilValue;                          \
+  }
 
 #if defined(__cplusplus)
 }
