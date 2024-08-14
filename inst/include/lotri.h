@@ -21,12 +21,12 @@ extern "C" {
   extern isLotri_type isLotri;
   typedef SEXP (*lotriMaxNu_type) (SEXP);
   extern lotriMaxNu_type lotriMaxNu;
-
-  extern int _lotriLoaded;
+  typedef SEXP (*lotriRcm_type) (SEXP);
+  lotriRcm_type lotriRcm;
 
   static inline void iniLotriPtr0(SEXP ptrLst) {
     //SEXP lotriLstToMatPtr = PROTECT(R_MakeExternalPtrFn((DL_FUNC)&_lotriLstToMat, R_NilValue, R_NilValue)); pro++;
-    if (_lotriLoaded == 0) {
+    if (lotriLstToMat == NULL) {
       lotriLstToMat = (lotriLstToMat_type) R_ExternalPtrAddrFn(VECTOR_ELT(ptrLst, 0));
       asLotriMat = (lotriMat_type) R_ExternalPtrAddrFn(VECTOR_ELT(ptrLst, 1));
       lotriSep = (lotriSep_type) R_ExternalPtrAddrFn(VECTOR_ELT(ptrLst, 2));
@@ -34,6 +34,7 @@ extern "C" {
       lotriGetBounds = (lotriGetBounds_type) R_ExternalPtrAddrFn(VECTOR_ELT(ptrLst, 4));
       lotriMaxNu = (lotriMaxNu_type) R_ExternalPtrAddrFn(VECTOR_ELT(ptrLst, 5));
       isLotri = (isLotri_type) R_ExternalPtrAddrFn(VECTOR_ELT(ptrLst, 6));
+      lotriRcm = (lotriRcm_type) R_ExternalPtrAddrFn(VECTOR_ELT(ptrLst, 7));
       _lotriLoaded = 1;
     }
   }
@@ -45,8 +46,8 @@ extern "C" {
     lotriGetBounds_type lotriGetBounds; \
     lotriMaxNu_type lotriMaxNu; \
     isLotri_type isLotri; \
-    lotriLstToMat_type lotriLstToMat;
-    int _lotriLoaded = 0; \
+    lotriLstToMat_type lotriLstToMat; \
+    lotriRcm_type lotriRcm; \
     SEXP iniLotriPtr(SEXP ptr) {                     \
       iniLotriPtr0(ptr);                             \
       return R_NilValue;                             \

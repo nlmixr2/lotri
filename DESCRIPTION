@@ -17,8 +17,10 @@ BugReports: https://github.com/nlmixr2/lotri/issues
 Depends:
     R (>= 3.4.0)
 Imports:
+    checkmate,
     crayon,
     methods,
+    Rcpp,
     stats,
     utils
 Suggests:
@@ -36,3 +38,6 @@ Encoding: UTF-8
 NeedsCompilation: yes
 RoxygenNote: 7.3.2
 Language: en-US
+LinkingTo: 
+    Rcpp,
+    RcppArmadillo
