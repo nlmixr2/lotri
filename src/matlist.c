@@ -1,4 +1,5 @@
 #include "matlist.h"
+#include "rcm.h"
 
 SEXP _lotriSep(SEXP lotri, SEXP above, SEXP below,
 	       SEXP aboveStart, SEXP belowStart) {
@@ -163,6 +164,7 @@ void lotriFunNoFree(void *ptr) {
   return;
 }
 
+
 /**
  * getLotriPointers - Creates and returns a list of external pointers to various C functions.
  *
@@ -200,8 +202,12 @@ SEXP _getLotriPointers(void) {
   SEXP isLotriPtr = PROTECT(R_MakeExternalPtrFn((DL_FUNC)&_isLotri,
                                                 R_NilValue, R_NilValue)); pro++;
 
+  SEXP lotriRcm = PROTECT(R_MakeExternalPtrFn((DL_FUNC) &_lotri_rcm_,
+                                              R_NilValue, R_NilValue)); pro++;
+
+
   // Create an R list to hold the external pointers
-  SEXP ret = PROTECT(Rf_allocVector(VECSXP, 7)); pro++;
+  SEXP ret = PROTECT(Rf_allocVector(VECSXP, 8)); pro++;
   SET_VECTOR_ELT(ret, 0, lotriLstToMatPtr);
   SET_VECTOR_ELT(ret, 1, asLotriMatPtr);
   SET_VECTOR_ELT(ret, 2, lotriSepPtr);
@@ -209,9 +215,10 @@ SEXP _getLotriPointers(void) {
   SET_VECTOR_ELT(ret, 4, lotriGetBoundsPtr);
   SET_VECTOR_ELT(ret, 5, lotriMaxNuPtr);
   SET_VECTOR_ELT(ret, 6, isLotriPtr);
+  SET_VECTOR_ELT(ret, 7, lotriRcm);
 
   // Create an R character vector to hold the names of the list elements
-  SEXP retN = PROTECT(Rf_allocVector(STRSXP, 7)); pro++;
+  SEXP retN = PROTECT(Rf_allocVector(STRSXP, 8)); pro++;
   SET_STRING_ELT(retN, 0, Rf_mkChar("lotriLstToMat"));
   SET_STRING_ELT(retN, 1, Rf_mkChar("asLotriMat"));
   SET_STRING_ELT(retN, 2, Rf_mkChar("lotriSep"));
@@ -219,6 +226,7 @@ SEXP _getLotriPointers(void) {
   SET_STRING_ELT(retN, 4, Rf_mkChar("lotriGetBounds"));
   SET_STRING_ELT(retN, 5, Rf_mkChar("lotriMaxNu"));
   SET_STRING_ELT(retN, 6, Rf_mkChar("isLotri"));
+  SET_STRING_ELT(retN, 7, Rf_mkChar("lotriRcm"));
 
   // Set the names attribute of the list
   Rf_setAttrib(ret, R_NamesSymbol, retN);
@@ -232,6 +240,7 @@ SEXP _getLotriPointers(void) {
 
 void R_init_lotri(DllInfo *info){
   R_CallMethodDef callMethods[]  = {
+    {"_lotri_rcm_", (DL_FUNC) &_lotri_rcm_, 1},
     {"_getLotriPointers", (DL_FUNC) &_getLotriPointers, 0},
     {"_lotriLstToMat", (DL_FUNC) &_lotriLstToMat, 4},
     {"_asLotriMat", (DL_FUNC) &_asLotriMat, 3},
