@@ -59,6 +59,7 @@ extern "C" {
     lotriLstToMat_type lotriLstToMat; \
     lotriRcm_type lotriRcm; \
     lotriNearPDc_type lotriNearPDc; \
+    lotriNearPDsexp_type lotriNearPDsexp; \
     SEXP iniLotriPtr(SEXP ptr) {                     \
       iniLotriPtr0(ptr);                             \
       return R_NilValue;                             \
