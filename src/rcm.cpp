@@ -1,11 +1,10 @@
-#include <RcppArmadillo.h>
-using namespace Rcpp;
-using namespace arma;
-
+#include <armadillo.hpp>
+#include <cpp11.hpp>
+#include <cpp11armadillo.hpp>
 // Function to perform the RCM algorithm
 extern "C" SEXP _lotri_rcm_(SEXP As) {
-  CharacterVector dimN = VECTOR_ELT(Rf_getAttrib(As, R_DimNamesSymbol), 0);
-  mat A = as<arma::mat>(As);
+  cpp11::doubles_matrix<> Asd = as_cpp<cpp11::doubles_matrix<>>(As);
+  mat A = as_Mat(Asd);
   uword n = A.n_rows;
   uvec nonZero(n);
   uvec perm(n);
@@ -53,13 +52,21 @@ extern "C" SEXP _lotri_rcm_(SEXP As) {
     }
   }
   perm = flipud(perm);
-  CharacterVector dimN2(n);
+  SEXP dimN2 = PROTECT(Rf_allocVector(STRSXP, n));
+  SEXP dimN = PROTECT(VECTOR_ELT(Rf_getAttrib(As, R_DimNamesSymbol), 0));
   for (uword i = 0; i < n; i++) {
-    dimN2(i) = dimN(perm(i));
+    SET_STRING_ELT(dimN2, i, STRING_ELT(dimN, perm(i)));
   }
   mat A2 = A(perm, perm);
-  RObject ret = wrap(A2);
-  ret.attr("dimnames") = List::create(dimN2, dimN2);
-  // Reverse the permutation
-  return wrap(ret);
+  cpp11::writable::list dn(2);
+  dn[0] = dimN2;
+  dn[1] = dimN2;
+  SEXP ret = PROTECT(as_sexp(A2));
+  cpp11::writable::integers dim(2);
+  dim[0] = n;
+  dim[1] = n;
+  Rf_setAttrib(ret, R_DimSymbol, as_sexp(dim));
+  Rf_setAttrib(ret, R_DimNamesSymbol, dn);
+  UNPROTECT(3);
+  return ret;
 }

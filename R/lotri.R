@@ -1,5 +1,4 @@
 #' @importFrom utils assignInMyNamespace
-#' @importFrom Rcpp sourceCpp
 #' @useDynLib lotri, .registration = TRUE
 NULL
 #' Paste inputNum in lower triangular format to input char

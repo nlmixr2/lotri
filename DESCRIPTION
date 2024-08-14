@@ -20,7 +20,6 @@ Imports:
     checkmate,
     crayon,
     methods,
-    Rcpp,
     stats,
     utils
 Suggests:
@@ -38,6 +37,6 @@ Encoding: UTF-8
 NeedsCompilation: yes
 RoxygenNote: 7.3.2
 Language: en-US
-LinkingTo: 
-    Rcpp,
-    RcppArmadillo
+LinkingTo:
+    cpp11,
+    cpp11armadillo
