@@ -230,7 +230,7 @@ SEXP _getLotriPointers(void) {
   SET_VECTOR_ELT(ret, 9, lotriNearPDsexp);
 
   // Create an R character vector to hold the names of the list elements
-  SEXP retN = PROTECT(Rf_allocVector(STRSXP, 8)); pro++;
+  SEXP retN = PROTECT(Rf_allocVector(STRSXP, 10)); pro++;
   SET_STRING_ELT(retN, 0, Rf_mkChar("lotriLstToMat"));
   SET_STRING_ELT(retN, 1, Rf_mkChar("asLotriMat"));
   SET_STRING_ELT(retN, 2, Rf_mkChar("lotriSep"));
