@@ -2,6 +2,7 @@ test_that("test nearPD with same functions as Matrix", {
   # https://github.com/cran/Matrix/blob/65c37738919156f6bbb682a1d8198d715a82a19f/tests/dpo-test.R#L69-L136
   # Testing nearPD() --- this is partly in  ../man/nearPD.Rd :
   if (requireNamespace("Matrix", quietly = TRUE)) {
+
     pr <- matrix(c(1,     0.477, 0.644, 0.478, 0.651, 0.826,
                    0.477, 1,     0.516, 0.233, 0.682, 0.75,
                    0.644, 0.516, 1,     0.599, 0.581, 0.742,
@@ -19,5 +20,14 @@ test_that("test nearPD with same functions as Matrix", {
     }
     expect_equal(lotriNearPD(pr, conv.tol = 1e-7), .npd(pr))
     expect_equal(lotriNearPD(pr, conv.tol = 1e-7, doDykstra=FALSE), .npd(pr, doDykstra=FALSE))
+
+    dimnames(pr) <- list(letters[1:6], letters[1:6])
+
+    pr2 <- lotriNearPD(pr, conv.tol = 1e-7)
+
+    expect_true(identical(dimnames(pr2), dimnames(pr)))
+
+    expect_false(identical(pr2, pr))
+
   }
 })
