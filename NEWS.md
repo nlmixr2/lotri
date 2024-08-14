@@ -11,6 +11,14 @@
 * Change internals for `lotri` so that new `rxode2` is no longer
   required to be binary linked to `lotri`.
 
+* Add new function `rcm()` which permutes the matrix to get a band
+  matrix (if possible).  This uses the Reverse Reverse Cuthill McKee
+  (RCM) algorithm.
+
+* Moved `nmNearPD()` to this package and renamed to `lotriNearPD()`.
+  In addition to moving, this function will now retain the dimension
+  names.
+
 # lotri 0.4.4
 
 * Bug fix for non-standard evaluation where you take the numeric vector from

@@ -238,8 +238,12 @@ SEXP _getLotriPointers(void) {
   return ret;
 }
 
+SEXP _lotriNearPD_(SEXP, SEXP, SEXP,  SEXP, SEXP,
+                   SEXP, SEXP, SEXP, SEXP, SEXP);
+
 void R_init_lotri(DllInfo *info){
   R_CallMethodDef callMethods[]  = {
+    {"_lotriNearPD_",(DL_FUNC) &_lotriNearPD_, 10},
     {"_lotri_rcm_", (DL_FUNC) &_lotri_rcm_, 1},
     {"_getLotriPointers", (DL_FUNC) &_getLotriPointers, 0},
     {"_lotriLstToMat", (DL_FUNC) &_lotriLstToMat, 4},
