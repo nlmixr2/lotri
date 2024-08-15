@@ -1,8 +1,10 @@
 #include <armadillo.hpp>
 #include <cpp11.hpp>
 #include <cpp11armadillo.hpp>
+#include "cpp11/declarations.hpp"
 // Function to perform the RCM algorithm
 extern "C" SEXP _lotri_rcm_(SEXP As) {
+  BEGIN_CPP11
   cpp11::doubles_matrix<> Asd = as_cpp<cpp11::doubles_matrix<>>(As);
   mat A = as_Mat(Asd);
   uword n = A.n_rows;
@@ -69,4 +71,5 @@ extern "C" SEXP _lotri_rcm_(SEXP As) {
   Rf_setAttrib(ret, R_DimNamesSymbol, dn);
   UNPROTECT(3);
   return ret;
+  END_CPP11
 }
