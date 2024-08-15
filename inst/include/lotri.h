@@ -74,6 +74,7 @@ extern "C" {
                                      double eig_tol   = 1e-6, double conv_tol  = 1e-7, double posd_tol  = 1e-8, \
                                      int maxit    = 1000, bool trace = false \
                                      ) {                                \
+    ret = arma::mat(x.n_rows, x.n_cols);                                \
     return lotriNearPDc(ret.memptr(), x.memptr(), x.n_rows,             \
                         keepDiag, do2eigen, doDykstra, only_values,     \
                         eig_tol, conv_tol, posd_tol, maxit, trace);     \

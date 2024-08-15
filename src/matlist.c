@@ -128,8 +128,6 @@ SEXP _lotriAllNames(SEXP lotri) {
   }
 }
 
-
-
 SEXP _isLotri(SEXP lotri) {
   SEXP lotriProp = Rf_getAttrib(lotri, Rf_install("lotri"));
   SEXP ret = PROTECT(Rf_allocVector(LGLSXP, 1));
@@ -209,7 +207,7 @@ SEXP _getLotriPointers(void) {
   SEXP lotriRcm = PROTECT(R_MakeExternalPtrFn((DL_FUNC) &_lotri_rcm_,
                                               R_NilValue, R_NilValue)); pro++;
 
-  SEXP lotriNearPD = PROTECT(R_MakeExternalPtrFn((DL_FUNC) &_lotriNearPD_,
+  SEXP lotriNearPD = PROTECT(R_MakeExternalPtrFn((DL_FUNC) &lotriNearPDc,
                                                  R_NilValue, R_NilValue)); pro++;
 
   SEXP lotriNearPDsexp = PROTECT(R_MakeExternalPtrFn((DL_FUNC) &_lotriNearPD_,
@@ -239,7 +237,7 @@ SEXP _getLotriPointers(void) {
   SET_STRING_ELT(retN, 5, Rf_mkChar("lotriMaxNu"));
   SET_STRING_ELT(retN, 6, Rf_mkChar("isLotri"));
   SET_STRING_ELT(retN, 7, Rf_mkChar("lotriRcm"));
-  SET_STRING_ELT(retN, 8, Rf_mkChar("lotriNearPD"));
+  SET_STRING_ELT(retN, 8, Rf_mkChar("lotriNearPDc"));
   SET_STRING_ELT(retN, 9, Rf_mkChar("lotriNearPDsexp"));
 
   // Set the names attribute of the list
