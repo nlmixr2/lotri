@@ -68,17 +68,17 @@ extern "C" {
 #if defined(__cplusplus)
 }
 
-#if defined lotriArma
-static inline bool lotriNearPDarma(arma::mat &ret, arma::mat x, bool keepDiag = true,
-                                   bool do2eigen = true, bool doDykstra = true, bool only_values = false,
-                                   double eig_tol   = 1e-6, double conv_tol  = 1e-7, double posd_tol  = 1e-8,
-                                   int maxit    = 1000, bool trace = false // set to TRUE (or 1 ..) to trace iterations
-                                   ) {
-  return lotriNearPDc(ret.memptr(), x.memptr(), x.n_rows,
-                      keepDiag, do2eigen, doDykstra, only_values,
-                      eig_tol, conv_tol, posd_tol, maxit, trace);
-}
-#endif
+#define lotriNearPDarmaSetup                                            \
+  static inline bool lotriNearPDarma(arma::mat &ret, arma::mat x, bool keepDiag = true, \
+                                     bool do2eigen = true, bool doDykstra = true, bool only_values = false, \
+                                     double eig_tol   = 1e-6, double conv_tol  = 1e-7, double posd_tol  = 1e-8, \
+                                     int maxit    = 1000, bool trace = false \
+                                     ) {                                \
+    return lotriNearPDc(ret.memptr(), x.memptr(), x.n_rows,             \
+                        keepDiag, do2eigen, doDykstra, only_values,     \
+                        eig_tol, conv_tol, posd_tol, maxit, trace);     \
+  }
+
 
 #endif
 
