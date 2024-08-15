@@ -6,6 +6,10 @@
 #include <cpp11armadillo.hpp>
 #include "nearPD.h"
 
+#include "cpp11/declarations.hpp"
+//#include <R_ext/Visibility.h>
+
+
 vec lotriRepEach(const vec& x, const int each) {
   std::size_t n=x.n_elem;
   std::size_t n_out=n*each;
@@ -49,6 +53,7 @@ bool eig_symR(vec &d, mat &Q, mat &B) {
   Q = fliplr(Q);
   return true;
 }
+
 
 bool lotriNearPDarma(mat &ret, mat x
                      , bool keepDiag// = false
@@ -185,12 +190,17 @@ bool eig_sym2(vec &d, mat &Q, mat &B) {
 extern "C" int lotriNearPDc(double *ret, double *x, int n, int keepDiag,
                             int do2eigen, int doDykstra, int only_values,
                             double eig_tol, double conv_tol, double posd_tol, int maxit, int trace) {
-  arma::mat retM(ret, n, n, false, true);
   arma::mat xM(x, n, n, false, true);
-  int res = lotriNearPDarma(retM, xM, keepDiag, do2eigen, doDykstra, only_values, eig_tol, conv_tol, posd_tol, maxit, trace);
-  return res;
+  if (only_values) {
+    arma::vec retV(ret, n, false, true);
+     int res = lotriNearPDarma(retV, xM, keepDiag, do2eigen, doDykstra, only_values, eig_tol, conv_tol, posd_tol, maxit, trace);
+    return res;
+  } else {
+    arma::mat retM(ret, n, n, false, true);
+    int res = lotriNearPDarma(retM, xM, keepDiag, do2eigen, doDykstra, only_values, eig_tol, conv_tol, posd_tol, maxit, trace);
+    return res;
+  }
 }
-
 extern "C" SEXP _lotriNearPD_(SEXP xS
                              , SEXP keepDiagS
                              , SEXP do2eigenS  // if TRUE do a sfsmisc::posdefify() eigen step
@@ -202,6 +212,7 @@ extern "C" SEXP _lotriNearPD_(SEXP xS
                              , SEXP maxitS // maximum number of iterations allowed
                              , SEXP traceS // set to TRUE (or 1 ..) to trace iterations
                              ){
+  BEGIN_CPP11
   int n = Rf_nrows(xS);
   int keepDiag = INTEGER(keepDiagS)[0];
   int do2eigen = INTEGER(do2eigenS)[0];
@@ -212,7 +223,12 @@ extern "C" SEXP _lotriNearPD_(SEXP xS
   double posd_tol = REAL(posd_tolS)[0];
   int maxit = INTEGER(maxitS)[0];
   int trace = INTEGER(traceS)[0];
-  SEXP mat = PROTECT(Rf_allocMatrix(REALSXP, n, n));
+  SEXP mat;
+  if (only_values) {
+    PROTECT(mat = Rf_allocVector(REALSXP, n));
+  } else {
+    PROTECT(mat = Rf_allocMatrix(REALSXP, n, n));
+  }
   double *mat_ptr = REAL(mat);
   double *x_ptr = REAL(xS);
   if (lotriNearPDc(mat_ptr, x_ptr, n, keepDiag,
@@ -226,4 +242,5 @@ extern "C" SEXP _lotriNearPD_(SEXP xS
     Rf_error("nearest PD calculation failed");
   }
   return R_NilValue;
+  END_CPP11
 }
