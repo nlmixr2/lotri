@@ -262,6 +262,35 @@ NULL
   return(list(env$nv, .fix, .unfix))
 }
 
+.lotri1handleMatrixRow <- function(k, j, value, fix, unfix, env) {
+  .i <- 0
+  .k <- k
+  while (TRUE) {
+    .v <- value[.k]
+    .f <- fix[.k]
+    .u <- unfix[.k]
+    .i <- .i + 1
+    .k <- .k + 1
+    if (.i == j) {
+      env$df <- rbind(
+        env$df,
+        data.frame(i = env$eta1 + .i, j = env$eta1 + .i, x = .v, fix=.f, unfix=.u)
+      )
+      return(.k)
+    } else {
+      env$df <- rbind(
+        env$df,
+        data.frame(
+          i = c(env$eta1 + .i, env$eta1 + j),
+          j = c(env$eta1 + j, env$eta1 + .i), x = .v,
+          fix=.f, unfix=.u
+        )
+      )
+    }
+  }
+  return(NA_integer_)
+}
+
 #' Parse lower triangular matrix list
 #'
 #' This is for x~c(1..) or x1+x2~c(...)
@@ -290,29 +319,14 @@ NULL
     .n <- .n[.n != "+"]
     if (length(.n) == .num) {
       env$names <- c(env$names, .n)
-      .i <- 0
       .j <- 1
-      for (.k in seq_along(.r)) {
-        .v <- .r[.k]
-        .f <- .rf[.k]
-        .u <- .ru[.k]
-        .i <- .i + 1
-        if (.i == .j) {
-          env$df <- rbind(
-            env$df,
-            data.frame(i = env$eta1 + .i, j = env$eta1 + .i, x = .v, fix=.f, unfix=.u)
-          )
-          .j <- .j + 1
-          .i <- 0
-        } else {
-          env$df <- rbind(
-            env$df,
-            data.frame(
-              i = c(env$eta1 + .i, env$eta1 + .j),
-              j = c(env$eta1 + .j, env$eta1 + .i), x = .v,
-              fix=.f, unfix=.u
-            )
-          )
+      .k <- 1
+      while (TRUE) {
+        .k <- .lotri1handleMatrixRow(k=.k, j=.j, value=.r,
+                                     fix=.rf, unfix=.ru, env=env)
+        .j <- .j + 1
+        if (.k > length(.r)) {
+          break
         }
       }
       env$eta1 <- env$eta1 + .num
@@ -362,6 +376,7 @@ NULL
           .env2$rcm  <- env$rcm
           .env2$df <- NULL
           .env2$eta1 <- 0L
+          .env2$lastN <- 0L
           env$cnd <- unique(c(env$cnd, .cnd))
           env[[.cnd]] <- .env2
           env[[paste0(.cnd, ".extra")]] <- .cndFull[[2]]
@@ -391,6 +406,31 @@ NULL
   }
 }
 
+
+#' Handle Matrix Expressions with Tilde
+#'
+#' This function processes matrix expressions of the form `name ~ c(lower-tri)`.
+#' It validates the expression, evaluates it, and updates the environment with
+#' the results.
+#'
+#' @param x A language object representing the expression to be evaluated.
+#' @param env An environment where the results of the evaluation will be stored.
+#'
+#' @details
+#' The function performs the following steps:
+#' 1. Checks if the length of `x` is 3. If not, it attempts to provide a helpful
+#'    error message suggesting the correct format.
+#' 2. If the right-hand side of the expression (`x[[3]]`) is a single name and
+#'    exists in the parent environment, it evaluates and replaces it.
+#' 3. If the right-hand side is a single numeric value, it updates the environment
+#'    with the new matrix element.
+#' 4. If the right-hand side is more complex, it delegates to another function
+#'    `.fcallTildeLhsSum`.
+#'
+#' @return This function does not return a value. It updates the provided environment.
+#'
+#' @noRd
+#'
 .fCallTilde <- function(x, env) {
   if (length(x) != 3) {
     .possible <- try(.deparse1(eval(parse(text=paste("quote(variableName", .deparse1(x), ")")))), silent=TRUE)
@@ -408,6 +448,7 @@ NULL
   if (length(x[[3]]) == 1) {
     ## et1 ~ 0.2
     if (is.numeric(x[[3]])) {
+      env$lastN <- 1
       env$netas <- 1
       env$eta1 <- env$eta1 + 1
       env$names <- c(env$names, as.character(x[[2]]))
@@ -1046,6 +1087,7 @@ lotri <- function(x, ..., cov=FALSE, rcm=FALSE,
     .env$fun <- .fun
     .env$rcm <- rcm
     .env$df <- NULL
+    .env$lastN <- 0
     .env$matrix <- NULL
     .env$eta1 <- 0L
     .env$cnd <- character()
@@ -1090,12 +1132,14 @@ lotri <- function(x, ..., cov=FALSE, rcm=FALSE,
         .env2$rcm <- .env$rcm
         .env2$fun <- .env$fun
         .env2$df <- rbind(.env2$df, .env$df)
+        .env2$lastN <- 0
         .env2$names <- c(.env2$names, .env$names)
         .env2$eta1 <- .env$eta1 + .env2$eta1
       } else if (!is.null(.env$df)) {
         .env[[default]] <- new.env(parent=emptyenv())
         .env2 <- .env[[default]]
         .env2$df <- .env$df
+        .env2$lastN <- 0
         .env2$isCov <- .env$isCov
         .env2$rcm <- .env$rcm
         .env2$fun <- .env$fun
