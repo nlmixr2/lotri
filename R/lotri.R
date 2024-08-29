@@ -886,6 +886,10 @@ NULL
 #'   it is equivalent to `cov=TRUE` with the additional ability to
 #'   correct the matrix to be non-positive definite if needed.
 #'
+#' @param rcm logical; if `TRUE`, the matrix will be reordered to
+#'   change the matrix to a banded matrix, which is easier to express
+#'   in `lotri` than a full matrix.
+#'
 #' @inheritParams base::eval
 #' @inheritParams as.lotri
 #'

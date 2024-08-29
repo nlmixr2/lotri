@@ -28,9 +28,9 @@ lotriNearPD(
     resulting matrix should have the same diagonal
     (\code{\link{diag}(x)}) as the input matrix.}
 
-\item{do2eigen}{logical indicating if a
-    \code{\link[sfsmisc]{posdefify}()} eigen step should be applied to
-    the result of the Higham algorithm.}
+\item{do2eigen}{logical indicating if a `posdefify()` (like in the
+package `sfsmisc`) eigen step should be applied to the result of
+the Higham algorithm}
 
 \item{doDykstra}{logical indicating if Dykstra's correction should be
     used; true by default.  If false, the algorithm is basically the
@@ -69,19 +69,19 @@ With `ensureSymmetry` it makes sure it is symmetric by applying 0.5*(t(x) + x) b
 }
 \details{
 This implements the algorithm of Higham (2002), and then (if
-  \code{do2eigen} is true) forces positive definiteness using code from
-  \code{\link[sfsmisc]{posdefify}}.  The algorithm of Knol and ten
-  Berge (1989) (not implemented here) is more general in that it
-  allows constraints to (1) fix some rows (and columns) of the matrix and
-  (2) force the smallest eigenvalue to have a certain value.
+\code{do2eigen} is true) forces positive definiteness using code from
+`sfsmisc::posdefify()`.  The algorithm of Knol and ten
+Berge (1989) (not implemented here) is more general in that it
+allows constraints to (1) fix some rows (and columns) of the matrix and
+(2) force the smallest eigenvalue to have a certain value.
 
-  Note that setting \code{corr = TRUE} just sets \code{diag(.) <- 1}
-  within the algorithm.
+Note that setting \code{corr = TRUE} just sets \code{diag(.) <- 1}
+within the algorithm.
 
-  Higham (2002) uses Dykstra's correction, but the version by Jens
-  \enc{Oehlschlägel}{Oehlschlaegel} did not use it (accidentally),
+Higham (2002) uses Dykstra's correction, but the version by Jens
+ \enc{Oehlschlägel}{Oehlschlaegel} did not use it (accidentally),
   and still gave reasonable results; this simplification, now only
-  used if \code{doDykstra = FALSE},
+ used if \code{doDykstra = FALSE},
   was active in \code{nearPD()} up to Matrix version 0.999375-40.
 }
 \examples{
@@ -129,11 +129,12 @@ nc  <- lotriNearPD(pr)
 }
 \seealso{
 A first version of this (with non-optional \code{corr=TRUE})
-  has been available as \code{\link[sfsmisc]{nearcor}()}; and
-  more simple versions with a similar purpose
-  \code{\link[sfsmisc]{posdefify}()}, both from package \pkg{sfsmisc}.
+has been available as `sfsmisc::nearcor()` and
+more simple versions with a similar purpose
+`sfsmisc::posdefify()`
 }
 \author{
-Jens \enc{Oehlschlägel}{Oehlschlaegel} donated a first version.
-  Subsequent changes by the Matrix package authors.
+Jens \enc{Oehlschlägel}{Oehlschlaegel} donated a first
+  version to Matrix.  Subsequent changes by the Matrix package
+  authors, later modifications to C++ by Matthew Fidler
 }

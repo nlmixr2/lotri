@@ -10,8 +10,39 @@
 #' symmetry test. \emph{Beware} however that setting it \code{FALSE}
 #' for an \bold{a}symmetric input \code{x}, is typically nonsense!
 #'
+#' @param do2eigen logical indicating if a `posdefify()` (like in the
+#'   package `sfsmisc`) eigen step should be applied to the result of
+#'   the Higham algorithm
+#'
+#' @seealso A first version of this (with non-optional \code{corr=TRUE})
+#' has been available as `sfsmisc::nearcor()` and
+#' more simple versions with a similar purpose
+#' `sfsmisc::posdefify()`
+#'
 #' @return unlike the matrix package, this simply returns the nearest
 #'   positive definite matrix
+#'
+#' @author Jens \enc{Oehlschlägel}{Oehlschlaegel} donated a first
+#'   version to Matrix.  Subsequent changes by the Matrix package
+#'   authors, later modifications to C++ by Matthew Fidler
+#'
+#' @details
+#'
+#' This implements the algorithm of Higham (2002), and then (if
+#' \code{do2eigen} is true) forces positive definiteness using code from
+#' `sfsmisc::posdefify()`.  The algorithm of Knol and ten
+#' Berge (1989) (not implemented here) is more general in that it
+#' allows constraints to (1) fix some rows (and columns) of the matrix and
+#' (2) force the smallest eigenvalue to have a certain value.
+#'
+#' Note that setting \code{corr = TRUE} just sets \code{diag(.) <- 1}
+#' within the algorithm.
+#'
+#' Higham (2002) uses Dykstra's correction, but the version by Jens
+#'  \enc{Oehlschlägel}{Oehlschlaegel} did not use it (accidentally),
+#'   and still gave reasonable results; this simplification, now only
+#'  used if \code{doDykstra = FALSE},
+#'   was active in \code{nearPD()} up to Matrix version 0.999375-40.
 #'
 #' @examples
 #'
