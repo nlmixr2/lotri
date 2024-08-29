@@ -310,6 +310,74 @@ NULL
   return(NA_integer_)
 }
 
+
+
+.resetLastN <- function(env, i=1L) {
+  if (env$lastN > 1L) {
+    env$eta1 <- env$eta1 + env$lastN - 1L
+    env$lastN <- i
+  }
+}
+
+#' Handle Single Line Estimation in Form #2
+#'
+#' This function processes a single line estimation in a form,
+#' updating the environment's data frame with the provided values,
+#' fixed, and unfixed parameters.
+#'
+#' This is for lotri matrices of the form x ~ 1; x2 ~ c(0.1, 1); x3 ~
+#' c(0.1, 0.2, 1)
+#'
+#' @param x2 A single element to be processed.
+#' @param values A vector of values to be added to the data frame.
+#' @param fixed A vector of fixed parameters corresponding to the
+#'   values.
+#' @param unfixed A vector of unfixed parameters corresponding to the
+#'   values.
+#' @param env An environment containing the data frame (`df`), the
+#'   last number of elements (`lastN`), and other necessary variables.
+#'
+#' @return Returns `TRUE` if the processing is successful and the data
+#'   frame is updated, otherwise returns `FALSE`.
+#' @noRd
+.handleSingleLineEstInForm2 <- function(x2, values, fixed, unfixed, env) {
+  .r <- values
+  .rf <- fixed
+  .ru <- unfixed
+  if (env$lastN != 0 && length(x2) == 1L) {
+    if (length(.r) == env$lastN + 1) {
+      for (.i in seq_len(env$lastN)) {
+        .v <- .r[.i]
+        .f <- .rf[.i]
+        .u <- .ru[.i]
+        env$df <- rbind(
+          env$df,
+          data.frame(
+            i = c(env$eta1 + .i-1, env$eta1 + env$lastN),
+            j = c(env$eta1 + env$lastN, env$eta1 + .i-1), x = .v,
+            fix=.f, unfix=.u
+          )
+        )
+      }
+      .v <- .r[env$lastN+1]
+      .f <- .rf[env$lastN+1]
+      .u <- .ru[env$lastN+1]
+      env$df <- rbind(
+        env$df,
+        data.frame(
+          i = env$eta1 + env$lastN,
+          j = env$eta1 + env$lastN, x = .v,
+          fix=.f, unfix=.u
+        )
+      )
+      env$lastN <- env$lastN + 1
+      env$names <- c(env$names, deparse1(x2))
+      return(TRUE)
+    }
+  }
+  FALSE
+}
+
 #' Parse lower triangular matrix list
 #'
 #' This is for x~c(1..) or x1+x2~c(...)
@@ -331,6 +399,9 @@ NULL
   .r <- .rl[[1]]
   .rf <- .rl[[2]]
   .ru <- .rl[[3]]
+  if (.handleSingleLineEstInForm2(x2, values=.r, fixed=.rf, unfixed=.ru, env)) {
+    return(NULL)
+  }
   if (env$lastN != 0 && length(x2) == 1L && length(.r) == env$lastN + 1) {
     for (.i in seq_len(env$lastN)) {
       .v <- .r[.i]
@@ -450,6 +521,18 @@ NULL
           env[[.cnd]] <- .env2
           env[[paste0(.cnd, ".extra")]] <- .cndFull[[2]]
           .val <- try(eval(x[[3]][[2]], envir=.lotriParentEnv), silent = TRUE)
+          if (length(.val) >= 2L &&
+                length(.val) == env$lastN+1) {
+            .env2$df <- env$df
+            .env2$eta1 <- env$eta1
+            .env2$lastN <- env$lastN
+            .env2$names <- env$names
+            # moved to .env2 for parsing
+            env$df <- NULL
+            env$lastN <- 0
+            env$eta1 <- 0
+            env$names <- character(0)
+          }
           if ((length(.val) == 1) &&
                 (is.numeric(.val) || is.integer(.val))) {
             .env2$netas <- 1
@@ -515,6 +598,7 @@ NULL
     x[[3]] <- str2lang(deparse1(get(as.character(x[[3]]), envir=.lotriParentEnv)))
   }
   if (length(x[[3]]) == 1) {
+    .resetLastN(env)
     ## et1 ~ 0.2
     if (is.numeric(x[[3]])) {
       env$lastN <- 1
