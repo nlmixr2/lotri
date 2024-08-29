@@ -359,6 +359,7 @@ NULL
           ## should not be elsewhere
           .env2 <- new.env(parent = emptyenv())
           .env2$isCov <- env$isCov
+          .env2$rcm  <- env$rcm
           .env2$df <- NULL
           .env2$eta1 <- 0L
           env$cnd <- unique(c(env$cnd, .cnd))
@@ -798,8 +799,9 @@ NULL
 #' @author Bill Denney & Matthew L. Fidler
 .lotriGetMatrixFromEnv <- function(env, cnd=NULL, fun=NULL) {
   .ret <- diag(env$eta1)
-  .retF <- matrix(FALSE, dim(.ret)[1], dim(.ret)[1])
-  .retU <- matrix(FALSE, dim(.ret)[1], dim(.ret)[1])
+  .n <- dim(.ret)[1]
+  .retF <- matrix(FALSE, dim(.ret)[1], .n)
+  .retU <- matrix(FALSE, dim(.ret)[1], .n)
   for (.i in seq_along(env$df$i)) {
     .ret[env$df$i[.i], env$df$j[.i]] <- env$df$x[.i]
     .retF[env$df$i[.i], env$df$j[.i]] <- env$df$fix[.i]
@@ -808,6 +810,12 @@ NULL
   dimnames(.ret) <- list(env$names, env$names)
   dimnames(.retF) <- list(env$names, env$names)
   dimnames(.retU) <- list(env$names, env$names)
+  if (is.logical(env$rcm) && env$rcm && .n >= 1) {
+    .ret <- rcm(.ret)
+    env$names <- dimnames(.ret)[[1]]
+    .retF <- .retF[env$names, env$names]
+    .retU <- .retU[env$names, env$names]
+  }
   if (any(.retF)) {
     class(.ret) <- c("lotriFix", class(.ret))
     attr(.ret, "lotriFix") <- .retF
@@ -831,12 +839,15 @@ NULL
 #' @return calling list incluing cov, envir and default
 #' @noRd
 #' @author Matthew L. Fidler
-.lotriGetFullCall <- function(call, cov=FALSE,
+.lotriGetFullCall <- function(call, cov=FALSE, rcm=FALSE,
                               envir = parent.frame(),
                              default = "id") {
   .fullCall <- call
   if (!any(names(.fullCall) %in% "cov")) {
     .fullCall <- c(.fullCall, list(cov=cov))
+  }
+  if (!any(names(.fullCall) %in% "rcm")) {
+    .fullCall <- c(.fullCall, list(rcm=rcm))
   }
   if (!any(names(.fullCall) %in% "default")) {
     .fullCall <- c(.fullCall, list(default=default))
@@ -874,6 +885,12 @@ NULL
 #'   definite matrix from this matrix input.  When this is a function,
 #'   it is equivalent to `cov=TRUE` with the additional ability to
 #'   correct the matrix to be non-positive definite if needed.
+#'
+#' @param rcm logical; if `TRUE`, the matrix will be reordered to
+#'   change the matrix to a banded matrix, which is easier to express
+#'   in `lotri` than a full matrix.  The RCM stands for the reverse
+#'   Cuthill McKee (RCM) algorithm which is used for this matrix permutation.
+#'   (see `rcm()`)
 #'
 #' @inheritParams base::eval
 #' @inheritParams as.lotri
@@ -974,7 +991,7 @@ NULL
 #' @importFrom stats setNames
 #' @importFrom utils str
 #' @export
-lotri <- function(x, ..., cov=FALSE,
+lotri <- function(x, ..., cov=FALSE, rcm=FALSE,
                   envir = parent.frame(),
                   default = "id") {
   .fun <- NULL
@@ -982,13 +999,15 @@ lotri <- function(x, ..., cov=FALSE,
     if (is.function(cov)) {
       .fun <- cov
       cov <- TRUE
+    } else if (is.logical(cov) && cov) {
+      .fun <- lotriNearPD
     } else {
       stop("'cov' must be a length 1 non-NA logical or function",
            call.=FALSE)
     }
   }
   if (missing(x)) {
-    return(lotri({}, cov=cov, envir=envir, default=default))
+    return(lotri({}, cov=cov, rcm=rcm, envir=envir, default=default))
   }
   if (is.null(.lotriParentEnv)) {
     assignInMyNamespace(".lotriParentEnv", envir)
@@ -1025,6 +1044,7 @@ lotri <- function(x, ..., cov=FALSE,
     .env <- new.env(parent = emptyenv())
     .env$isCov <- cov
     .env$fun <- .fun
+    .env$rcm <- rcm
     .env$df <- NULL
     .env$matrix <- NULL
     .env$eta1 <- 0L
@@ -1051,11 +1071,11 @@ lotri <- function(x, ..., cov=FALSE,
       .lstC <- list()
       .other <- NULL
       .prop <- NULL
-      .ndef <- sum(names(.call) %in% c("cov", "default", "envir"))
+      .ndef <- sum(names(.call) %in% c("cov", "rcm", "default", "envir"))
       if (length(.call) - .ndef > 1) {
         .call <- .call[-1]
         .other <- do.call("lotri",
-                          .lotriGetFullCall(.call, cov=cov,
+                          .lotriGetFullCall(.call, cov=cov, rcm=rcm,
                                             default=default, envir=envir),
                           envir=envir)
         if (inherits(.other, "lotri")) {
@@ -1067,6 +1087,7 @@ lotri <- function(x, ..., cov=FALSE,
         ## amplify with default
         .env2 <- .env[[default]]
         .env2$isCov <- .env$isCov
+        .env2$rcm <- .env$rcm
         .env2$fun <- .env$fun
         .env2$df <- rbind(.env2$df, .env$df)
         .env2$names <- c(.env2$names, .env$names)
@@ -1076,6 +1097,7 @@ lotri <- function(x, ..., cov=FALSE,
         .env2 <- .env[[default]]
         .env2$df <- .env$df
         .env2$isCov <- .env$isCov
+        .env2$rcm <- .env$rcm
         .env2$fun <- .env$fun
         .env2$eta1 <- .env$eta1
         .env2$names <- .env$names
@@ -1100,6 +1122,7 @@ lotri <- function(x, ..., cov=FALSE,
           if (any(names(.other) == .j)) {
             .fullCall <- .lotriGetFullCall(list(.ret0, .other[[.j]]),
                                            cov=cov,
+                                           rcm=rcm,
                                            default=default,
                                            envir=envir)
             .ret0 <- do.call("lotri", .fullCall,
@@ -1143,6 +1166,7 @@ lotri <- function(x, ..., cov=FALSE,
     .call <- .call[-1]
     .fullCall <- .lotriGetFullCall(.call,
                                    cov=cov,
+                                   rcm=rcm,
                                    default=default,
                                    envir=envir)
     .tmp <- do.call("lotri", .fullCall, envir=envir)
@@ -1161,7 +1185,7 @@ lotri <- function(x, ..., cov=FALSE,
         .prop <- c(.prop, .tmp1)
       }
       .ret <- lotri(list(.ret, .tmp[[.fullCnd]]),
-                    cov=cov, default=default, envir = envir)
+                    cov=cov, rcm=rcm, default=default, envir = envir)
       .w <- which(names(.tmp) != .fullCnd)
       if (length(.w) > 0L) {
         .tmp <- .tmp[.w]
@@ -1190,13 +1214,14 @@ lotri <- function(x, ..., cov=FALSE,
       return(.amplifyRetWithDfEst(.ret, .est))
     }
   } else {
-    .ndef <- sum(names(.call) %in% c("cov", "default", "envir"))
+    .ndef <- sum(names(.call) %in% c("cov", "rcm", "default", "envir"))
     if (length(.call) - .ndef == 1L) {
       return(.amplifyRetWithDfEst(.ret, .est))
     }
     .call <- .call[-1]
     .fullCall <- .lotriGetFullCall(.call,
                                    cov=cov,
+                                   rcm=rcm,
                                    default=default,
                                    envir=envir)
     .tmp <- do.call("lotri", .fullCall, envir=envir)
@@ -1206,6 +1231,7 @@ lotri <- function(x, ..., cov=FALSE,
         .lst <- list(.ret, .tmp[[.w]])
         .fullCall <- .lotriGetFullCall(.lst,
                                        cov=cov,
+                                       rcm=rcm,
                                        default=default,
                                        envir=envir)
         .tmp[[.w]] <- do.call("lotri", .fullCall, envir = envir)
@@ -1216,7 +1242,7 @@ lotri <- function(x, ..., cov=FALSE,
       }
     } else {
       .ret <- lotri(c(list(.ret), list(.tmp)),
-                    cov=cov, default=default,
+                    cov=cov, rcm=rcm, default=default,
                     envir = envir)
       if (inherits(.tmp, "lotri")) {
         attr(.ret, "lotri") <- .amplifyFinal(.ret, attr(.tmp, "lotri"))

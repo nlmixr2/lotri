@@ -4,7 +4,7 @@
 \alias{lotri}
 \title{Easily Specify block-diagonal matrices with lower triangular info}
 \usage{
-lotri(x, ..., cov = FALSE, envir = parent.frame(), default = "id")
+lotri(x, ..., cov = FALSE, rcm = FALSE, envir = parent.frame(), default = "id")
 }
 \arguments{
 \item{x}{list, matrix or expression, see details}
@@ -32,6 +32,12 @@ concatenated then reapplied to this function.}
   definite matrix from this matrix input.  When this is a function,
   it is equivalent to `cov=TRUE` with the additional ability to
   correct the matrix to be non-positive definite if needed.}
+
+\item{rcm}{logical; if `TRUE`, the matrix will be reordered to
+change the matrix to a banded matrix, which is easier to express
+in `lotri` than a full matrix.  The RCM stands for the reverse
+Cuthill McKee (RCM) algorithm which is used for this matrix permutation.
+(see `rcm()`)}
 
 \item{envir}{the \code{\link[base]{environment}} in which \code{expr} is to
     be evaluated.  May also be \code{NULL}, a list, a data frame,

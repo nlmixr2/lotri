@@ -8,6 +8,9 @@
   function to allow correction of the matrix to a positive definite
   matrix automatically.
 
+* New option of `rcm`; When enabled, it will permute the matrix to try
+  to get a banded matrix using the Reverse Cuthill McKee algorithm.
+
 * Change internals for `lotri` so that new `rxode2` is no longer
   required to be binary linked to `lotri`.
 
