@@ -35,7 +35,9 @@ concatenated then reapplied to this function.}
 
 \item{rcm}{logical; if `TRUE`, the matrix will be reordered to
 change the matrix to a banded matrix, which is easier to express
-in `lotri` than a full matrix.}
+in `lotri` than a full matrix.  The RCM stands for the reverse
+Cuthill McKee (RCM) algorithm which is used for this matrix permutation.
+(see `rcm()`)}
 
 \item{envir}{the \code{\link[base]{environment}} in which \code{expr} is to
     be evaluated.  May also be \code{NULL}, a list, a data frame,

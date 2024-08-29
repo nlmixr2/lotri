@@ -888,7 +888,9 @@ NULL
 #'
 #' @param rcm logical; if `TRUE`, the matrix will be reordered to
 #'   change the matrix to a banded matrix, which is easier to express
-#'   in `lotri` than a full matrix.
+#'   in `lotri` than a full matrix.  The RCM stands for the reverse
+#'   Cuthill McKee (RCM) algorithm which is used for this matrix permutation.
+#'   (see `rcm()`)
 #'
 #' @inheritParams base::eval
 #' @inheritParams as.lotri
