@@ -246,7 +246,12 @@ NULL
   env$val <- unlist(.tmp[1, ])
   env$fix <- unlist(.tmp[2, ])
   env$unfix <- unlist(.tmp[3, ])
-  env$nv <- .lotriMatrixVec(.lotriMatrix(env$val, chol=env$chol, sd=env$sd, cor=env$cor, lhs=env$lhs))
+  if (length(env$lhs) == 1 &&
+        length(env$val) != 1) {
+    env$nv <- env$val
+  } else {
+    env$nv <- .lotriMatrixVec(.lotriMatrix(env$val, chol=env$chol, sd=env$sd, cor=env$cor, lhs=env$lhs))
+  }
   if (!exists("globalFix", env)) {
     env$globalFix <- FALSE
   }
@@ -262,6 +267,20 @@ NULL
   return(list(env$nv, .fix, .unfix))
 }
 
+#' Handle Matrix Row for Lotri
+#'
+#' This internal function processes a matrix row for the Lotri package.
+#'
+#' @param k Integer. The starting index for the row.
+#' @param j Integer. The row number to process.
+#' @param value Numeric vector. The values to be inserted into the matrix.
+#' @param fix Logical vector. Indicates which values are fixed.
+#' @param unfix Logical vector. Indicates which values are not fixed.
+#' @param env Environment. The environment containing the data frame `df` and the offset `eta1`.
+#'
+#' @return Integer. The next index to process.
+#' @keywords internal
+#' @noRd
 .lotri1handleMatrixRow <- function(k, j, value, fix, unfix, env) {
   .i <- 0
   .k <- k
@@ -312,9 +331,44 @@ NULL
   .r <- .rl[[1]]
   .rf <- .rl[[2]]
   .ru <- .rl[[3]]
+  if (env$lastN != 0 && length(x2) == 1L && length(.r) == env$lastN + 1) {
+    for (.i in seq_len(env$lastN)) {
+      .v <- .r[.i]
+      .f <- .rf[.i]
+      .u <- .ru[.i]
+      env$df <- rbind(
+        env$df,
+        data.frame(
+          i = c(env$eta1 + .i-1, env$eta1 + env$lastN),
+          j = c(env$eta1 + env$lastN, env$eta1 + .i-1), x = .v,
+          fix=.f, unfix=.u
+        )
+      )
+    }
+    .v <- .r[env$lastN+1]
+    .f <- .rf[env$lastN+1]
+    .u <- .ru[env$lastN+1]
+    env$df <- rbind(
+      env$df,
+      data.frame(
+        i = env$eta1 + env$lastN,
+        j = env$eta1 + env$lastN, x = .v,
+        fix=.f, unfix=.u
+      )
+    )
+    env$lastN <- env$lastN + 1
+    env$names <- c(env$names, deparse1(x2))
+    return(invisible())
+  }
   env$netas <- length(.r)
   .num <- sqrt(1 + env$netas * 8) / 2 - 1 / 2
   if (round(.num) == .num) {
+    if (.num == 1) {
+      if (env$lastN > 1L) {
+
+      }
+      env$lastN <- 1
+    }
     .n <- unlist(strsplit(as.character(x2), " +[+] +"))
     .n <- .n[.n != "+"]
     if (length(.n) == .num) {
@@ -346,6 +400,21 @@ NULL
   }
 }
 
+#' Handle Tilde LHS Sum for Lotri
+#'
+#' This internal function processes the left-hand side of a tilde
+#' expression for the Lotri package.  These are used as the names of the matrix.
+#'
+#' ie x + y + z ~ ...
+#'
+#' @param x Expression. The expression to be evaluated.
+#'
+#' @param env Environment. The environment containing the necessary
+#'   variables and data frames.
+#'
+#' @return None. The function modifies the environment `env` by adding to its data frame `df` and other variables.
+#' @keywords internal
+#' @noRd
 .fcallTildeLhsSum <- function(x, env) {
   ## et1+et2+et3~NULL lower triangular matrix
   if (any(tolower(as.character(x[[3]][[1]])) ==
@@ -839,6 +908,7 @@ NULL
 #' @noRd
 #' @author Bill Denney & Matthew L. Fidler
 .lotriGetMatrixFromEnv <- function(env, cnd=NULL, fun=NULL) {
+  env$eta1 <- max(env$df$i)
   .ret <- diag(env$eta1)
   .n <- dim(.ret)[1]
   .retF <- matrix(FALSE, dim(.ret)[1], .n)
