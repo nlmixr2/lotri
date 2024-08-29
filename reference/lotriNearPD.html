@@ -75,9 +75,9 @@
 
 
 <dt id="arg-do-eigen">do2eigen<a class="anchor" aria-label="anchor" href="#arg-do-eigen"></a></dt>
-<dd><p>logical indicating if a
-    <code>posdefify()</code> eigen step should be applied to
-    the result of the Higham algorithm.</p></dd>
+<dd><p>logical indicating if a `posdefify()` (like in the
+package `sfsmisc`) eigen step should be applied to the result of
+the Higham algorithm</p></dd>
 
 
 <dt id="arg-dodykstra">doDykstra<a class="anchor" aria-label="anchor" href="#arg-dodykstra"></a></dt>
@@ -132,17 +132,17 @@ for an <b>a</b>symmetric input <code>x</code>, is typically nonsense!</p></dd>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>This implements the algorithm of Higham (2002), and then (if
-  <code>do2eigen</code> is true) forces positive definiteness using code from
-  <code>posdefify</code>.  The algorithm of Knol and ten
-  Berge (1989) (not implemented here) is more general in that it
-  allows constraints to (1) fix some rows (and columns) of the matrix and
-  (2) force the smallest eigenvalue to have a certain value.</p>
+<code>do2eigen</code> is true) forces positive definiteness using code from
+`sfsmisc::posdefify()`.  The algorithm of Knol and ten
+Berge (1989) (not implemented here) is more general in that it
+allows constraints to (1) fix some rows (and columns) of the matrix and
+(2) force the smallest eigenvalue to have a certain value.</p>
 <p>Note that setting <code>corr = TRUE</code> just sets <code>diag(.) &lt;- 1</code>
-  within the algorithm.</p>
+within the algorithm.</p>
 <p>Higham (2002) uses Dykstra's correction, but the version by Jens
-  Oehlschlägel did not use it (accidentally),
+ Oehlschlägel did not use it (accidentally),
   and still gave reasonable results; this simplification, now only
-  used if <code>doDykstra = FALSE</code>,
+ used if <code>doDykstra = FALSE</code>,
   was active in <code><a href="https://rdrr.io/pkg/Matrix/man/nearPD.html" class="external-link">nearPD()</a></code> up to Matrix version 0.999375-40.</p>
     </div>
     <div class="section level2">
@@ -162,14 +162,15 @@ for an <b>a</b>symmetric input <code>x</code>, is typically nonsense!</p></dd>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p>A first version of this (with non-optional <code>corr=TRUE</code>)
-  has been available as <code>nearcor()</code>; and
-  more simple versions with a similar purpose
-  <code>posdefify()</code>, both from package <span class="pkg">sfsmisc</span>.</p></div>
+has been available as `sfsmisc::nearcor()` and
+more simple versions with a similar purpose
+`sfsmisc::posdefify()`</p></div>
     </div>
     <div class="section level2">
     <h2 id="author">Author<a class="anchor" aria-label="anchor" href="#author"></a></h2>
-    <p>Jens Oehlschlägel donated a first version.
-  Subsequent changes by the Matrix package authors.</p>
+    <p>Jens Oehlschlägel donated a first
+  version to Matrix.  Subsequent changes by the Matrix package
+  authors, later modifications to C++ by Matthew Fidler</p>
     </div>
 
     <div class="section level2">
