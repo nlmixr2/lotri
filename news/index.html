@@ -36,7 +36,7 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="development version" id="lotri-development-version">lotri (development version)<a class="anchor" aria-label="anchor" href="#lotri-development-version"></a></h2>
+<h2 class="pkg-version" data-toc-text="1.0.0" id="lotri-100">lotri 1.0.0<a class="anchor" aria-label="anchor" href="#lotri-100"></a></h2>
 <ul><li>Added a new way of specifying lotri matrices:</li>
 </ul><p>Before you could specify matrices as:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
@@ -66,7 +66,7 @@
 <li><p>Change internals for <code>lotri</code> so that new <code>rxode2</code> is no longer required to be binary linked to <code>lotri</code>.</p></li>
 <li><p>Add new function <code><a href="../reference/rcm.html">rcm()</a></code> which permutes the matrix to get a band matrix (if possible). This uses the Reverse Reverse Cuthill McKee (RCM) algorithm.</p></li>
 <li><p>Moved <code>nmNearPD()</code> to this package and renamed to <code><a href="../reference/lotriNearPD.html">lotriNearPD()</a></code>. In addition to moving, this function will now retain the dimension names.</p></li>
-<li><p>New exported function <code><a href="../reference/lotriAsExpression.html">lotriAsExpression()</a></code> which has more fine control than <code><a href="https://rdrr.io/r/base/expression.html" class="external-link">as.expression()</a></code> and will work without converting the matrix to a lotri form.</p></li>
+<li><p>New exported function <code><a href="../reference/lotriAsExpression.html">lotriAsExpression()</a></code> which has more fine control than <code><a href="https://rdrr.io/r/base/expression.html" class="external-link">as.expression()</a></code> and will work without converting the matrix to a lotri form. This by default uses the new line form, but can be changed back to the <code>option(lotri.plusNames=TRUE)</code>. Also be default it will name each element in a matrix when the dimension is above <code>5x5</code>. You can change that number by <code>option(lotri.nameEst=10)</code> to increase it to be named above <code>10x10</code>. If you do not like the naming you can also disable it with <code>option(lotri.nameEst=TRUE)</code>, or if you always want it on you can use `option(lotri.nameEst=FALSE)</p></li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.4.4" id="lotri-044">lotri 0.4.4<a class="anchor" aria-label="anchor" href="#lotri-044"></a></h2>
