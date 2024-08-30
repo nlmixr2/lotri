@@ -61,7 +61,13 @@ human readable format.
 
 * New exported function `lotriAsExpression()` which has more fine
   control than `as.expression()` and will work without converting the
-  matrix to a lotri form.
+  matrix to a lotri form.  This by default uses the new line form, but
+  can be changed back to the `option(lotri.plusNames=TRUE)`.  Also be
+  default it will name each element in a matrix when the dimension is
+  above `5x5`.  You can change that number by
+  `option(lotri.nameEst=10)` to increase it to be named above
+  `10x10`. If you do not like the naming you can also disable it with
+  `option(lotri.nameEst=TRUE)`, or if you always want it on you can use `option(lotri.nameEst=FALSE)
 
 # lotri 0.4.4
 
