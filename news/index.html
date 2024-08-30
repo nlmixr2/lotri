@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">lotri</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,11 +37,36 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="development version" id="lotri-development-version">lotri (development version)<a class="anchor" aria-label="anchor" href="#lotri-development-version"></a></h2>
+<ul><li>Added a new way of specifying lotri matrices:</li>
+</ul><p>Before you could specify matrices as:</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span></span>
+<span>  <span class="va">a</span> <span class="op">+</span> <span class="va">b</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,</span>
+<span>            <span class="fl">0.5</span>, <span class="fl">1</span><span class="op">)</span></span>
+<span><span class="op">}</span><span class="op">)</span></span></code></pre></div>
+<p>Now you can specify per row as:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span></span>
+<span>  <span class="va">a</span> <span class="op">~</span> <span class="fl">1</span></span>
+<span>  <span class="va">b</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>, <span class="fl">1</span><span class="op">)</span></span>
+<span><span class="op">}</span><span class="op">)</span></span></code></pre></div>
+<p>This form is now the default when converting from a matrix to a lotri expression. In addition if the matrix is large enough (by default a 5x5 matrix), these would be named when changing them to an expression:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span></span>
+<span>  <span class="va">a</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>a<span class="op">=</span><span class="fl">1</span><span class="op">)</span></span>
+<span>  <span class="va">b</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>a<span class="op">=</span><span class="fl">0.5</span>, b<span class="op">=</span><span class="fl">1</span><span class="op">)</span></span>
+<span>  <span class="va">c</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>a<span class="op">=</span><span class="fl">0.5</span>, b<span class="op">=</span><span class="fl">0.5</span>, c<span class="op">=</span><span class="fl">1</span><span class="op">)</span></span>
+<span>  <span class="va">d</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>a<span class="op">=</span><span class="fl">0.5</span>, b<span class="op">=</span><span class="fl">0.5</span>, c<span class="op">=</span><span class="fl">0.5</span>, d<span class="op">=</span><span class="fl">1</span><span class="op">)</span></span>
+<span>  <span class="va">e</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>a<span class="op">=</span><span class="fl">0.5</span>, b<span class="op">=</span><span class="fl">0.5</span>, c<span class="op">=</span><span class="fl">0.5</span>, d<span class="op">=</span><span class="fl">1</span>,</span>
+<span>        e<span class="op">=</span><span class="fl">1</span><span class="op">)</span></span>
+<span><span class="op">}</span><span class="op">)</span></span></code></pre></div>
+<p>This way changing to an R parsed expression will be rendered in a more human readable format.</p>
 <ul><li><p>New option of <code>cov</code> added which check for matrix suitability for covariance matrix. When <code>cov=TRUE</code>, off-diagonal elements in covariance matrices may no longer be nonzero if the diagonal value is zero (rxode2#481). This will also check tht the matrix is non-positive definite on the non-diagonal terms. <code>cov</code> can also be a function to allow correction of the matrix to a positive definite matrix automatically.</p></li>
 <li><p>New option of <code>rcm</code>; When enabled, it will permute the matrix to try to get a banded matrix using the Reverse Cuthill McKee algorithm.</p></li>
 <li><p>Change internals for <code>lotri</code> so that new <code>rxode2</code> is no longer required to be binary linked to <code>lotri</code>.</p></li>
 <li><p>Add new function <code><a href="../reference/rcm.html">rcm()</a></code> which permutes the matrix to get a band matrix (if possible). This uses the Reverse Reverse Cuthill McKee (RCM) algorithm.</p></li>
 <li><p>Moved <code>nmNearPD()</code> to this package and renamed to <code><a href="../reference/lotriNearPD.html">lotriNearPD()</a></code>. In addition to moving, this function will now retain the dimension names.</p></li>
+<li><p>New exported function <code><a href="../reference/lotriAsExpression.html">lotriAsExpression()</a></code> which has more fine control than <code><a href="https://rdrr.io/r/base/expression.html" class="external-link">as.expression()</a></code> and will work without converting the matrix to a lotri form.</p></li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.4.4" id="lotri-044">lotri 0.4.4<a class="anchor" aria-label="anchor" href="#lotri-044"></a></h2>
