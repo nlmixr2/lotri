@@ -227,11 +227,11 @@ NULL
   }
 }
 
-.lotriParseMat <- function(x, env=NULL) {
+.lotriParseMat <- function(x, env=NULL, noMat=FALSE) {
   .lotriParseMatAssertGoodProps(x, env)
   .lotriParseMatCalculateFixedProps(x, env)
   if (length(x) == 2) {
-    return(.lotriParseMat(x[[2]], env=env))
+    return(.lotriParseMat(x[[2]], env=env, noMat=noMat))
   } else if (length(x) == 1) {
     .r <- x
   } else {
@@ -246,7 +246,9 @@ NULL
   env$val <- unlist(.tmp[1, ])
   env$fix <- unlist(.tmp[2, ])
   env$unfix <- unlist(.tmp[3, ])
-  if (length(env$lhs) == 1 &&
+  if (noMat) {
+    env$nv <- env$val
+  } else if (length(env$lhs) == 1 &&
         length(env$val) != 1) {
     env$nv <- env$val
   } else {
@@ -310,6 +312,21 @@ NULL
   return(NA_integer_)
 }
 
+.handleLastExpressionIsCndForForm2 <- function(x2, x3, env) {
+  if (exists("lastCnd", env)) {
+    .cnd <- env$lastCnd
+    if (exists(.cnd, env)) {
+      .env2 <- env[[.cnd]]
+      .env2$lastN <- max(.env2$df$i)
+      .len <- length(.env2$df$i)
+      .lotri1(x2, x3, .env2)
+      if (.len < length(.env2$df$i)) {
+        return(TRUE)
+      }
+    }
+  }
+  FALSE
+}
 
 
 .resetLastN <- function(env, i=1L) {
@@ -435,9 +452,6 @@ NULL
   .num <- sqrt(1 + env$netas * 8) / 2 - 1 / 2
   if (round(.num) == .num) {
     if (.num == 1) {
-      if (env$lastN > 1L) {
-
-      }
       env$lastN <- 1
     }
     .n <- unlist(strsplit(as.character(x2), " +[+] +"))
@@ -456,17 +470,27 @@ NULL
       }
       env$eta1 <- env$eta1 + .num
     } else if (.num - length(.n) < 0) {
+      if (.handleLastExpressionIsCndForForm2(x2, x3, env)) {
+        return(invisible())
+      }
       .expr <- paste(.deparse1(x2), "~", .deparse1(x3))
       stop("number named variables and lower triangular matrix size do not match:\n",
            .expr)
     } else {
       ## in this case
+      if (.handleLastExpressionIsCndForForm2(x2, x3, env)) {
+        return(invisible())
+      }
       .expr <- .deparse1(eval(parse(text=paste0("quote(", paste(c(.n, paste0("varName", length(.n) + seq_len(.num - length(.n)))), collapse="+"), "~ 0)"))))
       .expr <- paste0("  '", substr(.expr, 1, nchar(.expr) - 1))
       .expr <- .pasteLotri(.expr, x3)
+
       stop("number named variables and lower triangular matrix size do not match\n  did you mean something like:\n", .expr, call. = FALSE)
     }
   } else {
+    if (.handleLastExpressionIsCndForForm2(x2, x3, env)) {
+      return(invisible())
+    }
     stop("matrix expression should be 'name ~ c(lower-tri)'", call. = FALSE)
   }
 }
@@ -518,9 +542,13 @@ NULL
           .env2$eta1 <- 0L
           .env2$lastN <- 0L
           env$cnd <- unique(c(env$cnd, .cnd))
+          env$lastCnd <- .cnd
           env[[.cnd]] <- .env2
           env[[paste0(.cnd, ".extra")]] <- .cndFull[[2]]
-          .val <- try(eval(x[[3]][[2]], envir=.lotriParentEnv), silent = TRUE)
+          .val <- .lotriParseMat(x[[3]][[2]], env=env, noMat=TRUE)
+          .fix <- .val[[2]]
+          .unfix <- .val[[3]]
+          .val <- .val[[1]]
           if (length(.val) >= 2L &&
                 length(.val) == env$lastN+1) {
             .env2$df <- env$df
@@ -532,19 +560,18 @@ NULL
             env$lastN <- 0
             env$eta1 <- 0
             env$names <- character(0)
-          }
-          if ((length(.val) == 1) &&
-                (is.numeric(.val) || is.integer(.val))) {
-            .env2$netas <- 1
-            .env2$eta1 <- .env2$eta1 + 1
+            .lotri1(x[[2]], x[[3]][[2]], .env2)
+          } else if ((length(.val) == 1) &&
+                       (is.numeric(.val) || is.integer(.val))) {
+            .env2$netas <- 1L
+            .env2$eta1 <- .env2$eta1 + 1L
             .env2$names <- c(.env2$names, as.character(x[[2]]))
             .env2$df <- rbind(
               .env2$df,
               data.frame(
                 i = .env2$eta1, j = .env2$eta1,
                 x = .val,
-                fix=FALSE, unfix=FALSE)
-            )
+                fix=.fix, unfix=.unfix))
           } else {
             .lotri1(x[[2]], x[[3]][[2]], .env2)
           }
@@ -557,7 +584,6 @@ NULL
     }
   }
 }
-
 
 #' Handle Matrix Expressions with Tilde
 #'
