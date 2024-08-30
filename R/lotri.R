@@ -230,7 +230,13 @@ NULL
 .lotriParseMat <- function(x, env=NULL, noMat=FALSE) {
   .lotriParseMatAssertGoodProps(x, env)
   .lotriParseMatCalculateFixedProps(x, env)
-  if (length(x) == 2) {
+  if (identical(x[[1]], quote(`+`)) ||
+        identical(x[[1]], quote(`-`)) ||
+        identical(x[[1]], quote(`*`)) ||
+        identical(x[[1]], quote(`/`)) ||
+        identical(x[[1]], quote(`^`))) {
+    .r <- list(eval(x, envir=.lotriParentEnv))
+  } else if (length(x) == 2) {
     return(.lotriParseMat(x[[2]], env=env, noMat=noMat))
   } else if (length(x) == 1) {
     .r <- x
@@ -333,8 +339,8 @@ NULL
 .resetLastN <- function(env, i=1L) {
   if (env$lastN > 1L) {
     env$eta1 <- env$eta1 + env$lastN - 1L
-    env$lastN <- i
   }
+  env$lastN <- i
 }
 
 #' Handle Single Line Estimation in Form #2
@@ -658,7 +664,8 @@ NULL
   } else if (identical(x[[1]], quote(`{`))) {
     .x <- x[-1]
     for (.i in seq_along(.x)) {
-      .curLine <- try(.f(.x[[.i]], env=env), silent=TRUE)
+      .curLine <- .f(.x[[.i]], env=env)
+      ## .curLine <- try(.f(.x[[.i]], env=env), silent=TRUE)
       if (inherits(.curLine, "try-error")) {
         env$.hasErr <- TRUE
         env$.err[[.i]] <- paste(c(env$.err[[.i]], attr(.curLine, "condition")$message), collapse="\n")
@@ -672,8 +679,10 @@ NULL
     }
     env$matrix <- eval(x, envir=.lotriParentEnv)
   } else if (identical(x[[1]], quote(`=`)) ||
-               identical(x[[1]], quote(`<-`)) ||
-               identical(x[[1]], quote(`label`)) ||
+               identical(x[[1]], quote(`<-`))) {
+    ## these are handled in .parseThetaEst()
+    .resetLastN(env, 0L)
+  } else if (identical(x[[1]], quote(`label`)) ||
                identical(x[[1]], quote(`backTransform`))) {
     ## these are handled in .parseThetaEst()
   } else {
@@ -1024,6 +1033,12 @@ NULL
 #' @noRd
 #' @author Bill Denney & Matthew L. Fidler
 .lotriGetMatrixFromEnv <- function(env, cnd=NULL, fun=NULL) {
+  if (is.null(env$df)) {
+    return(matrix(nrow=0, ncol=0))
+  }
+  if (length(env$df$i) == 0L) {
+    return(matrix(nrow=0, ncol=0))
+  }
   env$eta1 <- max(env$df$i)
   .ret <- diag(env$eta1)
   .n <- dim(.ret)[1]
