@@ -545,6 +545,12 @@ NULL
           .cnd <- x[[3]][[3]]
           .cndFull <- .parseCondition(.cnd, envir = env)
           .cnd <- .cndFull[[1]]
+          if (exists("lastCnd", env)) {
+            if (env$lastCnd == .cnd) {
+              .lotri1(x[[2]], x[[3]][[2]], env)
+              return(invisible())
+            }
+          }
           ## Each condition is parsed so this new environment
           ## should not be elsewhere
           .env2 <- new.env(parent = emptyenv())
