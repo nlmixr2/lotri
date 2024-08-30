@@ -1,5 +1,42 @@
 # lotri (development version)
 
+* Added a new way of specifying lotri matrices:
+
+Before you could specify matrices as:
+
+```r
+m <- lotri({
+  a + b ~ c(1,
+            0.5, 1)
+})
+```
+
+Now you can specify per row as:
+```r
+m <- lotri({
+  a ~ 1
+  b ~ c(0.5, 1)
+})
+```
+
+This form is now the default when converting from a matrix to a lotri
+expression. In addition if the matrix is large enough (by default a
+5x5 matrix), these would be named when changing them to an expression:
+
+```r
+m <- lotri({
+  a ~ c(a=1)
+  b ~ c(a=0.5, b=1)
+  c ~ c(a=0.5, b=0.5, c=1)
+  d ~ c(a=0.5, b=0.5, c=0.5, d=1)
+  e ~ c(a=0.5, b=0.5, c=0.5, d=1,
+        e=1)
+})
+```
+
+This way changing to an R parsed expression will be rendered in a more
+human readable format.
+
 * New option of `cov` added which check for matrix suitability for
   covariance matrix. When `cov=TRUE`, off-diagonal elements in
   covariance matrices may no longer be nonzero if the diagonal value
@@ -21,6 +58,10 @@
 * Moved `nmNearPD()` to this package and renamed to `lotriNearPD()`.
   In addition to moving, this function will now retain the dimension
   names.
+
+* New exported function `lotriAsExpression()` which has more fine
+  control than `as.expression()` and will work without converting the
+  matrix to a lotri form.
 
 # lotri 0.4.4
 

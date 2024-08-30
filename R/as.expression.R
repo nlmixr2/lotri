@@ -84,6 +84,117 @@
     .lotriExpressionLinesFromDf1(df1)
   }))
 }
+#' Get ETA Matrix Elements in Line Form
+#'
+#' This function processes a matrix or a list of matrices to extract
+#' ETA matrix elements and format them in a line form, that is:
+#'
+#' a ~ 1
+#' b ~ c(1, 2)
+#'
+#' Which is different from the plus form
+#'
+#' a + b ~ c(1, 1, 2)
+#'
+#' @param x A matrix or a list of matrices. If a matrix, it is
+#'   processed directly. If a list, each matrix in the list is
+#'   processed.
+#'
+#' @param condition A character string specifying the condition to be
+#'   applied. Default is `"id"`.
+#'
+#' @param nameEst An integer or logical value. If an integer, it
+#'   specifies the maximum of dimension before the expression uses
+#'   names. If logical, it indicates whether to use names for all expressions
+#'
+#' @return A list of language objects representing the formatted matrix elements.
+#'
+#' @details
+#'
+#' The function checks if the input `x` is a matrix or a list. If it
+#' is a matrix, it changes the matrix to a lotri matrix list using
+#' `lotriMatInv` and processes each element to format it according to
+#' the specified condition and naming convention. If it is a list, the
+#' function recursively processes each matrix in the list.
+#'
+#' @examples
+#' # Example usage:
+#'
+#' mat <- matrix(c(1, 0.5, 0.5, 1), nrow = 2)
+#' dimnames(mat) <- list(c("a", "b"), c("a", "b"))
+#'
+#' .lotriGetEtaMatrixElementsLineForm(mat)
+#'
+#' @keywords internal
+#' @author Matthew L. Fidler
+#' @noRd
+.lotriGetEtaMatrixElementsLineForm <- function(x, condition="id", nameEst=5L) {
+  if (inherits(x, "matrix")) {
+    .x <- lotriMatInv(x)
+    .l <- lapply(seq_along(.x), function(i) {
+      .mat <- .x[[i]]
+      .lotriFix <- attr(.mat, "lotriFix")
+      .fixOrC <- "c"
+      if (!is.null(.lotriFix)) {
+        if (all(.lotriFix)) {
+          .fixOrC <- "fix"
+        }
+      }
+      .nme <- dimnames(.mat)[[1]]
+      if (is.logical(nameEst)) {
+        .useNames <- nameEst
+      } else {
+        .useNames <- nameEst <= length(.nme)
+      }
+      .n <- length(.nme)
+      lapply(seq_len(.n), function(i) {
+        .c <- .fixOrC
+        if (!is.null(.lotriFix)) {
+          if (all(.lotriFix[seq(1, i), i])) {
+            .c <- "fix"
+          } else {
+            .c <- "c"
+          }
+        }
+        .vals <- vapply(seq_len(i), function(j) {
+          .fix <- FALSE
+          if (.c != "fix" && !is.null(.lotriFix)) {
+            .fix <- .lotriFix[i, j]
+          }
+          if (.fix) {
+            if (.useNames) {
+              paste0(.nme[j], "= fix(", .mat[i, j], ")")
+            }  else {
+              paste0("fix(", .mat[i, j], ")")
+            }
+          } else {
+            if (.useNames) {
+              paste0(.nme[j], "=", .mat[i, j])
+            }  else {
+              paste0(.mat[i, j])
+            }
+          }
+        }, character((1)), USE.NAMES=FALSE)
+        if (length(.vals) == 1 && .c == "c" && !.useNames) {
+          str2lang(paste0(.nme[i], "~ ", .vals,
+                          ifelse(condition == "id", "", paste0("| ", condition))))
+        } else {
+          str2lang(paste0(.nme[i], "~ ", .c,
+                          "(",paste(.vals, collapse=", "), ")",
+                          ifelse(condition == "id", "", paste0("| ", condition))))
+        }
+      })
+    })
+    do.call(`c`, .l)
+  } else if (inherits(x, "list")) {
+    .n <- names(x)
+    do.call("c", lapply(.n, function(nme) {
+      .lotriGetEtaMatrixElementsLineForm(x[[nme]],
+                                         condition=nme,
+                                         nameEst=nameEst)
+    }))
+  }
+}
 
 #' Get the eta matrix elements for a lotri matrix
 #'
@@ -92,7 +203,7 @@
 #' @return list expression
 #' @author Matthew L. Fidler
 #' @noRd
-.lotriGetEtaMatrixElements <- function(x, condition="id") {
+.lotriGetEtaMatrixElementsPlusForm <- function(x, condition="id") {
   if (inherits(x, "matrix")) {
     .x <- lotriMatInv(x)
     .l <- lapply(seq_along(.x), function(i) {
@@ -125,7 +236,7 @@
   } else if (inherits(x, "list")) {
     .n <- names(x)
     do.call("c", lapply(.n, function(nme){
-      .lotriGetEtaMatrixElements(x[[nme]], condition=nme)
+      .lotriGetEtaMatrixElementsPlusForm(x[[nme]], condition=nme)
     }))
   }
  }
@@ -169,12 +280,50 @@ as.expression.lotriFix <- function(x, ...) {
   if (!any(names(.lst) == "useIni")) {
     .lst$useIni <- FALSE
   }
+  if (!any(names(.lst) == "plusNames")) {
+    .lst$plusNames <- FALSE
+  }
+  if (!any(names(.lst) == "nameEst")) {
+    .lst$nameEst <- 5L
+  }
   .l <- x
   .est <- attr(.l, "lotriEst")
   .mat <- .l
   attr(.mat, "lotriEst") <- NULL
   class(.mat) <- NULL
-  as.call(list(ifelse(.lst$useIni, quote(`ini`), quote(`lotri`)),
-               as.call(c(list(quote(`{`)), .lotriGetPopLinesFromDf(.est),
-                          .lotriGetEtaMatrixElements(.mat)))))
+  if (!.lst$plusNames) {
+    as.call(list(ifelse(.lst$useIni, quote(`ini`), quote(`lotri`)),
+                 as.call(c(list(quote(`{`)), .lotriGetPopLinesFromDf(.est),
+                           .lotriGetEtaMatrixElementsLineForm(.mat, nameEst=.lst$nameEst)))))
+  } else {
+    as.call(list(ifelse(.lst$useIni, quote(`ini`), quote(`lotri`)),
+                 as.call(c(list(quote(`{`)), .lotriGetPopLinesFromDf(.est),
+                            .lotriGetEtaMatrixElementsPlusForm(.mat)))))
+  }
+}
+
+#' Change a matrix or lotri matrix to a lotri expression
+#'
+#' @param x matrix
+#' @param useIni use the ini block
+#' @param plusNames logical, when `TRUE` use the `a + b ~ c(1, 0.1,
+#'   1)` naming convention.  Otherwise use the lotri single line
+#'   convention `a ~ 1; b ~ c(0.1, 1)`
+#' @param nameEst logical or integerish.  When logical `TRUE` will add
+#'   names to all matrix estimates and `TRUE` when using the lotri
+#'   single line convention i.e. `a~c(a=1); b~c(a=0.1, b=1)`.  When an
+#'   integer, the dimension of the matrix being displayed needs to
+#'   have a dimension above this number before names are displayed.
+#'
+#' @export
+lotriAsExpression <- function(x, useIni=FALSE, plusNames=FALSE,
+                              nameEst=5L) {
+  checkmate::assertLogical(useIni, any.missing=FALSE, len=1)
+  checkmate::assertLogical(plusNames, any.missing=FALSE, len=1)
+  if (is.logical(nameEst)) {
+    checkmate::assertLogical(nameEst, any.missing=FALSE, len=1)
+  } else  {
+    checkmate::assertIntegerish(nameEst, any.missing=FALSE, len=1, lower=1)
+  }
+  as.expression.lotriFix(x, useIni=useIni, plusNames=plusNames, nameEst=nameEst)
 }

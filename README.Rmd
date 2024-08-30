@@ -38,7 +38,7 @@ This was made to allow people (like me) to specify lower triangular
 matrices similar to the domain specific language implemented in
 `nlmixr2`.  Originally I had it included in `RxODE`, but thought it may
 have more general applicability, so I separated it into a new
-package. 
+package.
 
 ## Installation
 
@@ -75,6 +75,11 @@ library(ggplot2)
 mat <- lotri(a+b ~ c(1,
                      0.5, 1))
 print(mat)
+
+# You can also specify line by line:
+mat <- lotri({a ~ 1
+              b ~ c(0.5, 1)})
+print(mat)
 ```
 
 I find it more legible and easier to specify, especially if you have a
@@ -88,6 +93,17 @@ mat <- lotri({
     d +e ~ c(1,
              0.5, 1)
 })
+print(mat)
+
+# or
+mat <- lotri({
+  a ~ 1
+  b ~ c(0.5, 1)
+  c ~ 1
+  d ~ 1
+ e ~ c(0.5, 1)
+})
+
 print(mat)
 ```
 
@@ -225,4 +241,3 @@ autoplot(mb)
 A new feature is the ability to condition on variables by `|`.  This
 will be useful when simulating nested random effects using the
 upcoming `RxODE2`
-

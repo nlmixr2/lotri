@@ -1,16 +1,17 @@
 Package: lotri
 Title: A Simple Way to Specify Symmetric, Block Diagonal Matrices
-Version: 0.5.0.9000
+Version: 1.0.0
 Authors@R:
     c(person("Matthew L.", "Fidler", , "matthew.fidler@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0001-8538-6691")),
-           person("Bill", "Denney", email="wdenney@humanpredictions.com", role="ctb", comment=c(ORCID="0000-0002-5759-428X")))
+      person("Bill", "Denney", email="wdenney@humanpredictions.com", role="ctb", comment=c(ORCID="0000-0002-5759-428X")))
 Maintainer: Matthew L. Fidler <matthew.fidler@gmail.com>
 Description: Provides a simple mechanism to specify a symmetric block
     diagonal matrices (often used for covariance matrices).  This is based
     on the domain specific language implemented in 'nlmixr2' but expanded
     to create matrices in R generally instead of specifying parts of
-    matrices to estimate.
+    matrices to estimate. It has expanded to include some matrix manipulation
+    functions that are generally useful for 'rxode2' and 'nlmixr2'.
 License: GPL (>=2)
 URL: https://nlmixr2.github.io/lotri/, https://github.com/nlmixr2/lotri
 BugReports: https://github.com/nlmixr2/lotri/issues
