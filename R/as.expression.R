@@ -281,10 +281,10 @@ as.expression.lotriFix <- function(x, ...) {
     .lst$useIni <- FALSE
   }
   if (!any(names(.lst) == "plusNames")) {
-    .lst$plusNames <- FALSE
+    .lst$plusNames <- getOption("lotri.plusNames", FALSE)
   }
   if (!any(names(.lst) == "nameEst")) {
-    .lst$nameEst <- 5L
+    .lst$nameEst <- getOption("lotri.nameEst", 5L)
   }
   .l <- x
   .est <- attr(.l, "lotriEst")
@@ -305,10 +305,13 @@ as.expression.lotriFix <- function(x, ...) {
 #' Change a matrix or lotri matrix to a lotri expression
 #'
 #' @param x matrix
+#'
 #' @param useIni use the ini block
+#'
 #' @param plusNames logical, when `TRUE` use the `a + b ~ c(1, 0.1,
 #'   1)` naming convention.  Otherwise use the lotri single line
 #'   convention `a ~ 1; b ~ c(0.1, 1)`
+#'
 #' @param nameEst logical or integerish.  When logical `TRUE` will add
 #'   names to all matrix estimates and `TRUE` when using the lotri
 #'   single line convention i.e. `a~c(a=1); b~c(a=0.1, b=1)`.  When an
@@ -316,8 +319,9 @@ as.expression.lotriFix <- function(x, ...) {
 #'   have a dimension above this number before names are displayed.
 #'
 #' @export
-lotriAsExpression <- function(x, useIni=FALSE, plusNames=FALSE,
-                              nameEst=5L) {
+lotriAsExpression <- function(x, useIni=FALSE,
+                              plusNames=getOption("lotri.plusNames", FALSE),
+                              nameEst=getOption("lotri.nameEst", 5L)) {
   checkmate::assertLogical(useIni, any.missing=FALSE, len=1)
   checkmate::assertLogical(plusNames, any.missing=FALSE, len=1)
   if (is.logical(nameEst)) {
