@@ -290,6 +290,7 @@ NULL
     .v <- value[.k]
     .f <- fix[.k]
     .u <- unfix[.k]
+    names(.v) <- names(.f) <- names(.u) <- NULL
     .i <- .i + 1
     .k <- .k + 1
     if (.i == j) {
@@ -367,6 +368,7 @@ NULL
         .v <- .r[.i]
         .f <- .rf[.i]
         .u <- .ru[.i]
+        names(.v) <- names(.f) <- names(.u) <- NULL
         env$df <- rbind(
           env$df,
           data.frame(
@@ -379,6 +381,7 @@ NULL
       .v <- .r[env$lastN+1]
       .f <- .rf[env$lastN+1]
       .u <- .ru[env$lastN+1]
+      names(.v) <- names(.f) <- names(.u) <- NULL
       env$df <- rbind(
         env$df,
         data.frame(
@@ -424,6 +427,7 @@ NULL
       .v <- .r[.i]
       .f <- .rf[.i]
       .u <- .ru[.i]
+      names(.v) <- names(.f) <- names(.u) <- NULL
       env$df <- rbind(
         env$df,
         data.frame(
@@ -436,6 +440,7 @@ NULL
     .v <- .r[env$lastN+1]
     .f <- .rf[env$lastN+1]
     .u <- .ru[env$lastN+1]
+    names(.v) <- names(.f) <- names(.u) <- NULL
     env$df <- rbind(
       env$df,
       data.frame(
@@ -517,6 +522,7 @@ NULL
     .lotri1(x[[2]], x[[3]], env)
   } else {
     .val <- try(eval(x[[3]], envir=.lotriParentEnv), silent = TRUE)
+    names(.val) <- NULL
     if (is.numeric(.val) || is.integer(.val)) {
       env$netas <- 1
       env$eta1 <- env$eta1 + 1
@@ -636,7 +642,7 @@ NULL
         data.frame(
           i = env$eta1,
           j = env$eta1,
-          x = eval(x[[3]], envir=.lotriParentEnv),
+          x = setNames(eval(x[[3]], envir=.lotriParentEnv), NULL),
           fix=FALSE, unfix=FALSE))
     } else {
       stop("cannot figure out expression `", deparse1(x), "` in lotri while handling `~`")
