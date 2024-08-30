@@ -59,6 +59,9 @@ human readable format.
   In addition to moving, this function will now retain the dimension
   names.
 
+* New exported function `lotriAsExpression()` which has more fine
+  control than `as.expression()` and will work without converting the
+  matrix to a lotri form.
 
 # lotri 0.4.4
 
