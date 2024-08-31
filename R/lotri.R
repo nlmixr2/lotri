@@ -986,51 +986,7 @@ NULL
   }
   return(.zd)
 }
-#' This asserts that the matrix is positive definite (in cov matrices)
 #'
-#' @param mat matrix to check
-#' @param zd which diagonals are zero
-#' @param fun function to apply to get a positive definite matix
-#' @param cnd condition that is currently being processed
-#' @return positive definite matrix, if successful
-#' @noRd
-#' @author Matthew L. Fidler
-.assertPositiveDefinite <- function(mat, zd, fun, cnd) {
-  .d <- dim(mat)
-  if (.d[1] == length(zd)) {
-    # all are diagonal zeros
-    return(mat)
-  }
-  if (length(zd) == 0) {
-    .mat <- mat
-  } else {
-    .mat <- mat[zd, zd, drop = FALSE]
-  }
-  .e <- eigen(.mat)
-  if (all(.e$values > 0)) return(mat)
-  .cnd <- ""
-  if (!is.null(cnd)) {
-    .cnd <- paste0(" for level ", cnd)
-  }
-  .stp <- paste0("non-positive definite matrix covariance matrix", .cnd)
-  if (is.function(fun)) {
-    .mat <- fun(.mat)
-    .e <- eigen(.mat)
-    if (all(.e$values > 0)) {
-      .mat2 <- mat
-      if (length(zd) == 0) {
-        .mat2 <- .mat
-      } else {
-        .mat2[zd, zd] <- .mat
-      }
-      warning(paste0("corrected matrix to be non-positive definite", .cnd),
-              call.=FALSE)
-      return(.mat2)
-    }
-    .stp <- paste0(.stp, " even after correction")
-  }
-  stop(.stp, call.=FALSE)
-}
 #' Create the matrix from the lotri environment
 #'
 #' @param env lotri environment
@@ -1075,7 +1031,6 @@ NULL
   # Verify that zero diagonals have zero off diagonals (rxode2#481)
   if (env$isCov) {
     .zd <- .assertErrZeroDiag(.ret, cnd)
-    .ret <- .assertPositiveDefinite(mat=.ret, zd=.zd, fun=fun, cnd=cnd)
   }
   .ret
 }
