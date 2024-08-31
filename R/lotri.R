@@ -1059,6 +1059,7 @@ NULL
   dimnames(.retF) <- list(env$names, env$names)
   dimnames(.retU) <- list(env$names, env$names)
   if (is.logical(env$rcm) && env$rcm && .n >= 1) {
+    .tmp <- lotriMatInv(.ret)
     .ret <- rcm(.ret)
     env$names <- dimnames(.ret)[[1]]
     .retF <- .retF[env$names, env$names]
