@@ -1058,8 +1058,8 @@ NULL
   dimnames(.ret) <- list(env$names, env$names)
   dimnames(.retF) <- list(env$names, env$names)
   dimnames(.retU) <- list(env$names, env$names)
-  if (is.logical(env$rcm) && env$rcm && .n >= 1) {
-    .tmp <- lotriMatInv(.ret)
+  if (is.logical(env$rcm) && env$rcm && .n >= 1 &&
+        !lotriIsBlockMat(.ret)) {
     .ret <- rcm(.ret)
     env$names <- dimnames(.ret)[[1]]
     .retF <- .retF[env$names, env$names]
