@@ -670,8 +670,8 @@ NULL
   } else if (identical(x[[1]], quote(`{`))) {
     .x <- x[-1]
     for (.i in seq_along(.x)) {
-      .curLine <- .f(.x[[.i]], env=env)
-      ## .curLine <- try(.f(.x[[.i]], env=env), silent=TRUE)
+      ##.curLine <- .f(.x[[.i]], env=env)
+      .curLine <- try(.f(.x[[.i]], env=env), silent=TRUE)
       if (inherits(.curLine, "try-error")) {
         env$.hasErr <- TRUE
         env$.err[[.i]] <- paste(c(env$.err[[.i]], attr(.curLine, "condition")$message), collapse="\n")
