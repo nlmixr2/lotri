@@ -4,7 +4,12 @@
 \alias{lotriAsExpression}
 \title{Change a matrix or lotri matrix to a lotri expression}
 \usage{
-lotriAsExpression(x, useIni = FALSE, plusNames = FALSE, nameEst = 5L)
+lotriAsExpression(
+  x,
+  useIni = FALSE,
+  plusNames = getOption("lotri.plusNames", FALSE),
+  nameEst = getOption("lotri.nameEst", 5L)
+)
 }
 \arguments{
 \item{x}{matrix}

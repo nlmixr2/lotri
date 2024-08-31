@@ -45,8 +45,9 @@ human readable format.
   function to allow correction of the matrix to a positive definite
   matrix automatically.
 
-* New option of `rcm`; When enabled, it will permute the matrix to try
-  to get a banded matrix using the Reverse Cuthill McKee algorithm.
+* New option of `rcm`; When enabled, and `lotriIsBlockMat()` is not
+  true, `lotri()` will permute the matrix to try to get a banded
+  matrix using the Reverse Cuthill McKee algorithm.
 
 * Change internals for `lotri` so that new `rxode2` is no longer
   required to be binary linked to `lotri`.
@@ -111,6 +112,9 @@ human readable format.
   of estimates and covariance estimates, allow them to be converted to
   an equivalent expression with `as.expression()` for the lotri object
   and `lotriDataFrameToLotriExpression()` for the `data.frame`
+
+* Added `lotriIsBlockMat()` to check to see if a matrix is in a block
+  diagonal matrix form.
 
 # lotri 0.3.1
 
