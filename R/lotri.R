@@ -364,7 +364,7 @@ NULL
 #' @return Returns `TRUE` if the processing is successful and the data
 #'   frame is updated, otherwise returns `FALSE`.
 #' @noRd
-.handleSingleLineEstInForm2 <- function(x2, values, fixed, unfixed, env) {
+.handleSingleLineEstInLineForm <- function(x2, values, fixed, unfixed, env) {
   .r <- values
   .rf <- fixed
   .ru <- unfixed
@@ -425,7 +425,7 @@ NULL
   .r <- .rl[[1]]
   .rf <- .rl[[2]]
   .ru <- .rl[[3]]
-  if (.handleSingleLineEstInForm2(x2, values=.r, fixed=.rf, unfixed=.ru, env)) {
+  if (.handleSingleLineEstInLineForm(x2, values=.r, fixed=.rf, unfixed=.ru, env)) {
     return(NULL)
   }
   if (env$lastN != 0 && length(x2) == 1L && length(.r) == env$lastN + 1) {
