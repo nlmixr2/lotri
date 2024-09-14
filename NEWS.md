@@ -37,6 +37,12 @@ m <- lotri({
 This way changing to an R parsed expression will be rendered in a more
 human readable format.
 
+You can change the deparsing options that are used by default with
+`lotri` with `options(lotri.plusNames=TRUE)` which prefers the `a+b+c`
+syntax when deparsing. Otherwise, the line format is used by default.
+The dimension number before naming the values in the line-format can
+be controlled with `options(lotri.nameEst=2)` or some other dimension.
+
 * New option of `cov` added which check for matrix suitability for
   covariance matrix. When `cov=TRUE`, off-diagonal elements in
   covariance matrices may no longer be nonzero if the diagonal value
