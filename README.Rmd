@@ -77,6 +77,7 @@ mat <- lotri(a+b ~ c(1,
 print(mat)
 
 # You can also specify line by line:
+
 mat <- lotri({a ~ 1
               b ~ c(0.5, 1)})
 print(mat)
