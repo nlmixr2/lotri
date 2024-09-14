@@ -127,23 +127,31 @@ NULL
   .ret
 }
 
+.isFixedElt <- function(x) {
+  (identical(x, quote(`fix`)) ||
+     identical(x, quote(`fixed`)) ||
+     identical(x, quote(`Fixed`)) ||
+     identical(x, quote(`FIXED`)) ||
+     identical(x, quote(`Fix`)) ||
+     identical(x, quote(`FIX`)))
+}
+
+.isUnfixedElt <- function(x) {
+ (identical(x, quote(`unfix`)) ||
+    identical(x, quote(`unfixed`)) ||
+    identical(x, quote(`Unfixed`)) ||
+    identical(x, quote(`UNFIXED`)) ||
+    identical(x, quote(`Unfix`)) ||
+    identical(x, quote(`UNFIX`)))
+}
+
 .repFixedWithC <- function(x, env=new.env(parent=emptyenv())) {
   if (is.call(x)) {
-    if (identical(x[[1]], quote(`fix`)) ||
-          identical(x[[1]], quote(`fixed`)) ||
-          identical(x[[1]], quote(`Fixed`)) ||
-          identical(x[[1]], quote(`FIXED`)) ||
-          identical(x[[1]], quote(`Fix`)) ||
-          identical(x[[1]], quote(`FIX`))) {
+    if (.isFixedElt(x[[1]])) {
       env$fix <- TRUE
       x[[1]] <- quote(`c`)
       return(x)
-    } else if (identical(x[[1]], quote(`unfix`)) ||
-                 identical(x[[1]], quote(`unfixed`)) ||
-                 identical(x[[1]], quote(`Unfixed`)) ||
-                 identical(x[[1]], quote(`UNFIXED`)) ||
-                 identical(x[[1]], quote(`Unfix`)) ||
-                 identical(x[[1]], quote(`UNFIX`))) {
+    } else if (.isUnfixedElt(x[[1]])) {
       env$unfix <- TRUE
       x[[1]] <- quote(`c`)
       return(x)
@@ -213,16 +221,10 @@ NULL
 #' @author Matthew L. Fidler
 #' @noRd
 .lotriParseMatCalculateFixedProps <- function(x, env=NULL) {
-  if (identical(x[[1]], quote(`fix`)) ||
-        identical(x[[1]], quote(`fixed`)) ||
-        identical(x[[1]], quote(`FIX`)) ||
-        identical(x[[1]], quote(`FIX`))) {
+  if (.isFixedElt(x[[1]])) {
     env$globalFix <- TRUE
   }
-  if (identical(x[[1]], quote(`unfix`)) ||
-        identical(x[[1]], quote(`unfixed`)) ||
-        identical(x[[1]], quote(`UNFIX`)) ||
-        identical(x[[1]], quote(`UNFIX`))) {
+  if (.isUnfixedElt(x[[1]])) {
     env$globalUnfix <- TRUE
   }
 }
@@ -641,10 +643,38 @@ NULL
         exists(as.character(x[[3]]), envir=.lotriParentEnv)) {
     x[[3]] <- str2lang(deparse1(get(as.character(x[[3]]), envir=.lotriParentEnv)))
   }
-  if (length(x[[3]]) == 1) {
+  .fix <- FALSE
+  .unfix <- FALSE
+  .x3 <- x[[3]]
+  if (length(.x3) == 2L &&
+        identical(.x3[[1]], quote(`c`))) {
+    .x3t <- eval(.x3, envir=.lotriParentEnv)
+    if (length(.x3t) == 1L && is.numeric(.x3t)) {
+      .x3 <- .x3t
+    }
+  } else if (length(.x3) == 2L &&
+        .isFixedElt(.x3[[1]])) {
+    .x3t <- .x3
+    .x3t[[1]] <- quote(`c`)
+    .x3t <- eval(.x3t, envir=.lotriParentEnv)
+    if (length(.x3t) == 1L && is.numeric(.x3t)) {
+      .x3 <- .x3t
+      .fix <- TRUE
+    }
+  } else if (length(.x3) == 2L &&
+               .isUnfixedElt(.x3[[1]])) {
+    .x3t <- .x3
+    .x3t[[1]] <- quote(`c`)
+    .x3t <- eval(.x3t, envir=.lotriParentEnv)
+    if (length(.x3t) == 1L && is.numeric(.x3t)) {
+      .x3 <- .x3t
+      .unfix <- TRUE
+    }
+  }
+  if (length(.x3) == 1) {
     .resetLastN(env)
     ## et1 ~ 0.2
-    if (is.numeric(x[[3]])) {
+    if (is.numeric(.x3)) {
       env$lastN <- 1
       env$netas <- 1
       env$eta1 <- env$eta1 + 1
@@ -654,8 +684,8 @@ NULL
         data.frame(
           i = env$eta1,
           j = env$eta1,
-          x = setNames(eval(x[[3]], envir=.lotriParentEnv), NULL),
-          fix=FALSE, unfix=FALSE))
+          x = setNames(eval(.x3, envir=.lotriParentEnv), NULL),
+          fix=.fix, unfix=.unfix))
     } else {
       stop("cannot figure out expression `", deparse1(x), "` in lotri while handling `~`")
     }
