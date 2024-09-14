@@ -284,10 +284,26 @@ test_that("lotri lower triangular matrix specification 2", {
     expect_equal(lotri({
       eta1 ~ 0.175278
       eta2 ~ c(0.115896, 0.112362)
+      eta3 ~ c(eta3=0)
+    }),
+    lotri(eta1+eta2 ~ c(0.175278, 0.115896, 0.112362),
+          eta3 ~  0))
+
+    expect_equal(lotri({
+      eta1 ~ 0.175278
+      eta2 ~ c(0.115896, 0.112362)
       eta3 ~ fix(0)
     }),
     lotri(eta1+eta2 ~ c(0.175278, 0.115896, 0.112362),
           eta3 ~  fix(0)))
+
+    expect_equal(lotri({
+      eta1 ~ 0.175278
+      eta2 ~ c(0.115896, 0.112362)
+      eta3 ~ fix(0)
+    }),
+    lotri(eta1+eta2 ~ c(0.175278, 0.115896, 0.112362),
+          eta3 ~  fix(eta3=0)))
 
     expect_equal(lotri({
       eta1 ~ 0.175278
