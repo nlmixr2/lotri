@@ -605,6 +605,14 @@ NULL
   }
 }
 
+.isKnownCall <- function(x) {
+  if (is.call(x) && length(x) >= 1) {
+    return(tolower(as.character(x[[1]])) %in%
+             c("fix", "fixed", "unfix", "unfixed", "var", "sd", "cor", "cov", "chol"))
+  }
+  FALSE
+}
+
 #' Handle Matrix Expressions with Tilde
 #'
 #' This function processes matrix expressions of the form `name ~ c(lower-tri)`.
@@ -653,7 +661,8 @@ NULL
       .x3 <- .x3t
     }
   } else if (length(.x3) == 2L &&
-        .isFixedElt(.x3[[1]])) {
+               .isFixedElt(.x3[[1]]) &&
+               !.isKnownCall(.x3[[2]])) {
     .x3t <- .x3
     .x3t[[1]] <- quote(`c`)
     .x3t <- eval(.x3t, envir=.lotriParentEnv)
@@ -662,13 +671,22 @@ NULL
       .fix <- TRUE
     }
   } else if (length(.x3) == 2L &&
-               .isUnfixedElt(.x3[[1]])) {
+               .isUnfixedElt(.x3[[1]]) &&
+               !.isKnownCall(.x3[[2]])) {
     .x3t <- .x3
     .x3t[[1]] <- quote(`c`)
     .x3t <- eval(.x3t, envir=.lotriParentEnv)
     if (length(.x3t) == 1L && is.numeric(.x3t)) {
       .x3 <- .x3t
       .unfix <- TRUE
+    }
+  } else if (length(.x3) == 2L &&
+               !.isKnownCall(.x3)){
+    .x3t <- try(eval(.x3, envir=.lotriParentEnv), silent=TRUE)
+    if (!inherits(.x3t, "try-error") &&
+          length(.x3t) == 1L &&
+          is.numeric(.x3t)) {
+      .x3 <- .x3t
     }
   }
   if (length(.x3) == 1) {
