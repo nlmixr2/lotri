@@ -4,6 +4,8 @@
 ^lotri\.Rproj$
 ^\.Rproj\.user$
 ^README\.Rmd$
+^README\.html$
+^README\.htm$
 ^_pkgdown\.yml$
 ^docs$
 ^pkgdown$
