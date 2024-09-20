@@ -1,3 +1,5 @@
+# lotri (development version)
+
 # lotri 1.0.0
 
 * Added a new way of specifying lotri matrices:
