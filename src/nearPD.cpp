@@ -1,8 +1,6 @@
 // https://github.com/cran/Matrix/blob/master/R/nearPD.R
 // Contributors Martin Maechler, Jens Oehlschlägel
 #define ARMA_WARN_LEVEL 1
-#include <armadillo.hpp>
-#include <cpp11.hpp>
 #include <cpp11armadillo.hpp>
 #include "nearPD.h"
 
