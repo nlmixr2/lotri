@@ -1,3 +1,6 @@
+.lotriEnv <- new.env(parent=emptyenv())
+.lotriEnv$lastTilde <- FALSE
+
 #' @importFrom utils assignInMyNamespace
 #' @useDynLib lotri, .registration = TRUE
 NULL
@@ -400,6 +403,7 @@ NULL
       )
       env$lastN <- env$lastN + 1
       env$names <- c(env$names, deparse1(x2))
+      env$labels <- c(env$labels, NA_character_)
       return(TRUE)
     }
   }
@@ -459,6 +463,7 @@ NULL
     )
     env$lastN <- env$lastN + 1
     env$names <- c(env$names, deparse1(x2))
+    env$labels <- c(env$labels, NA_character_)
     return(invisible())
   }
   env$netas <- length(.r)
@@ -471,6 +476,7 @@ NULL
     .n <- .n[.n != "+"]
     if (length(.n) == .num) {
       env$names <- c(env$names, .n)
+      env$labels <- c(env$labels, rep(NA_character_, length(.n)))
       .j <- 1
       .k <- 1
       while (TRUE) {
@@ -535,6 +541,7 @@ NULL
       env$netas <- 1
       env$eta1 <- env$eta1 + 1
       env$names <- c(env$names, as.character(x[[2]]))
+      env$labels <- c(env$labels, NA_character_)
       env$df <- rbind(
         env$df,
         data.frame(i = env$eta1, j = env$eta1, x = .val, fix=FALSE, unfix=FALSE)
@@ -575,6 +582,7 @@ NULL
             .env2$eta1 <- env$eta1
             .env2$lastN <- env$lastN
             .env2$names <- env$names
+            .env2$labels <- env$labels
             # moved to .env2 for parsing
             env$df <- NULL
             env$lastN <- 0
@@ -586,6 +594,7 @@ NULL
             .env2$netas <- 1L
             .env2$eta1 <- .env2$eta1 + 1L
             .env2$names <- c(.env2$names, as.character(x[[2]]))
+            .env2$labels <- c(.env2$labels, NA_character_)
             .env2$df <- rbind(
               .env2$df,
               data.frame(
@@ -697,6 +706,7 @@ NULL
       env$netas <- 1
       env$eta1 <- env$eta1 + 1
       env$names <- c(env$names, as.character(x[[2]]))
+      env$labels <- c(env$labels, NA_character_)
       env$df <- rbind(
         env$df,
         data.frame(
@@ -711,9 +721,17 @@ NULL
     .fcallTildeLhsSum(x, env)
   }
 }
-
+#' This handles the `~` operator in the lotri DSL.
+#'
+#'
+#' @param x expression
+#' @param env parsing environment
+#' @return nothing, called for side effects to env
+#' @noRd
+#' @author Matthew L. Fidler
 .fCall <- function(x, env) {
   if (identical(x[[1]], quote(`~`))) {
+    .lotriEnv$lastTilde <- TRUE
     .fCallTilde(x, env)
   } else if (identical(x[[1]], quote(`{`))) {
     .x <- x[-1]
@@ -734,10 +752,16 @@ NULL
     env$matrix <- eval(x, envir=.lotriParentEnv)
   } else if (identical(x[[1]], quote(`=`)) ||
                identical(x[[1]], quote(`<-`))) {
+    .lotriEnv$lastTilde <- FALSE
     ## these are handled in .parseThetaEst()
     .resetLastN(env, 0L)
+  } else if (.lotriEnv$lastTilde &&
+               identical(x[[1]], quote(`label`))) {
+    # only the last tilde is labeled
+    env$labels[length(env$labels)] <- x[[2]]
   } else if (identical(x[[1]], quote(`label`)) ||
                identical(x[[1]], quote(`backTransform`))) {
+
     ## these are handled in .parseThetaEst()
   } else {
     stop("matrix expression should be 'name ~ c(lower-tri)'", call. = FALSE)
@@ -983,6 +1007,13 @@ NULL
 
 .lotriParentEnv <- NULL
 
+#' Amplify the return with the fixed estimates (if present)
+#'
+#' @param ret return value to amplify with fixed estimates
+#' @param df data frame of fixed estimates
+#' @returnamplified return value with fixed estimates
+#' @noRd
+#' @author Matthew L. Fidler
 .amplifyRetWithDfEst <- function(ret, df) {
   if (is.null(df)) return(ret)
   attr(ret, "lotriEst") <- df
@@ -1075,6 +1106,12 @@ NULL
   } else if (any(.retU)) {
     class(.ret) <- c("lotriFix", class(.ret))
     attr(.ret, "lotriUnfix") <- .retU
+  }
+  if (any(!is.na(env$labels))) {
+    attr(.ret, "lotriLabels") <- env$labels
+    if (!inherits(.ret, "lotriFix")) {
+      class(.ret) <- c("lotriLabels", class(.ret))
+    }
   }
   # Verify that zero diagonals have zero off diagonals (rxode2#481)
   if (env$isCov) {
@@ -1345,6 +1382,7 @@ lotri <- function(x, ..., cov=FALSE, rcm=FALSE,
         .env2$df <- rbind(.env2$df, .env$df)
         .env2$lastN <- 0
         .env2$names <- c(.env2$names, .env$names)
+        .env2$labels <- c(.env2$labels, .env$labels)
         .env2$eta1 <- .env$eta1 + .env2$eta1
       } else if (!is.null(.env$df)) {
         .env[[default]] <- new.env(parent=emptyenv())
@@ -1356,6 +1394,7 @@ lotri <- function(x, ..., cov=FALSE, rcm=FALSE,
         .env2$fun <- .env$fun
         .env2$eta1 <- .env$eta1
         .env2$names <- .env$names
+        .env2$labels <- .env$labels
         .env$cnd <- c(default, .env$cnd)
       }
       for (.j in .env$cnd) {
