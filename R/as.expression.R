@@ -1,8 +1,11 @@
 #' Turn a character expression into quoted symbol
 #'
 #' @param chr Character symbol
+#'
 #' @return Quoted symbol
+#'
 #' @author Matthew Fidler
+#'
 #' @noRd
 .enQuote <- function(chr) {
   eval(parse(text=paste0("quote(", chr, ")")))
@@ -11,8 +14,11 @@
 #' Turn a single lotri estimate data frame estimate into lhs expression
 #'
 #' @param df1 Single Left hand side data row
+#'
 #' @return normalized left handed expression
+#'
 #' @author Matthew L. Fidler
+#'
 #' @noRd
 .lotriLhsExpressionFromDf1 <- function(df1) {
   .ret <- list(ifelse(df1$fix, quote(`fix`), quote(`c`)),
@@ -131,6 +137,7 @@
 .lotriGetEtaMatrixElementsLineForm <- function(x, condition="id", nameEst=5L) {
   if (inherits(x, "matrix")) {
     .x <- lotriMatInv(x)
+    .labels <- attr(x, "lotriLabels")
     .l <- lapply(seq_along(.x), function(i) {
       .mat <- .x[[i]]
       .lotriFix <- attr(.mat, "lotriFix")
@@ -175,17 +182,26 @@
             }
           }
         }, character((1)), USE.NAMES=FALSE)
-        if (length(.vals) == 1 && .c == "c" && !.useNames) {
-          str2lang(paste0(.nme[i], "~ ", .vals,
-                          ifelse(condition == "id", "", paste0("| ", condition))))
+        .lab <- .labels[i]
+        if (!is.na(.lab) && .lab != "") {
+          .lab <- str2lang(paste0("quote(label(\"", .lab, "\"))"))
         } else {
-          str2lang(paste0(.nme[i], "~ ", .c,
+          .lab <- NULL
+        }
+        if (length(.vals) == 1 && .c == "c" && !.useNames) {
+          list(
+            str2lang(paste0(.nme[i], "~ ", .vals,
+                            ifelse(condition == "id", "", paste0("| ", condition)))),
+            .lab)
+        } else {
+          list(str2lang(paste0(.nme[i], "~ ", .c,
                           "(",paste(.vals, collapse=", "), ")",
-                          ifelse(condition == "id", "", paste0("| ", condition))))
+                          ifelse(condition == "id", "", paste0("| ", condition)))),
+                .lab)
         }
       })
     })
-    do.call(`c`, .l)
+    do.call(`c`, unlist(.l))
   } else if (inherits(x, "list")) {
     .n <- names(x)
     do.call("c", lapply(.n, function(nme) {
@@ -244,9 +260,13 @@
 #' Convert a lotri data frame to a lotri expression
 #'
 #' @param data lotri data frame
+#'
 #' @param useIni Use `ini` instead of `lotri` in the expression
+#'
 #' @return expression of the lotri syntax equivalent to the data.frame provided
+#'
 #' @author Matthew L. Fidler
+#'
 #' @examples
 #'
 #'  x <- lotri({
