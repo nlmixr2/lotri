@@ -758,10 +758,17 @@ NULL
   } else if (.lotriEnv$lastTilde &&
                identical(x[[1]], quote(`label`))) {
     # only the last tilde is labeled
-    env$labels[length(env$labels)] <- x[[2]]
+    if (is.null(env$labels)) {
+      if (exists("lastCnd", env) &&
+            exists(env$lastCnd,env)) {
+        env[[env$lastCnd]]$labels <- c(env[[env$lastCnd]]$labels,
+                                       x[[2]])
+      }
+    } else {
+      env$labels[length(env$labels)] <- x[[2]]
+    }
   } else if (identical(x[[1]], quote(`label`)) ||
                identical(x[[1]], quote(`backTransform`))) {
-
     ## these are handled in .parseThetaEst()
   } else {
     stop("matrix expression should be 'name ~ c(lower-tri)'", call. = FALSE)
@@ -1110,7 +1117,7 @@ NULL
   if (any(!is.na(env$labels))) {
     attr(.ret, "lotriLabels") <- env$labels
     if (!inherits(.ret, "lotriFix")) {
-      class(.ret) <- c("lotriLabels", class(.ret))
+      class(.ret) <- c("lotriFix", class(.ret))
     }
   }
   # Verify that zero diagonals have zero off diagonals (rxode2#481)
