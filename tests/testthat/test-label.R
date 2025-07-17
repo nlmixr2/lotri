@@ -18,7 +18,7 @@ test_that("test labels", {
 
   expect_equal(est$label[w], "additive error (mg/L)")
 
-  expect_equal(attr(f, "lotriLabel"),
+  expect_equal(attr(f, "lotriLabels"),
                c("IIV ka", "IIV cl", "IIV v"))
 
   f <-   lotri({
@@ -33,7 +33,7 @@ test_that("test labels", {
     eta.v  ~ c(0.1, 0.1, 0.1)   ; label("IIV v")
   })
 
-  expect_equal(attr(f, "lotriLabel"),
+  expect_equal(attr(f, "lotriLabels"),
                c("IIV ka", "IIV cl", "IIV v"))
 
   f <-   lotri({
@@ -48,7 +48,7 @@ test_that("test labels", {
     eta.v  ~ c(0.1)   ; label("IIV v")
   })
 
-  expect_equal(attr(f, "lotriLabel"),
+  expect_equal(attr(f, "lotriLabels"),
                c(NA_character_, "IIV cl", "IIV v"))
 
   f <-   lotri({
@@ -62,6 +62,6 @@ test_that("test labels", {
                         0.1, 0.1)
     eta.v  ~ c(0.1)
   })
-  expect_null(attr(f, "lotriLabel"))
+  expect_null(attr(f, "lotriLabels"))
 
 })
