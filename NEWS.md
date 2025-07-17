@@ -1,4 +1,6 @@
-# lotri (development version)
+# lotri 1.0.1
+
+* Now support labels on etas or covariances
 
 # lotri 1.0.0
 
