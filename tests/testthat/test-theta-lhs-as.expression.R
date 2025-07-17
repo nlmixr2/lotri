@@ -107,10 +107,10 @@ test_that("as.expression handling; lhs of theta parameters", {
                list(quote(et5 ~ 1),
                     quote(label("eta 5")),
                     quote(et2 ~ 1),
-                    quote(label("eta 5")),
                     quote(et3 ~ c(2, 3)),
+                    quote(label("eta 3")),
                     quote(et1 ~ fix(3)),
-                    quote(label("eta 5"))))
+                    quote(label("eta 1"))))
 
   fix2 <- lotri({
     f+g ~ fix(1,
