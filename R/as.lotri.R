@@ -43,6 +43,7 @@ as.lotri.matrix <- function(x, ..., default = "") {
                    function(.i) {
                      x$name[x$neta1==.i & x$neta2 == .i]
                    }, character(1), USE.NAMES = FALSE)
+  x$label <- as.character(x$label)
   .labels <- vapply(seq_len(dim(.mat)[1]),
                     function(.i) {
                       x$label[x$neta1==.i & x$neta2 == .i]
