@@ -137,9 +137,9 @@
 .lotriGetEtaMatrixElementsLineForm <- function(x, condition="id", nameEst=5L) {
   if (inherits(x, "matrix")) {
     .x <- lotriMatInv(x)
-    .labels <- attr(x, "lotriLabels")
     .l <- lapply(seq_along(.x), function(i) {
       .mat <- .x[[i]]
+      .labels <- attr(.mat, "lotriLabels")
       .lotriFix <- attr(.mat, "lotriFix")
       .fixOrC <- "c"
       if (!is.null(.lotriFix)) {

@@ -761,8 +761,8 @@ NULL
     if (is.null(env$labels)) {
       if (exists("lastCnd", env) &&
             exists(env$lastCnd,env)) {
-        env[[env$lastCnd]]$labels <- c(env[[env$lastCnd]]$labels,
-                                       x[[2]])
+        .lab <- env[[env$lastCnd]]$labels
+        env[[env$lastCnd]]$labels[length(.lab)] <- x[[2]]
       }
     } else {
       env$labels[length(env$labels)] <- x[[2]]

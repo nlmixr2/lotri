@@ -94,12 +94,23 @@ test_that("as.expression handling; lhs of theta parameters", {
                     quote(et2 + et3 ~ c(1, 2, 3)),
                     quote(et1 ~ fix(3))))
 
+  x1 <- lotri({
+    et5 ~ 1; label("eta 5")
+    et2 + et3 ~ c(
+      1,
+      2, 3
+    ); label("eta 3")
+    et1 ~ fix(3); label("eta 1")
+  })
+
   expect_equal(.lotriGetEtaMatrixElementsLineForm(x1),
                list(quote(et5 ~ 1),
+                    quote(label("eta 5")),
                     quote(et2 ~ 1),
+                    quote(label("eta 5")),
                     quote(et3 ~ c(2, 3)),
-                    quote(et1 ~ fix(3))))
-
+                    quote(et1 ~ fix(3)),
+                    quote(label("eta 5"))))
 
   fix2 <- lotri({
     f+g ~ fix(1,
@@ -117,6 +128,22 @@ test_that("as.expression handling; lhs of theta parameters", {
                     quote(n ~ c(0.5, 1)),
                     quote(f ~ fix(1) | occ),
                     quote(g ~ fix(0.5, 1) | occ)))
+
+  fix2 <- lotri({
+    f+g ~ fix(1,
+              0.5, 1) | occ ; label("g")
+    m+n ~ c(2,
+            0.5, 1)  ; label("n")
+  })
+
+  expect_equal(.lotriGetEtaMatrixElementsLineForm(fix2),
+               list(quote(m ~ 2),
+                    quote(n ~ c(0.5, 1)),
+                    quote(label("n")),
+                    quote(f ~ fix(1) | occ),
+                    quote(g ~ fix(0.5, 1) | occ),
+                    quote(label("g"))))
+
 
   x <- lotri({
     tka <- 0.45; label("Log Ka")
