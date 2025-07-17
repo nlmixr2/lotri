@@ -1011,7 +1011,7 @@ NULL
 #'
 #' @param ret return value to amplify with fixed estimates
 #' @param df data frame of fixed estimates
-#' @returnamplified return value with fixed estimates
+#' @return Amplified return value with fixed estimates
 #' @noRd
 #' @author Matthew L. Fidler
 .amplifyRetWithDfEst <- function(ret, df) {

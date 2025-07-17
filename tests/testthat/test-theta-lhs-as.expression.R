@@ -1,4 +1,5 @@
 test_that("as.expression handling; lhs of theta parameters", {
+
   x <- lotri({
     tka <- 0.45; label("Log Ka")
     tcl <- 1; label("Log Cl")

@@ -43,9 +43,18 @@ as.lotri.matrix <- function(x, ..., default = "") {
                    function(.i) {
                      x$name[x$neta1==.i & x$neta2 == .i]
                    }, character(1), USE.NAMES = FALSE)
+  .labels <- vapply(seq_len(dim(.mat)[1]),
+                    function(.i) {
+                      x$label[x$neta1==.i & x$neta2 == .i]
+                    }, character(1), USE.NAMES = FALSE)
   dimnames(.mat) <- list(.names, .names)
   dimnames(.matF) <- list(.names, .names)
-  if(any(.matF)) {
+  .hasLab <- FALSE
+  if (!all(is.na(.labels))) {
+    attr(.mat, "lotriLabels") <- .labels
+    .hasLab <- TRUE
+  }
+  if (any(.matF) || .hasLab) {
     attr(.mat, "lotriFix") <- .matF
     class(.mat) <- c("lotriFix", class(.mat))
   }
@@ -56,11 +65,13 @@ as.lotri.matrix <- function(x, ..., default = "") {
 ##' @export
 as.lotri.data.frame <- function(x, ..., default="") {
   ## Get lotriEst
-  if (!all(c("name", "lower", "est", "upper", "fix", "label", "backTransform") %in% names(x))) {
+  if (!all(c("name", "lower", "est", "upper", "fix", "label", "backTransform") %in%
+             names(x))) {
     stop("the required names in the data.frame are not present; This needs:\n",
          "  name, lower, est, upper, fix, label, backTransform\n", call.=FALSE)
   }
-  .lotriEst <- x[which(!is.na(x$ntheta)), c("name", "lower", "est", "upper", "fix", "label", "backTransform")]
+  .lotriEst <- x[which(!is.na(x$ntheta)), c("name", "lower", "est", "upper",
+                                            "fix", "label", "backTransform")]
   .lotriMatDf <- x[which(is.na(x$ntheta)), ]
   .cnd <- unique(.lotriMatDf$condition)
   if (length(.cnd) == 1) {

@@ -182,21 +182,26 @@
             }
           }
         }, character((1)), USE.NAMES=FALSE)
-        .lab <- .labels[i]
-        if (!is.na(.lab) && .lab != "") {
-          .lab <- str2lang(paste0("quote(label(\"", .lab, "\"))"))
-        } else {
+        if (is.null(.labels)) {
           .lab <- NULL
+        } else {
+          .lab <- .labels[i]
+          if (!is.na(.lab)) {
+            .lab <- str2lang(paste0("quote(label(", deparse1(.lab), "))"))
+          } else {
+            .lab <- NULL
+          }
         }
         if (length(.vals) == 1 && .c == "c" && !.useNames) {
           list(
-            str2lang(paste0(.nme[i], "~ ", .vals,
-                            ifelse(condition == "id", "", paste0("| ", condition)))),
+            str2lang(paste0("quote(",
+                            .nme[i], "~ ", .vals,
+                            ifelse(condition == "id", "", paste0("| ", condition)), ")")),
             .lab)
         } else {
-          list(str2lang(paste0(.nme[i], "~ ", .c,
+          list(str2lang(paste0("quote(", .nme[i], "~ ", .c,
                           "(",paste(.vals, collapse=", "), ")",
-                          ifelse(condition == "id", "", paste0("| ", condition)))),
+                          ifelse(condition == "id", "", paste0("| ", condition)), ")")),
                 .lab)
         }
       })
