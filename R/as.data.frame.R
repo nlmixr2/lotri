@@ -95,6 +95,12 @@ as.data.frame.lotriFix <- function(x, row.names = NULL, optional = FALSE, ...,
                       backTransform=character(0),
                       condition=character(0)))
   }
+  if (!is.null(attr(x, "lotriLabels"))) {
+    .lab <- attr(x, "lotriLabels")
+    for (i in seq_along(.lab)) {
+      .df$label[which(.df$neta1 == i & .df$neta2 == i)] <- .lab[i]
+    }
+  }
   return(.df[, .ord])
 
   ##   ntheta neta1 neta2   name lower       est   upper   fix  err  label
