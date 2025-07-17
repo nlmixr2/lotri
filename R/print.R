@@ -21,6 +21,7 @@ print.lotriFix <- function(x, ...) {
     .lotriFix <- attr(.tmp, "lotriFix")
     .lotriUnfix <- attr(.tmp, "lotriUnfix")
     .lotriEst <- attr(.tmp, "lotriEst")
+    .lotriLabels <- attr(.tmp, "lotriLabels")
     if (all(.dim == 0L) & !is.null(.lotriEst)) {
       cat("Lotri Estimates (get with `lotriEst()`):\n")
       print(.lotriEst)
@@ -29,6 +30,7 @@ print.lotriFix <- function(x, ...) {
     attr(.tmp, "lotriFix") <- NULL
     attr(.tmp, "lotriEst") <- NULL
     attr(.tmp, "lotriUnfix") <- NULL
+    attr(.tmp, "lotriLabels") <- NULL
     .w <- which(.cls == "lotriFix")
     .cls <- .cls[-.w]
     class(.tmp) <- NULL # Note that a matrix doesn't actually have a class
@@ -43,6 +45,11 @@ print.lotriFix <- function(x, ...) {
     } else if (!is.null(.lotriUnfix)) {
       cat("this matrix elements that will be unfixed\n")
     }
+    if (!is.null(.lotriLabels)) {
+      cat("\nThis matrix has diagonal labels:\n")
+      print(.lotriLabels)
+      cat("\n")
+    }
   } else {
     ## lotri or list
     .lotriEst <- attr(x, "lotriEst")
@@ -53,6 +60,7 @@ print.lotriFix <- function(x, ...) {
     }
     y <- x
     attr(y, "lotriEst") <- NULL
+    attr(y, "lotriLabels") <- NULL
     .cls <- class(y)
     .cls <- .cls[.cls != "lotriFix"]
     class(y) <- .cls
