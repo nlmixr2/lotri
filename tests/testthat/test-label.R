@@ -18,6 +18,9 @@ test_that("test labels", {
 
   expect_equal(est$label[w], "additive error (mg/L)")
 
+  expect_equal(attr(f, "lotriLabel"),
+               c("IIV ka", "IIV cl", "IIV v"))
+
   f <-   lotri({
     # Where initial conditions/variables are specified
     lka  <- log(1.15) ; label("log ka (1/h)")
@@ -29,6 +32,9 @@ test_that("test labels", {
     eta.cl ~ c(0.1, 0.1)   ; label("IIV cl")
     eta.v  ~ c(0.1, 0.1, 0.1)   ; label("IIV v")
   })
+
+  expect_equal(attr(f, "lotriLabel"),
+               c("IIV ka", "IIV cl", "IIV v"))
 
   f <-   lotri({
     # Where initial conditions/variables are specified
@@ -42,5 +48,20 @@ test_that("test labels", {
                         eta.v  ~ c(0.1)   ; label("IIV v")
   })
 
+  expect_equal(attr(f, "lotriLabel"),
+               c(NA_character_, "IIV cl", "IIV v"))
+
+  f <-   lotri({
+    # Where initial conditions/variables are specified
+    lka  <- log(1.15) ; label("log ka (1/h)")
+    lcl  <- log(0.135) ;label("log Cl (L/h)")
+    lv   <- log(8)   ;  label("log V (L)")
+    prop.err <- 0.15; label("proportional error (SD/mean)")
+    add.err  <- 0.6  ; label("additive error (mg/L)")
+    eta.ka + eta.cl ~ c(0.5,
+                        0.1, 0.1)
+                        eta.v  ~ c(0.1)
+  })
+  expect_null(attr(f, "lotriLabel"))
 
 })
