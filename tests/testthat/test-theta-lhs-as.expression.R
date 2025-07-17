@@ -171,7 +171,6 @@ test_that("as.expression handling; lhs of theta parameters", {
                  eta.v ~ 0.1
                })))
 
-
   expect_equal(lotriDataFrameToLotriExpression(df, useIni=TRUE),
                quote(ini({
                  tka <- 0.45
@@ -215,6 +214,87 @@ test_that("as.expression handling; lhs of theta parameters", {
                  eta.cl ~ 0.3
                  eta.v ~ 0.1
                })))
+
+  x <- lotri({
+    tka <- 0.45; label("Log Ka")
+    tcl <- 1; label("Log Cl")
+    tv <- 3.45; label("Log V")
+    eta.ka ~ 0.6 ; label("eta ka")
+    eta.cl ~ 0.3 ; label("eta cl")
+    eta.v ~ 0.1 ; label("eta v")
+    add.err <- 0.7
+  })
+
+  df <- as.data.frame(x)
+
+  expect_equal(lotriDataFrameToLotriExpression(df),
+               quote(lotri({
+                 tka <- 0.45
+                 label("Log Ka")
+                 tcl <- 1
+                 label("Log Cl")
+                 tv <- 3.45
+                 label("Log V")
+                 add.err <- 0.7
+                 eta.ka ~ 0.6
+                 label("eta ka")
+                 eta.cl ~ 0.3
+                 label("eta cl")
+                 eta.v ~ 0.1
+                 label("eta v")
+               })))
+
+  expect_equal(lotriDataFrameToLotriExpression(df, useIni=TRUE),
+               quote(ini({
+                 tka <- 0.45
+                 label("Log Ka")
+                 tcl <- 1
+                 label("Log Cl")
+                 tv <- 3.45
+                 label("Log V")
+                 add.err <- 0.7
+                 eta.ka ~ 0.6
+                 label("eta ka")
+                 eta.cl ~ 0.3
+                 label("eta cl")
+                 eta.v ~ 0.1
+                 label("eta v")
+               })))
+
+  expect_equal(as.expression(x),
+               quote(lotri({
+                 tka <- 0.45
+                 label("Log Ka")
+                 tcl <- 1
+                 label("Log Cl")
+                 tv <- 3.45
+                 label("Log V")
+                 add.err <- 0.7
+                 eta.ka ~ 0.6
+                 label("eta ka")
+                 eta.cl ~ 0.3
+                 label("eta cl")
+                 eta.v ~ 0.1
+                 label("eta v")
+               })))
+
+  expect_equal(as.expression(x, useIni=TRUE),
+               quote(ini({
+                 tka <- 0.45
+                 label("Log Ka")
+                 tcl <- 1
+                 label("Log Cl")
+                 tv <- 3.45
+                 label("Log V")
+                 add.err <- 0.7
+                 eta.ka ~ 0.6
+                 label("eta ka")
+                 eta.cl ~ 0.3
+                 label("eta cl")
+                 eta.v ~ 0.1
+                 label("eta v")
+               })))
+
 
   expect_error(lotriDataFrameToLotriExpression(rnorm))
 
