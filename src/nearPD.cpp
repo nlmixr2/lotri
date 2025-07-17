@@ -210,7 +210,6 @@ extern "C" SEXP _lotriNearPD_(SEXP xS
                              , SEXP maxitS // maximum number of iterations allowed
                              , SEXP traceS // set to TRUE (or 1 ..) to trace iterations
                              ){
-  BEGIN_CPP11
   int n = Rf_nrows(xS);
   int keepDiag = INTEGER(keepDiagS)[0];
   int do2eigen = INTEGER(do2eigenS)[0];
@@ -229,16 +228,21 @@ extern "C" SEXP _lotriNearPD_(SEXP xS
   }
   double *mat_ptr = REAL(mat);
   double *x_ptr = REAL(xS);
-  if (lotriNearPDc(mat_ptr, x_ptr, n, keepDiag,
-                   do2eigen, doDykstra, only_values,
-                   eig_tol, conv_tol, posd_tol, maxit, trace)) {
-    Rf_setAttrib(mat, R_DimNamesSymbol,  Rf_getAttrib(xS, R_DimNamesSymbol));
+  try {
+    if (lotriNearPDc(mat_ptr, x_ptr, n, keepDiag,
+                     do2eigen, doDykstra, only_values,
+                     eig_tol, conv_tol, posd_tol, maxit, trace)) {
+      Rf_setAttrib(mat, R_DimNamesSymbol,  Rf_getAttrib(xS, R_DimNamesSymbol));
+      UNPROTECT(1);
+      return mat;
+    } else {
+      UNPROTECT(1);
+      Rf_error("nearest PD calculation failed");
+    }
+  } catch (...) {
     UNPROTECT(1);
-    return mat;
-  } else {
-    UNPROTECT(1);
-    Rf_error("nearest PD calculation failed");
+    Rf_error("unknown c++ error");
   }
+  UNPROTECT(1);
   return R_NilValue;
-  END_CPP11
 }
