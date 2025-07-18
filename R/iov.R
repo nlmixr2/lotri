@@ -78,11 +78,11 @@ omegaCreate <- function(dim, diag.xform = c("sqrt", "log", "identity")) {
   ## -t(eta)*Omega^-1*(dOmega)*Omega^-1*d(eta)
   ## t(eta)*d(Omega^-1)*d(eta)
   ## Therefore NO symbolic derivatives of anything but d(Omega^-1) are required; These are below:
-  cnt.i <- 0
+  cnt.i <- 1
   cnt <- function() {
     message(".", appendLF = FALSE)
     if (cnt.i %% 5 == 0) {
-      message(cnt.i, apendLF = FALSE)
+      message(cnt.i, appendLF = FALSE)
     }
     if (cnt.i %% 50 == 0) {
       message("", appendLF = TRUE)
@@ -174,6 +174,17 @@ omegaCreate <- function(dim, diag.xform = c("sqrt", "log", "identity")) {
 
 
 genOme <- function(mx=12) {
+  mxOmega <- devtools::package_file("mxOmega")
+  if (file.exists(mxOmega)) {
+    mxOmegaN <- as.numeric(suppressWarnings(readLines(mxOmega, n=1)))
+  } else {
+    mxOmegaN <- 0
+  }
+  if (mxOmegaN == mx) {
+    message("mxOmega is already set to ", mx, ". No need to re-generate.")
+    return("")
+  }
+  devtools::package_file("src/omegaSqrt.c")
   omega.c <- devtools::package_file("src/omegaSqrt.c")
   file.out <- file(omega.c, "wb")
   writeLines(
@@ -221,6 +232,7 @@ genOme <- function(mx=12) {
                      x, tmp)
            }, character(1), USE.NAMES=FALSE), collapse=""), "\n  return;\n}"), file.out)
   close(file.out)
+  writeLines(as.character(mx), con=mxOmega)
   ""
 }
 
