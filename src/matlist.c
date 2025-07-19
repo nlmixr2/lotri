@@ -2,6 +2,7 @@
 #include "rcm.h"
 #include "nearPD.h"
 #include "omegaR.h"
+#include "omegaFromR.h"
 
 SEXP _lotriSep(SEXP lotri, SEXP above, SEXP below,
 	       SEXP aboveStart, SEXP belowStart) {
@@ -254,6 +255,17 @@ SEXP _getLotriPointers(void) {
 
 void R_init_lotri(DllInfo *info){
   R_CallMethodDef callMethods[]  = {
+    {"_lotri_getCholOmega", (DL_FUNC) &_lotri_getCholOmega, 1},
+    {"_lotri_getCholOmega1", (DL_FUNC) &_lotri_getCholOmega1, 1},
+    {"_lotri_getCholOmegaInv", (DL_FUNC) &_lotri_getCholOmegaInv, 1},
+    {"_lotri_getLogDetOMGAinv5", (DL_FUNC) &_lotri_getLogDetOMGAinv5, 1},
+    {"_lotri_getOmegaInv", (DL_FUNC) &_lotri_getOmegaInv, 1},
+    {"_lotri_getOmegaR", (DL_FUNC) &_lotri_getOmegaR, 1},
+    {"_lotri_getTheta", (DL_FUNC) &_lotri_getTheta, 1},
+    {"_lotri_getdDomegaInv", (DL_FUNC) &_lotri_getdDomegaInv, 1},
+    {"_lotri_lotriOmegaNew", (DL_FUNC) &_lotri_lotriOmegaNew, 2},
+    {"_lotri_setTheta", (DL_FUNC) &_lotri_setTheta, 2},
+    {"_lotri_tr28", (DL_FUNC) &_lotri_tr28, 1},
     {"_lotriOmega_getBuiltinSize", (DL_FUNC) &_lotriOmega_getBuiltinSize, 0},
     {"_lotriNearPD_",(DL_FUNC) &_lotriNearPD_, 10},
     {"_lotri_rcm_", (DL_FUNC) &_lotri_rcm_, 1},
