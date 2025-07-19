@@ -50,6 +50,7 @@ omegaCreate <- function(dim, diag.xform = c("sqrt", "log", "identity")) {
   message("done")
 
   ## Then take the derivatives
+  ##
   ## These are used in equations #28 and #47
   ##
   ##
@@ -75,9 +76,12 @@ omegaCreate <- function(dim, diag.xform = c("sqrt", "log", "identity")) {
   ## Equation #29 uses d(Omega^-1)
   ##
   ## Equation #47 uses
+  ##
   ## -t(eta)*Omega^-1*(dOmega)*Omega^-1*d(eta)
   ## t(eta)*d(Omega^-1)*d(eta)
-  ## Therefore NO symbolic derivatives of anything but d(Omega^-1) are required; These are below:
+  ##
+  ## Therefore NO symbolic derivatives of anything but d(Omega^-1) are
+  ## required; These are below:
   cnt.i <- 1
   cnt <- function() {
     message(".", appendLF = FALSE)
