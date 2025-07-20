@@ -176,7 +176,13 @@ omegaCreate <- function(dim, diag.xform = c("sqrt", "log", "identity")) {
   return(ret)
 }
 
-
+#' Generate the C matrix call
+#'
+#'
+#' @param mx maximum matrix size
+#' @return nothing called for side effects
+#' @noRd
+#' @author Matthew L. Fidler
 genOme <- function(mx=12) {
   mxOmega <- devtools::package_file("mxOmega")
   if (file.exists(mxOmega)) {
@@ -242,7 +248,6 @@ genOme <- function(mx=12) {
 
 #' Get the number of built-in omega inverses
 #'
-#'
 #' @return The dimension of the pre-compiled omega matrix translations
 #' @author Matthew L. Fidler
 #' @eval genOme()
@@ -251,4 +256,30 @@ genOme <- function(mx=12) {
 #' .nlmixr2omegaBuiltinSize()
 .lotriOmegaBuiltinSize <- function() {
   .Call(`_lotriOmega_getBuiltinSize`)
+}
+
+#' Get the omega block theta information
+#'
+#' @param omega this is the omega matrix
+#' @param diagXform diagonal transform
+#' @return
+#' @export
+#' @author Matthew L. Fidler
+#' @examples
+#'
+#' d <- 10
+#'
+#' m <- matrix(rnorm(d^2), d, d)
+#'
+#' mcov <- tcrossprod(m, m)
+#'
+#' omegaBlock(mcov)
+#'
+omegaBlock <- function(omega, diagXform=c("sqrt", "log", "identity")) {
+  diagXform <- c("sqrt"=1L, "log"=2L, "identity"=3L)[match.arg(diagXform)]
+  .Call(`_lotri_omegaBlock`, omega, diagXform)
+}
+
+omegaBlockOp <- function(omeBlock, op) {
+  .Call(`_lotri_omegaBlockOp`, omeBlock, op)
 }

@@ -2,6 +2,7 @@
 #include "rcm.h"
 #include "nearPD.h"
 #include "omegaR.h"
+#include "omeBlock.h"
 
 SEXP _lotriSep(SEXP lotri, SEXP above, SEXP below,
 	       SEXP aboveStart, SEXP belowStart) {
@@ -254,6 +255,8 @@ SEXP _getLotriPointers(void) {
 
 void R_init_lotri(DllInfo *info){
   R_CallMethodDef callMethods[]  = {
+    {"_lotri_omegaBlockOp", (DL_FUNC) &_lotri_omegaBlockOp, 2},
+    {"_lotri_omegaBlock", (DL_FUNC) &_lotri_omegaBlock, 2},
     {"_lotriOmega_getBuiltinSize", (DL_FUNC) &_lotriOmega_getBuiltinSize, 0},
     {"_lotriNearPD_",(DL_FUNC) &_lotriNearPD_, 10},
     {"_lotri_rcm_", (DL_FUNC) &_lotri_rcm_, 1},

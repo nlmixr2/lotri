@@ -1,0 +1,20 @@
+#ifndef __OME_BLOCK_H__
+#define __OME_BLOCK_H__
+
+#define omegaXformSqrt 1
+#define omegaXformLog  2
+#define omegaXformIdentity 3
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+  SEXP _lotri_omegaBlock(SEXP omeInS, SEXP diagXformS);
+  SEXP _lotri_omegaBlockOp(SEXP omeBlock, SEXP opS);
+
+#if defined(__cplusplus)
+}
+#endif
+
+
+#endif // __OME_BLOCK_H__
