@@ -258,6 +258,11 @@ genOme <- function(mx=12) {
   .Call(`_lotriOmega_getBuiltinSize`)
 }
 
+.newEnv <- function() {
+  ## Create a new environment for the omega block
+  new.env(parent=emptyenv())
+}
+
 #' Get the omega block theta information
 #'
 #' @param omega this is the omega matrix
@@ -282,4 +287,15 @@ omegaBlock <- function(omega, diagXform=c("sqrt", "log", "identity")) {
 
 omegaBlockOp <- function(omeBlock, op) {
   .Call(`_lotri_omegaBlockOp`, omeBlock, op)
+}
+
+#' @export
+`$.lotriOmegaBlock` <- function(obj, arg, exact = TRUE) {
+  if (arg == "cholOmegaInv") {
+    .Call(`_lotri_omegaBlockOp`, obj, 0L)
+  } else if (arg == "omegaInv") {
+    .Call(`_lotri_omegaBlockOp`, obj, -1L)
+  } else if (arg == "ntheta") {
+    .Call(`_lotri_omegaBlockOp`, obj, -2L)
+  }
 }
