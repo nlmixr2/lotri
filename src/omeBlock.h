@@ -10,7 +10,7 @@ extern "C" {
 #endif
 
   SEXP _lotri_omegaBlock(SEXP omeInS, SEXP diagXformS);
-  SEXP _lotri_omegaBlockOp(SEXP omeBlock, SEXP opS);
+  SEXP _lotri_omegaBlockOpI(SEXP omeBlock, SEXP opS);
 
 #if defined(__cplusplus)
 }
