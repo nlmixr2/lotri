@@ -267,35 +267,47 @@ genOme <- function(mx=12) {
 #'
 #' @param omega this is the omega matrix
 #' @param diagXform diagonal transform
-#' @return
+#' @return A `lotriOmegaBlock` environment
 #' @export
 #' @author Matthew L. Fidler
 #' @examples
 #'
-#' d <- 10
+#' d <- 4
 #'
 #' m <- matrix(rnorm(d^2), d, d)
 #'
 #' mcov <- tcrossprod(m, m)
 #'
-#' omegaBlock(mcov)
+#' ob <- omegaBlock(mcov)
 #'
 omegaBlock <- function(omega, diagXform=c("sqrt", "log", "identity")) {
   diagXform <- c("sqrt"=1L, "log"=2L, "identity"=3L)[match.arg(diagXform)]
   .Call(`_lotri_omegaBlock`, omega, diagXform)
 }
 
-omegaBlockOp <- function(omeBlock, op) {
-  .Call(`_lotri_omegaBlockOp`, omeBlock, op)
-}
-
 #' @export
 `$.lotriOmegaBlock` <- function(obj, arg, exact = TRUE) {
-  if (arg == "cholOmegaInv") {
-    .Call(`_lotri_omegaBlockOp`, obj, 0L)
-  } else if (arg == "omegaInv") {
-    .Call(`_lotri_omegaBlockOp`, obj, -1L)
-  } else if (arg == "ntheta") {
-    .Call(`_lotri_omegaBlockOp`, obj, -2L)
+  if (exists(arg, envir=obj)) {
+    return(get(arg, envir=obj))
   }
+  if (arg == "cholOmegaInv") {
+    .ret <- .Call(`_lotri_omegaBlockOp`, obj, 0L)
+    assign("cholOmegaInv", .ret, envir=obj)
+  } else if (arg == "omegaInv") {
+    .ret <- .Call(`_lotri_omegaBlockOp`, obj, -1L)
+    assign("omegaInv", .ret, envir=obj)
+  } else if (arg == "ntheta") {
+    .ret <- .Call(`_lotri_omegaBlockOp`, obj, -2L)
+    assign("ntheta", .ret, envir=obj)
+  } else if (arg == "dOmegaInv") {
+    .ret <- .Call(`_lotri_omegaBlockOp`, obj, -3L)
+    assign("dOmegaInv", .ret, envir=obj)
+  } else if (arg == "cholOmega1") {
+    if (!exists("cholOmegaInv", .ret, envir=obj)) {
+      `$.lotriOmegaBlock`(obj, "cholOmegaInv", exact = TRUE)
+    }
+    .ret <- .Call(`_lotri_omegaBlockOp`, obj, -4L)
+    assign("cholOmega1", .ret, envir=obj)
+  }
+  .ret
 }

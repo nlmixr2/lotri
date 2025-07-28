@@ -124,7 +124,7 @@ SEXP _lotri_omegaBlockOpI(SEXP omeBlock, int op) {
 }
 
 
-arma::mat lotriCholOmega(arma::mat cholMat){
+arma::mat lotriCholOmega(arma::mat cholMat) {
   // Only the cholesky is needed for the liklihood calculation
   // trimatu is faster, but it seems to have problems sometimes with certain BLAS combinations:
   // See https://github.com/nlmixrdevelopment/rxode2/issues/84
@@ -148,42 +148,56 @@ arma::mat lotriCholOmega(arma::mat cholMat){
   return cholO;
 }
 
-
-
 extern "C" SEXP _lotri_omegaBlockOp(SEXP omeBlock, SEXP opC) {
   try {
-    cpp11::environment env = cpp11::as_cpp<cpp11::environment>(omeBlock);
-    cpp11::strings op = cpp11::as_cpp<cpp11::strings>(opC);
-    std::string op0 = cpp11::r_string(op[0]);
-    if (env.exists(op0)) {
-      return cpp11::as_sexp(env[op0]);
-    }
-    if (op0 == "cholOmegaInv") {
-      env["cholOmegaInv"] = _lotri_omegaBlockOpI(omeBlock, 0);
-      return cpp11::as_sexp(env["cholOmegaInv"]);
-    } else if (op0 == "omegaInv") {
-      env["omegaInv"] = _lotri_omegaBlockOpI(omeBlock, -1);
-      return cpp11::as_sexp(env["omegaInv"]);
-    } else if (op0 =="dOmegaInv") {
+
+    // cpp11::strings op = cpp11::as_cpp<cpp11::strings>(opC);
+    // std::string takes more time to compare than R strings.
+    // So we use an integer instead
+    int opI = INTEGER(opC)[0];
+    // std::string op0 = cpp11::r_string(op[0]);
+    // if (env.exists(op0)) {
+    //   return cpp11::as_sexp(env[op0]);
+    // }
+    switch (opI) {
+    case omegaOpNtheta:
+    case omegaOpOmegaInv:
+    case omegaOpCholOmegaInv:
+      return _lotri_omegaBlockOpI(omeBlock, opI);
+      break;
+    case omegaOpDOmegaInv: {
+
+      cpp11::environment env = cpp11::as_cpp<cpp11::environment>(omeBlock);
       cpp11::doubles theta = cpp11::as_cpp<cpp11::doubles>(env["theta"]);
       cpp11::writable::list dOmegaInv(theta.size());
       for (int i = 1; i < theta.size()+1; i++) {
         dOmegaInv[i-1] = _lotri_omegaBlockOpI(omeBlock, i);
       }
-      env["dOmegaInv"] = dOmegaInv;
-      return cpp11::as_sexp(env["dOmegaInv"]);
-    } else if (op0 == "cholOmega1") {
-      if (!env.exists("cholOmegaInv")) {
-        env["cholOmegaInv"] = _lotri_omegaBlockOpI(omeBlock, 0);
-      }
+      return dOmegaInv;
+    }
+      break;
+    case omegaOpCholOmega1: {
+      cpp11::environment env = cpp11::as_cpp<cpp11::environment>(omeBlock);
       arma::mat cholOmega1 = lotriCholOmega(as_Mat(cpp11::as_cpp<cpp11::doubles_matrix<>>(env["cholOmegaInv"])));
       SEXP cholOmega1S = PROTECT(Rf_allocMatrix(REALSXP, cholOmega1.n_rows, cholOmega1.n_cols));
       std::copy(cholOmega1.begin(), cholOmega1.end(), REAL(cholOmega1S));
       Rf_dimnamesgets(cholOmega1S, cpp11::as_sexp(env["dimnames"]));
-      env["cholOmega1"] = cholOmega1S;
       UNPROTECT(1);
-      return cpp11::as_sexp(env["cholOmega1"]);
+      return cholOmega1S;
     }
+      break;
+    }
+    // } else if (op0 == "cholOmega1") {
+    //   if (!env.exists("cholOmegaInv")) {
+    //     env["cholOmegaInv"] = _lotri_omegaBlockOpI(omeBlock, 0);
+    //   }
+    //   SEXP cholOmega1S = PROTECT(Rf_allocMatrix(REALSXP, cholOmega1.n_rows, cholOmega1.n_cols));
+    //   std::copy(cholOmega1.begin(), cholOmega1.end(), REAL(cholOmega1S));
+    //   Rf_dimnamesgets(cholOmega1S, cpp11::as_sexp(env["dimnames"]));
+    //   env["cholOmega1"] = cholOmega1S;
+    //   UNPROTECT(1);
+    //   return cpp11::as_sexp(env["cholOmega1"]);
+    // }
   } catch (...) {
 
   }

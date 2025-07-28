@@ -5,12 +5,19 @@
 #define omegaXformLog  2
 #define omegaXformIdentity 3
 
+#define omegaOpCholOmegaInv 0
+#define omegaOpOmegaInv    -1
+#define omegaOpNtheta      -2
+#define omegaOpDOmegaInv   -3
+#define omegaOpCholOmega1  -4
+
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
   SEXP _lotri_omegaBlock(SEXP omeInS, SEXP diagXformS);
-  SEXP _lotri_omegaBlockOpI(SEXP omeBlock, SEXP opS);
+  SEXP _lotri_omegaBlockOp(SEXP omeBlock, SEXP opS);
 
 #if defined(__cplusplus)
 }
