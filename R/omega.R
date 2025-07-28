@@ -308,6 +308,12 @@ omegaBlock <- function(omega, diagXform=c("sqrt", "log", "identity")) {
     }
     .ret <- .Call(`_lotri_omegaBlockOp`, obj, -4L)
     assign("cholOmega1", .ret, envir=obj)
+  } else if (arg == "omega") {
+    if (!exists("cholOmega1", .ret, envir=obj)) {
+      `$.lotriOmegaBlock`(obj, "cholOmega1", exact = TRUE)
+    }
+    .ret <- .Call(`_lotri_omegaBlockOp`, obj, -5L)
+    assign("omega", .ret, envir=obj)
   }
   .ret
 }

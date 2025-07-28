@@ -10,6 +10,7 @@
 #define omegaOpNtheta      -2
 #define omegaOpDOmegaInv   -3
 #define omegaOpCholOmega1  -4
+#define omegaOpOmega       -5
 
 
 #if defined(__cplusplus)
