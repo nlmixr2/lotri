@@ -286,6 +286,30 @@ omegaBlock <- function(omega, diagXform=c("sqrt", "log", "identity")) {
 }
 
 #' @export
+"$<-.lotriOmegaBlock" <- function(obj, arg, value) {
+  if (arg == "theta") {
+    .ntheta <- `$.lotriOmegaBlock`(obj, "ntheta", exact = TRUE)
+    for (v in c("cholOmegaInv","omegaInv", "ntheta", "dOmegaInv",
+                "cholOmega1", "omega", "cholOmega", "log.det.OMGAinv.5",
+                "tr.28", "omega.47")) {
+      if (exists(v, envir=obj)) {
+        rm(list=v, envir=obj)
+      }
+    }
+    if (checkmate::testNumeric(value, any.missing = FALSE, len = .ntheta)) {
+      assign("theta", value, envir=obj)
+      invisible(obj)
+    } else  {
+        stop("`theta` must be a numeric vector with length equal to `", .ntheta, "`",
+             call. = FALSE)
+    }
+  } else {
+    stop("only `theta` can be set in a `lotriOmegaBlock` object",
+         call. = FALSE)
+  }
+}
+
+#' @export
 `$.lotriOmegaBlock` <- function(obj, arg, exact = TRUE) {
   if (exists(arg, envir=obj)) {
     return(get(arg, envir=obj))

@@ -11,18 +11,21 @@ omegaBlock(omega, diagXform = c("sqrt", "log", "identity"))
 
 \item{diagXform}{diagonal transform}
 }
+\value{
+A `lotriOmegaBlock` environment
+}
 \description{
 Get the omega block theta information
 }
 \examples{
 
-d <- 10
+d <- 4
 
 m <- matrix(rnorm(d^2), d, d)
 
 mcov <- tcrossprod(m, m)
 
-omegaBlock(mcov)
+ob <- omegaBlock(mcov)
 
 }
 \author{

@@ -2,6 +2,7 @@
 
 S3method("$",lotri)
 S3method("$",lotriOmegaBlock)
+S3method("$<-",lotriOmegaBlock)
 S3method(.DollarNames,lotri)
 S3method(as.data.frame,lotriFix)
 S3method(as.expression,lotriFix)

@@ -251,17 +251,6 @@ extern "C" SEXP _lotri_omegaBlockOp(SEXP omeBlock, SEXP opC) {
     }
       break;
     }
-    // } else if (op0 == "cholOmega1") {
-    //   if (!env.exists("cholOmegaInv")) {
-    //     env["cholOmegaInv"] = _lotri_omegaBlockOpI(omeBlock, 0);
-    //   }
-    //   SEXP cholOmega1S = PROTECT(Rf_allocMatrix(REALSXP, cholOmega1.n_rows, cholOmega1.n_cols));
-    //   std::copy(cholOmega1.begin(), cholOmega1.end(), REAL(cholOmega1S));
-    //   Rf_dimnamesgets(cholOmega1S, cpp11::as_sexp(env["dimnames"]));
-    //   env["cholOmega1"] = cholOmega1S;
-    //   UNPROTECT(1);
-    //   return cpp11::as_sexp(env["cholOmega1"]);
-    // }
   } catch (...) {
 
   }
