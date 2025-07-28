@@ -11,6 +11,9 @@
 #define omegaOpDOmegaInv   -3
 #define omegaOpCholOmega1  -4
 #define omegaOpOmega       -5
+#define omegaOpCholOmega   -6
+// log.det.OMGAinv.5
+#define omegaOpLogDetOmegaInv -7
 
 
 #if defined(__cplusplus)

@@ -196,6 +196,30 @@ extern "C" SEXP _lotri_omegaBlockOp(SEXP omeBlock, SEXP opC) {
       UNPROTECT(1);
       return omegaS;
     }
+      break;
+    case omegaOpCholOmega: {
+      cpp11::environment env = cpp11::as_cpp<cpp11::environment>(omeBlock);
+      arma::mat omega = as_Mat(cpp11::as_cpp<cpp11::doubles_matrix<>>(env["omega"]));
+      arma::mat cholOmega = chol(omega);
+      SEXP cholOmegaS = PROTECT(Rf_allocMatrix(REALSXP,
+                                               cholOmega.n_rows,
+                                               cholOmega.n_cols));
+      std::copy(cholOmega.begin(), cholOmega.end(), REAL(cholOmegaS));
+      Rf_dimnamesgets(cholOmegaS, cpp11::as_sexp(env["dimnames"]));
+      UNPROTECT(1);
+      return cholOmegaS;
+    }
+      break;
+    case omegaOpLogDetOmegaInv: {
+      cpp11::environment env = cpp11::as_cpp<cpp11::environment>(omeBlock);
+      arma::mat c = as_Mat(cpp11::as_cpp<cpp11::doubles_matrix<>>(env["cholOmegaInv"]));
+      arma::vec diag = c.diag();
+      arma::vec ldiag = log(diag);
+      SEXP retS = PROTECT(Rf_allocVector(REALSXP, 1));
+      REAL(retS)[0] = arma::sum(ldiag);
+      UNPROTECT(1);
+      return retS;
+    }
     }
     // } else if (op0 == "cholOmega1") {
     //   if (!env.exists("cholOmegaInv")) {

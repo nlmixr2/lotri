@@ -314,6 +314,33 @@ omegaBlock <- function(omega, diagXform=c("sqrt", "log", "identity")) {
     }
     .ret <- .Call(`_lotri_omegaBlockOp`, obj, -5L)
     assign("omega", .ret, envir=obj)
+  } else if (arg == "cholOmega") {
+    if (!exists("omega", .ret, envir=obj)) {
+      `$.lotriOmegaBlock`(obj, "omega", exact = TRUE)
+    }
+    .ret <- .Call(`_lotri_omegaBlockOp`, obj, -6L)
+    assign("cholOmega", .ret, envir=obj)
+  } else if (arg == "log.det.OMGAinv.5") {
+    if (!exists("cholOmegaInv", .ret, envir=obj)) {
+      `$.lotriOmegaBlock`(obj, "cholOmegaInv", exact = TRUE)
+    }
+    .ret <- .Call(`_lotri_omegaBlockOp`, obj, -7L)
+    assign("log.det.OMGAinv.5", .ret, envir=obj)
+  } else if (arg == "tr.28") {
+    if (!exists("dOmegaInv")) {
+      `$.lotriOmegaBlock`(obj, "dOmegaInv", exact = TRUE)
+    }
+    if (!exists("omega")) {
+      `$.lotriOmegaBlock`(obj, "omega", exact = TRUE)
+    }
+    .dOmegaInv <- get("dOmegaInv", envir=obj)
+    .omega <- get("omega", envir=obj)
+    .ret <- vapply(seq_along(.dOmegaInv), function(i) {
+      0.5*sum(diag(.dOmegaInv[[i]] %*% .omega))
+    }, numeric(1), USE.NAMES=FALSE)
+    assign("tr.28", .ret, envir=obj)
+  } else {
+    .ret <- NULL
   }
   .ret
 }
