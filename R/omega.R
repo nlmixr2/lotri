@@ -339,6 +339,15 @@ omegaBlock <- function(omega, diagXform=c("sqrt", "log", "identity")) {
       0.5*sum(diag(.dOmegaInv[[i]] %*% .omega))
     }, numeric(1), USE.NAMES=FALSE)
     assign("tr.28", .ret, envir=obj)
+  } else if (arg == "omega.47") {
+    if (!exists("cholOmegaInv", .ret, envir=obj)) {
+      `$.lotriOmegaBlock`(obj, "cholOmegaInv", exact = TRUE)
+    }
+    if (!exists("dOmegaInv")) {
+      `$.lotriOmegaBlock`(obj, "dOmegaInv", exact = TRUE)
+    }
+    .ret <- .Call(`_lotri_omegaBlockOp`, obj, -8L)
+    assign("omega.47", .ret, envir=obj)
   } else {
     .ret <- NULL
   }

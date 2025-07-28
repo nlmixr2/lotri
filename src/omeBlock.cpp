@@ -220,6 +220,36 @@ extern "C" SEXP _lotri_omegaBlockOp(SEXP omeBlock, SEXP opC) {
       UNPROTECT(1);
       return retS;
     }
+      break;
+    case omegaOpOmega47: {
+      cpp11::environment env = cpp11::as_cpp<cpp11::environment>(omeBlock);
+      unsigned int j;
+      arma::mat cholO = as_Mat(cpp11::as_cpp<cpp11::doubles_matrix<>>(env["cholOmegaInv"]));
+      int neta = cholO.n_rows;
+      cpp11::doubles theta = cpp11::as_cpp<cpp11::doubles>(env["theta"]);
+      cpp11::list dOmegaInv = cpp11::as_cpp<cpp11::list>(env["dOmegaInv"]);
+      arma::mat cEta = zeros(neta,1);
+      arma::mat c;
+      cpp11::writable::list prod2(theta.size());
+      int pro = 0;
+      for (int i = dOmegaInv.size(); i--;) {
+        c = as_Mat(cpp11::as_cpp<cpp11::doubles_matrix<>>(dOmegaInv[i]));
+        SEXP prodI = PROTECT(Rf_allocVector(VECSXP, neta)); pro++;
+        for (j = neta; j--;){
+          cEta(j,0) = 1;
+          arma::mat prodIM = c*cEta;
+          SEXP prodIMS = PROTECT(Rf_allocMatrix(REALSXP, prodIM.n_rows, prodIM.n_cols)); pro++;
+          std::copy(prodIM.begin(), prodIM.end(), REAL(prodIMS));
+          SET_VECTOR_ELT(prodI, j, prodIMS);
+          //prodI[j] = c*cEta;
+          cEta(j,0) = 0;
+        }
+        prod2[i] = prodI;
+      }
+      UNPROTECT(pro);
+      return cpp11::as_sexp(prod2);
+    }
+      break;
     }
     // } else if (op0 == "cholOmega1") {
     //   if (!env.exists("cholOmegaInv")) {
