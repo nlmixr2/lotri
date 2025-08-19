@@ -1,4 +1,49 @@
-omegaCreate <- function(dim, diag.xform = c("sqrt", "log", "identity")) {
+omegaCreate <- function(dim) {
+  mat1 <- matrix(rep(1, dim * dim), dim)
+  num <- as.vector(mat1[upper.tri(mat1, TRUE)])
+  i <- 0
+  num <- sapply(num, function(x) {
+    if (x == 1) {
+      i <<- i + 1
+      return(i)
+    } else {
+      return(0)
+    }
+  })
+  mat1[upper.tri(mat1, TRUE)] <- num - 1
+  mat1[lower.tri(mat1)] <- t(mat1)[lower.tri(mat1)]
+  d <- dim(mat1)[1]
+  mat1 <- paste0("t", mat1)
+  mat1 <- matrix(mat1, d)
+
+  cnt.i <- 1
+  cnt <- function() {
+    message(".", appendLF = FALSE)
+    if (cnt.i %% 5 == 0) {
+      message(cnt.i, appendLF = FALSE)
+    }
+    if (cnt.i %% 50 == 0) {
+      message("", appendLF = TRUE)
+    }
+    cnt.i <<- cnt.i + 1
+  }
+  i <- 0
+  j <- 0
+  .m1 <- symengine::Matrix(mat1)
+  diag <- paste(lapply(num, function(x) {
+    .m <- symengine::D(.m1, symengine::S(paste0("t", -(x + 2))))
+    .n <- dim(.m)[1]
+    .str <- paste(sapply(seq(1, .n), function(d) {
+      sprintf("      ret[%s] = %s;", d - 1, seC(.m[d, 1]))
+    }), collapse = "\n")
+    sprintf(
+      "    %sif (*_tn == %s){\n%s\n    }", ifelse(-(x + 2) == 0, "", "else "), x - 1,
+      .str
+    )
+  }), collapse = "\n")
+}
+
+omegaCholCreate <- function(dim, diag.xform = c("sqrt", "log", "identity")) {
   mat1 <- matrix(rep(1, dim * dim), dim)
   diag.xform <- match.arg(diag.xform)
   message("diagonal form: ", diag.xform)
@@ -30,7 +75,7 @@ omegaCreate <- function(dim, diag.xform = c("sqrt", "log", "identity")) {
     ## The diagonal elements are assumed to be estimated as log
     diag(mat2) <- sprintf("%s=3", diag(mat2))
     diag(mat1) <- sprintf("exp(%s)", diag(mat1))
-  } else {
+  } else if (diag.xform == "identity") {
     ## The diagonal elements are assumed to be estimated as identity
     diag(mat2) <- sprintf("%s=4", diag(mat2))
     diag(mat1) <- sprintf("(%s)", diag(mat1))
@@ -53,7 +98,6 @@ omegaCreate <- function(dim, diag.xform = c("sqrt", "log", "identity")) {
   ##
   ## These are used in equations #28 and #47
   ##
-  ##
   ## - Omega^-1 %*% dOmega %*% Omega^-1 = d(Omega^-1)
   ##
   ## In Equation #28
@@ -72,7 +116,7 @@ omegaCreate <- function(dim, diag.xform = c("sqrt", "log", "identity")) {
   ## In fact the whole of dOmega does not need to be calculated,
   ## rather the diff(D_Omega^-1) where the D is the LDL^T
   ## factorization
-
+  ##
   ## Equation #29 uses d(Omega^-1)
   ##
   ## Equation #47 uses
@@ -200,7 +244,7 @@ genOme <- function(mx=12) {
   writeLines(
     paste0(sprintf("//Generated from ::document() for %s dimensions\n#include <R.h>\n#include <Rdefines.h>\n#include <R_ext/Error.h>\n#include <Rmath.h>\nint _lotriOmega_matSize(void) {\n  return %d;\n}\n\nvoid _lotriOmega_mat_sqrt(int *dm, double *_t, int *length_theta, int  *_tn, double *ret){\n", mx, mx),
            paste(vapply(1:mx, function(x) {
-             tmp <- omegaCreate(x, diag.xform="sqrt")[[1]]
+             tmp <- omegaCholCreate(x, diag.xform="sqrt")[[1]]
              sprintf("%sif (*dm == %s) {\n%s\n",
                      ifelse(x==1, "", "else "),
                      x, tmp)
@@ -212,7 +256,7 @@ genOme <- function(mx=12) {
   writeLines(
     paste0(sprintf("//Generated from ::document() for %s dimensions\n#include <R.h>\n#include <Rdefines.h>\n#include <R_ext/Error.h>\n#include <Rmath.h>\nvoid _lotriOmega_mat_log(int *dm, double *_t, int *length_theta, int  *_tn, double *ret){\n", mx),
            paste(vapply(1:mx, function(x) {
-             tmp <- omegaCreate(x, diag.xform="log")[[1]]
+             tmp <- omegaCholCreate(x, diag.xform="log")[[1]]
              sprintf("%sif (*dm == %s) {\n%s\n",
                      ifelse(x==1, "", "else "),
                      x, tmp)
@@ -224,7 +268,7 @@ genOme <- function(mx=12) {
   writeLines(
     paste0(sprintf("//Generated from ::document() for %s dimensions\n#include <R.h>\n#include <Rdefines.h>\n#include <R_ext/Error.h>\n#include <Rmath.h>\nvoid _lotriOmega_mat(int *dm, double *_t, int *length_theta, int  *_tn, double *ret){\n", mx),
            paste(vapply(1:mx, function(x) {
-             tmp <- omegaCreate(x, diag.xform="identity")[[1]]
+             tmp <- omegaCholCreate(x, diag.xform="identity")[[1]]
              sprintf("%sif (*dm == %s) {\n%s\n",
                      ifelse(x==1, "", "else "),
                      x, tmp)
@@ -236,7 +280,7 @@ genOme <- function(mx=12) {
   writeLines(
     paste0(sprintf("//Generated from ::document() for %s dimensions\n#include <R.h>\n#include <Rdefines.h>\n#include <R_ext/Error.h>\n#include <Rmath.h>\nvoid _lotriOmega_mat_log(int *dm, double *_t, int *length_theta, int  *_tn, double *ret){\n", mx),
            paste(vapply(1:mx, function(x) {
-             tmp <- omegaCreate(x, diag.xform="log")[[1]]
+             tmp <- omegaCholCreate(x, diag.xform="log")[[1]]
              sprintf("%sif (*dm == %s) {\n%s\n",
                      ifelse(x==1, "", "else "),
                      x, tmp)

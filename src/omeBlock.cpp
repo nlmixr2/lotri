@@ -166,7 +166,6 @@ extern "C" SEXP _lotri_omegaBlockOp(SEXP omeBlock, SEXP opC) {
       return _lotri_omegaBlockOpI(omeBlock, opI);
       break;
     case omegaOpDOmegaInv: {
-
       cpp11::environment env = cpp11::as_cpp<cpp11::environment>(omeBlock);
       cpp11::doubles theta = cpp11::as_cpp<cpp11::doubles>(env["theta"]);
       cpp11::writable::list dOmegaInv(theta.size());
