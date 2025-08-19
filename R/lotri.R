@@ -420,11 +420,14 @@ NULL
 #'
 #' @param env  environment to update
 #'
+#' @param env2 environment to try if the last expression could be a
+#'   multi-line expression
+#'
 #' @return Nothing; updates environment
 #'
 #' @author Matthew Fidler
 #' @noRd
-.lotri1 <- function(x2, x3, env) {
+.lotri1 <- function(x2, x3, env, env2=NULL) {
   .envParse <- new.env(parent = emptyenv())
   .envParse$lhs <- x2
   .rl <- .lotriParseMat(x3, env=.envParse)
@@ -503,12 +506,14 @@ NULL
       .expr <- .deparse1(eval(parse(text=paste0("quote(", paste(c(.n, paste0("varName", length(.n) + seq_len(.num - length(.n)))), collapse="+"), "~ 0)"))))
       .expr <- paste0("  '", substr(.expr, 1, nchar(.expr) - 1))
       .expr <- .pasteLotri(.expr, x3)
-
       stop("number named variables and lower triangular matrix size do not match\n  did you mean something like:\n", .expr, call. = FALSE)
     }
   } else {
     if (.handleLastExpressionIsCndForForm2(x2, x3, env)) {
       return(invisible())
+    }
+    if (!is.null(env2)) {
+      return(.lotri1(x2, x3, env2))
     }
     stop("matrix expression should be 'name ~ c(lower-tri)'", call. = FALSE)
   }
@@ -556,7 +561,11 @@ NULL
           .cnd <- .cndFull[[1]]
           if (exists("lastCnd", env)) {
             if (env$lastCnd == .cnd) {
-              .lotri1(x[[2]], x[[3]][[2]], env)
+              if (exists(.cnd, env)) {
+                .lotri1(x[[2]], x[[3]][[2]], env[[.cnd]], env)
+              } else {
+                .lotri1(x[[2]], x[[3]][[2]], env)
+              }
               return(invisible())
             }
           }

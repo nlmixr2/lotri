@@ -1,3 +1,7 @@
+# lotri 1.0.2
+
+* Fix for iov variables that are right next to one another (issue #37)
+
 # lotri 1.0.1
 
 * Now support labels on etas or covariances
