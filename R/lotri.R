@@ -556,7 +556,11 @@ NULL
           .cnd <- .cndFull[[1]]
           if (exists("lastCnd", env)) {
             if (env$lastCnd == .cnd) {
-              .lotri1(x[[2]], x[[3]][[2]], env)
+              if (exists(.cnd, env)) {
+                .lotri1(x[[2]], x[[3]][[2]], env[[.cnd]])
+              } else {
+                .lotri1(x[[2]], x[[3]][[2]], env)
+              }
               return(invisible())
             }
           }
