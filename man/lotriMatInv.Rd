@@ -22,11 +22,15 @@ This is the inverse of `lotriMat()`
 
 # Create a block matrix using `lotri()`
 mat <- lotri({
-   a+b ~ c(1,
-           0.5, 1)
-   c ~ 1
-   d +e ~ c(1,
-            0.5, 1)
+  a + b ~ c(
+    1,
+    0.5, 1
+  )
+  c ~ 1
+  d + e ~ c(
+    1,
+    0.5, 1
+  )
 })
 
 print(mat)

@@ -38,11 +38,15 @@
 #'
 #' # Create a block matrix using `lotri()`
 #' mat <- lotri({
-#'    a+b ~ c(1,
-#'            0.5, 1)
-#'    c ~ 1
-#'    d +e ~ c(1,
-#'             0.5, 1)
+#'   a + b ~ c(
+#'     1,
+#'     0.5, 1
+#'   )
+#'   c ~ 1
+#'   d + e ~ c(
+#'     1,
+#'     0.5, 1
+#'   )
 #' })
 #'
 #' print(mat)
@@ -59,12 +63,14 @@
 #' print(mat3)
 #' @export
 lotriMatInv <- function(mat) {
-  if (!inherits(mat, "matrix"))
-    stop("'mat' must be a matrix", call.=FALSE)
+  if (!inherits(mat, "matrix")) {
+    stop("'mat' must be a matrix", call. = FALSE)
+  }
   if (!is.null(attr(mat, "lotriEst"))) {
     stop("a lotri matrix with attached estimates cannot be converted to a list matrix\n",
-         "drop with `lotriEst(x,drop=TRUE)",
-         call.=FALSE)
+      "drop with `lotriEst(x,drop=TRUE)",
+      call. = FALSE
+    )
   }
   .matF <- attr(mat, "lotriFix")
   .matU <- attr(mat, "lotriUnfix")
@@ -104,7 +110,7 @@ lotriMatInv <- function(mat) {
       .i <- .i + 1
     }
   }
-  if (.d > 0){
+  if (.d > 0) {
     if (!is.null(.matF)) {
       attr(.mat, "lotriFix") <- .matF
       class(.mat) <- c("lotriFix", class(.mat))
@@ -141,23 +147,39 @@ lotriMatInv <- function(mat) {
 #'   f ~ c(a = 0, b = 0, c = 0, d = 0, e = 0, f = 1.3)
 #'   g ~ c(a = 0, b = 0, c = 0, d = 0, e = 0, f = -0.6, g = 0.8)
 #'   h ~ c(a = 0, b = 0, c = 0, d = 0, e = 0, f = 0, g = 0, h = 0)
-#'   i ~ c(a = 0, b = 0, c = 0, d = 0, e = 0, f = 0, g = 0, h = 0,
-#'         i = 0.2)
-#'   j ~ c(a = 0, b = 0, c = 0, d = 0, e = 0, f = 0, g = 0, h = 0,
-#'         i = 0, j = 0.9)
-#'   k ~ c(a = 0, b = 0, c = 0, d = 0, e = 0, f = 0, g = 0, h = 0,
-#'         i = 0, j = 0, k = 0.9)
-#'   l ~ c(a = 0, b = 0, c = 0, d = 0, e = 0, f = 0, g = 0, h = 0,
-#'         i = 0, j = -0.2, k = 0, l = 0.3)
-#'   m ~ c(a = 0, b = 0, c = 0, d = 0, e = 0, f = 0, g = 0, h = 0,
-#'         i = 0, j = 0, k = 0, l = 0, m = 2.1)
-#'   n ~ c(a = 0.2, b = 0, c = 0, d = 0.2, e = 0, f = 0, g = 0,
-#'         h = 0, i = 0, j = 0, k = 0, l = 0, m = 0, n = 0.4)
-#'   o ~ c(a = 0, b = 0, c = 0, d = 0, e = 0, f = -1.1, g = 0.9,
-#'         h = 0, i = 0, j = 0, k = 0, l = 0, m = 0, n = 0, o = 4.7)
-#'   p ~ c(a = 0, b = 0, c = 0, d = 0, e = 0, f = 0, g = 0, h = 0,
-#'         i = 0, j = 0.5, k = 0, l = 0.2, m = 0, n = 0, o = 0,
-#'        p = 1.9)
+#'   i ~ c(
+#'     a = 0, b = 0, c = 0, d = 0, e = 0, f = 0, g = 0, h = 0,
+#'     i = 0.2
+#'   )
+#'   j ~ c(
+#'     a = 0, b = 0, c = 0, d = 0, e = 0, f = 0, g = 0, h = 0,
+#'     i = 0, j = 0.9
+#'   )
+#'   k ~ c(
+#'     a = 0, b = 0, c = 0, d = 0, e = 0, f = 0, g = 0, h = 0,
+#'     i = 0, j = 0, k = 0.9
+#'   )
+#'   l ~ c(
+#'     a = 0, b = 0, c = 0, d = 0, e = 0, f = 0, g = 0, h = 0,
+#'     i = 0, j = -0.2, k = 0, l = 0.3
+#'   )
+#'   m ~ c(
+#'     a = 0, b = 0, c = 0, d = 0, e = 0, f = 0, g = 0, h = 0,
+#'     i = 0, j = 0, k = 0, l = 0, m = 2.1
+#'   )
+#'   n ~ c(
+#'     a = 0.2, b = 0, c = 0, d = 0.2, e = 0, f = 0, g = 0,
+#'     h = 0, i = 0, j = 0, k = 0, l = 0, m = 0, n = 0.4
+#'   )
+#'   o ~ c(
+#'     a = 0, b = 0, c = 0, d = 0, e = 0, f = -1.1, g = 0.9,
+#'     h = 0, i = 0, j = 0, k = 0, l = 0, m = 0, n = 0, o = 4.7
+#'   )
+#'   p ~ c(
+#'     a = 0, b = 0, c = 0, d = 0, e = 0, f = 0, g = 0, h = 0,
+#'     i = 0, j = 0.5, k = 0, l = 0.2, m = 0, n = 0, o = 0,
+#'     p = 1.9
+#'   )
 #' })
 #'
 #' lotriIsBlockMat(m)
@@ -166,7 +188,7 @@ lotriMatInv <- function(mat) {
 #'
 lotriIsBlockMat <- function(mat) {
   .lst <- lotriMatInv(mat)
-  all(vapply(seq_along(.lst), function (i) {
+  all(vapply(seq_along(.lst), function(i) {
     .mat <- .lst[[i]]
     if (dim(.mat)[1] == 1) {
       return(TRUE)

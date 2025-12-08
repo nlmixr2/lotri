@@ -15,3 +15,4 @@
 ^inst/lotriHex.R$
 ^cran-comments\.md$
 ^CRAN-SUBMISSION$
+^Makefile$

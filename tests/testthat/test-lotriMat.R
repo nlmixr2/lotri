@@ -36,49 +36,71 @@ test_that("lotriMat", {
   )
 
   fix1 <- lotri({
-    a <- c(0, 1); backTransform("exp"); label("a label")
+    a <- c(0, 1)
+    backTransform("exp")
+    label("a label")
     b <- c(0, 1, 2)
     c <- fix(1)
     d <- fix(0, 1, 2)
     e <- c(0, 1, 2, fixed)
-    f+g ~ fix(1,
-              0.5, 1)
+    f + g ~ fix(
+      1,
+      0.5, 1
+    )
   })
 
   unfix1 <- lotri({
-    a <- c(0, 1); backTransform("exp"); label("a label")
+    a <- c(0, 1)
+    backTransform("exp")
+    label("a label")
     b <- c(0, 1, 2)
     c <- fix(1)
     d <- fix(0, 1, 2)
     e <- c(0, 1, 2, fixed)
-    f+g ~ unfix(1,
-                0.5, 1)
+    f + g ~ unfix(
+      1,
+      0.5, 1
+    )
   })
 
 
   fix2 <- lotri({
-    h <- c(0, 1); backTransform("expit"); label("b label")
+    h <- c(0, 1)
+    backTransform("expit")
+    label("b label")
     i <- c(0, 1, 2)
     j <- fix(1)
     k <- fix(0, 1, 2)
     l <- c(0, 1, 2, fixed)
-    m+n ~ c(1,
-            0.5, 1)
+    m + n ~ c(
+      1,
+      0.5, 1
+    )
   })
 
-  expect_equal(lotriMatInv(lotriEst(lotriMat(list(fix1, fix2)), drop=TRUE)),
-               list(structure(c(1, 0.5, 0.5, 1), .Dim = c(2L, 2L),
-                              .Dimnames = list(c("f", "g"), c("f", "g")),
-                              lotriFix = structure(c(TRUE, TRUE, TRUE, TRUE),
-                                                   .Dim = c(2L, 2L),
-                                                   .Dimnames = list(c("f", "g"), c("f", "g"))),
-                              class = .cls),
-                    structure(c(1, 0.5, 0.5, 1), .Dim = c(2L, 2L),
-                              .Dimnames = list(c("m", "n"), c("m", "n")),
-                              lotriFix = structure(c(FALSE, FALSE, FALSE, FALSE),
-                                                   .Dim = c(2L, 2L),
-                                                   .Dimnames = list(c("m", "n"), c("m", "n"))),
-                              class = .cls)))
+  expect_equal(
+    lotriMatInv(lotriEst(lotriMat(list(fix1, fix2)), drop = TRUE)),
+    list(
+      structure(c(1, 0.5, 0.5, 1),
+        .Dim = c(2L, 2L),
+        .Dimnames = list(c("f", "g"), c("f", "g")),
+        lotriFix = structure(c(TRUE, TRUE, TRUE, TRUE),
+          .Dim = c(2L, 2L),
+          .Dimnames = list(c("f", "g"), c("f", "g"))
+        ),
+        class = .cls
+      ),
+      structure(c(1, 0.5, 0.5, 1),
+        .Dim = c(2L, 2L),
+        .Dimnames = list(c("m", "n"), c("m", "n")),
+        lotriFix = structure(c(FALSE, FALSE, FALSE, FALSE),
+          .Dim = c(2L, 2L),
+          .Dimnames = list(c("m", "n"), c("m", "n"))
+        ),
+        class = .cls
+      )
+    )
+  )
 
   expect_equal(vapply(seq_along(tmp2), function(i) {
     dimnames(tmp2[[i]])[[1]]
@@ -88,22 +110,21 @@ test_that("lotriMat", {
   ))
 
 
+  expect_error(asLotriMat("a", list(nu = 3), "id"))
 
-  expect_error(.Call(.lotri$`_asLotriMat`, "a", list(nu = 3), "id", PACKAGE = "lotri"))
-
-  expect_error(.Call(.lotri$`_asLotriMat`, matrix(1), list(nu = 3), "id", PACKAGE = "lotri"))
-  expect_error(.Call(.lotri$`_asLotriMat`, structure(1, .Dim = c(1L, 1L), dimnames = list(NULL, "a")),
-                     list(nu = 3), "id",
-                     PACKAGE = "lotri"
+  expect_error(asLotriMat(matrix(1), list(nu = 3), "id"))
+  expect_error(asLotriMat(
+    structure(1, .Dim = c(1L, 1L), dimnames = list(NULL, "a")),
+    list(nu = 3), "id"
   ))
-  expect_error(.Call(.lotri$`_asLotriMat`, structure(1, .Dim = c(1L, 1L), dimnames = list("a", NULL)),
-                     list(nu = 3), "id",
-                     PACKAGE = "lotri"
+  expect_error(asLotriMat(
+    structure(1, .Dim = c(1L, 1L), dimnames = list("a", NULL)),
+    list(nu = 3), "id"
   ))
 
-  expect_error(.Call(.lotri$`_asLotriMat`, lotri(et1 + et2 ~ c(0.1, 0.01, 1)),
-                     "a", "id",
-                     PACKAGE = "lotri"
+  expect_error(asLotriMat(
+    lotri(et1 + et2 ~ c(0.1, 0.01, 1)),
+    "a", "id"
   ))
 
   expect_error(as.lotri(lotri(et1 + et2 ~ c(0.1, 0.01, 1)), upper = 1L, default = c("id", "id2")))
@@ -124,13 +145,15 @@ test_that("lotriMat", {
     matrix(c(1L, 0L, 0L, 1L), 2, 2)
   )
 
-  expect_equal(lotriMat(testList),
-               structure(c(
-                 40, 0.1, 0.1, 0, 0, 0, 0, 0, 0.1, 20, 0.1, 0, 0,
-                 0, 0, 0, 0.1, 0.1, 30, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0,
-                 0, 0, 0, 0, 0.1, 0.01, 0, 0, 0, 0, 0, 0, 0.01, 1, 0, 0, 0, 0,
-                 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1
-               ), .Dim = c(8L, 8L)))
+  expect_equal(
+    lotriMat(testList),
+    structure(c(
+      40, 0.1, 0.1, 0, 0, 0, 0, 0, 0.1, 20, 0.1, 0, 0,
+      0, 0, 0, 0.1, 0.1, 30, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0,
+      0, 0, 0, 0, 0.1, 0.01, 0, 0, 0, 0, 0, 0, 0.01, 1, 0, 0, 0, 0,
+      0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1
+    ), .Dim = c(8L, 8L))
+  )
 
   testList <- list(
     matrix(c(1L, 0L, 0L, 1L), 2, 2),
@@ -145,11 +168,15 @@ test_that("lotriMat", {
     lotri(et1 + et6 ~ c(0.1, 0.01, 1))
   )
 
-  expect_equal(lotriMat(testList),
-               structure(c(1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
-                           0, 40, 0.1, 0.1, 0, 0, 0, 0, 0, 0.1, 20, 0.1, 0, 0, 0, 0, 0,
-                           0.1, 0.1, 30, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0,
-                           0, 0.1, 0.01, 0, 0, 0, 0, 0, 0, 0.01, 1), .Dim = c(8L, 8L)))
+  expect_equal(
+    lotriMat(testList),
+    structure(c(
+      1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
+      0, 40, 0.1, 0.1, 0, 0, 0, 0, 0, 0.1, 20, 0.1, 0, 0, 0, 0, 0,
+      0.1, 0.1, 30, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0,
+      0, 0.1, 0.01, 0, 0, 0, 0, 0, 0, 0.01, 1
+    ), .Dim = c(8L, 8L))
+  )
 
   testList <- list(
     lotri({
@@ -162,10 +189,10 @@ test_that("lotriMat", {
     lotri(et5 ~ 6),
     lotri(et1 + et6 ~ c(0.1, 0.01, 1)),
     matrix(c(1L, 0L, 0L, 1L), 2, 2,
-           dimnames = list(
-             c("et7", "et8"),
-             c("et7", "et8")
-           )
+      dimnames = list(
+        c("et7", "et8"),
+        c("et7", "et8")
+      )
     )
   )
 
@@ -206,10 +233,10 @@ test_that("lotriMat", {
     list(lotri(et5 ~ 6), 3),
     lotri(et1 + et6 ~ c(0.1, 0.01, 1)),
     matrix(c(1L, 0L, 0L, 1L), 2, 2,
-           dimnames = list(
-             c("et7", "et8"),
-             c("et7", "et8")
-           )
+      dimnames = list(
+        c("et7", "et8"),
+        c("et7", "et8")
+      )
     )
   )
 
@@ -224,10 +251,10 @@ test_that("lotriMat", {
     list(lotri(et5 ~ 6), 3L),
     lotri(et1 + et6 ~ c(0.1, 0.01, 1)),
     matrix(c(1L, 0L, 0L, 1L), 2, 2,
-           dimnames = list(
-             c("et7", "et8"),
-             c("et7", "et8")
-           )
+      dimnames = list(
+        c("et7", "et8"),
+        c("et7", "et8")
+      )
     )
   )
 
@@ -263,10 +290,10 @@ test_that("lotriMat", {
     list(lotri(et5 ~ 6), 3, 4),
     lotri(et1 + et6 ~ c(0.1, 0.01, 1)),
     matrix(c(1L, 0L, 0L, 1L), 2, 2,
-           dimnames = list(
-             c("et7", "et8"),
-             c("et7", "et8")
-           )
+      dimnames = list(
+        c("et7", "et8"),
+        c("et7", "et8")
+      )
     )
   )
   expect_error(lotriMat(testList))
@@ -282,10 +309,10 @@ test_that("lotriMat", {
     list(lotri(et5 ~ 6), 0),
     lotri(et1 + et6 ~ c(0.1, 0.01, 1)),
     matrix(c(1L, 0L, 0L, 1L), 2, 2,
-           dimnames = list(
-             c("et7", "et8"),
-             c("et7", "et8")
-           )
+      dimnames = list(
+        c("et7", "et8"),
+        c("et7", "et8")
+      )
     )
   )
   expect_error(lotriMat(testList))
@@ -301,10 +328,10 @@ test_that("lotriMat", {
     list(lotri(et5 ~ 6), 1:3),
     lotri(et1 + et6 ~ c(0.1, 0.01, 1)),
     matrix(c(1L, 0L, 0L, 1L), 2, 2,
-           dimnames = list(
-             c("et7", "et8"),
-             c("et7", "et8")
-           )
+      dimnames = list(
+        c("et7", "et8"),
+        c("et7", "et8")
+      )
     )
   )
 
@@ -325,5 +352,4 @@ test_that("lotriMat", {
   expect_equal(lotriMat(mat1), lotriMat(list(mat1)))
   expect_equal(lotriMat(mat1, "ETA[%d]"), lotriMat(list(mat1), "ETA[%d]"))
   expect_equal(lotriMat(mat1, "ETA[%d]", 4), lotriMat(list(mat1), "ETA[%d]", 4L))
-
 })

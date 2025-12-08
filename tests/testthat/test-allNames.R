@@ -1,6 +1,4 @@
 test_that("allNames", {
-  .lotri <- loadNamespace("lotri")
-  
   omega9 <- lotri(
     lotri(
       eta.Cl ~ 0.1,
@@ -38,7 +36,7 @@ test_that("allNames", {
       inv.Ka ~ 0.02
     ) | inv(nu = 10)
   )
-  
+
   expect_equal(
     omega$.allNames,
     c(
@@ -46,10 +44,10 @@ test_that("allNames", {
       "eye.Cl", "eye.Ka", "eta.Cl", "eta.Ka"
     )
   )
-  
-  expect_error(.Call(.lotri$`_lotriAllNames`, 1:20, PACKAGE = "lotri"))
-  
-  
+
+  expect_error(lotriAllNames(1:20))
+
+
   mat0 <- lotri(
     eta.Cl ~ 0.1,
     eta.Ka ~ 0.1
@@ -57,36 +55,32 @@ test_that("allNames", {
   dn <- dimnames(mat0)
   dn0 <- list(dn[[1]], NULL)
   dimnames(mat0) <- dn0
-  
-  dn1 <- .Call(.lotri$`_lotriAllNames`, mat0, PACKAGE = "lotri")
-  
+
+  dn1 <- lotriAllNames(mat0)
+
   dn0 <- list(NULL, dn[[1]])
   dimnames(mat0) <- dn0
-  
-  dn2 <- .Call(.lotri$`_lotriAllNames`, mat0, PACKAGE = "lotri")
-  
+
+  dn2 <- lotriAllNames(mat0)
+
   expect_equal(dn1, dn2)
-  
+
   dn0 <- list(NULL, NULL)
   dimnames(mat0) <- dn0
-  
-  dn3 <- .Call(.lotri$`_lotriAllNames`, mat0, PACKAGE = "lotri")
-  
+
+  dn3 <- lotriAllNames(mat0)
+
   expect_equal(dn3, character(0))
-  
+
   dimnames(mat0) <- NULL
-  
-  dn3 <- .Call(.lotri$`_lotriAllNames`, mat0, PACKAGE = "lotri")
-  
+
+  dn3 <- lotriAllNames(mat0)
+
   expect_equal(dn3, character(0))
-  
+
   name9 <- c(
     "inv.Cl", "inv.Ka", "iov.Cl", "iov.Ka", "eye.Cl", "eye.Ka",
     "eta.Cl", "eta.Ka"
   )
-  expect_equal(
-    .Call(.lotri$`_lotriAllNames`, omega9, PACKAGE = "lotri"),
-    name9
-  )
-  
+  expect_equal(lotriAllNames(omega9), name9)
 })

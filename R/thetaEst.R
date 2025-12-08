@@ -1,9 +1,9 @@
-.deparse1 <- function (expr, collapse = " ", width.cutoff = 500L, ...) {
+.deparse1 <- function(expr, collapse = " ", width.cutoff = 500L, ...) {
   paste(deparse(expr, width.cutoff, ...), collapse = collapse)
 }
 
 .parseThetaEstFixQ <- function(x, env) {
-  x  <- .repFixedWithC(x, env)
+  x <- .repFixedWithC(x, env)
   if (is.call(x)) {
     # See if c(1,2,3,fixed) is present.  If so drop the fixed element
     # and flag the environment
@@ -19,17 +19,17 @@
       env$fix <- TRUE
       x <- x[-.w]
     }
-    return(as.call(lapply(x, .parseThetaEstFixQ, env=env)))
+    return(as.call(lapply(x, .parseThetaEstFixQ, env = env)))
   } else {
     return(x)
   }
 }
 
-.parseThetaEstFix <- function(x, envir=parent.frame()) {
-  .env <- new.env(parent=emptyenv())
+.parseThetaEstFix <- function(x, envir = parent.frame()) {
+  .env <- new.env(parent = emptyenv())
   .env$fix <- FALSE
   .x <- .parseThetaEstFixQ(x, .env)
-  .ret <- try(eval(.x, envir=envir), silent=TRUE)
+  .ret <- try(eval(.x, envir = envir), silent = TRUE)
   .numeric <- vapply(.ret, is.numeric, logical(1))
   if (!all(.numeric)) {
     return(.deparse1(x))
@@ -40,12 +40,14 @@
   } else if (length(.ret) != 3) {
     return(.deparse1(x))
   }
-  data.frame(lower=.ret[1], est=.ret[2], upper=.ret[3], fix=.env$fix,
-             stringsAsFactors = FALSE)
+  data.frame(
+    lower = .ret[1], est = .ret[2], upper = .ret[3], fix = .env$fix,
+    stringsAsFactors = FALSE
+  )
 }
 
 
-.parseThetaEstQ <- function(x, env, envir=parent.frame()) {
+.parseThetaEstQ <- function(x, env, envir = parent.frame()) {
   if (is.call(x)) {
     .doAssign <- FALSE
     if (exists("assign", env)) {
@@ -60,9 +62,9 @@
       .lastDfLen <- 0
       for (.i in seq_along(.x)) {
         env$.lines[.i] <- sprintf("\033[1m:%03d\033[0m: %s", .i, .deparse1(.x[[.i]]))
-        .parseThetaEstQ(.x[[.i]], env=env, envir=envir)
+        .parseThetaEstQ(.x[[.i]], env = env, envir = envir)
         if (length(env$err) > 0) {
-          env$.err[[.i]] <- paste(env$err, collapse="\n")
+          env$.err[[.i]] <- paste(env$err, collapse = "\n")
           env$err <- NULL
           env$.hasErr <- TRUE
         }
@@ -73,7 +75,7 @@
         }
       }
     } else if (identical(x[[1]], quote(`quote`))) {
-      lapply(x[[2]], .parseThetaEstQ, env=env, envir = envir)
+      lapply(x[[2]], .parseThetaEstQ, env = env, envir = envir)
     } else if (identical(x[[1]], quote(`label`))) {
       if (.doAssign) {
         .lab <- ""
@@ -102,15 +104,17 @@
         .lst[[length(.lst)]] <- .df0
         env$df <- .lst
       }
-    } else if  (identical(x[[1]], quote(`<-`)) ||
-                  identical(x[[1]], quote(`=`))) {
+    } else if (identical(x[[1]], quote(`<-`)) ||
+      identical(x[[1]], quote(`=`))) {
       env$assign <- TRUE
       .name <- as.character(x[[2]])
-      .df <- .parseThetaEstFix(x[[3]], envir=envir)
+      .df <- .parseThetaEstFix(x[[3]], envir = envir)
       if (inherits(.df, "data.frame")) {
-        env$df <- c(env$df, list(data.frame(name=.name, .df, label=NA_character_,
-                                            backTransform=NA_character_,
-                                            stringsAsFactors = FALSE)))
+        env$df <- c(env$df, list(data.frame(
+          name = .name, .df, label = NA_character_,
+          backTransform = NA_character_,
+          stringsAsFactors = FALSE
+        )))
       } else {
         env$err <- c(env$err, paste0("estimate syntax unsupported: ", .name, " ", deparse(x[[1]]), " ", .df))
       }
@@ -118,7 +122,7 @@
       if (identical(x[[1]], quote(`~`))) {
         env$assign <- FALSE
       }
-      return(as.call(lapply(x, .parseThetaEstQ, env=env, envir=envir)))
+      return(as.call(lapply(x, .parseThetaEstQ, env = env, envir = envir)))
     }
   } else {
     return(x)
@@ -127,76 +131,98 @@
 
 .parseThetaEstBadEsts <- function(env, lines, text) {
   for (i in seq_along(lines)) {
-    env$.err[[lines[i]]] <- paste(c(env$.err[[lines[i]]], text[i]), collapse="\n")
+    env$.err[[lines[i]]] <- paste(c(env$.err[[lines[i]]], text[i]), collapse = "\n")
   }
 }
 
-.parseThetaEst <- function(x, envir=parent.frame()) {
-  .env <- new.env(parent=emptyenv())
+.parseThetaEst <- function(x, envir = parent.frame()) {
+  .env <- new.env(parent = emptyenv())
   .env$.hasErr <- FALSE
   .env$df <- NULL
   .env$err <- NULL
-  .parseThetaEstQ(x, .env, envir=envir)
-  if (!is.null(.env$df)){
+  .parseThetaEstQ(x, .env, envir = envir)
+  if (!is.null(.env$df)) {
     .env$df <- do.call(rbind, .env$df)
     .w <- which(is.na(.env$df$lower))
     if (length(.w) > 0) {
-      .parseThetaEstBadEsts(.env, .env$.dfToLine[.w],
-                            paste0("lower bounds cannot be NA: '", .env$df$name[.w], "'"))
+      .parseThetaEstBadEsts(
+        .env, .env$.dfToLine[.w],
+        paste0("lower bounds cannot be NA: '", .env$df$name[.w], "'")
+      )
     }
     .w <- which(is.na(.env$df$upper))
     if (length(.w) > 0) {
-      .parseThetaEstBadEsts(.env, .env$.dfToLine[.w],
-                            paste0("upper bounds cannot be NA: '", .env$df$name[.w], "'"))
+      .parseThetaEstBadEsts(
+        .env, .env$.dfToLine[.w],
+        paste0("upper bounds cannot be NA: '", .env$df$name[.w], "'")
+      )
     }
     .w <- which(is.na(.env$df$est))
     if (length(.w) > 0) {
-      .parseThetaEstBadEsts(.env, .env$.dfToLine[.w],
-                            paste0("initial estimates cannot be NA: '", .env$df$name[.w], "'"))
+      .parseThetaEstBadEsts(
+        .env, .env$.dfToLine[.w],
+        paste0("initial estimates cannot be NA: '", .env$df$name[.w], "'")
+      )
     }
 
     .w <- which(is.nan(.env$df$lower))
     if (length(.w) > 0) {
-      .parseThetaEstBadEsts(.env, .env$.dfToLine[.w],
-                            paste0("lower bounds cannot be NaN: '", .env$df$name[.w], "'"))
+      .parseThetaEstBadEsts(
+        .env, .env$.dfToLine[.w],
+        paste0("lower bounds cannot be NaN: '", .env$df$name[.w], "'")
+      )
     }
     .w <- which(is.nan(.env$df$upper))
     if (length(.w) > 0) {
-      .parseThetaEstBadEsts(.env, .env$.dfToLine[.w],
-                            paste0("upper bounds cannot be NaN: '", .env$df$name[.w], "'"))
+      .parseThetaEstBadEsts(
+        .env, .env$.dfToLine[.w],
+        paste0("upper bounds cannot be NaN: '", .env$df$name[.w], "'")
+      )
     }
     .w <- which(is.nan(.env$df$est))
     if (length(.w) > 0) {
-      .parseThetaEstBadEsts(.env, .env$.dfToLine[.w],
-                            paste0("initial estimates cannot be NaN: '", .env$df$name[.w], "'"))
+      .parseThetaEstBadEsts(
+        .env, .env$.dfToLine[.w],
+        paste0("initial estimates cannot be NaN: '", .env$df$name[.w], "'")
+      )
     }
 
     .w <- which(is.infinite(.env$df$est))
     if (length(.w) > 0) {
-      .parseThetaEstBadEsts(.env, .env$.dfToLine[.w],
-                            paste0("initial estimates cannot be infinite: '", .env$df$name[.w], "'"))
+      .parseThetaEstBadEsts(
+        .env, .env$.dfToLine[.w],
+        paste0("initial estimates cannot be infinite: '", .env$df$name[.w], "'")
+      )
     }
     .w <- which(.env$df$lower == Inf)
     if (length(.w) > 0) {
-      .parseThetaEstBadEsts(.env, .env$.dfToLine[.w],
-                            paste0("lower bounds cannot be +Inf: '", paste(.env$df$name[.w], collapse="', '"), "'"))
+      .parseThetaEstBadEsts(
+        .env, .env$.dfToLine[.w],
+        paste0("lower bounds cannot be +Inf: '", paste(.env$df$name[.w], collapse = "', '"), "'")
+      )
     }
     .w <- which(.env$df$upper == -Inf)
     if (length(.w) > 0) {
-      .parseThetaEstBadEsts(.env, .env$.dfToLine[.w],
-                            paste0("upper bounds cannot be -Inf: '", .env$df$name[.w], "'"))
+      .parseThetaEstBadEsts(
+        .env, .env$.dfToLine[.w],
+        paste0("upper bounds cannot be -Inf: '", .env$df$name[.w], "'")
+      )
     }
 
     .w <- which(.env$df$upper == .env$df$est | .env$df$lower == .env$df$est)
     if (length(.w) > 0) {
-      .parseThetaEstBadEsts(.env, .env$.dfToLine[.w],
-                            paste0("estimate cannot be equal upper or lower bounds: '", .env$df$name[.w], "'"))
+      .parseThetaEstBadEsts(
+        .env, .env$.dfToLine[.w],
+        paste0("estimate cannot be equal upper or lower bounds: '", .env$df$name[.w], "'")
+      )
     }
 
     .w <- which(.env$df$upper < .env$df$est | .env$df$lower > .env$df$est)
     if (length(.w) > 0) {
-      .parseThetaEstBadEsts(.env, .env$.dfToLine[.w],
-                            paste0("estimate and bounds need to be re-ordered: '", .env$df$name[.w], "'"))
+      .parseThetaEstBadEsts(
+        .env, .env$.dfToLine[.w],
+        paste0("estimate and bounds need to be re-ordered: '", .env$df$name[.w], "'")
+      )
     }
     ## print(.env$.dfToLine)
     ## print(.env$.err)
@@ -231,7 +257,7 @@
 ##' lotriEst(fix1, drop=TRUE)
 ##'
 ##' @export
-lotriEst <- function(x, drop=FALSE) {
+lotriEst <- function(x, drop = FALSE) {
   if (drop) {
     y <- x
     attr(y, "lotriEst") <- NULL

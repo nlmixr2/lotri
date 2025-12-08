@@ -26,10 +26,16 @@ symmetric matrices.
 }
 \examples{
 
-testList <- list(lotri({et2 + et3 + et4 ~ c(40,
-                           0.1, 20,
-                           0.1, 0.1, 30)}),
-                 lotri(et5 ~ 6))
+testList <- list(
+  lotri({
+    et2 + et3 + et4 ~ c(
+      40,
+      0.1, 20,
+      0.1, 0.1, 30
+    )
+  }),
+  lotri(et5 ~ 6)
+)
 
 testList
 
@@ -40,10 +46,16 @@ lotriMat(testList)
 # can be done with list(matrix, # times to repeat).
 
 # In the example below, the first matrix is repeated 3 times
-testList <- list(list(lotri({et2 + et3 + et4 ~ c(40,
-                           0.1, 20,
-                           0.1, 0.1, 30)}), 3),
-                 lotri(et5 ~ 6))
+testList <- list(
+  list(lotri({
+    et2 + et3 + et4 ~ c(
+      40,
+      0.1, 20,
+      0.1, 0.1, 30
+    )
+  }), 3),
+  lotri(et5 ~ 6)
+)
 
 lotriMat(testList)
 

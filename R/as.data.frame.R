@@ -1,7 +1,7 @@
-.as.data.frame.lotriFix.mat <- function(mat, default="id",
-                                        eta1=1) {
+.as.data.frame.lotriFix.mat <- function(mat, default = "id",
+                                        eta1 = 1) {
   .df3 <- NULL
-  .env <- new.env(parent=emptyenv())
+  .env <- new.env(parent = emptyenv())
   .env$eta1 <- eta1
   if (inherits(mat, "matrix")) {
     .lst2 <- lotriMatInv(mat)
@@ -24,18 +24,22 @@
           } else {
             .fix <- FALSE
           }
-          .df3 <- rbind(.df3,
-                        data.frame(ntheta=NA_integer_,
-                                   neta1=.env$eta1 + .j - 1,
-                                   neta2=.env$eta1 + .k - 1,
-                                   name=.curName,
-                                   lower= -Inf,
-                                   est=.curMat[.j, .k],
-                                   upper=Inf,
-                                   fix=.fix,
-                                   label=NA_integer_,
-                                   backTransform=NA_character_,
-                                   condition=default))
+          .df3 <- rbind(
+            .df3,
+            data.frame(
+              ntheta = NA_integer_,
+              neta1 = .env$eta1 + .j - 1,
+              neta2 = .env$eta1 + .k - 1,
+              name = .curName,
+              lower = -Inf,
+              est = .curMat[.j, .k],
+              upper = Inf,
+              fix = .fix,
+              label = NA_integer_,
+              backTransform = NA_character_,
+              condition = default
+            )
+          )
         }
       }
       .env$eta1 <- max(.df3$neta1) + 1
@@ -44,18 +48,20 @@
   .df3
 }
 
-##'@export
+##' @export
 as.data.frame.lotriFix <- function(x, row.names = NULL, optional = FALSE, ...,
-                                   default="id") {
+                                   default = "id") {
   if (!missing(row.names)) {
     stop("'row.names' should not be used when converting lotri object to data.frame",
-         call.=FALSE)
+      call. = FALSE
+    )
   }
   if (!missing(optional)) {
     stop("'optional' should not be used when converting lotri object to data.frame",
-         call.=FALSE)
+      call. = FALSE
+    )
   }
-  .df <- lotriEst(x, drop=FALSE)
+  .df <- lotriEst(x, drop = FALSE)
   if (!is.null(.df)) {
     if (length(.df$est) > 0) {
       .df$ntheta <- seq_along(.df$est)
@@ -64,36 +70,43 @@ as.data.frame.lotriFix <- function(x, row.names = NULL, optional = FALSE, ...,
       .df$condition <- NA_character_
     }
   }
-  .df2 <- lotriEst(x, drop=TRUE)
+  .df2 <- lotriEst(x, drop = TRUE)
   .df3 <- NULL
   if (inherits(.df2, "matrix")) {
-    .df3 <- .as.data.frame.lotriFix.mat(.df2, default=default)
+    .df3 <- .as.data.frame.lotriFix.mat(.df2, default = default)
   } else if (inherits(.df2, "list") | inherits(.df2, "lotri")) {
-    .env <- new.env(parent=emptyenv())
+    .env <- new.env(parent = emptyenv())
     .env$eta1 <- 1
-    .df3 <- do.call(rbind,
-                    lapply(names(.df2), function(default) {
-                      .ret <- .as.data.frame.lotriFix.mat(.df2[[default]], default=default,
-                                                          eta1=.env$eta1)
-                      assign("eta1", .env$eta1 + dim(.df2[[default]])[1],
-                             envir=.env)
-                      return(.ret)
-                    }))
+    .df3 <- do.call(
+      rbind,
+      lapply(names(.df2), function(default) {
+        .ret <- .as.data.frame.lotriFix.mat(.df2[[default]],
+          default = default,
+          eta1 = .env$eta1
+        )
+        assign("eta1", .env$eta1 + dim(.df2[[default]])[1],
+          envir = .env
+        )
+        return(.ret)
+      })
+    )
   }
   .ord <- c("ntheta", "neta1", "neta2", "name", "lower", "est", "upper", "fix", "label", "backTransform", "condition")
   .df <- rbind(.df, .df3)
   if (length(.df) == 0) {
-    return(data.frame(ntheta=integer(0),
-                      neta1=numeric(0),
-                      neta2=numeric(0),
-                      name=character(0),
-                      lower=numeric(0),
-                      est=numeric(0),
-                      upper=numeric(0),
-                      fix=numeric(0),
-                      label=character(0),
-                      backTransform=character(0),
-                      condition=character(0)))
+    return(data.frame(
+      ntheta = integer(0),
+      neta1 = numeric(0),
+      neta2 = numeric(0),
+      name = character(0),
+      lower = numeric(0),
+      est = numeric(0),
+      upper = numeric(0),
+      fix = numeric(0),
+      label = character(0),
+      backTransform = character(0),
+      condition = character(0)
+    ))
   }
   if (!is.null(attr(x, "lotriLabels"))) {
     .lab <- attr(x, "lotriLabels")

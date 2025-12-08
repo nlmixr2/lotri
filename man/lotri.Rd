@@ -73,29 +73,44 @@ This can take an R matrix, a list including matrices or
 \examples{
 
 ## A few ways to specify the same matrix
-lotri({et2 + et3 + et4 ~ c(40,
-                           0.1, 20,
-                           0.1, 0.1, 30)})
+lotri({
+  et2 + et3 + et4 ~ c(
+    40,
+    0.1, 20,
+    0.1, 0.1, 30
+  )
+})
 
 ## You  do not need to enclose in {}
-lotri(et2 + et3 + et4 ~ c(40,
-                          0.1, 20,
-                          0.1, 0.1, 30),
-          et5 ~ 6)
+lotri(
+  et2 + et3 + et4 ~ c(
+    40,
+    0.1, 20,
+    0.1, 0.1, 30
+  ),
+  et5 ~ 6
+)
 ## But if you do enclose in {}, you can use
 ## multi-line matrix specifications:
 
-lotri({et2 + et3 + et4 ~ c(40,
-                           0.1, 20,
-                           0.1, 0.1, 30)
-          et5 ~ 6
-          })
+lotri({
+  et2 + et3 + et4 ~ c(
+    40,
+    0.1, 20,
+    0.1, 0.1, 30
+  )
+  et5 ~ 6
+})
 
 ## You can also add lists or actual R matrices as in this example:
-lotri(list(et2 + et3 + et4 ~ c(40,
-                               0.1, 20,
-                               0.1, 0.1, 30),
-              matrix(1,dimnames=list("et5","et5"))))
+lotri(list(
+  et2 + et3 + et4 ~ c(
+    40,
+    0.1, 20,
+    0.1, 0.1, 30
+  ),
+  matrix(1, dimnames = list("et5", "et5"))
+))
 
 ## Overall this is a flexible way to specify symmetric block
 ## diagonal matrices.
@@ -103,10 +118,16 @@ lotri(list(et2 + et3 + et4 ~ c(40,
 ## For rxode2, you may also condition based on different levels of
 ## nesting with lotri;  Here is an example:
 
-mat <- lotri(lotri(iov.Ka ~ 0.5,
-                    iov.Cl ~ 0.6),
-              lotri(occ.Ka ~ 0.5,
-                    occ.Cl ~ 0.6) | occ(lower=4,nu=3))
+mat <- lotri(
+  lotri(
+    iov.Ka ~ 0.5,
+    iov.Cl ~ 0.6
+  ),
+  lotri(
+    occ.Ka ~ 0.5,
+    occ.Cl ~ 0.6
+  ) | occ(lower = 4, nu = 3)
+)
 
 mat
 
@@ -135,7 +156,7 @@ mat$nu$id
 
 ## You can also change the default condition with `as.lotri`
 
-mat <- as.lotri(mat, default="id")
+mat <- as.lotri(mat, default = "id")
 
 mat
 

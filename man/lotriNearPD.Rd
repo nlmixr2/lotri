@@ -87,7 +87,7 @@ Higham (2002) uses Dykstra's correction, but the version by Jens
 \examples{
 
 set.seed(27)
-m <- matrix(round(rnorm(25),2), 5, 5)
+m <- matrix(round(rnorm(25), 2), 5, 5)
 m <- m + t(m)
 diag(m) <- pmax(0, diag(m)) + 1
 (m <- round(cov2cor(m), 2))
@@ -96,20 +96,24 @@ near.m <- lotriNearPD(m)
 round(near.m, 2)
 norm(m - near.m) # 1.102 / 1.08
 
-round(lotriNearPD(m, only.values=TRUE), 9)
+round(lotriNearPD(m, only.values = TRUE), 9)
 
 ## A longer example, extended from Jens' original,
 ## showing the effects of some of the options:
 
-pr <- matrix(c(1,     0.477, 0.644, 0.478, 0.651, 0.826,
-               0.477, 1,     0.516, 0.233, 0.682, 0.75,
-               0.644, 0.516, 1,     0.599, 0.581, 0.742,
-               0.478, 0.233, 0.599, 1,     0.741, 0.8,
-               0.651, 0.682, 0.581, 0.741, 1,     0.798,
-               0.826, 0.75,  0.742, 0.8,   0.798, 1),
-               nrow = 6, ncol = 6)
+pr <- matrix(
+  c(
+    1, 0.477, 0.644, 0.478, 0.651, 0.826,
+    0.477, 1, 0.516, 0.233, 0.682, 0.75,
+    0.644, 0.516, 1, 0.599, 0.581, 0.742,
+    0.478, 0.233, 0.599, 1, 0.741, 0.8,
+    0.651, 0.682, 0.581, 0.741, 1, 0.798,
+    0.826, 0.75, 0.742, 0.8, 0.798, 1
+  ),
+  nrow = 6, ncol = 6
+)
 
-nc  <- lotriNearPD(pr)
+nc <- lotriNearPD(pr)
 
 }
 \references{
