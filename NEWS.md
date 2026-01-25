@@ -1,3 +1,7 @@
+# lotri 1.0.3
+
+* Lotri shifted to using `cpp4r` and `armadillo4r` (issue #41)
+
 # lotri 1.0.2
 
 * Fix for iov variables that are right next to one another (issue #37)
