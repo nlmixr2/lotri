@@ -1,5 +1,10 @@
 # Changelog
 
+## lotri 1.0.3
+
+- Lotri shifted to using `cpp4r` and `armadillo4r` (issue
+  [\#41](https://github.com/nlmixr2/lotri/issues/41))
+
 ## lotri 1.0.2
 
 CRAN release: 2025-08-29
