@@ -172,9 +172,9 @@ mb <- microbenchmark(matf(testList),lotriMat(testList))
 
 print(mb)
 #> Unit: microseconds
-#>                expr      min        lq       mean    median        uq      max
-#>      matf(testList) 1269.165 1313.8300 1497.76488 1361.5925 1634.9030 6783.941
-#>  lotriMat(testList)    3.134    3.8305    7.06538    7.0775    9.4845   15.561
+#>                expr      min       lq       mean   median        uq      max
+#>      matf(testList) 1252.593 1310.472 1489.10890 1372.138 1627.7335 6584.355
+#>  lotriMat(testList)    3.198    3.793    6.95702    6.718    9.0455   19.582
 #>  neval
 #>    100
 #>    100

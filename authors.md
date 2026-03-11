@@ -14,7 +14,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/nlmixr2/lotri/blob/main/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/nlmixr2/lotri/blob/v1.0.3/DESCRIPTION)
 
 Fidler M (2026). *lotri: A Simple Way to Specify Symmetric, Block
 Diagonal Matrices*. R package version 1.0.3,
