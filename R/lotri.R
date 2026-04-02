@@ -437,38 +437,6 @@ NULL
   if (.handleSingleLineEstInLineForm(x2, values=.r, fixed=.rf, unfixed=.ru, env)) {
     return(NULL)
   }
-  if (env$lastN != 0 && length(x2) == 1L && length(.r) == env$lastN + 1) {
-    for (.i in seq_len(env$lastN)) {
-      .v <- .r[.i]
-      .f <- .rf[.i]
-      .u <- .ru[.i]
-      names(.v) <- names(.f) <- names(.u) <- NULL
-      env$df <- rbind(
-        env$df,
-        data.frame(
-          i = c(env$eta1 + .i-1, env$eta1 + env$lastN),
-          j = c(env$eta1 + env$lastN, env$eta1 + .i-1), x = .v,
-          fix=.f, unfix=.u
-        )
-      )
-    }
-    .v <- .r[env$lastN+1]
-    .f <- .rf[env$lastN+1]
-    .u <- .ru[env$lastN+1]
-    names(.v) <- names(.f) <- names(.u) <- NULL
-    env$df <- rbind(
-      env$df,
-      data.frame(
-        i = env$eta1 + env$lastN,
-        j = env$eta1 + env$lastN, x = .v,
-        fix=.f, unfix=.u
-      )
-    )
-    env$lastN <- env$lastN + 1
-    env$names <- c(env$names, deparse1(x2))
-    env$labels <- c(env$labels, NA_character_)
-    return(invisible())
-  }
   env$netas <- length(.r)
   .num <- sqrt(1 + env$netas * 8) / 2 - 1 / 2
   if (round(.num) == .num) {
