@@ -7,6 +7,14 @@ extern "C" SEXP _lotri_rcm_(SEXP As) {
     cpp4r::doubles_matrix<> Asd = as_cpp<cpp4r::doubles_matrix<>>(As);
     mat A = as_Mat(Asd);
     uword n = A.n_rows;
+    // Guard: n=0 causes n-1 to wrap to UWORD_MAX (unsigned underflow) in the
+    // loop below, producing an effectively infinite loop.
+    if (n == 0) {
+      SEXP ret = PROTECT(Rf_allocMatrix(REALSXP, 0, 0)); pro++;
+      Rf_setAttrib(ret, R_DimNamesSymbol, Rf_getAttrib(As, R_DimNamesSymbol));
+      UNPROTECT(pro);
+      return ret;
+    }
     uvec nonZero(n);
     uvec perm(n);
     // Fill the permutations to values outside the range of the matrix

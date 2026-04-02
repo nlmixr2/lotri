@@ -64,7 +64,12 @@ bool lotriNearPDarma(mat &ret, mat x
                      , int maxit//    = 100 // maximum number of iterations allowed
                      , bool trace// = false // set to TRUE (or 1 ..) to trace iterations
                      ){
-  unsigned int n = (unsigned int)x.n_cols;
+  arma::uword n = x.n_cols;
+  if (n == 0) {
+    // Empty matrix: already the nearest PD (vacuously), return unchanged
+    ret = x;
+    return true;
+  }
   vec diagX0;
   if (keepDiag) {
     diagX0 = x.diag();
@@ -134,14 +139,14 @@ bool lotriNearPDarma(mat &ret, mat x
         if (!only_values) {
           vec o_diag = X.diag();
           mat Q2 = Q.t();
-          for (unsigned int i = 0; i < n; ++i)  {
+          for (arma::uword i = 0; i < n; ++i)  {
             Q2.col(i) = d % Q2.col(i);
           }
           X = Q * Q2;
           vec D = sqrt(lotriPmaxC(Eps, o_diag)/X.diag());
           mat DX(n, n);
           mat D2(n, n);
-          for (unsigned int i = 0; i < n; ++i)  {
+          for (arma::uword i = 0; i < n; ++i)  {
             DX.col(i) = D % X.col(i);
             D2.col(i) = D;
           }
