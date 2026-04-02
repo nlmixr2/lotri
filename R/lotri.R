@@ -1304,8 +1304,6 @@ lotri <- function(x, ..., cov=FALSE, rcm=FALSE,
     if (is.function(cov)) {
       .fun <- cov
       cov <- TRUE
-    } else if (is.logical(cov) && cov) {
-      .fun <- lotriNearPD
     } else {
       stop("'cov' must be a length 1 non-NA logical or function",
            call.=FALSE)
