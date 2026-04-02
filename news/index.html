@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">lotri</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.3.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,9 +32,17 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/nlmixr2/lotri/blob/v1.0.3/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/nlmixr2/lotri/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.0.3.9000" id="lotri-1039000">lotri 1.0.3.9000<a class="anchor" aria-label="anchor" href="#lotri-1039000"></a></h2>
+<ul><li><p>Fix unsigned integer underflow in <code>rcm.cpp</code>: when called with a 0-row matrix, <code>n-1</code> would wrap to <code>UWORD_MAX</code> causing an infinite loop; added an early-return guard for <code>n == 0</code>.</p></li>
+<li><p>Fix type narrowing and underflow in <code>nearPD.cpp</code>: changed <code>unsigned int n</code> to <code>arma::uword</code> to prevent silent 32-bit truncation; added <code>n == 0</code> early-return guard to prevent out-of-bounds access on the eigenvalue vector.</p></li>
+<li><p>Fix variable shadowing in <code>lotriProp.c</code>: local <code>double val</code> renamed to <code>inVal</code> to eliminate <code>-Wshadow</code> warning against the function parameter.</p></li>
+<li><p>Fix hard-coded buffer size in <code>matlist.h</code>: <code>snprintf</code> buffer increased from 100 to 256 bytes and size passed via <code>sizeof(out)</code>.</p></li>
+<li><p>Use <code>R_xlen_t</code> instead of <code>int</code> for variables storing <code>Rf_length()</code> and <code>Rf_xlength()</code> returns across <code>matlist.h</code>, <code>lotriProp.c</code>, <code>lotriBounds.c</code>, and <code>lotriLstToMat.c</code>.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.0.3" id="lotri-103">lotri 1.0.3<a class="anchor" aria-label="anchor" href="#lotri-103"></a></h2><p class="text-muted">CRAN release: 2026-03-11</p>
 <ul><li>Lotri shifted to using <code>cpp4r</code> and <code>armadillo4r</code> (issue <a href="https://github.com/nlmixr2/lotri/issues/41" class="external-link">#41</a>)</li>
