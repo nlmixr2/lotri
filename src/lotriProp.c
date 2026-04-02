@@ -85,15 +85,15 @@ SEXP ampDefault(SEXP cur, SEXP dimn, double val, int pro0, const char * what) {
   }
   int pro = 0;
   SEXP names = Rf_getAttrib(cur, R_NamesSymbol);
-  int nDim = Rf_xlength(dimn);
+  R_xlen_t nDim = Rf_xlength(dimn);
   if (Rf_isNull(names)) {
     if (Rf_xlength(cur) == 1){
       SEXP ret = PROTECT(Rf_allocVector(REALSXP, nDim)); pro++;
       double *retD = REAL(ret);
       Rf_setAttrib(ret, R_NamesSymbol, dimn);
-      double val = REAL(cur)[0];
-      for (int i = nDim;i--;){
-	retD[i] = val;
+      double inVal = REAL(cur)[0];
+      for (R_xlen_t i = nDim; i--;) {
+	retD[i] = inVal;
       }
       UNPROTECT(pro);
       return ret;
@@ -102,13 +102,13 @@ SEXP ampDefault(SEXP cur, SEXP dimn, double val, int pro0, const char * what) {
       Rf_errorcall(R_NilValue, "'%s' needs to be named", what);
     }
   } else {
-    int nnames = Rf_xlength(names);
+    R_xlen_t nnames = Rf_xlength(names);
     SEXP ret = PROTECT(Rf_allocVector(REALSXP, nDim)); pro++;
     double *retD = REAL(ret);
     double *in = REAL(cur);
-    for (int i=0; i < nDim; ++i) {
+    for (R_xlen_t i = 0; i < nDim; ++i) {
       int found = 0;
-      for (int j = 0; j < nnames; ++j) {
+      for (R_xlen_t j = 0; j < nnames; ++j) {
 	if (!strcmp(CHAR(STRING_ELT(dimn, i)),
 		    CHAR(STRING_ELT(names, j)))) {
 	  retD[i] = in[j];

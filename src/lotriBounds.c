@@ -3,14 +3,14 @@
 SEXP _lotriAssumeUnbounded(SEXP lst_) {
   int pro=0;
   SEXP names = PROTECT(_lotriAllNames(lst_)); pro++;
-  int len = Rf_length(names);
+  R_xlen_t len = Rf_length(names);
   SEXP boundLower = PROTECT(Rf_allocVector(REALSXP, len)); pro++;
   SEXP boundUpper = PROTECT(Rf_allocVector(REALSXP, len)); pro++;
   Rf_setAttrib(boundLower, R_NamesSymbol, names);
   Rf_setAttrib(boundUpper, R_NamesSymbol, names);
   double *bL = REAL(boundLower);
   double *bU = REAL(boundUpper);
-  for (int j = len; j--; ){
+  for (R_xlen_t j = len; j--;) {
     bL[j] = R_NegInf;
     bU[j] = R_PosInf;
   }

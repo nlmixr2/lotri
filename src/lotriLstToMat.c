@@ -58,7 +58,7 @@ lotriInfo assertCorrectMatrixProperties(SEXP lst_, SEXP format, SEXP startNum, i
 
 SEXP _lotriEstDf(SEXP lst_, int totNum) {
   int i0 = 0, pro = 0;
-  int lstLen = Rf_length(lst_);
+  R_xlen_t lstLen = Rf_length(lst_);
   SEXP ret  = PROTECT(Rf_allocVector(VECSXP, 7)); pro++;
   SEXP retN = PROTECT(Rf_allocVector(STRSXP, 7)); pro++;
 
@@ -94,7 +94,7 @@ SEXP _lotriEstDf(SEXP lst_, int totNum) {
   SEXP backTransform = PROTECT(Rf_allocVector(STRSXP, totNum)); pro++;
   SET_VECTOR_ELT(ret, 6, backTransform);
 
-  for (int listCnt = 0; listCnt < lstLen; ++listCnt) {
+  for (R_xlen_t listCnt = 0; listCnt < lstLen; ++listCnt) {
     SEXP curV = Rf_getAttrib(VECTOR_ELT(lst_, listCnt), Rf_install("lotriEst"));
     if (!Rf_isNull(curV)) {
       SEXP nameIn = VECTOR_ELT(curV, 0);
@@ -104,8 +104,8 @@ SEXP _lotriEstDf(SEXP lst_, int totNum) {
       int *fixIn = INTEGER(VECTOR_ELT(curV, 4));
       SEXP labelIn = VECTOR_ELT(curV, 5);
       SEXP backTransformIn = VECTOR_ELT(curV, 6);
-      int inLen = Rf_length(nameIn);
-      for (int inCnt = 0; inCnt < inLen; ++inCnt) {
+      R_xlen_t inLen = Rf_length(nameIn);
+      for (R_xlen_t inCnt = 0; inCnt < inLen; ++inCnt) {
 	SET_STRING_ELT(name, i0, STRING_ELT(nameIn, inCnt));
 	lower[i0] = lowerIn[inCnt];
 	est[i0] = estIn[inCnt];

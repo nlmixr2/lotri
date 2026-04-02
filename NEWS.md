@@ -1,3 +1,15 @@
+# lotri 1.0.3.9000
+
+* Fix unsigned integer underflow in `rcm.cpp`: when called with a 0-row matrix, `n-1` would wrap to `UWORD_MAX` causing an infinite loop; added an early-return guard for `n == 0`.
+
+* Fix type narrowing and underflow in `nearPD.cpp`: changed `unsigned int n` to `arma::uword` to prevent silent 32-bit truncation; added `n == 0` early-return guard to prevent out-of-bounds access on the eigenvalue vector.
+
+* Fix variable shadowing in `lotriProp.c`: local `double val` renamed to `inVal` to eliminate `-Wshadow` warning against the function parameter.
+
+* Fix hard-coded buffer size in `matlist.h`: `snprintf` buffer increased from 100 to 256 bytes and size passed via `sizeof(out)`.
+
+* Use `R_xlen_t` instead of `int` for variables storing `Rf_length()` and `Rf_xlength()` returns across `matlist.h`, `lotriProp.c`, `lotriBounds.c`, and `lotriLstToMat.c`.
+
 # lotri 1.0.3
 
 * Lotri shifted to using `cpp4r` and `armadillo4r` (issue #41)

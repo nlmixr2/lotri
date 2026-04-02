@@ -115,8 +115,8 @@ static inline int getCheckDim(SEXP lst, int i, int *named, int *fixed, int *esti
 static inline int setStrElt(SEXP retN, SEXP colnames, int curBand, int j,
 			    const char *fmt, int doFormat, int *cnt, int nsame) {
   if (doFormat && nsame > 1) {
-    char out[100];
-    int cx = snprintf( out, 100, fmt, cnt[0]++);
+    char out[256];
+    int cx = snprintf(out, sizeof(out), fmt, cnt[0]++);
     SET_STRING_ELT(retN, curBand+j, Rf_mkChar(out));
     return cx;
   } else {
@@ -129,12 +129,12 @@ static inline double getDouble(SEXP colnames, int i, SEXP inUpperLower, SEXP upp
 			       double defaultValue, int type) {
   const char *lookup = CHAR(STRING_ELT(colnames, i));
   const char *current;
-  int upperLowerNamesSize = Rf_length(upperLowerNames);
-  int inUpperLowerSize = Rf_length(inUpperLower);
+  R_xlen_t upperLowerNamesSize = Rf_length(upperLowerNames);
+  R_xlen_t inUpperLowerSize = Rf_length(inUpperLower);
   if (inUpperLowerSize != upperLowerNamesSize) {
     Rf_errorcall(R_NilValue,_("malformed upper/lower names; names length and vector length are unequal"));
   }
-  for (int j = Rf_length(upperLowerNames); j--;) {
+  for (R_xlen_t j = (R_xlen_t)Rf_length(upperLowerNames); j--;) {
     current = CHAR(STRING_ELT(upperLowerNames, j));
     if (!strcmp(current, lookup)){
       return REAL(inUpperLower)[j];
@@ -148,7 +148,7 @@ static inline int setUpperLower(SEXP inUpperLower, SEXP colnames,
 				const char *what, int nsame) {
   SEXP upperLowerNames = Rf_getAttrib(inUpperLower, R_NamesSymbol);
   double value = defaultValue;
-  int ncol = Rf_length(colnames);
+  R_xlen_t ncol = Rf_length(colnames);
   if (Rf_isNull(upperLowerNames)){
     if (Rf_length(inUpperLower) == 1) {
       int typ = TYPEOF(inUpperLower);
@@ -162,17 +162,17 @@ static inline int setUpperLower(SEXP inUpperLower, SEXP colnames,
       /* Rf_errorcall(R_NilValue, _("cannot figure out valid '%s' properties"), what); */
       return 1;
     }
-    for (int i = ncol*nsame; i--;) {
+    for (R_xlen_t i = (R_xlen_t)ncol * nsame; i--;) {
       outUpperLower[i0+i] = value;
     }
   } else {
     int typ = TYPEOF(inUpperLower);
-    for (int i = ncol; i--;) {
-      outUpperLower[i0+i] = getDouble(colnames, i, inUpperLower,
+    for (R_xlen_t i = ncol; i--;) {
+      outUpperLower[i0+i] = getDouble(colnames, (int)i, inUpperLower,
 				      upperLowerNames, defaultValue, typ);
     }
     for (int i = 1; i < nsame; ++i) {
-      memcpy(&outUpperLower[i0+i*ncol], &outUpperLower[i0], ncol*sizeof(double));
+      memcpy(&outUpperLower[i0+i*ncol], &outUpperLower[i0], (size_t)ncol*sizeof(double));
     }
   }
   return 0;
