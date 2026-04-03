@@ -1,3 +1,16 @@
+test_that("rcm() errors with mismatched row/col names", {
+  m <- matrix(c(1, 0, 0, 1), nrow = 2,
+               dimnames = list(c("a", "b"), c("x", "y")))
+  expect_error(rcm(m))
+})
+
+test_that("rcm() on a 0x0 matrix returns 0x0 matrix", {
+  m0 <- matrix(numeric(0), nrow = 0, ncol = 0,
+               dimnames = list(character(0), character(0)))
+  r <- rcm(m0)
+  expect_equal(dim(r), c(0L, 0L))
+})
+
 test_that("rcm", {
 
   m <- lotri({

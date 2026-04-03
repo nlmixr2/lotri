@@ -97,3 +97,31 @@ test_that("as.data.frame", {
                fix2)
 
 })
+
+test_that("as.data.frame on lotri with only theta estimates returns correct data.frame", {
+  fix0 <- lotri({
+    a <- c(0, 1)
+    b <- c(0, 2)
+  })
+  df <- as.data.frame(fix0)
+  expect_true(inherits(df, "data.frame"))
+  expect_equal(nrow(df), 2L)
+  expect_true(all(!is.na(df$ntheta)))
+})
+
+test_that("as.data.frame handles lotriUnfix attribute in matrix", {
+  m <- lotri({ a + b ~ unfix(1, 0.5, 1) })
+  df <- as.data.frame(m)
+  expect_true(inherits(df, "data.frame"))
+  expect_equal(nrow(df), 3L)  # 2x2 lower triangle
+})
+
+test_that("as.data.frame on empty lotriFix (0x0) returns empty data.frame", {
+  m0 <- matrix(numeric(0), nrow = 0, ncol = 0)
+  class(m0) <- c("lotriFix", class(m0))
+  df <- as.data.frame(m0)
+  expect_true(inherits(df, "data.frame"))
+  expect_equal(nrow(df), 0L)
+  expect_true("ntheta" %in% names(df))
+  expect_true("name" %in% names(df))
+})
