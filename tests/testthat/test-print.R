@@ -33,8 +33,9 @@ test_that("print.lotriFix with zero-dim and lotriEst only shows estimates", {
     tka <- c(0, 0.45)
     tcl <- c(0, 0.99)
   })
-  if (inherits(fix0, "lotriFix") && all(dim(fix0) == 0L)) {
-    out <- capture.output(print(fix0))
-    expect_true(any(grepl("Estimates", out)))
-  }
+  expect_s3_class(fix0, "lotriFix")
+  expect_identical(dim(fix0), c(0L, 0L))
+  expect_true(!is.null(attr(fix0, "lotriEst")))
+  out <- capture.output(print(fix0))
+  expect_true(any(grepl("Estimates", out)))
 })
