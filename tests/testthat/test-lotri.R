@@ -478,13 +478,11 @@ test_that(".lotriGetMatrixFromEnv line 1097: non-NULL df with empty $i", {
   expect_equal(ncol(result), 0L)
 })
 
-test_that("lotri() cov=TRUE produces nearest PD matrix (line 1308 path via logical TRUE cov)", {
-  # cov=TRUE: length==1, is.logical, not NA — skips the if block, .fun stays NULL
-  # To trigger line 1308 (.fun <- lotriNearPD): need a non-scalar logical that
-  # is still TRUE but length != 1.  In R < 4.3 this warned; in R >= 4.3 it errors.
-  # Instead, just verify the normal cov=TRUE behavior works (exercises cov param).
+test_that("lotri() cov=TRUE accepts a valid positive-definite covariance matrix", {
   m <- lotri({ a + b ~ c(1, 0.5, 1) }, cov = TRUE)
   expect_true(is.matrix(m))
+  expect_equal(dim(m), c(2L, 2L))
+  expect_true(all(eigen(m, only.values = TRUE)$values > 0))
 })
 
 test_that("lotri() with NULL x returns NULL (line 1343)", {
