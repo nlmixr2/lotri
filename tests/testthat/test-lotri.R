@@ -204,7 +204,13 @@ test_that("lotri() with cov=TRUE accepts positive definite matrix", {
 })
 
 test_that("lotri() with cov=function uses provided function", {
-  m <- lotri({ a + b ~ c(1, 0.1, 1) }, cov = lotriNearPD)
+  called <- FALSE
+  cov_wrapper <- function(x) {
+    called <<- TRUE
+    lotriNearPD(x)
+  }
+  m <- lotri({ a + b ~ c(1, 0.1, 1) }, cov = cov_wrapper)
+  expect_true(called)
   expect_equal(dim(m), c(2L, 2L))
 })
 
