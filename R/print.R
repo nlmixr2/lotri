@@ -1,7 +1,6 @@
 ##' @export
 print.lotri <- function(x, ...) {
   .tmp <- x
-  .lotri <- attr(.tmp, "lotri")
   class(.tmp) <- NULL
   attr(.tmp, "lotri") <- NULL
   print(.tmp)
@@ -9,7 +8,7 @@ print.lotri <- function(x, ...) {
   if (length(.names) > 0) {
     cat(paste0("Properties: ", paste(.names, collapse = ", ")), "\n")
   }
-  return(invisible(x))
+  invisible(x)
 }
 
 ##' @export
@@ -22,7 +21,7 @@ print.lotriFix <- function(x, ...) {
     .lotriUnfix <- attr(.tmp, "lotriUnfix")
     .lotriEst <- attr(.tmp, "lotriEst")
     .lotriLabels <- attr(.tmp, "lotriLabels")
-    if (all(.dim == 0L) & !is.null(.lotriEst)) {
+    if (all(.dim == 0L) && !is.null(.lotriEst)) {
       cat("Lotri Estimates (get with `lotriEst()`):\n")
       print(.lotriEst)
       return(invisible(x))
@@ -66,7 +65,7 @@ print.lotriFix <- function(x, ...) {
     class(y) <- .cls
     print(y)
   }
-  return(invisible(x))
+  invisible(x)
 }
 
 ##' @export
