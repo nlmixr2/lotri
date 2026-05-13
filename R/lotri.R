@@ -436,38 +436,6 @@ NULL
   if (.handleSingleLineEstInLineForm(x2, values=.r, fixed=.rf, unfixed=.ru, env)) {
     return(NULL)
   }
-  if (env$lastN != 0 && length(x2) == 1L && length(.r) == env$lastN + 1) {
-    for (.i in seq_len(env$lastN)) {
-      .v <- .r[.i]
-      .f <- .rf[.i]
-      .u <- .ru[.i]
-      names(.v) <- names(.f) <- names(.u) <- NULL
-      env$df <- rbind(
-        env$df,
-        data.frame(
-          i = c(env$eta1 + .i-1, env$eta1 + env$lastN),
-          j = c(env$eta1 + env$lastN, env$eta1 + .i-1), x = .v,
-          fix=.f, unfix=.u
-        )
-      )
-    }
-    .v <- .r[env$lastN+1]
-    .f <- .rf[env$lastN+1]
-    .u <- .ru[env$lastN+1]
-    names(.v) <- names(.f) <- names(.u) <- NULL
-    env$df <- rbind(
-      env$df,
-      data.frame(
-        i = env$eta1 + env$lastN,
-        j = env$eta1 + env$lastN, x = .v,
-        fix=.f, unfix=.u
-      )
-    )
-    env$lastN <- env$lastN + 1
-    env$names <- c(env$names, deparse1(x2))
-    env$labels <- c(env$labels, NA_character_)
-    return(invisible())
-  }
   env$netas <- length(.r)
   .num <- sqrt(1 + env$netas * 8) / 2 - 1 / 2
   if (round(.num) == .num) {
@@ -1115,6 +1083,25 @@ NULL
     .retF <- .retF[env$names, env$names]
     .retU <- .retU[env$names, env$names]
   }
+  if (env$isCov) {
+    .assertErrZeroDiag(.ret, cnd)
+    if (is.function(fun)) {
+      .ret2 <- fun(.ret)
+      if (!is.matrix(.ret2)) {
+        stop("'cov' function must return a matrix", call.=FALSE)
+      }
+      if (!identical(dim(.ret2), dim(.ret))) {
+        stop("'cov' function must return a matrix with the same dimensions", call.=FALSE)
+      }
+      .dn <- dimnames(.ret2)
+      if (is.null(.dn) || is.null(.dn[[1]]) || is.null(.dn[[2]])) {
+        dimnames(.ret2) <- dimnames(.ret)
+      } else if (!identical(.dn, dimnames(.ret))) {
+        stop("'cov' function must preserve matrix dimnames", call.=FALSE)
+      }
+      .ret <- .ret2
+    }
+  }
   if (any(.retF)) {
     class(.ret) <- c("lotriFix", class(.ret))
     attr(.ret, "lotriFix") <- .retF
@@ -1127,10 +1114,6 @@ NULL
     if (!inherits(.ret, "lotriFix")) {
       class(.ret) <- c("lotriFix", class(.ret))
     }
-  }
-  # Verify that zero diagonals have zero off diagonals (rxode2#481)
-  if (env$isCov) {
-    .zd <- .assertErrZeroDiag(.ret, cnd)
   }
   .ret
 }
@@ -1303,8 +1286,6 @@ lotri <- function(x, ..., cov=FALSE, rcm=FALSE,
     if (is.function(cov)) {
       .fun <- cov
       cov <- TRUE
-    } else if (is.logical(cov) && cov) {
-      .fun <- lotriNearPD
     } else {
       stop("'cov' must be a length 1 non-NA logical or function",
            call.=FALSE)

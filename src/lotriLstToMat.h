@@ -10,7 +10,7 @@ typedef struct lotriInfo {
   int err;
   int sym;
   int fix; // Is there a fixed matrix to store?
-  int est; // Stores # of estimated parameters to concatenate (if needed)
+  R_xlen_t est; // Stores # of estimated parameters to concatenate (if needed)
 } lotriInfo;
 
 SEXP lotriToLstMat(SEXP lotri);
@@ -104,10 +104,10 @@ static inline void lotriLstToMatFillInMatrixBand(double *retd, int *retf, int ns
 }
 
 static inline void lotriLstToMatFillInFullMatrix(double *retd, int *retf, int *totdim, SEXP retN,
-						 int *curBand, int *len, lotriInfo *li, int *named) {
+						 int *curBand, R_xlen_t *len, lotriInfo *li, int *named) {
   SEXP sameS, dimnames, colnames, curFixed = R_NilValue;
   int totN;
-  for (int i = 0; i < *len; ++i) {
+  for (R_xlen_t i = 0; i < *len; ++i) {
     SEXP cur = VECTOR_ELT(li->lst, i);
     int type = TYPEOF(cur);
     int nsame = 1;

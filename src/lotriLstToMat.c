@@ -8,9 +8,10 @@ SEXP lotriToLstMat(SEXP lotri) {
   SEXP lotriNames = Rf_getAttrib(lotri, R_NamesSymbol);
   SEXP lotriPropNames = Rf_getAttrib(lotriProp, R_NamesSymbol);
   int pro=0;
-  SEXP ret = PROTECT(Rf_allocVector(VECSXP, Rf_length(lotri))); pro++;
+  R_xlen_t lotriLen = Rf_xlength(lotri);
+  SEXP ret = PROTECT(Rf_allocVector(VECSXP, lotriLen)); pro++;
   int nsame;
-  for (int i = Rf_length(ret); i--;) {
+  for (R_xlen_t i = lotriLen; i--;) {
     nsame = getSame(lotriNames, i, lotriProp, lotriPropNames);
     if (nsame > 1){
       SEXP cur = PROTECT(Rf_allocVector(VECSXP, 2)); pro++;
@@ -31,7 +32,7 @@ lotriInfo assertCorrectMatrixProperties(SEXP lst_, SEXP format, SEXP startNum, i
   int type = TYPEOF(lst_);
   if (type != VECSXP) {
     int fixed = 0;
-    int estimate = 0;
+    R_xlen_t estimate = 0;
     if (isSymNameMat(lst_, *named, &fixed, &estimate)) {
       lotriInfo li;
       li.sym = 1;
@@ -56,9 +57,10 @@ lotriInfo assertCorrectMatrixProperties(SEXP lst_, SEXP format, SEXP startNum, i
   return li;
 }
 
-SEXP _lotriEstDf(SEXP lst_, int totNum) {
-  int i0 = 0, pro = 0;
-  R_xlen_t lstLen = Rf_length(lst_);
+SEXP _lotriEstDf(SEXP lst_, R_xlen_t totNum) {
+  R_xlen_t i0 = 0;
+  int pro = 0;
+  R_xlen_t lstLen = Rf_xlength(lst_);
   SEXP ret  = PROTECT(Rf_allocVector(VECSXP, 7)); pro++;
   SEXP retN = PROTECT(Rf_allocVector(STRSXP, 7)); pro++;
 
@@ -125,7 +127,7 @@ SEXP _lotriEstDf(SEXP lst_, int totNum) {
   SEXP rowNamesS = PROTECT(Rf_allocVector(INTSXP, 2)); pro++;
   int *rowNames = INTEGER(rowNamesS);
   rowNames[0] = NA_INTEGER;
-  rowNames[1] = totNum;
+  rowNames[1] = (int)totNum;
 
   Rf_setAttrib(ret, R_NamesSymbol, retN);
   Rf_setAttrib(ret, Rf_install("row.names"), rowNamesS);
@@ -140,9 +142,8 @@ SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum, SEXP matCls) {
   lotriInfo li = assertCorrectMatrixProperties(lst_, format, startNum, &named);
   if (li.sym) return lst_;
   PROTECT(li.lst); pro++;
-  int len = Rf_length(li.lst);
+  R_xlen_t len = Rf_xlength(li.lst);
   int totdim = 0;
-  int i;
   if (len == 2) {
     int repN = isSingleInt(VECTOR_ELT(li.lst, 1), NA_INTEGER);
     if (repN != NA_INTEGER && repN > 0) {
@@ -156,10 +157,10 @@ SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum, SEXP matCls) {
     }
   }
   li.est = 0;
-  for (i = 0; i < len; ++i) {
+  for (R_xlen_t i = 0; i < len; ++i) {
     totdim += getCheckDim(li.lst, i, &named, &(li.fix),  &(li.est));
   }
-  int liEst = li.est;
+  R_xlen_t liEst = li.est;
   SEXP ret = PROTECT(Rf_allocMatrix(REALSXP, totdim, totdim)); pro++;
   SEXP retN = PROTECT(Rf_allocVector(STRSXP, totdim)); pro++;
   double *retd = REAL(ret);
@@ -196,10 +197,10 @@ SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum, SEXP matCls) {
     Rf_setAttrib(ret, Rf_install("lotriEst"), liEstSEXP);
   }
   if (doCls) {
-    int lenCls = Rf_length(matCls);
+    R_xlen_t lenCls = Rf_xlength(matCls);
     SEXP cls = PROTECT(Rf_allocVector(STRSXP, lenCls+1)); pro++;
     SET_STRING_ELT(cls, 0, Rf_mkChar("lotriFix"));
-    for (int mi = lenCls; mi--;) {
+    for (R_xlen_t mi = lenCls; mi--;) {
       SET_STRING_ELT(cls, mi+1, STRING_ELT(matCls, mi));
     }
     Rf_classgets(ret, cls);

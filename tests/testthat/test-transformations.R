@@ -61,3 +61,41 @@ test_that("transformations", {
                                        0.4, 1.6))))
   
 })
+
+test_that("lotri sd() without cor squares the diagonal", {
+  # Single sd value: variance = sd^2
+  m <- lotri({ a ~ sd(2) })
+  expect_equal(m["a", "a"], 4)
+
+  # 2x2 sd() without cor: diagonal squared, off-diag preserved
+  m2 <- lotri({ a + b ~ sd(1, 0.5, 2) })
+  expect_equal(m2["a", "a"], 1)  # 1^2 = 1
+  expect_equal(m2["b", "b"], 4)  # 2^2 = 4
+  expect_equal(m2["a", "b"], 0.5)
+})
+
+test_that("lotri unfix() creates a lotriUnfix attribute", {
+  m <- lotri({ a + b ~ unfix(1, 0.5, 1) })
+  expect_true(!is.null(attr(m, "lotriUnfix")))
+  expect_true(inherits(m, "lotriFix"))
+})
+
+test_that("lotri var and sd conflict errors", {
+  # Error message is wrapped by lotri's {} parser as "lotri syntax errors above"
+  expect_error(lotri({ a + b ~ var(sd(1, 0.5, 1)) }))
+})
+
+test_that("lotri cor and cov conflict errors", {
+  expect_error(lotri({ a + b ~ cov(cor(1, 0.5, 1)) }))
+})
+
+test_that("lotri chol with sd errors", {
+  # chol used after sd has been set triggers "'chol' has to only be with a single block"
+  expect_error(lotri({ a + b ~ sd(chol(1, 0.5, 1)) }))
+})
+
+test_that("wrong-size lower triangular triggers an error", {
+  expect_error(lotri({ a ~ c(1, 2) }))
+  # With multi-name LHS, .lotriMatrix is called and gives specific message
+  expect_error(lotri({ a + b ~ c(1, 2) }))
+})
