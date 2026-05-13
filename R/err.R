@@ -7,7 +7,7 @@
 .printErr <- function(.env) {
   if (.env$.hasErr) {
     messageText <-
-      "\033[1mlotri syntax error:\n=================================================================================\033[0m"
+      "\033[1mlotri syntax error:\n=================================================================================\033[0m" # nolint
     for (i in seq_along(.env$.err)) {
       if (!is.null(.env$.err[[i]])) {
         messageText <-
