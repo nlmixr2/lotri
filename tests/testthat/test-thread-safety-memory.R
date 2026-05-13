@@ -137,7 +137,7 @@ test_that("large matrix allocation >2GB is skipped with explanation", {
   expect_equal(nrow(big_mat), n_params)
   expect_equal(ncol(big_mat), n_params)
   # Diagonal should be all 1s
-  expect_equal(diag(big_mat), rep(1.0, n_params))
+  expect_equal(unname(diag(big_mat)), rep(1.0, n_params))
   # Off-diagonal should be all 0s (block diagonal)
   expect_equal(big_mat[1, 2], 0.0)
 })

@@ -47,9 +47,9 @@ SEXP _lotriGetBounds(SEXP lst_, SEXP format, SEXP startNum) {
     UNPROTECT(pro);
     Rf_errorcall(R_NilValue, _("when format is specified, 'startNum' must be a single integer"));
   }
-  int len = Rf_length(li.lst);
+  R_xlen_t len = Rf_xlength(li.lst);
   int totdim=0, named = 1;
-  for (int i = 0; i < len; ++i) {
+  for (R_xlen_t i = 0; i < len; ++i) {
     totdim += getCheckDim(li.lst, i, &named, &(li.fix), &(li.est));
   }
   SEXP retN = PROTECT(Rf_allocVector(STRSXP, totdim)); pro++;
@@ -61,7 +61,7 @@ SEXP _lotriGetBounds(SEXP lst_, SEXP format, SEXP startNum) {
   SEXP cur, sameS, dimnames, colnames;
   int curBand = 0;
   int badUpper = 0, badLower = 0;
-  for (int i = 0; i < len; ++i) {
+  for (R_xlen_t i = 0; i < len; ++i) {
     cur = VECTOR_ELT(li.lst, i);
     type = TYPEOF(cur);
     nsame = 1;
