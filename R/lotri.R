@@ -259,7 +259,7 @@ NULL
   if (noMat) {
     env$nv <- env$val
   } else if (length(env$lhs) == 1 &&
-        length(env$val) != 1) {
+               length(env$val) != 1) {
     env$nv <- env$val
   } else {
     env$nv <- .lotriMatrixVec(.lotriMatrix(env$val, chol=env$chol, sd=env$sd, cor=env$cor, lhs=env$lhs))
@@ -702,7 +702,7 @@ NULL
     .x3t <- try(eval(.x3, envir=.lotriParentEnv), silent=TRUE)
     if (!inherits(.x3t, "try-error") &&
           length(.x3t) == 1L &&
-          is.numeric(.x3t)) {
+           is.numeric(.x3t)) {
       .x3 <- .x3t
     }
   }
@@ -1145,7 +1145,7 @@ NULL
 #' @author Matthew L. Fidler
 .lotriGetFullCall <- function(call, cov=FALSE, rcm=FALSE,
                               envir = parent.frame(),
-                             default = "id") {
+                              default = "id") {
   .fullCall <- call
   if (!any(names(.fullCall) %in% "cov")) {
     .fullCall <- c(.fullCall, list(cov=cov))
