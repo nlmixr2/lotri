@@ -9,7 +9,7 @@
 #' @keywords internal
 #' @noRd
 .lotriBlockZeros <- function(mat, i) {
-  return(!((row(mat) > i & col(mat) > i) | (row(mat) <= i & col(mat) <= i)))
+  !((row(mat) > i & col(mat) > i) | (row(mat) <= i & col(mat) <= i))
 }
 
 #' Return if diagonal i is a block matrix
@@ -20,7 +20,7 @@
 #' @author Matthew Fidler
 #' @noRd
 .lotriIsBlock <- function(mat, i) {
-  return(all(mat[.lotriBlockZeros(mat, i)] == 0))
+  all(mat[.lotriBlockZeros(mat, i)] == 0)
 }
 
 #' Converts a matrix into a list of block matrices
@@ -84,7 +84,7 @@ lotriMatInv <- function(mat) {
         .matF <- .matF[-.s, -.s, drop = FALSE]
       } else if (!is.null(.matU)) {
         .mat1U <- .matU[.s, .s, drop = FALSE]
-        attr(.mat1, "lotriUnfix") <- .mat1F
+        attr(.mat1, "lotriUnfix") <- .mat1U
         class(.mat1) <- c("lotriFix", class(.mat1))
         .matU <- .matU[-.s, -.s, drop = FALSE]
       }
@@ -104,7 +104,7 @@ lotriMatInv <- function(mat) {
       .i <- .i + 1
     }
   }
-  if (.d > 0){
+  if (.d > 0) {
     if (!is.null(.matF)) {
       attr(.mat, "lotriFix") <- .matF
       class(.mat) <- c("lotriFix", class(.mat))
@@ -166,7 +166,7 @@ lotriMatInv <- function(mat) {
 #'
 lotriIsBlockMat <- function(mat) {
   .lst <- lotriMatInv(mat)
-  all(vapply(seq_along(.lst), function (i) {
+  all(vapply(seq_along(.lst), function(i) {
     .mat <- .lst[[i]]
     if (dim(.mat)[1] == 1) {
       return(TRUE)
