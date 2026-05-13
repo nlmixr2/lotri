@@ -33,11 +33,11 @@ test_that("as.expression handling; lhs of theta parameters", {
 
   x1$upper <- 1
   expect_equal(.lotriLhsExprFromDf1(x1), quote(fix(0, 0.45, 1)))
-  expect_equal(.lotriAssignmentExpressionFromDf1(x1), quote(tka <- fix(0, 0.45, 1)))
+  expect_equal(.lotriAssignmentExprFromDf1(x1), quote(tka <- fix(0, 0.45, 1)))
 
   x1$fix <- FALSE
   expect_equal(.lotriLhsExprFromDf1(x1), quote(c(0, 0.45, 1)))
-  expect_equal(.lotriAssignmentExpressionFromDf1(x1), quote(tka <- c(0, 0.45, 1)))
+  expect_equal(.lotriAssignmentExprFromDf1(x1), quote(tka <- c(0, 0.45, 1)))
 
   expect_equal(.lotriBackTransformFromDf1(x1), NULL)
 
@@ -103,7 +103,7 @@ test_that("as.expression handling; lhs of theta parameters", {
     et1 ~ fix(3); label("eta 1")
   })
 
-  expect_equal(.lotriGetEtaMatrixElementsLineForm(x1),
+  expect_equal(.lotriGetEtaLineForm(x1),
                list(quote(et5 ~ 1),
                     quote(label("eta 5")),
                     quote(et2 ~ 1),
@@ -123,7 +123,7 @@ test_that("as.expression handling; lhs of theta parameters", {
                list(quote(m + n ~ c(2, 0.5, 1)),
                     quote(f + g ~ fix(1, 0.5, 1) | occ)))
 
-  expect_equal(.lotriGetEtaMatrixElementsLineForm(fix2),
+  expect_equal(.lotriGetEtaLineForm(fix2),
                list(quote(m ~ 2),
                     quote(n ~ c(0.5, 1)),
                     quote(f ~ fix(1) | occ),
@@ -136,7 +136,7 @@ test_that("as.expression handling; lhs of theta parameters", {
             0.5, 1)  ; label("n")
   })
 
-  expect_equal(.lotriGetEtaMatrixElementsLineForm(fix2),
+  expect_equal(.lotriGetEtaLineForm(fix2),
                list(quote(m ~ 2),
                     quote(n ~ c(0.5, 1)),
                     quote(label("n")),

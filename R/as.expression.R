@@ -38,7 +38,7 @@
 #' @return Quoted assignment expression
 #' @author Matthew L. Fidler
 #' @noRd
-.lotriAssignmentExpressionFromDf1 <- function(df1) {
+.lotriAssignmentExprFromDf1 <- function(df1) {
   call("<-", .enQuote(df1$name), .lotriLhsExprFromDf1(df1))
 }
 #' Returns the quoted `backTransform` argument
@@ -73,7 +73,7 @@
 #' @author Matthew L. Fidler
 #' @noRd
 .lotriExpressionLinesFromDf1 <- function(df1) {
-  c(list(.lotriAssignmentExpressionFromDf1(df1)),
+  c(list(.lotriAssignmentExprFromDf1(df1)),
     .lotriBackTransformFromDf1(df1),
     .lotriLabelFromDf1(df1))
 }
@@ -135,12 +135,12 @@
 #' mat <- matrix(c(1, 0.5, 0.5, 1), nrow = 2)
 #' dimnames(mat) <- list(c("a", "b"), c("a", "b"))
 #'
-#' .lotriGetEtaMatrixElementsLineForm(mat)
+#' .lotriGetEtaLineForm(mat)
 #'
 #' @keywords internal
 #' @author Matthew L. Fidler
 #' @noRd
-.lotriGetEtaMatrixElementsLineForm <- function(x, condition="id", nameEst=5L) {
+.lotriGetEtaLineForm <- function(x, condition="id", nameEst=5L) {
   if (inherits(x, "matrix")) {
     .x <- lotriMatInv(x) # nolint
     .l <- lapply(seq_along(.x), function(i) {
@@ -215,7 +215,7 @@
   } else if (inherits(x, "list")) {
     .n <- names(x)
     do.call("c", lapply(.n, function(nme) {
-      .lotriGetEtaMatrixElementsLineForm(x[[nme]],
+      .lotriGetEtaLineForm(x[[nme]],
                                          condition=nme,
                                          nameEst=nameEst)
     }))
@@ -324,7 +324,7 @@ as.expression.lotriFix <- function(x, ...) {
   if (!.lst$plusNames) {
     as.call(list(ifelse(.lst$useIni, quote(`ini`), quote(`lotri`)),
                  as.call(c(list(quote(`{`)), .lotriGetPopLinesFromDf(.est),
-                           .lotriGetEtaMatrixElementsLineForm(.mat, nameEst=.lst$nameEst)))))
+                           .lotriGetEtaLineForm(.mat, nameEst=.lst$nameEst)))))
   } else {
     as.call(list(ifelse(.lst$useIni, quote(`ini`), quote(`lotri`)),
                  as.call(c(list(quote(`{`)), .lotriGetPopLinesFromDf(.est),
