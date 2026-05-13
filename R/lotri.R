@@ -1084,6 +1084,25 @@ NULL
     .retF <- .retF[env$names, env$names]
     .retU <- .retU[env$names, env$names]
   }
+  if (env$isCov) {
+    .assertErrZeroDiag(.ret, cnd)
+    if (is.function(fun)) {
+      .ret2 <- fun(.ret)
+      if (!is.matrix(.ret2)) {
+        stop("'cov' function must return a matrix", call.=FALSE)
+      }
+      if (!identical(dim(.ret2), dim(.ret))) {
+        stop("'cov' function must return a matrix with the same dimensions", call.=FALSE)
+      }
+      .dn <- dimnames(.ret2)
+      if (is.null(.dn) || is.null(.dn[[1]]) || is.null(.dn[[2]])) {
+        dimnames(.ret2) <- dimnames(.ret)
+      } else if (!identical(.dn, dimnames(.ret))) {
+        stop("'cov' function must preserve matrix dimnames", call.=FALSE)
+      }
+      .ret <- .ret2
+    }
+  }
   if (any(.retF)) {
     class(.ret) <- c("lotriFix", class(.ret))
     attr(.ret, "lotriFix") <- .retF
@@ -1096,10 +1115,6 @@ NULL
     if (!inherits(.ret, "lotriFix")) {
       class(.ret) <- c("lotriFix", class(.ret))
     }
-  }
-  # Verify that zero diagonals have zero off diagonals (rxode2#481)
-  if (env$isCov) {
-    .zd <- .assertErrZeroDiag(.ret, cnd)
   }
   .ret
 }
