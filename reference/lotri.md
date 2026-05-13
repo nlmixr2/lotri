@@ -89,6 +89,7 @@ Matthew L Fidler
 ## Examples
 
 ``` r
+
 ## A few ways to specify the same matrix
 lotri({et2 + et3 + et4 ~ c(40,
                            0.1, 20,

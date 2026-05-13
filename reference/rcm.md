@@ -22,6 +22,7 @@ A permuted matrix that should be banded
 ## Examples
 
 ``` r
+
 m <- lotri({
  a + b + c + d + e + f + g + h + i + j + k + l + m + n + o +
  p ~ c(0.4, 0, 0.3, 0, 0, 0, -0.1, 0, 0, 0.2, 0, 0, 0,

@@ -1,6 +1,6 @@
 # Changelog
 
-## lotri 1.0.3.9000
+## lotri 1.0.4
 
 - Fix unsigned integer underflow in `rcm.cpp`: when called with a 0-row
   matrix, `n-1` would wrap to `UWORD_MAX` causing an infinite loop;
@@ -51,6 +51,7 @@ CRAN release: 2024-09-18
 Before you could specify matrices as:
 
 ``` r
+
 m <- lotri({
   a + b ~ c(1,
             0.5, 1)
@@ -60,6 +61,7 @@ m <- lotri({
 Now you can specify per row as:
 
 ``` r
+
 m <- lotri({
   a ~ 1
   b ~ c(0.5, 1)
@@ -71,6 +73,7 @@ expression. In addition if the matrix is large enough (by default a 5x5
 matrix), these would be named when changing them to an expression:
 
 ``` r
+
 m <- lotri({
   a ~ c(a=1)
   b ~ c(a=0.5, b=1)

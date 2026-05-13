@@ -37,6 +37,7 @@ Matthew Fidler
 ## Examples
 
 ``` r
+
 testList <- list(lotri({et2 + et3 + et4 ~ c(40,
                            0.1, 20,
                            0.1, 0.1, 30)}),

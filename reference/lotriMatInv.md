@@ -29,6 +29,7 @@ Matthew Fidler
 ## Examples
 
 ``` r
+
 # Create a block matrix using `lotri()`
 mat <- lotri({
    a+b ~ c(1,

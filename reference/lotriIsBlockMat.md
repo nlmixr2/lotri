@@ -25,6 +25,7 @@ Matthew L. Fidler
 ## Examples
 
 ``` r
+
 m <- lotri({
   a ~ c(a = 0.4)
   b ~ c(a = 0, b = 0.3)

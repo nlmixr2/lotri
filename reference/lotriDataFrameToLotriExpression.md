@@ -29,6 +29,7 @@ Matthew L. Fidler
 ## Examples
 
 ``` r
+
  x <- lotri({
   tka <- 0.45; label("Log Ka")
   tcl <- 1; label("Log Cl")

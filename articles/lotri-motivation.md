@@ -12,12 +12,14 @@ them using R’s default matrix. For instance to fully specify a simple
 2x2 matrix, in R you specify:
 
 ``` r
+
 mat <- matrix(c(1, 0.5, 0.5, 1),nrow=2,ncol=2,dimnames=list(c("a", "b"), c("a", "b")))
 ```
 
 With `lotri`, you simply specify:
 
 ``` r
+
 library(lotri)
 library(microbenchmark)
 library(ggplot2)
@@ -30,6 +32,7 @@ I find it more legible and easier to specify, especially if you have a
 more complex matrix. For instance with the more complex matrix:
 
 ``` r
+
 mat <- lotri({
     a+b ~ c(1,
             0.5, 1)
@@ -42,6 +45,7 @@ mat <- lotri({
 To fully specify this in base R you would need to use:
 
 ``` r
+
 mat <- matrix(c(1, 0.5, 0, 0, 0,
                 0.5, 1, 0, 0, 0,
                 0, 0, 1, 0, 0,
@@ -54,6 +58,7 @@ mat <- matrix(c(1, 0.5, 0, 0, 0,
 Of course with the excellent `Matrix` package this is a bit easier:
 
 ``` r
+
 library(Matrix)
 mat <- matrix(c(1, 0.5, 0.5, 1),nrow=2,ncol=2,dimnames=list(c("a", "b"), c("a", "b")))
 mat <- bdiag(list(mat, matrix(1), mat))
@@ -73,6 +78,7 @@ an `id` with the `|` syntax.
 For example:
 
 ``` r
+
 mat <- lotri({
     a+b ~ c(1,
             0.5, 1) | id
@@ -126,6 +132,7 @@ Now there is even a faster way to do a similar banded matrix
 concatenation with `lotriMat`
 
 ``` r
+
 testList <- list(lotri({et2 + et3 + et4 ~ c(40,
                             0.1, 20,
                             0.1, 0.1, 30)}),
@@ -172,9 +179,9 @@ mb <- microbenchmark(matf(testList),lotriMat(testList))
 
 print(mb)
 #> Unit: microseconds
-#>                expr      min        lq       mean    median       uq      max
-#>      matf(testList) 1406.456 1458.9045 1678.38787 1511.8780 1927.499 7081.213
-#>  lotriMat(testList)    3.135    3.8015    6.67605    7.1835    8.180   25.548
+#>                expr      min        lq       mean    median        uq      max
+#>      matf(testList) 1233.385 1287.2450 1451.11548 1342.6040 1595.2310 6557.311
+#>  lotriMat(testList)    3.134    3.7535    7.29437    7.4465    8.9615   54.464
 #>  neval
 #>    100
 #>    100

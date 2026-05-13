@@ -46,6 +46,7 @@ Matthew Fidler
 ## Examples
 
 ``` r
+
 omega <- lotri(lotri(eta.Cl ~ 0.1,
                         eta.Ka ~ 0.1) | id(nu=100),
                   lotri(eye.Cl ~ 0.05,

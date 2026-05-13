@@ -17,13 +17,13 @@ Source:
 [`DESCRIPTION`](https://github.com/nlmixr2/lotri/blob/main/DESCRIPTION)
 
 Fidler M (2026). *lotri: A Simple Way to Specify Symmetric, Block
-Diagonal Matrices*. R package version 1.0.3.9000,
+Diagonal Matrices*. R package version 1.0.4,
 <https://nlmixr2.github.io/lotri/>.
 
     @Manual{,
       title = {lotri: A Simple Way to Specify Symmetric, Block Diagonal Matrices},
       author = {Matthew L. Fidler},
       year = {2026},
-      note = {R package version 1.0.3.9000},
+      note = {R package version 1.0.4},
       url = {https://nlmixr2.github.io/lotri/},
     }

@@ -25,6 +25,7 @@ data frame with estimates or NULL if there is not a data.frame attached
 ## Examples
 
 ``` r
+
 fix1 <- lotri({
    a <- c(0, 1); backTransform("exp"); label("a label")
    b <- c(0, 1, 2)
