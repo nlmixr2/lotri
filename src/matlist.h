@@ -41,7 +41,7 @@ static inline int isSingleInt(SEXP in, int defaultVal) {
 }
 
 // returns number of rows if the matrix is a symmetric (named) matrix
-static inline int isSymNameMat(SEXP cur, int named, int *fixed, int *estimate) {
+static inline int isSymNameMat(SEXP cur, int named, int *fixed, R_xlen_t *estimate) {
   int type = TYPEOF(cur);
   if (type == INTSXP || type == REALSXP) {
     if (Rf_isMatrix(cur)){
@@ -76,7 +76,7 @@ static inline int isSymNameMat(SEXP cur, int named, int *fixed, int *estimate) {
   return 0;
 }
 
-static inline int getCheckDim(SEXP lst, int i, int *named, int *fixed, int *estimate) {
+static inline int getCheckDim(SEXP lst, R_xlen_t i, int *named, int *fixed, R_xlen_t *estimate) {
   SEXP cur = VECTOR_ELT(lst, i);
   int type = TYPEOF(cur);
   int same=1;
@@ -106,8 +106,8 @@ static inline int getCheckDim(SEXP lst, int i, int *named, int *fixed, int *esti
 	return ret*same;
       }
     }
-    if (*named) Rf_errorcall(R_NilValue, _("list element %d is not a symmetric named matrix"), i+1);
-    else Rf_errorcall(R_NilValue, _("list element %d is not a symmetric matrix"), i+1);
+    if (*named) Rf_errorcall(R_NilValue, _("list element %d is not a symmetric named matrix"), (int)(i+1));
+    else Rf_errorcall(R_NilValue, _("list element %d is not a symmetric matrix"), (int)(i+1));
   }
   return 0;
 }
@@ -194,7 +194,7 @@ static inline int setUpperLower(SEXP inUpperLower, SEXP colnames,
 
 
 
-SEXP getLotriProp(SEXP names, int i, SEXP lotriProp, SEXP lotriPropNames, const char *prop);
+SEXP getLotriProp(SEXP names, R_xlen_t i, SEXP lotriProp, SEXP lotriPropNames, const char *prop);
 
 SEXP lotriToLstMat(SEXP lotri);
 

@@ -10,7 +10,7 @@ SEXP _asLotriMatGen(SEXP x, SEXP extra, SEXP def, SEXP dims, SEXP dimn, const ch
 
   // Now setup extra
   int nNull = 0;
-  int lExtra = Rf_length(extra);
+  R_xlen_t lExtra = Rf_xlength(extra);
   if (lExtra == 0) {
     // Here extra isn't added.
     Rf_setAttrib(ret, R_ClassSymbol, lotriClass);
@@ -21,7 +21,7 @@ SEXP _asLotriMatGen(SEXP x, SEXP extra, SEXP def, SEXP dims, SEXP dimn, const ch
     Rf_errorcall(R_NilValue, "extra properties need default try 'lotri(matrix,x=3,default=\"id\")'");
   }
   SEXP extraNames = PROTECT(Rf_getAttrib(extra, R_NamesSymbol)); pro++;
-  for (int i = lExtra; i--;) {
+  for (R_xlen_t i = lExtra; i--;) {
     if (Rf_isNull(VECTOR_ELT(extra, i))) {
       nNull++;
     }
@@ -30,8 +30,8 @@ SEXP _asLotriMatGen(SEXP x, SEXP extra, SEXP def, SEXP dims, SEXP dimn, const ch
   SEXP fextra = PROTECT(Rf_allocVector(VECSXP, lExtra-nNull)); pro++;
   Rf_setAttrib(lotri, R_NamesSymbol, def);
   SEXP fextraN = PROTECT(Rf_allocVector(STRSXP, lExtra-nNull)); pro++;
-  int j = 0;
-  for (int i = lExtra; i--;) {
+  R_xlen_t j = 0;
+  for (R_xlen_t i = lExtra; i--;) {
     if (!Rf_isNull(VECTOR_ELT(extra, i))){
       SEXP curNameS = STRING_ELT(extraNames, i);
       const char *curName = CHAR(curNameS);

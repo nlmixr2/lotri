@@ -879,3 +879,21 @@ test_that("lotri matrix parsing", {
     ))), class = "lotri")
   )
 })
+
+test_that("lotriMatInv errors on non-matrix input", {
+  expect_error(lotriMatInv(list(1)), "'mat' must be a matrix")
+})
+
+test_that("lotriMatInv errors on matrix with attached lotriEst", {
+  fix1 <- lotri({
+    a <- c(0, 1)
+    b + c ~ c(1, 0.5, 1)
+  })
+  expect_error(lotriMatInv(fix1), "lotri matrix with attached estimates")
+})
+
+test_that("lotriIsBlockMat returns FALSE for non-block matrix", {
+  m <- matrix(c(1, 0.5, 0, 0.5, 1, 0.5, 0, 0.5, 1), nrow = 3,
+               dimnames = list(c("a","b","c"), c("a","b","c")))
+  expect_false(lotriIsBlockMat(m))
+})

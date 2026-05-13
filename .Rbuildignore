@@ -1,3 +1,9 @@
+^\.vexp$
+^revdep$
+^\.antigravity$
+^\.claude$
+^\.vscode$
+^vexp\.toml$
 ^codecov\.yml$
 ^appveyor\.yml$
 ^\.travis\.yml$

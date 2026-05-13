@@ -103,18 +103,18 @@ SEXP _lotriAllNames(SEXP lotri) {
   } else {
     int type = TYPEOF(lotri);
     if (type == VECSXP) {
-      int intN=0;
-      for (int i = Rf_length(lotri); i--;){
+      R_xlen_t intN=0;
+      for (R_xlen_t i = Rf_xlength(lotri); i--;){
 	intN +=
-	  Rf_length(VECTOR_ELT(Rf_getAttrib(VECTOR_ELT(lotri, i),
-					    R_DimNamesSymbol), 1));
+	  Rf_xlength(VECTOR_ELT(Rf_getAttrib(VECTOR_ELT(lotri, i),
+					     R_DimNamesSymbol), 1));
       }
-      int j = 0;
+      R_xlen_t j = 0;
       SEXP ret = PROTECT(Rf_allocVector(STRSXP, intN)); pro++;
-      for (int i = Rf_length(lotri); i--;){
+      for (R_xlen_t i = Rf_xlength(lotri); i--;){
 	SEXP cur = VECTOR_ELT(Rf_getAttrib(VECTOR_ELT(lotri, i),
 					   R_DimNamesSymbol), 1);
-	for (int k = 0; k < Rf_length(cur); ++k) {
+	for (R_xlen_t k = 0; k < Rf_xlength(cur); ++k) {
 	  /* SET_STRING_ELT(retN, curBand+j, Rf_mkChar(out)); */
 	  SET_STRING_ELT(ret, j++, STRING_ELT(cur, k));
 	}
@@ -134,7 +134,7 @@ SEXP _isLotri(SEXP lotri) {
   if (Rf_isNull(lotriProp)) {
     if (TYPEOF(lotri) == VECSXP){
       int isL = 1;
-      for (int i = Rf_length(lotri); i--;){
+      for (R_xlen_t i = Rf_xlength(lotri); i--;){
 	SEXP cur = VECTOR_ELT(lotri, i);
 	if (Rf_isMatrix(cur)) {
 	  SEXP dimnames = Rf_getAttrib(cur, R_DimNamesSymbol);

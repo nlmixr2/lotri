@@ -1,6 +1,6 @@
 Package: lotri
 Title: A Simple Way to Specify Symmetric, Block Diagonal Matrices
-Version: 1.0.3.9000
+Version: 1.0.4
 Authors@R:
     c(person("Matthew L.", "Fidler", , "matthew.fidler@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0001-8538-6691")),
@@ -35,7 +35,8 @@ Suggests:
     Matrix,
     microbenchmark,
     rmarkdown,
-    testthat
+    testthat,
+    memuse
 VignetteBuilder:
     knitr
 Biarch: true
@@ -46,4 +47,4 @@ Language: en-US
 LinkingTo:
     cpp4r,
     armadillo4r
-RoxygenNote: 7.3.3
+Config/roxygen2/version: 8.0.0
