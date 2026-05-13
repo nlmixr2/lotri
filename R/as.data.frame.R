@@ -4,7 +4,7 @@
   .env <- new.env(parent=emptyenv())
   .env$eta1 <- eta1
   if (inherits(mat, "matrix")) {
-    .lst2 <- lotriMatInv(mat)
+    .lst2 <- lotriMatInv(mat) # nolint
     for (.i in seq_along(.lst2)) {
       .curMat <- .lst2[[.i]]
       .curMatF <- attr(.curMat, "lotriFix")
@@ -55,7 +55,7 @@ as.data.frame.lotriFix <- function(x, row.names = NULL, optional = FALSE, ...,
     stop("'optional' should not be used when converting lotri object to data.frame",
          call.=FALSE)
   }
-  .df <- lotriEst(x, drop=FALSE)
+  .df <- lotriEst(x, drop=FALSE) # nolint
   if (!is.null(.df)) {
     if (length(.df$est) > 0) {
       .df$ntheta <- seq_along(.df$est)
@@ -64,11 +64,11 @@ as.data.frame.lotriFix <- function(x, row.names = NULL, optional = FALSE, ...,
       .df$condition <- NA_character_
     }
   }
-  .df2 <- lotriEst(x, drop=TRUE)
+  .df2 <- lotriEst(x, drop=TRUE) # nolint
   .df3 <- NULL
   if (inherits(.df2, "matrix")) {
     .df3 <- .as.data.frame.lotriFix.mat(.df2, default=default)
-  } else if (inherits(.df2, "list") | inherits(.df2, "lotri")) {
+  } else if (inherits(.df2, "list") || inherits(.df2, "lotri")) {
     .env <- new.env(parent=emptyenv())
     .env$eta1 <- 1
     .df3 <- do.call(rbind,
@@ -77,7 +77,7 @@ as.data.frame.lotriFix <- function(x, row.names = NULL, optional = FALSE, ...,
                                                           eta1=.env$eta1)
                       assign("eta1", .env$eta1 + dim(.df2[[default]])[1],
                              envir=.env)
-                      return(.ret)
+                      .ret
                     }))
   }
   .ord <- c("ntheta", "neta1", "neta2", "name", "lower", "est", "upper", "fix", "label", "backTransform", "condition")
@@ -101,7 +101,7 @@ as.data.frame.lotriFix <- function(x, row.names = NULL, optional = FALSE, ...,
       .df$label[which(.df$neta1 == i & .df$neta2 == i)] <- .lab[i]
     }
   }
-  return(.df[, .ord])
+  .df[, .ord]
 
   ##   ntheta neta1 neta2   name lower       est   upper   fix  err  label
   ## 1      1    NA    NA    tka  -Inf 0.4500000     Inf FALSE <NA> Log Ka
