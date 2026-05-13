@@ -20,7 +20,7 @@
 #' @author Matthew L. Fidler
 #'
 #' @noRd
-.lotriLhsExpressionFromDf1 <- function(df1) {
+.lotriLhsExprFromDf1 <- function(df1) {
   .ret <- list(ifelse(df1$fix, quote(`fix`), quote(`c`)),
                df1$lower, df1$est, df1$upper)
   if (.ret[[4]] == Inf) {
@@ -39,7 +39,7 @@
 #' @author Matthew L. Fidler
 #' @noRd
 .lotriAssignmentExpressionFromDf1 <- function(df1) {
-  call("<-", .enQuote(df1$name), .lotriLhsExpressionFromDf1(df1))
+  call("<-", .enQuote(df1$name), .lotriLhsExprFromDf1(df1))
 }
 #' Returns the quoted `backTransform` argument
 #'

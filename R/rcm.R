@@ -30,5 +30,6 @@ rcm <- function(x) {
   if (!identical(.d[[1]], .d[[2]])) {
     stop("The matrix must be square, symmetric with matching row and column names")
   }
-  .Call(`_lotri_rcm_`, x)
+  .Call(`_lotri_rcm_`, # nolint
+        x)
 }

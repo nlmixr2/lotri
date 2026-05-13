@@ -13,30 +13,30 @@ test_that("as.expression handling; lhs of theta parameters", {
   xdf <- as.data.frame(x)
   x1 <- xdf[1, ]
 
-  expect_equal(.lotriLhsExpressionFromDf1(x1), quote(0.45))
+  expect_equal(.lotriLhsExprFromDf1(x1), quote(0.45))
 
   x1$fix <- TRUE
-  expect_equal(.lotriLhsExpressionFromDf1(x1),quote(fix(0.45)))
+  expect_equal(.lotriLhsExprFromDf1(x1),quote(fix(0.45)))
 
   x1$upper <- 1
-  expect_equal(.lotriLhsExpressionFromDf1(x1), quote(fix(-Inf, 0.45, 1)))
+  expect_equal(.lotriLhsExprFromDf1(x1), quote(fix(-Inf, 0.45, 1)))
 
   x1$fix <- FALSE
-  expect_equal(.lotriLhsExpressionFromDf1(x1), quote(c(-Inf, 0.45, 1)))
+  expect_equal(.lotriLhsExprFromDf1(x1), quote(c(-Inf, 0.45, 1)))
 
   x1$upper <- Inf
   x1$lower <- 0
-  expect_equal(.lotriLhsExpressionFromDf1(x1), quote(c(0, 0.45)))
+  expect_equal(.lotriLhsExprFromDf1(x1), quote(c(0, 0.45)))
 
   x1$fix <- TRUE
-  expect_equal(.lotriLhsExpressionFromDf1(x1), quote(fix(0, 0.45)))
+  expect_equal(.lotriLhsExprFromDf1(x1), quote(fix(0, 0.45)))
 
   x1$upper <- 1
-  expect_equal(.lotriLhsExpressionFromDf1(x1), quote(fix(0, 0.45, 1)))
+  expect_equal(.lotriLhsExprFromDf1(x1), quote(fix(0, 0.45, 1)))
   expect_equal(.lotriAssignmentExpressionFromDf1(x1), quote(tka <- fix(0, 0.45, 1)))
 
   x1$fix <- FALSE
-  expect_equal(.lotriLhsExpressionFromDf1(x1), quote(c(0, 0.45, 1)))
+  expect_equal(.lotriLhsExprFromDf1(x1), quote(c(0, 0.45, 1)))
   expect_equal(.lotriAssignmentExpressionFromDf1(x1), quote(tka <- c(0, 0.45, 1)))
 
   expect_equal(.lotriBackTransformFromDf1(x1), NULL)

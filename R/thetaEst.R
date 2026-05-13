@@ -1,9 +1,9 @@
-.deparse1 <- function (expr, collapse = " ", width.cutoff = 500L, ...) {
+.deparse1 <- function(expr, collapse = " ", width.cutoff = 500L, ...) {
   paste(deparse(expr, width.cutoff, ...), collapse = collapse)
 }
 
 .parseThetaEstFixQ <- function(x, env) {
-  x  <- .repFixedWithC(x, env)
+  x  <- .repFixedWithC(x, env) # nolint
   if (is.call(x)) {
     # See if c(1,2,3,fixed) is present.  If so drop the fixed element
     # and flag the environment
@@ -19,9 +19,9 @@
       env$fix <- TRUE
       x <- x[-.w]
     }
-    return(as.call(lapply(x, .parseThetaEstFixQ, env=env)))
+    as.call(lapply(x, .parseThetaEstFixQ, env=env))
   } else {
-    return(x)
+    x
   }
 }
 
@@ -118,10 +118,10 @@
       if (identical(x[[1]], quote(`~`))) {
         env$assign <- FALSE
       }
-      return(as.call(lapply(x, .parseThetaEstQ, env=env, envir=envir)))
+      as.call(lapply(x, .parseThetaEstQ, env=env, envir=envir))
     }
   } else {
-    return(x)
+    x
   }
 }
 
@@ -137,7 +137,7 @@
   .env$df <- NULL
   .env$err <- NULL
   .parseThetaEstQ(x, .env, envir=envir)
-  if (!is.null(.env$df)){
+  if (!is.null(.env$df)) {
     .env$df <- do.call(rbind, .env$df)
     .w <- which(is.na(.env$df$lower))
     if (length(.w) > 0) {
@@ -198,10 +198,8 @@
       .parseThetaEstBadEsts(.env, .env$.dfToLine[.w],
                             paste0("estimate and bounds need to be re-ordered: '", .env$df$name[.w], "'"))
     }
-    ## print(.env$.dfToLine)
-    ## print(.env$.err)
   }
-  return(.env)
+  .env
 }
 
 ##' Extract or remove lotri estimate data frame from lotri object
@@ -239,7 +237,7 @@ lotriEst <- function(x, drop=FALSE) {
       return(y)
     }
     class(y) <- NULL
-    return(y)
+    y
   } else {
     attr(x, "lotriEst")
   }
