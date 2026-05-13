@@ -72,13 +72,17 @@
 #' nc  <- lotriNearPD(pr)
 #'
 #' @export
-lotriNearPD <- function(x, keepDiag = FALSE, do2eigen = TRUE, doDykstra = TRUE, only.values = FALSE, ensureSymmetry=!isSymmetric(x), eig.tol = 1e-6, conv.tol = 1e-7, posd.tol = 1e-8, maxit = 100L,
-                     trace = FALSE # nolint
-                     ) {
+lotriNearPD <- function(x, keepDiag = FALSE, do2eigen = TRUE, doDykstra = TRUE,
+                        only.values = FALSE, ensureSymmetry=!isSymmetric(x),
+                        eig.tol = 1e-6, conv.tol = 1e-7, posd.tol = 1e-8,
+                        maxit = 100L,
+                        trace = FALSE # nolint
+                        ) { # nolint
   if (ensureSymmetry) {
     x <- 0.5 * (t(x) + x)
   }
-  .Call(`_lotriNearPD_`, x, keepDiag, do2eigen, doDykstra, only.values, eig.tol, conv.tol, posd.tol, maxit,
+  .Call(`_lotriNearPD_`, # nolint
+        x, keepDiag, do2eigen, doDykstra, only.values, eig.tol, conv.tol, posd.tol, maxit,
         trace # nolint
         )
 }
