@@ -1,23 +1,23 @@
-##' As lower triangular matrix
-##'
-##' @param x Matrix or other data frame
-##'
-##' @param ... Other factors
-##'
-##' @param default Is the default factor when no conditioning is
-##'     implemented.
-##'
-##' @return Lower triangular matrix
-##'
-##' @author Matthew Fidler
-##'
-##' @export
+#' As lower triangular matrix
+#'
+#' @param x Matrix or other data frame
+#'
+#' @param ... Other factors
+#'
+#' @param default Is the default factor when no conditioning is
+#'     implemented.
+#'
+#' @return Lower triangular matrix
+#'
+#' @author Matthew Fidler
+#'
+#' @export
 as.lotri <- function(x, ..., default = "") {
   UseMethod("as.lotri")
 }
 
-##' @rdname as.lotri
-##' @export
+#' @rdname as.lotri
+#' @export
 as.lotri.matrix <- function(x, ..., default = "") {
   .Call(`_asLotriMat`, x, list(...), default = default)
 }
@@ -62,8 +62,8 @@ as.lotri.matrix <- function(x, ..., default = "") {
   return(.mat)
 }
 
-##' @rdname as.lotri
-##' @export
+#' @rdname as.lotri
+#' @export
 as.lotri.data.frame <- function(x, ..., default="") {
   ## Get lotriEst
   if (!all(c("name", "lower", "est", "upper", "fix", "label", "backTransform") %in%
@@ -88,8 +88,8 @@ as.lotri.data.frame <- function(x, ..., default="") {
   .mat
 }
 
-##' @rdname as.lotri
-##' @export
+#' @rdname as.lotri
+#' @export
 as.lotri.default <- function(x, ..., default = "") {
   if (inherits(x, "list") || inherits(x, "lotri")) {
     .ret <- x

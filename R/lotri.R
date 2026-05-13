@@ -31,7 +31,7 @@ NULL
       .i <- 0
     }
   }
-  return(.ret)
+  .ret
 }
 
 #' lotriMatrix convert numeric vector to matrix
