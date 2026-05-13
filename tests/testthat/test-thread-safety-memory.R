@@ -117,9 +117,12 @@ test_that("large matrix allocation >2GB is skipped with explanation", {
   # This test is skipped unconditionally because most CI/test environments
   # do not have sufficient RAM for a 2 GiB single allocation, and R itself
   # may refuse to allocate objects this large depending on available memory.
-  skip("Requires >2GB RAM: a 16384x16384 double matrix needs 2,147,483,648 bytes (2 GiB). Run manually on a machine with >4GB free RAM.")
+  skip_if(!requireNamespace("memuse", quietly = TRUE), "memuse not available")
+  mem <- memuse::Sys.meminfo()
+  mem <- as.numeric(mem$freeram)
+  skip_if(mem < 2147483648*2,
+    message="Requires >2GB RAM: a 16384x16384 double matrix needs 2,147,483,648 bytes (2 GiB). Run on a machine with >4GB free RAM.")
 
-  # The actual test (runs only when skip() is removed):
   n_params <- 16384L
   # Build a list of n_params named 1x1 identity matrices
   block_list <- lapply(seq_len(n_params), function(i) {

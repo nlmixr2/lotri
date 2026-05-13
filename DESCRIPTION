@@ -35,7 +35,8 @@ Suggests:
     Matrix,
     microbenchmark,
     rmarkdown,
-    testthat
+    testthat,
+    memuse
 VignetteBuilder:
     knitr
 Biarch: true
