@@ -87,15 +87,14 @@ NULL
   if (cor) {
     .d <- diag(.ret)
     if (!sd) {
-      ## cor + var
       .d <- sqrt(.d)
     }
     diag(.ret) <- 1
     if (any(abs(.ret) > 1))
       stop("correlations must be between -1 and 1",
            call.=FALSE)
-    .D <- diag(.d)
-    return(.D %*% .ret %*% .D)
+    .mD <- diag(.d)
+    return(.mD %*% .ret %*% .mD)
   }
   if (sd) {
     diag(.ret) <- diag(.ret) ^ 2
@@ -140,12 +139,12 @@ NULL
 }
 
 .isUnfixedElt <- function(x) {
- (identical(x, quote(`unfix`)) ||
-    identical(x, quote(`unfixed`)) ||
-    identical(x, quote(`Unfixed`)) ||
-    identical(x, quote(`UNFIXED`)) ||
-    identical(x, quote(`Unfix`)) ||
-    identical(x, quote(`UNFIX`)))
+  (identical(x, quote(`unfix`)) ||
+     identical(x, quote(`unfixed`)) ||
+     identical(x, quote(`Unfixed`)) ||
+     identical(x, quote(`UNFIXED`)) ||
+     identical(x, quote(`Unfix`)) ||
+     identical(x, quote(`UNFIX`)))
 }
 
 .repFixedWithC <- function(x, env=new.env(parent=emptyenv())) {
@@ -153,16 +152,16 @@ NULL
     if (.isFixedElt(x[[1]])) {
       env$fix <- TRUE
       x[[1]] <- quote(`c`)
-      return(x)
+      x
     } else if (.isUnfixedElt(x[[1]])) {
       env$unfix <- TRUE
       x[[1]] <- quote(`c`)
-      return(x)
+      x
     } else {
-      return(as.call(lapply(x, .repFixedWithC, env=env)))
+      as.call(lapply(x, .repFixedWithC, env=env))
     }
   } else {
-    return(x)
+    x
   }
 }
 
@@ -171,7 +170,7 @@ NULL
   .env$fix <- NA
   .env$unfix <- NA
   .num <- as.numeric(eval(.repFixedWithC(x, .env), envir=.lotriParentEnv))
-  return(list(.num, .env$fix, .env$unfix))
+  list(.num, .env$fix, .env$unfix)
 }
 #' Assert the proper properties of a lotri matrix (cant mix var, sd ) etc
 #'
@@ -277,7 +276,7 @@ NULL
   .unfix <- vapply(env$unfix, function(x) {
     ifelse(is.na(x), env$globalUnfix, x)
   }, logical(1))
-  return(list(env$nv, .fix, .unfix))
+  list(env$nv, .fix, .unfix)
 }
 
 #' Handle Matrix Row for Lotri
