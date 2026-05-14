@@ -1,7 +1,23 @@
+#' deparse1() for versions of R prior to 4.0.0
+#'
+#' @inheritParams deparse
+#' @return a single string with the deparsed expression
+#' @noRd
 .deparse1 <- function(expr, collapse = " ", width.cutoff = 500L, ...) {
   paste(deparse(expr, width.cutoff, ...), collapse = collapse)
 }
-
+#' Parse the fixed element in lotri estimate syntax
+#'
+#'  This function looks for the presence of the fixed element in the
+#'  lotri estimate syntax and flags the environment if it is present.
+#'  It also drops the fixed element from the expression so that it can
+#'  be evaluated to a numeric vector.
+#'
+#' @param x an expression to parse for the fixed element
+#' @param env environment to flag if the fixed element is present
+#' @return the expression with the fixed element removed
+#' @noRd
+#' @author Matthew L. Fidler
 .parseThetaEstFixQ <- function(x, env) {
   x  <- .repFixedWithC(x, env) # nolint
   if (is.call(x)) {
@@ -24,7 +40,15 @@
     x
   }
 }
-
+#' Parse the fixed theta estimates
+#'
+#' @param x an expression to parse for fixed theta estimates
+#' @param envir environment to evaluate the expression in
+#' @return a data frame with columns lower, est, upper, and fix if the
+#'   expression can be evaluated to a numeric vector of length 1, 2,
+#'   or 3.  Otherwise the original expression is returned as a string.
+#' @noRd
+#' @author Matthew L. Fidler
 .parseThetaEstFix <- function(x, envir=parent.frame()) {
   .env <- new.env(parent=emptyenv())
   .env$fix <- FALSE
@@ -44,7 +68,59 @@
              stringsAsFactors = FALSE)
 }
 
-
+#' Parse the lotri estimate syntax
+#'
+#' This function recursively parses the lotri estimate syntax and builds a
+#' data frame with columns name, lower, est, upper, label, and backTransform
+#' for each estimate.  It also builds a data frame with the lines of the
+#' estimate syntax and any errors that are found in the syntax.
+#'
+#' @param x an expression to parse for lotri estimate syntax
+#'
+#' @param env environment to store the data frame of estimates and any
+#'   errors found in the syntax.  The environment should have the
+#'   following variables:
+#'
+#' - **df:** a list of data frames with columns name, lower, est, upper
+#'
+#' - **err:** a list of character vectors with any errors found in the syntax
+#'
+#' - **assign:** a boolean flag indicating if the current expression is an assignment
+#'
+#' - **.lines:** a character vector with the lines of the estimate syntax
+#'
+#' - **.dfToLine:** a numeric vector with the line number
+#' corresponding to each row of the data frame of estimates
+#'
+#' - **.hasErr:** a boolean flag indicating if any errors were found in the syntax
+#'
+#' The function recursively parses the expression and builds the data
+#' frame of estimates and any errors found in the syntax.  It also
+#' builds a character vector with the lines of the estimate syntax and
+#' a numeric vector with the line number corresponding to each row of
+#' the data frame of estimates.
+#'
+#' @param envir environment to evaluate any expressions in the syntax.
+#'   This is used to evaluate any expressions for the initial
+#'   estimates, lower bounds, and upper bounds.
+#'
+#' @return an environment with the following variables:
+#'
+#' - **df:** a data frame with columns name, lower, est, upper, label,
+#'   and backTransform for each estimate found in the syntax
+#'
+#' - **err:** a character vector with any errors found in the syntax
+#'
+#' - **.lines:** a character vector with the lines of the estimate syntax
+#'
+#' - **.dfToLine:** a numeric vector with the line number corresponding to each
+#'   row of the data frame of estimates
+#'
+#' - **.hasErr:** a boolean flag indicating if any errors were found in the
+#'   syntax
+#'
+#' @noRd
+#' @author Matthew L. Fidler
 .parseThetaEstQ <- function(x, env, envir=parent.frame()) {
   if (is.call(x)) {
     .doAssign <- FALSE
@@ -124,13 +200,32 @@
     x
   }
 }
-
+#' Parse bad estimates in lotri estimate syntax
+#'
+#'
+#' @param env environmet to store the data frame of estimates and any
+#'   errors found in the syntax.
+#'
+#' @param lines a character vector with the lines of the estimate
+#'   syntax
+#' @param text a character vector with the error text to add to the
+#'   environment for each line
+#' @return nothing called for the side effect of adding the error text
+#'   to the environment
+#' @noRd
+#' @author Matthew L. Fidler
 .parseThetaEstBadEsts <- function(env, lines, text) {
   for (i in seq_along(lines)) {
     env$.err[[lines[i]]] <- paste(c(env$.err[[lines[i]]], text[i]), collapse="\n")
   }
 }
-
+#' Parse the lotri estimate syntax and build a data frame of estimates
+#'
+#' @param x  an expression to parse for lotri estimate syntax
+#' @param envir environment to evaluate any expressions in the syntax.
+#' @return new environment for parsing the lotri estimate syntax
+#' @noRd
+#' @author Matthew L. Fidler
 .parseThetaEst <- function(x, envir=parent.frame()) {
   .env <- new.env(parent=emptyenv())
   .env$.hasErr <- FALSE
