@@ -89,7 +89,7 @@ test_that("as.expression handling; lhs of theta parameters", {
     et1 ~ fix(3)
   })
 
-  expect_equal(.lotriGetEtaMatrixElementsPlusForm(x1),
+  expect_equal(.lotriGetEtaMatEltPlusForm(x1),
                list(quote(et5 ~ 1),
                     quote(et2 + et3 ~ c(1, 2, 3)),
                     quote(et1 ~ fix(3))))
@@ -119,7 +119,7 @@ test_that("as.expression handling; lhs of theta parameters", {
             0.5, 1)
   })
 
-  expect_equal(.lotriGetEtaMatrixElementsPlusForm(fix2),
+  expect_equal(.lotriGetEtaMatEltPlusForm(fix2),
                list(quote(m + n ~ c(2, 0.5, 1)),
                     quote(f + g ~ fix(1, 0.5, 1) | occ)))
 

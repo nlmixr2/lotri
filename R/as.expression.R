@@ -216,8 +216,8 @@
     .n <- names(x)
     do.call("c", lapply(.n, function(nme) {
       .lotriGetEtaLineForm(x[[nme]],
-                                         condition=nme,
-                                         nameEst=nameEst)
+                           condition=nme,
+                           nameEst=nameEst)
     }))
   }
 }
@@ -229,7 +229,7 @@
 #' @return list expression
 #' @author Matthew L. Fidler
 #' @noRd
-.lotriGetEtaMatrixElementsPlusForm <- function(x, condition="id") {
+.lotriGetEtaMatEltPlusForm <- function(x, condition="id") {
   if (inherits(x, "matrix")) {
     .x <- lotriMatInv(x) # nolint
     .l <- lapply(seq_along(.x), function(i) {
@@ -262,7 +262,7 @@
   } else if (inherits(x, "list")) {
     .n <- names(x)
     do.call("c", lapply(.n, function(nme) {
-      .lotriGetEtaMatrixElementsPlusForm(x[[nme]], condition=nme)
+      .lotriGetEtaMatEltPlusForm(x[[nme]], condition=nme)
     }))
   }
 }
@@ -298,7 +298,7 @@
 #' as.expression(x)
 #'
 #' @export
-lotriDataFrameToLotriExpression <- function(data, useIni=FALSE) {
+lotriDataFrameToLotriExpression <- function(data, useIni=FALSE) { # nolint
   if (!inherits(data, "data.frame")) stop("input must be lotri data.frame", call.=FALSE)
   .l <- as.lotri(data) # nolint
   as.expression(.l, useIni=useIni)
@@ -328,7 +328,7 @@ as.expression.lotriFix <- function(x, ...) {
   } else {
     as.call(list(ifelse(.lst$useIni, quote(`ini`), quote(`lotri`)),
                  as.call(c(list(quote(`{`)), .lotriGetPopLinesFromDf(.est),
-                           .lotriGetEtaMatrixElementsPlusForm(.mat)))))
+                           .lotriGetEtaMatEltPlusForm(.mat)))))
   }
 }
 
