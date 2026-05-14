@@ -1216,7 +1216,14 @@ NULL
   }
   .fullCall
 }
-
+#' This gets the cov information
+#'
+#' @param cov Is this a covariance matrix (boolean/function;
+#'   default=`FALSE`).
+#' @return list with cov and fun elements where cov is the original
+#'   cov argument and fun is the function if cov was a function
+#' @noRd
+#' @author Matthew L. Fidler
 .lotriCovInfo <- function(cov) {
   .fun <- NULL
   if (length(cov) != 1 || !is.logical(cov) || is.na(cov)) {
@@ -1230,7 +1237,14 @@ NULL
   }
   list(cov=cov, fun=.fun)
 }
-
+#' This prepares the call for lotri by evaluating any subcalls
+#'
+#' @param call  lotri call to prepare
+#' @param x lotri call x argument
+#' @param xSub lotri call x argument subcall if it exists
+#' @param envir environment where lotri is evaluated
+#' @noRd
+#' @author Matthew L. Fidler
 .lotriPrepCall <- function(call, x, xSub, envir) {
   if (inherits(xSub, "{")) {
     x <- eval(parse(text=paste0("quote(", paste(deparse(xSub), collapse="\n"), ")")))
@@ -1251,7 +1265,27 @@ NULL
   }
   list(call=call, x=x, fullCnd=.fullCnd, fullCndLst=.fullCndLst)
 }
-
+#' Expand conditionals in lotri calls and combine matrices
+#'
+#' This handles the conditionals in lotri and combines the matrices
+#' from the conditionals with the main matrix and any subcalls. It
+#' also handles the properties of the matrices and ensures they are
+#' properly merged and amplified with defaults. The result is a list
+#' of matrices that will be used to create the final lotri object.
+#'
+#'
+#' @param env lotri environment with the main matrix and any
+#'   conditional matrices
+#' @param call lotri call to prepare
+#' @param cov Is this a covariance matrix (boolean/function;
+#'   default=`FALSE`).
+#' @param rcm Do rcm re-ordering (boolean; default=`FALSE`).
+#' @param default default level of variability (id=default)
+#' @param envir environment where lotri is evaluated
+#' @return list of matrices to be used for the final lotri object,
+#'   with properties properly merged and amplified
+#' @noRd
+#' @author Matthew L. Fidler
 .lotriExprCnd <- function(env, call, cov, rcm, default, envir) {
   .lstC <- list()
   .other <- NULL
@@ -1328,7 +1362,39 @@ NULL
   }
   .lstC
 }
-
+#' Lotri expression result
+#'
+#' This function evaluates the lotri expression and returns the
+#' resulting matrix, any fixed estimates, and whether the evaluation
+#' is complete. It handles the parsing of the lotri expression,
+#' including any conditionals, and prepares the final result for use
+#' in creating a lotri object.
+#'
+#' @param sX represents the lotri expression to be evaluated,
+#'   typically a call or expression object that defines the structure
+#'   of the lotri model. This is the main input that contains the
+#'   specifications for the matrices and any conditionals that need to
+#'   be processed.
+#' @param cov Is this a covariance matrix (boolean/function;
+#'   default=`FALSE`).
+#' @param rcm Do rcm re-ordering (boolean; default=`FALSE`).
+#' @param fun If `cov` is a function, this is the function to apply to
+#'   the matrix when `cov` is `TRUE`. It should take a matrix as input
+#'   and return a matrix of the same dimensions. This allows for
+#'   custom transformations of the covariance matrix if needed.
+#' @param default default level of variability (id=default)
+#' @param call the original call to lotri, used for error messages and
+#'   to determine how to combine matrices if there are conditionals
+#' @param envir environment where lotri is evaluated, used for
+#'   evaluating any subcalls or conditions
+#' @return the result of evaluating the lotri expression, which
+#'   includes the resulting matrix (or list of matrices if there are
+#'   conditionals), any fixed estimates, and a flag indicating whether
+#'   the evaluation is complete. The result is typically a list with
+#'   elements `ret` (the resulting matrix or list of matrices), `est`
+#'   (data frame of fixed estimates), and `done` (boolean indicating
+#'   if the evaluation is complete).
+#' @author Matthew L. Fidler
 .lotriExprResult <- function(sX, cov, rcm, fun, default, call, envir) {
   .env <- new.env(parent = emptyenv())
   .env$isCov <- cov
@@ -1358,7 +1424,37 @@ NULL
   }
   list(ret=.ret, est=.est, done=.done)
 }
-
+#' Finalize the lotri expression result
+#'
+#' @param ret result to be finalized
+#' @param est data frame of fixed estimates to be included in the
+#'   final result
+#' @param fullCnd full condition name if there was a conditional in
+#'   the lotri expression, used for combining matrices and properties
+#' @param fullCndLst list with full condition name and properties if
+#'   there was a conditional in the lotri expression, used for
+#'   combining matrices and properties
+#' @param call the original call to lotri, used for determining how to
+#'   combine matrices if there are conditionals
+#' @param cov Is this a covariance matrix (boolean/function;
+#'   default=`FALSE`), used for determining how to combine matrices if
+#'   there are conditionals
+#' @param rcm Do rcm re-ordering (boolean; default=`FALSE`), used for
+#'   determining how to combine matrices if there are conditionals
+#' @param default default level of variability (id=default), used for
+#'   determining how to combine matrices if there are conditionals
+#' @param envir environment where lotri is evaluated, used for
+#'   evaluating any subcalls or conditions when combining matrices if
+#'   there are conditionals
+#' @return the finalized result of the lotri expression, which
+#'   includes the resulting matrix (or list of matrices if there are
+#'   conditionals) with any fixed estimates included and properties
+#'   properly merged and amplified. The result is typically a list
+#'   with elements `ret` (the resulting matrix or list of matrices),
+#'   and `est` (data frame of fixed estimates), ready to be used for
+#'   creating a lotri object.
+#' @noRd
+#' @author Matthew L. Fidler
 .lotriFinalize <- function(ret, est, fullCnd, fullCndLst, call,
                            cov, rcm, default, envir) {
   if (!is.null(fullCnd)) {
