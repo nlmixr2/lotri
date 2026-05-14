@@ -2,6 +2,8 @@
 
 ## lotri 1.0.4
 
+CRAN release: 2026-05-14
+
 - Fix unsigned integer underflow in `rcm.cpp`: when called with a 0-row
   matrix, `n-1` would wrap to `UWORD_MAX` causing an infinite loop;
   added an early-return guard for `n == 0`.
