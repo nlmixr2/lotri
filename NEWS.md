@@ -1,3 +1,7 @@
+# lotri 1.0.5
+
+* Fixed rchk issues and small bugs found while linting
+
 # lotri 1.0.4
 
 * Fix unsigned integer underflow in `rcm.cpp`: when called with a
