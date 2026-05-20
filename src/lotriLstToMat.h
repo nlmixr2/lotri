@@ -46,7 +46,7 @@ static inline lotriInfo _lotriLstToMat0(SEXP lst_, SEXP format, SEXP startNum) {
   if (ret.doFormat) {
     ret.counter = isSingleInt(startNum, NA_INTEGER);
     if (ret.counter == NA_INTEGER){
-      SEXP startNum2 = Rf_getAttrib(lst_, Rf_install("start"));
+      SEXP startNum2 = PROTECT(Rf_getAttrib(lst_, Rf_install("start"))); pro++;
       ret.counter = isSingleInt(startNum2, NA_INTEGER);
       if (ret.counter == NA_INTEGER) {
 	ret.err = 2;
@@ -122,14 +122,17 @@ static inline void lotriLstToMatFillInFullMatrix(double *retd, int *retf, int *t
       dimnames = Rf_getAttrib(cur, R_DimNamesSymbol);
       colnames = VECTOR_ELT(dimnames, 1);
     }
+    int proFix = 0;
+    curFixed = R_NilValue;
     if (li->fix) {
-      curFixed = Rf_getAttrib(cur, Rf_install("lotriFix"));
+      curFixed = PROTECT(Rf_getAttrib(cur, Rf_install("lotriFix"))); proFix++;
       if (!Rf_isMatrix(curFixed) || TYPEOF(curFixed) != LGLSXP) {
 	curFixed = R_NilValue;
       }
     }
     lotriLstToMatFillInMatrixBand(retd, retf, nsame, type, *named, totN, *totdim,
 				  retN, colnames, curBand, li, cur, curFixed);
+    if (proFix) UNPROTECT(proFix);
   }
 }
 

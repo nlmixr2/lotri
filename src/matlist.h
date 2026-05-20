@@ -50,7 +50,7 @@ static inline int isSymNameMat(SEXP cur, int named, int *fixed, R_xlen_t *estima
       if (nrows == ncols) {
 	if (*fixed != 1) {
 	  // Check for fixed if the flag is not already set
-	  SEXP hasFix = Rf_getAttrib(cur, Rf_install("lotriFix"));
+	  SEXP hasFix = PROTECT(Rf_getAttrib(cur, Rf_install("lotriFix")));
 	  if (TYPEOF(hasFix) == LGLSXP && Rf_isMatrix(hasFix)) {
 	    // Dims need to match
 	    int nrows2 = Rf_nrows(hasFix);
@@ -59,12 +59,14 @@ static inline int isSymNameMat(SEXP cur, int named, int *fixed, R_xlen_t *estima
 	      *fixed = 1; // There is a fixed matrix in this matrix
 	    }
 	  }
+	  UNPROTECT(1);
 	}
-	SEXP hasEst = Rf_getAttrib(cur, Rf_install("lotriEst"));
+	SEXP hasEst = PROTECT(Rf_getAttrib(cur, Rf_install("lotriEst")));
 	if (TYPEOF(hasEst) == VECSXP) {
 	  SEXP estNames = VECTOR_ELT(hasEst, 0);
 	  *estimate += Rf_length(estNames);
 	}
+	UNPROTECT(1);
 	if (!named) return nrows;
 	SEXP dimn = Rf_getAttrib(cur, R_DimNamesSymbol);
 	if (dimn != R_NilValue) {

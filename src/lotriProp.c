@@ -33,11 +33,11 @@ SEXP blankProp(SEXP names) {
 }
 
 SEXP _lotriMaxNu(SEXP lotri) {
-  SEXP lotriProp = Rf_getAttrib(lotri, Rf_install("lotri"));
+  SEXP lotriProp = PROTECT(Rf_getAttrib(lotri, Rf_install("lotri")));
   SEXP ret = PROTECT(Rf_allocVector(REALSXP, 1));
   REAL(ret)[0] = 0.0;
   if (Rf_isNull(lotriProp)){
-    UNPROTECT(1);
+    UNPROTECT(2);
     return ret;
   }
   SEXP lotriPropNames = Rf_getAttrib(lotriProp, R_NamesSymbol);
@@ -53,7 +53,7 @@ SEXP _lotriMaxNu(SEXP lotri) {
     }
   }
   REAL(ret)[0] = maxNu;
-  UNPROTECT(1);
+  UNPROTECT(2);
   return ret;
 }
 

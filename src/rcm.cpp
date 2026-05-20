@@ -62,7 +62,8 @@ extern "C" SEXP _lotri_rcm_(SEXP As) {
     }
     perm = flipud(perm);
     SEXP dimN2 = PROTECT(Rf_allocVector(STRSXP, n)); pro++;
-    SEXP dimN = PROTECT(VECTOR_ELT(Rf_getAttrib(As, R_DimNamesSymbol), 0)); pro++;
+    SEXP asDimnames = PROTECT(Rf_getAttrib(As, R_DimNamesSymbol)); pro++;
+    SEXP dimN = VECTOR_ELT(asDimnames, 0);
     for (uword i = 0; i < n; i++) {
       SET_STRING_ELT(dimN2, i, STRING_ELT(dimN, perm(i)));
     }
