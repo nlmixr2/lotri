@@ -152,15 +152,20 @@ bool lotriNearPDarma(mat &ret, mat x
           }
           X = DX % D2;
         }
-        if (only_values) {
-          ret = d;
-          return true;
-        }
-
         // unneeded(?!): X <- (X + t(X))/2
         if (keepDiag) {
           X.diag()= diagX0;
         }
+      }
+      if (only_values) {
+        // Return the (posdefified) eigenvalues whether or not any eigenvalue
+        // actually needed clamping.  Previously this lived inside the
+        // `d(n-1) < Eps` branch, so an already-positive-definite input skipped
+        // it and fell through to `ret = X` below -- assigning an n x n matrix
+        // into the length-n `ret` vector alias, which aborts with
+        // "unknown c++ error".
+        ret = d;
+        return true;
       }
     } //end from posdefify(sfsmisc)
   }

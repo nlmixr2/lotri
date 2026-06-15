@@ -24,6 +24,22 @@ test_that("lotriNearPD on 0x0 matrix returns 0x0 matrix", {
   expect_equal(dim(r), c(0L, 0L))
 })
 
+test_that("lotriNearPD(only.values=TRUE) works on already positive-definite input", {
+  ## Before the fix the only_values path only assigned the eigenvalues inside
+  ## the d(n-1) < Eps clamping branch; an already-PD input skipped it and fell
+  ## through to `ret = X` -- an n x n matrix assigned into the length-n result
+  ## alias -- aborting with "unknown c++ error".
+  pd <- matrix(c(4, 1, 1, 3), 2, 2)
+  expect_equal(sort(lotriNearPD(pd, only.values = TRUE), decreasing = TRUE),
+               sort(eigen(pd, only.values = TRUE)$values, decreasing = TRUE))
+  pd3 <- matrix(c(10, 3, 2, 3, 8, 1, 2, 1, 6), 3, 3)
+  expect_equal(sort(lotriNearPD(pd3, only.values = TRUE), decreasing = TRUE),
+               sort(eigen(pd3, only.values = TRUE)$values, decreasing = TRUE))
+  ## the non-PD path (clamps small eigenvalues) is unchanged
+  npd <- matrix(c(1, 2, 2, 1), 2, 2)
+  expect_no_error(lotriNearPD(npd, only.values = TRUE))
+})
+
 test_that("test nearPD with same functions as Matrix", {
   # https://github.com/cran/Matrix/blob/65c37738919156f6bbb682a1d8198d715a82a19f/tests/dpo-test.R#L69-L136
   # Testing nearPD() --- this is partly in  ../man/nearPD.Rd :
