@@ -828,6 +828,42 @@ NULL
   NULL
 }
 
+#' Is this a `~invWishart(4)` whole omega prior line?
+#'
+#' A one sided `~` with a matrix valued distribution applies that prior
+#' to every block of the omega, which saves naming each block when they
+#' all share the same degrees of freedom.
+#'
+#' @param x language object to test
+#' @return TRUE when this is a whole omega prior
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriIsWholeOmegaPriorLine <- function(x) {
+  if (!(is.call(x) && length(x) == 2L && identical(x[[1]], quote(`~`)))) {
+    return(FALSE)
+  }
+  .r <- x[[2]]
+  if (!is.call(.r)) return(FALSE)
+  .nm <- as.character(.r[[1]])
+  if (length(.nm) != 1L) return(FALSE)
+  .d <- .lotriPriorLookup(.nm)
+  ## only the matrix valued distributions; `~c(40)` stays an error
+  !is.null(.d) && .d$kind == "matrix"
+}
+
+#' Collect a `~invWishart(4)` whole omega prior
+#'
+#' @param x language object of the prior line
+#' @param env parsing environment
+#' @return nothing, called for the side effect on `env$wholeOmegaPrior`
+#' @noRd
+#' @author Matthew L. Fidler
+.fCallWholeOmegaPrior <- function(x, env) {
+  env$wholeOmegaPrior <- c(env$wholeOmegaPrior,
+                           list(.lotriPriorNormalize(x[[2]])))
+  invisible()
+}
+
 #' Strip the `om.` prefix used to name an omega element
 #'
 #' In a NONMEM `TNPRI` model the prior is over the omega elements as
@@ -1050,10 +1086,36 @@ NULL
 #' @return list with the amended `ret` and `est`
 #' @noRd
 #' @author Matthew L. Fidler
-.lotriResolvePriors <- function(ret, est, priors) {
-  if (length(priors) == 0L) return(list(ret=ret, est=est))
+.lotriResolvePriors <- function(ret, est, priors, wholePriors=NULL) {
+  if (length(priors) == 0L && length(wholePriors) == 0L) {
+    return(list(ret=ret, est=est))
+  }
   .isList <- !is.matrix(ret) && (inherits(ret, "list") || inherits(ret, "lotri"))
   .mats <- if (.isList) as.list(ret) else list(ret)
+  ## `~invWishart(4)` names no block, so expand it to one entry per block
+  ## and let the ordinary resolution below validate each of them
+  if (length(wholePriors) > 0L) {
+    .expand <- list()
+    for (.wp in wholePriors) {
+      for (.k in seq_along(.mats)) {
+        .m <- .mats[[.k]]
+        if (!is.matrix(.m) || dim(.m)[1] == 0L) next
+        .dn <- dimnames(.m)[[1]]
+        .i <- 1L
+        while (.i <= length(.dn)) {
+          .idx <- .lotriBlockIndexes(.m, .i)
+          .expand[[length(.expand) + 1L]] <- list(names=.dn[.idx], info=.wp)
+          .i <- max(.idx) + 1L
+        }
+      }
+    }
+    if (length(.expand) == 0L) {
+      stop("'~", wholePriors[[1]]$text,
+           "' was given but the model has no omega to apply it to",
+           call.=FALSE)
+    }
+    priors <- c(.expand, priors)
+  }
   .pri <- lapply(.mats, function(m) {
     if (!is.matrix(m)) return(character(0))
     rep(NA_character_, dim(m)[1])
@@ -1154,6 +1216,9 @@ NULL
     ## `.lotriEnv$lastTilde` is not changed; otherwise a `label()`
     ## following a prior would be applied to the last matrix row.
     .fCallPrior(x, env)
+  } else if (.lotriIsWholeOmegaPriorLine(x)) {
+    ## `~invWishart(4)` gives every omega block the same prior
+    .fCallWholeOmegaPrior(x, env)
   } else if (.lotriIsOmegaPriorLine(x)) {
     ## `om.eta.cl ~ 0.01` is a normal prior on the omega element of
     ## `eta.cl`, which is what a NONMEM TNPRI model needs
@@ -1813,7 +1878,7 @@ NULL
   .lotriThetaPriorsFromEnv(.env)
   .lotriThetaPriorsFromEnv(.env, "omegaPriorEnv")
   if (!is.null(.env$matrix)) {
-    .res <- .lotriResolvePriors(.env$matrix, .est, .env$priors)
+    .res <- .lotriResolvePriors(.env$matrix, .est, .env$priors, .env$wholeOmegaPrior)
     return(list(ret=.res$ret, est=.res$est, done=TRUE))
   }
   if (length(.env$cnd) == 0L) {
@@ -1825,7 +1890,7 @@ NULL
   }
   ## resolved last so that priors are matched by name against the
   ## final (possibly `rcm` re-ordered) matrix
-  .res <- .lotriResolvePriors(.ret, .est, .env$priors)
+  .res <- .lotriResolvePriors(.ret, .est, .env$priors, .env$wholeOmegaPrior)
   list(ret=.res$ret, est=.res$est, done=.done)
 }
 #' Finalize the lotri expression result

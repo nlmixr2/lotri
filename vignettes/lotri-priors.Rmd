@@ -137,8 +137,37 @@ This is the pair that a NONMEM `NWPRI` model writes as `$OMEGAP` and
 and the number here is the degrees of freedom.
 
 It works on a 1x1 block as well, since an inverse Wishart of dimension one
-is an inverse gamma.  Give the scale matrix explicitly only when it differs
-from the estimates:
+is an inverse gamma.
+
+When every block shares the same degrees of freedom, a one-sided `~` sets
+them all at once instead of naming each block:
+
+```{r}
+m <- lotri({
+  eta.cl + eta.v ~ c(0.3,
+                     0.01, 0.1)
+  eta.ka ~ 0.5
+  ~invWishart(4)
+})
+
+as.data.frame(m)[, c("name", "est", "prior")]
+```
+
+Both blocks got it -- the 2x2 and the 1x1.  Each is still checked
+individually, so a degrees of freedom that is proper for one block and not
+another is caught.  Naming a block as well is a duplicate rather than an
+override:
+
+```{r error=TRUE}
+lotri({
+  eta.cl + eta.v ~ c(0.3,
+                     0.01, 0.1)
+  ~invWishart(4)
+  prior(eta.cl, eta.v) ~ invWishart(5)
+})
+```
+
+Give the scale matrix explicitly only when it differs from the estimates:
 
 ```{r}
 lotriEst(lotri({
