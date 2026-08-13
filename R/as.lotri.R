@@ -70,7 +70,7 @@ as.lotri.matrix <- function(x, ..., default = "") {
     attr(.mat, "lotriFix") <- .matF
     class(.mat) <- c("lotriFix", class(.mat))
   }
-  return(.mat)
+  .mat
 }
 
 #' @rdname as.lotri
@@ -118,7 +118,7 @@ as.lotri.default <- function(x, ..., default = "") {
       names(.ret) <- .n
     }
     class(.ret) <- "lotri"
-    return(.ret)
+    .ret
   } else {
     stop("unsupported object of class c('", paste(class(x), collapse="', '"), "') used with `as.lotri`",
          call.=FALSE)

@@ -210,18 +210,8 @@ SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum, SEXP matCls) {
   }
   // Carry the per-parameter character attributes across the
   // concatenation; these used to be silently dropped here.
-  if (lotriLstHasStrAttr(li.lst, len, "lotriLabels")) {
-    doCls = 1;
-    SEXP retLab = PROTECT(Rf_allocVector(STRSXP, totdim)); pro++;
-    lotriLstToMatFillInStrAttr(retLab, "lotriLabels", li.lst, len);
-    Rf_setAttrib(ret, Rf_install("lotriLabels"), retLab);
-  }
-  if (lotriLstHasStrAttr(li.lst, len, "lotriPriors")) {
-    doCls = 1;
-    SEXP retPri = PROTECT(Rf_allocVector(STRSXP, totdim)); pro++;
-    lotriLstToMatFillInStrAttr(retPri, "lotriPriors", li.lst, len);
-    Rf_setAttrib(ret, Rf_install("lotriPriors"), retPri);
-  }
+  doCls |= lotriSetStrAttr(ret, "lotriLabels", li.lst, len, totdim, &pro);
+  doCls |= lotriSetStrAttr(ret, "lotriPriors", li.lst, len, totdim, &pro);
   if (liEst) {
     doCls = 1;
     SEXP liEstSEXP = PROTECT(_lotriEstDf(lst_, liEst)); pro++;

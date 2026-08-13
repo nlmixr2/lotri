@@ -147,6 +147,18 @@ static inline void lotriLstToMatFillInStrAttr(SEXP out, const char *what,
   }
 }
 
+/* Attach one concatenated character attribute to the assembled matrix,
+   when any of the blocks carried it.  Returns 1 when it was set, so the
+   caller knows the result needs the `lotriFix` class. */
+static inline int lotriSetStrAttr(SEXP ret, const char *what, SEXP lst,
+				  R_xlen_t len, int totdim, int *pro) {
+  if (!lotriLstHasStrAttr(lst, len, what)) return 0;
+  SEXP out = PROTECT(Rf_allocVector(STRSXP, totdim)); (*pro)++;
+  lotriLstToMatFillInStrAttr(out, what, lst, len);
+  Rf_setAttrib(ret, Rf_install(what), out);
+  return 1;
+}
+
 static inline void lotriLstToMatFillInFullMatrix(double *retd, int *retf, int *totdim, SEXP retN,
 						 int *curBand, R_xlen_t *len, lotriInfo *li, int *named) {
   SEXP sameS, dimnames, colnames, curFixed = R_NilValue;

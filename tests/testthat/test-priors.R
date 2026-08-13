@@ -1,3 +1,5 @@
+.lotri <- loadNamespace("lotri")
+
 test_that("priors can be given on population estimates", {
 
   m <- lotri({
@@ -607,7 +609,7 @@ test_that("~invWishart() sets the degrees of freedom for the whole omega", {
   expect_error(lotri({ eta.ka ~ 0.5; ~lkjCorr(2) }))
 
   ## a one sided formula that is not a distribution is still an error
-  expect_error(lotri(~c(40)))
+  expect_error(lotri(~c(40))) #nolint
 })
 
 test_that("an omega cannot have both degrees of freedom and a normal prior", {
@@ -800,7 +802,7 @@ test_that("every Stan and camelCase spelling normalizes to the canonical one", {
 
 test_that("the distribution name helpers behave", {
 
-  .camel <- lotri:::.lotriSnakeToCamel
+  .camel <- .lotri$.lotriSnakeToCamel
 
   expect_equal(.camel("inv_wishart"), "invWishart")
   expect_equal(.camel("scaled_inv_chi_square"), "scaledInvChiSquare")
@@ -809,7 +811,7 @@ test_that("the distribution name helpers behave", {
   expect_equal(.camel("gumbel"), "gumbel")
   expect_equal(.camel(c("std_normal", "normal")), c("stdNormal", "normal"))
 
-  .look <- lotri:::.lotriPriorLookup
+  .look <- .lotri$.lotriPriorLookup
 
   ## each of the four spellings finds the same row
   expect_equal(.look("dnorm")$stanName, "normal")
@@ -818,7 +820,7 @@ test_that("the distribution name helpers behave", {
   expect_equal(.look("inv_wishart")$stanName, "inv_wishart")
   expect_null(.look("notADistribution"))
 
-  .sug <- lotri:::.lotriPriorSuggest
+  .sug <- .lotri$.lotriPriorSuggest
 
   ## a near miss suggests, something unrecognisable does not
   expect_true(grepl("did you mean", .sug("dnorml")))
@@ -827,7 +829,7 @@ test_that("the distribution name helpers behave", {
 
 test_that("the prior family classifier separates the omega prior forms", {
 
-  .fam <- lotri:::.lotriPriorFamily
+  .fam <- .lotri$.lotriPriorFamily
 
   expect_equal(.fam("invWishart(4)"), "wishart")
   expect_equal(.fam("wishart(4)"), "wishart")
@@ -908,7 +910,7 @@ test_that("labels and priors survive a repeated matrix", {
 
 test_that("the prior parsing helpers handle the odd shapes", {
 
-  .lhs <- lotri:::.lotriTildeLhsNames
+  .lhs <- .lotri$.lotriTildeLhsNames
 
   expect_equal(.lhs(quote(a)), "a")
   expect_equal(.lhs(quote(a + b + c)), c("a", "b", "c"))
@@ -917,16 +919,16 @@ test_that("the prior parsing helpers handle the odd shapes", {
   expect_null(.lhs(quote(a + f(b))))
   expect_null(.lhs(quote(1)))
 
-  .whole <- lotri:::.lotriIsWholeOmegaPriorLine
+  .whole <- .lotri$.lotriIsWholeOmegaPriorLine
 
   expect_true(.whole(quote(~invWishart(4))))
-  expect_false(.whole(quote(~c(40))))
+  expect_false(.whole(quote(~c(40)))) #nolint
   ## a namespaced call is not a distribution name
   expect_false(.whole(quote(~stats::rnorm(1))))
   expect_false(.whole(quote(~a)))
   expect_false(.whole(quote(a ~ 1)))
 
-  .blk <- lotri:::.lotriBlockIndexes
+  .blk <- .lotri$.lotriBlockIndexes
   .m <- lotri({ a + b ~ c(1, 0.1, 1); d ~ 1 })
   ## starting anywhere in a block finds the whole block, including
   ## extending left from the end of it
@@ -934,13 +936,13 @@ test_that("the prior parsing helpers handle the odd shapes", {
   expect_equal(.blk(.m, 2), 1:2)
   expect_equal(.blk(.m, 3), 3L)
 
-  .are <- lotri:::.lotriNamesAreBlock
+  .are <- .lotri$.lotriNamesAreBlock
   expect_true(.are(.m, c("a", "b")))
   expect_false(.are(.m, c("a", "d")))
   ## a name that is not in the matrix at all
   expect_false(.are(.m, c("a", "nope")))
 
-  .strip <- lotri:::.lotriStripOm
+  .strip <- .lotri$.lotriStripOm
   expect_equal(.strip(c("om.a", "om.b")), c("a", "b"))
   expect_null(.strip(c("om.a", "b")))
   expect_null(.strip("a"))
