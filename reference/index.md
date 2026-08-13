@@ -20,6 +20,8 @@
   : Converts a matrix into a list of block matrices
 - [`lotriNearPD()`](https://nlmixr2.github.io/lotri/reference/lotriNearPD.md)
   : C++ implementation of Matrix's nearPD
+- [`lotriPriorDists()`](https://nlmixr2.github.io/lotri/reference/lotriPriorDists.md)
+  : Return the prior distributions supported by \`lotri()\`
 - [`lotriSep()`](https://nlmixr2.github.io/lotri/reference/lotriSep.md)
   : Separate a lotri matrix into above and below lotri matrices
 - [`rcm()`](https://nlmixr2.github.io/lotri/reference/rcm.md) : Use the

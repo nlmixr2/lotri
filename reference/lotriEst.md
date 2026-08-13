@@ -38,12 +38,12 @@ fix1 <- lotri({
 
 # Extract the attached lotri estimate data frame
 lotriEst(fix1)
-#>   name lower est upper   fix   label backTransform
-#> 1    a     0   1   Inf FALSE a label           exp
-#> 2    b     0   1     2 FALSE    <NA>          <NA>
-#> 3    c  -Inf   1   Inf  TRUE    <NA>          <NA>
-#> 4    d     0   1     2  TRUE    <NA>          <NA>
-#> 5    e     0   1     2  TRUE    <NA>          <NA>
+#>   name lower est upper   fix   label backTransform prior
+#> 1    a     0   1   Inf FALSE a label           exp  <NA>
+#> 2    b     0   1     2 FALSE    <NA>          <NA>  <NA>
+#> 3    c  -Inf   1   Inf  TRUE    <NA>          <NA>  <NA>
+#> 4    d     0   1     2  TRUE    <NA>          <NA>  <NA>
+#> 5    e     0   1     2  TRUE    <NA>          <NA>  <NA>
 
 # Remove the attached lotri estimate data frame
 lotriEst(fix1, drop=TRUE)

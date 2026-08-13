@@ -3,7 +3,8 @@ pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
   lotri-motivation: lotri-motivation.html
-last_built: 2026-08-13T18:31Z
+  lotri-priors: lotri-priors.html
+last_built: 2026-08-13T23:02Z
 urls:
   reference: https://nlmixr2.github.io/lotri/reference
   article: https://nlmixr2.github.io/lotri/articles

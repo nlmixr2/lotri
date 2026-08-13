@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">lotri</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.5</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.6</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -39,6 +39,7 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/lotri-motivation.html">Lotri Motivation</a></li>
+    <li><a class="dropdown-item" href="../articles/lotri-priors.html">Prior distributions in lotri</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -227,9 +228,9 @@ concatenation with <code>lotriMat</code></p>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">mb</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Unit: microseconds</span></span>
-<span><span class="co">#&gt;                expr     min       lq       mean    median        uq      max</span></span>
-<span><span class="co">#&gt;      matf(testList) 981.641 1117.778 1279.13002 1179.7060 1424.0840 5697.119</span></span>
-<span><span class="co">#&gt;  lotriMat(testList)   2.476    3.280    6.51444    6.1125    9.2305   13.415</span></span>
+<span><span class="co">#&gt;                expr      min        lq       mean    median        uq      max</span></span>
+<span><span class="co">#&gt;      matf(testList) 1263.113 1318.2830 1496.33314 1393.0685 1642.8920 6607.937</span></span>
+<span><span class="co">#&gt;  lotriMat(testList)    3.404    4.0305    7.46877    6.8685    9.7905   18.966</span></span>
 <span><span class="co">#&gt;  neval</span></span>
 <span><span class="co">#&gt;    100</span></span>
 <span><span class="co">#&gt;    100</span></span>

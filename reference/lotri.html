@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">lotri</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.5</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.6</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -19,6 +19,7 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/lotri-motivation.html">Lotri Motivation</a></li>
+    <li><a class="dropdown-item" href="../articles/lotri-priors.html">Prior distributions in lotri</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -113,6 +114,40 @@ implemented.</p></dd>
 <p>The matrices are concatenated into a block diagonal matrix, like
  <code><a href="https://rdrr.io/pkg/Matrix/man/bdiag.html" class="external-link">bdiag</a></code>, but allows expressions to specify
  matrices easier.</p>
+<p>Population estimates can be given with</p>
+<p>name &lt;- estimate</p>
+<p>or with bounds, <code>name &lt;- c(lower, estimate, upper)</code></p>
+<p>A prior distribution can be put on any of these with</p>
+<p>prior(name) ~ dist(...)</p>
+<p>Since the statement names what it applies to, prior lines can be
+ put anywhere in the block.  A prior can be given for a population
+ estimate, for a single eta, or for a whole covariance block:</p>
+<p>prior(eta1, eta2) ~ lkjCorr(2)</p>
+<p>Normal priors also have a shorthand that reuses the matrix syntax:
+ when the name on the left of a <code>~</code> is a population estimate
+ (instead of an eta), it is a normal prior with a zero mean and the
+ given variance</p>
+<p>tka ~ 4</p>
+<p>tcl + tv ~ c(1,
+              0.01, 1)</p>
+<p>The first is a normal prior on <code>tka</code> with a standard deviation
+ of 2 and the second a multivariate normal prior on <code>tcl</code> and
+ <code>tv</code> with a zero mean vector.  Every matrix spelling works,
+ including the per row line form and the <code><a href="https://rdrr.io/r/stats/sd.html" class="external-link">sd()</a></code>/<code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cor()</a></code>
+ transformations.  The estimate given with <code>&lt;-</code> stays the initial
+ estimate; it is not the prior mean.</p>
+<p>The distributions understood are listed by
+ <code><a href="lotriPriorDists.html">lotriPriorDists</a></code>.  Each has three accepted spellings:
+ the R name where R parameterizes it the same way 'Stan' does
+ (<code><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">dnorm()</a></code>), the camelCase name (<code>invWishart()</code>), and the
+ 'Stan' name (<code>inv_wishart()</code>).  The canonical one is the R name
+ where there is a faithful one and the camelCase name otherwise.</p>
+<p>Bounds are not repeated in the prior; a parameter declared as
+ <code>c(0, 1)</code> with a <code>dcauchy(0, 5)</code> prior is a half-Cauchy.</p>
+<p>The scale matrix of the Wishart family is optional, since the block
+ it is put on already is that matrix, so
+ <code>prior(eta1, eta2) ~ invWishart(4)</code> gives just the degrees of
+ freedom (the <code>$OMEGAPD</code> of a NONMEM NWPRI model).</p>
     </div>
     <div class="section level2">
     <h2 id="author">Author<a class="anchor" aria-label="anchor" href="#author"></a></h2>
