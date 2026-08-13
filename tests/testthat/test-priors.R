@@ -258,6 +258,43 @@ test_that("theta priors accept the matrix transformations", {
   expect_equal(lotriEst(m3)$prior, "dnorm(0, 2)")
 })
 
+test_that("a theta prior matrix means the same thing as an eta matrix", {
+
+  ## The prior covariance has to be read exactly the way nlmixr2 reads an
+  ## eta block -- as a *covariance*, not a correlation -- for every
+  ## spelling.  This compares the matrix stored in the prior against the
+  ## matrix the identical specification gives for etas.
+  .sigma <- function(m) eval(str2lang(lotriEst(m)$prior[1])[[3]])
+
+  .cmp <- function(spec) {
+    .eta <- eval(bquote(lotri(.(str2lang(paste0("{ a + b ~ ", spec, " }"))))))
+    .th <- eval(bquote(lotri(.(str2lang(
+      paste0("{ a <- 1; b <- 2; a + b ~ ", spec, " }"))))))
+    expect_equal(unname(as.matrix(.sigma(.th))), unname(as.matrix(.eta)),
+                 info=spec)
+  }
+
+  .cmp("c(1, 0.5, 2)")
+  .cmp("var(1, 0.5, 2)")
+  .cmp("cov(1, 0.5, 2)")
+  .cmp("sd(1, 0.5, 2)")
+  .cmp("sd(cor(1, 0.5, 2))")
+  .cmp("chol(1, 0.5, 2)")
+
+  ## an off-diagonal is a covariance, so it is kept as given rather than
+  ## being rescaled the way a correlation would be
+  .m <- lotri({ a <- 1; b <- 2; a + b ~ c(1, 0.5, 2) })
+  expect_equal(.sigma(.m)[1, 2], 0.5)
+
+  ## and cor() really does convert: 0.5 * sd(1) * sd(2) = 1
+  .m2 <- lotri({ a <- 1; b <- 2; a + b ~ sd(cor(1, 0.5, 2)) })
+  expect_equal(.sigma(.m2)[1, 2], 1)
+
+  ## the uncorrelated case keeps the variance too, as the sd of a dnorm
+  .m3 <- lotri({ a <- 1; b <- 2; a + b ~ c(4, 0, 9) })
+  expect_equal(lotriEst(.m3)$prior, c("dnorm(0, 2)", "dnorm(0, 3)"))
+})
+
 test_that("theta priors round trip", {
 
   m <- lotri({

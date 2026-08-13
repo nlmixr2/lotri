@@ -166,6 +166,26 @@ That is a multivariate normal with a zero mean vector.  The covariance is
 kept as the `lotri` expression that built it, which is valid R and round
 trips exactly.
 
+The matrix means exactly what it means for etas: the off-diagonal is a
+**covariance**, not a correlation.  A prior block and an eta block written
+the same way give the same matrix:
+
+```{r}
+.eta <- lotri({ a + b ~ c(1,
+                          0.5, 2) })
+
+.prior <- lotri({
+  a <- 1
+  b <- 2
+  a + b ~ c(1,
+            0.5, 2)
+})
+
+## pull the covariance back out of the stored prior
+identical(unname(as.matrix(eval(str2lang(lotriEst(.prior)$prior[1])[[3]]))),
+          unname(as.matrix(.eta)))
+```
+
 The per-row line form builds up the block, exactly as it does for etas:
 
 ```{r}
