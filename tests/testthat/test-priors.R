@@ -490,6 +490,85 @@ test_that("omega degrees of freedom can be given on their own", {
   expect_error(lotri({ tka <- 1; prior(tka) ~ invWishart(4) }))
 })
 
+test_that("om. names put a prior on the omega elements", {
+
+  ## a NONMEM TNPRI model puts a normal prior on the omega elements as
+  ## well as the thetas, so the elements need names: `om.` prepended to
+  ## the between subject variability
+  m <- lotri({
+    eta.cl ~ 0.3
+    eta.v ~ 0.1
+    om.eta.cl ~ 0.01
+    om.eta.v ~ 0.04
+  })
+
+  ## the omega itself is unchanged; only priors were added
+  expect_equal(dimnames(m)[[1]], c("eta.cl", "eta.v"))
+  expect_equal(as.numeric(diag(m)), c(0.3, 0.1))
+  expect_equal(attr(m, "lotriPriors"), c("dnorm(0, 0.1)", "dnorm(0, 0.2)"))
+
+  ## `prior()` accepts the same names
+  m2 <- lotri({
+    eta.cl ~ 0.3
+    eta.v ~ 0.1
+    prior(om.eta.cl) ~ dnorm(0, 0.1)
+    prior(om.eta.v) ~ dnorm(0, 0.2)
+  })
+  expect_equal(m, m2)
+
+  ## and so does naming the eta directly, since it means the same thing
+  m3 <- lotri({
+    eta.cl ~ 0.3
+    eta.v ~ 0.1
+    prior(eta.cl) ~ dnorm(0, 0.1)
+    prior(eta.v) ~ dnorm(0, 0.2)
+  })
+  expect_equal(m, m3)
+})
+
+test_that("om. names support a correlated prior and round trip", {
+
+  m <- lotri({
+    eta.cl + eta.v ~ c(0.3,
+                       0.01, 0.1)
+    om.eta.cl ~ 0.01
+    om.eta.v ~ c(0.001, 0.02)
+  })
+
+  expect_equal(attr(m, "lotriPriors")[1],
+               "multiNormal(0, lotri(om.eta.cl + om.eta.v ~ c(0.01, 0.001, 0.02)))")
+  expect_true(is.na(attr(m, "lotriPriors")[2]))
+
+  expect_equal(as.data.frame(eval(as.expression(m))), as.data.frame(m))
+})
+
+test_that("om. names must match a between subject variability", {
+
+  expect_error(lotri({ eta.ka ~ 0.3; om.eta.nope ~ 0.1 }))
+  expect_error(lotri({ tka <- 1; om.tka ~ 0.1 }))
+
+  ## an `om.` line does not silently create an eta
+  expect_error(lotri({ om.eta.ka ~ 0.1 }))
+})
+
+test_that("a NWPRI and a TNPRI omega prior are distinguishable", {
+
+  .nw <- lotri({
+    eta.cl + eta.v ~ c(0.3,
+                       0.01, 0.1)
+    prior(eta.cl, eta.v) ~ invWishart(4)
+  })
+  .tn <- lotri({
+    eta.cl + eta.v ~ c(0.3,
+                       0.01, 0.1)
+    om.eta.cl ~ 0.01
+    om.eta.v ~ c(0.001, 0.02)
+  })
+
+  expect_equal(attr(.nw, "lotriPriors")[1], "invWishart(4)")
+  expect_true(grepl("^multiNormal", attr(.tn, "lotriPriors")[1]))
+})
+
 test_that("labels follow the matrix when rcm re-orders it", {
 
   ## regression: the labels used to stay in parse order while the

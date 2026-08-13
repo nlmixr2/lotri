@@ -49,6 +49,28 @@ lotri({
   It works on a 1x1 block too (an inverse Wishart of dimension one is
   an inverse gamma), and an improper `nu <= p - 1` is an error.
 
+* A normal prior can be put on the omega values themselves, which is
+  what a NONMEM `TNPRI` model needs.  `om.` prepended to a between
+  subject variability names its omega element, so the normal prior
+  shorthand can be used on it:
+
+```r
+lotri({
+  eta.cl ~ 0.3
+  eta.v ~ 0.1
+  om.eta.cl ~ 0.01
+  om.eta.v ~ 0.04
+})
+```
+
+  The omega itself is untouched; only the prior is added.  Correlated
+  omega priors work the same way, including the per row line form.  An
+  `om.` name has to match a real between subject variability and never
+  creates one.  `prior(om.eta.cl)` and `prior(eta.cl)` mean the same
+  thing; the `om.` spelling exists so the shorthand has a name to put
+  on the left of a `~`, since `eta.cl ~ ...` already means the omega
+  value.
+
 * Because normal priors are so common they also have a shorthand that
   reuses the matrix syntax: putting a *population estimate* on the left
   of a `~` gives it a normal prior with a zero mean and the given

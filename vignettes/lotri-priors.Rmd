@@ -166,6 +166,62 @@ lotri({
 })
 ```
 
+### A prior on the omega values themselves
+
+The two NONMEM prior flavours want different things from an omega.  An
+`NWPRI` model gives it degrees of freedom, which is the `invWishart()` above.
+A `TNPRI` model instead puts a normal prior on the omega *elements*, jointly
+with the thetas, so those elements need names of their own.
+
+Prepending `om.` to a between subject variability names its omega element:
+
+```{r}
+m <- lotri({
+  eta.cl ~ 0.3
+  eta.v ~ 0.1
+  om.eta.cl ~ 0.01
+  om.eta.v ~ 0.04
+})
+
+attr(m, "lotriPriors")
+```
+
+`om.eta.cl ~ 0.01` reads exactly like the shorthand for a population
+estimate: a normal prior with a zero mean and a variance of 0.01.  The omega
+itself is untouched -- only the prior was added:
+
+```{r}
+diag(m)
+```
+
+Correlated omega priors work the same way, including the per-row line form:
+
+```{r}
+m2 <- lotri({
+  eta.cl + eta.v ~ c(0.3,
+                     0.01, 0.1)
+  om.eta.cl ~ 0.01
+  om.eta.v ~ c(0.001, 0.02)
+})
+
+attr(m2, "lotriPriors")[1]
+```
+
+An `om.` name has to match a real between subject variability; it never
+quietly creates one:
+
+```{r error=TRUE}
+lotri({
+  eta.ka ~ 0.3
+  om.eta.nope ~ 0.1
+})
+```
+
+Naming the eta directly means the same thing, so `prior(om.eta.cl)` and
+`prior(eta.cl)` are interchangeable.  The `om.` spelling exists so the
+shorthand has a name to put on the left of the `~`, since `eta.cl ~ ...`
+already means the omega value itself.
+
 ### One block at a time
 
 The names have to be *exactly* one block.  Two unrelated diagonal elements

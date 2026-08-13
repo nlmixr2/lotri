@@ -828,6 +828,77 @@ NULL
   NULL
 }
 
+#' Strip the `om.` prefix used to name an omega element
+#'
+#' In a NONMEM `TNPRI` model the prior is over the omega elements as
+#' well as the thetas, so the elements need names of their own.  `om.`
+#' prepended to a between subject variability names its omega element,
+#' ie `om.eta.cl` is the omega element of `eta.cl`.
+#'
+#' @param nm character vector of names
+#' @return the names with `om.` removed, or NULL when they are not all
+#'   `om.` prefixed
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriStripOm <- function(nm) {
+  if (length(nm) > 0L && all(grepl("^om[.].", nm))) {
+    return(sub("^om[.]", "", nm))
+  }
+  NULL
+}
+
+#' Is this an `om.eta ~ variance` normal prior line?
+#'
+#' @param x language object to test
+#' @return TRUE when every name on the left is `om.` prefixed
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriIsOmegaPriorLine <- function(x) {
+  if (!(is.call(x) && length(x) == 3L && identical(x[[1]], quote(`~`)))) {
+    return(FALSE)
+  }
+  if (is.call(x[[3]]) && identical(x[[3]][[1]], quote(`|`))) return(FALSE)
+  .nm <- .lotriTildeLhsNames(x[[2]])
+  !is.null(.nm) && !is.null(.lotriStripOm(.nm))
+}
+
+#' Handle the `om.eta ~ variance` normal prior shorthand
+#'
+#' Kept in its own environment so that an omega prior line never joins a
+#' population estimate prior block, or an eta matrix, by accident.
+#'
+#' @param x language object of the prior line
+#' @param env parsing environment
+#' @return nothing, called for the side effect on `env$omegaPriorEnv`
+#' @noRd
+#' @author Matthew L. Fidler
+.fCallOmegaPrior <- function(x, env) {
+  if (is.null(env$omegaPriorEnv)) {
+    env$omegaPriorEnv <- .lotriNewPriorEnv()
+  }
+  .fCallTilde(x, env$omegaPriorEnv)
+  invisible()
+}
+
+#' A scratch environment for accumulating normal prior lines
+#'
+#' @return a new environment set up for `.fCallTilde()`
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriNewPriorEnv <- function() {
+  .env <- new.env(parent = emptyenv())
+  .env$isCov <- FALSE
+  .env$fun <- NULL
+  .env$rcm <- FALSE
+  .env$df <- NULL
+  .env$lastN <- 0
+  .env$eta1 <- 0L
+  .env$cnd <- character()
+  .env$names <- character(0)
+  .env$labels <- character(0)
+  .env
+}
+
 #' Is this a `theta ~ variance` normal prior line?
 #'
 #' A `~` whose left hand side names only *population estimates* cannot be
@@ -864,17 +935,7 @@ NULL
 #' @author Matthew L. Fidler
 .fCallThetaPrior <- function(x, env) {
   if (is.null(env$thetaPriorEnv)) {
-    .env2 <- new.env(parent = emptyenv())
-    .env2$isCov <- FALSE
-    .env2$fun <- NULL
-    .env2$rcm <- FALSE
-    .env2$df <- NULL
-    .env2$lastN <- 0
-    .env2$eta1 <- 0L
-    .env2$cnd <- character()
-    .env2$names <- character(0)
-    .env2$labels <- character(0)
-    env$thetaPriorEnv <- .env2
+    env$thetaPriorEnv <- .lotriNewPriorEnv()
   }
   ## fed through the ordinary matrix parser so that every matrix
   ## spelling works here too: the plus form, the per row line form
@@ -894,9 +955,9 @@ NULL
 #' @return nothing, called for the side effect on `env$priors`
 #' @noRd
 #' @author Matthew L. Fidler
-.lotriThetaPriorsFromEnv <- function(env) {
-  if (is.null(env$thetaPriorEnv)) return(invisible())
-  .mat <- .lotriGetMatrixFromEnv(env$thetaPriorEnv)
+.lotriThetaPriorsFromEnv <- function(env, which="thetaPriorEnv") {
+  if (is.null(env[[which]])) return(invisible())
+  .mat <- .lotriGetMatrixFromEnv(env[[which]])
   if (dim(.mat)[1] == 0L) return(invisible())
   attr(.mat, "lotriFix") <- NULL
   attr(.mat, "lotriUnfix") <- NULL
@@ -1019,11 +1080,17 @@ NULL
       next
     }
     .found <- FALSE
+    ## `om.eta.cl` names the omega element of `eta.cl`
+    .om <- .lotriStripOm(.nm)
     for (.k in seq_along(.mats)) {
       .m <- .mats[[.k]]
       if (!is.matrix(.m)) next
       .dn <- dimnames(.m)[[1]]
-      if (is.null(.dn) || !all(.nm %in% .dn)) next
+      if (is.null(.dn)) next
+      if (!all(.nm %in% .dn)) {
+        if (is.null(.om) || !all(.om %in% .dn)) next
+        .nm <- .om
+      }
       .isBlock <- length(.nm) > 1L
       if (.isBlock && !.lotriNamesAreBlock(.m, .nm)) {
         stop("'", paste(.nm, collapse=", "),
@@ -1078,6 +1145,10 @@ NULL
     ## `.lotriEnv$lastTilde` is not changed; otherwise a `label()`
     ## following a prior would be applied to the last matrix row.
     .fCallPrior(x, env)
+  } else if (.lotriIsOmegaPriorLine(x)) {
+    ## `om.eta.cl ~ 0.01` is a normal prior on the omega element of
+    ## `eta.cl`, which is what a NONMEM TNPRI model needs
+    .fCallOmegaPrior(x, env)
   } else if (.lotriIsThetaPriorLine(x, env)) {
     ## `tka ~ 1` where `tka` is a population estimate is a normal prior,
     ## not an eta; checked before `lastTilde` is set for the same reason
@@ -1731,6 +1802,7 @@ NULL
   .f(sX, .env)
   .printErr(.env) # nolint
   .lotriThetaPriorsFromEnv(.env)
+  .lotriThetaPriorsFromEnv(.env, "omegaPriorEnv")
   if (!is.null(.env$matrix)) {
     .res <- .lotriResolvePriors(.env$matrix, .est, .env$priors)
     return(list(ret=.res$ret, est=.res$est, done=TRUE))
