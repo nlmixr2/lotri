@@ -321,8 +321,17 @@ lotriDataFrameToLotriExpression <- function(data, useIni=FALSE) { # nolint
 .lotriGetPriorLines <- function(est, mat) {
   .ret <- list()
   .add <- function(nms, txt) {
-    .ret[[length(.ret) + 1L]] <<-
-      str2lang(paste0("prior(", paste(nms, collapse=", "), ") ~ ", txt))
+    .e <- try(str2lang(paste0("prior(", paste(nms, collapse=", "), ") ~ ", txt)),
+              silent=TRUE)
+    if (inherits(.e, "try-error")) {
+      ## a prior is validated when it is parsed, so this only happens if
+      ## the column was written to by hand; say so rather than making the
+      ## object impossible to print
+      warning("cannot deparse the prior on '", paste(nms, collapse=", "),
+              "': ", txt, call.=FALSE)
+      return(invisible())
+    }
+    .ret[[length(.ret) + 1L]] <<- .e
   }
   .isMultiPrior <- function(txt) {
     .fn <- try(str2lang(txt)[[1]], silent=TRUE)

@@ -1196,6 +1196,13 @@ NULL
     .attr <- attributes(ret)
     ret <- .mats
     attributes(ret) <- .attr
+    ## the list itself has to be a `lotriFix` as well, or `as.expression()`
+    ## and `print()` dispatch to the default methods and the priors are
+    ## never shown
+    if (any(vapply(.pri, function(p) any(!is.na(p)), logical(1))) &&
+          !inherits(ret, "lotriFix")) {
+      class(ret) <- c("lotriFix", class(ret))
+    }
   } else {
     ret <- .mats[[1]]
   }

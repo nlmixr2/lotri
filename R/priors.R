@@ -184,8 +184,8 @@ lotriPriorDists <- function() {
   if (length(.w) == 1L) return(.lotriDistTable[.w, ])
   .w <- which(.lotriDistTable$stanName == nm)
   if (length(.w) == 1L) return(.lotriDistTable[.w, ])
-  .w <- which(!is.na(.lotriDistTable$rName) & .lotriDistTable$rName == nm)
-  if (length(.w) == 1L) return(.lotriDistTable[.w, ])
+  ## the R name needs no branch of its own: it *is* the canonical `name`
+  ## whenever there is one, so it was matched first
   NULL
 }
 
@@ -242,11 +242,11 @@ lotriPriorDists <- function() {
     .out[[.w]] <- argList[[.i]]
     .used[.w] <- TRUE
   }
+  ## every unnamed argument has a free slot to go in: the count was
+  ## already checked against `.nPar` above, and each name consumed one of
+  ## each, so `length(.pos) <= length(.free)` always holds here
   .free <- which(!.used)
   .pos <- which(!nzchar(.argNames))
-  if (length(.pos) > length(.free)) {
-    stop("too many arguments given to '", distName, "'", call.=FALSE)
-  }
   for (.j in seq_along(.pos)) {
     .out[[.free[.j]]] <- argList[[.pos[.j]]]
     .used[.free[.j]] <- TRUE
@@ -257,16 +257,9 @@ lotriPriorDists <- function() {
     stop("'", distName, "' is missing argument(s): ",
          paste(.miss, collapse=", "), call.=FALSE)
   }
-  ## an optional argument may only be left off the end, otherwise the
-  ## positional meaning of what follows it would be ambiguous
+  ## every optional parameter is a trailing one, so dropping the unused
+  ## slots keeps the remaining ones in their positional order
   if (.nPar > nReq) {
-    .have <- which(.used)
-    if (length(.have) > 0L && !identical(as.integer(.have),
-                                         seq_len(max(.have)))) {
-      stop("'", distName, "' cannot skip the argument(s) ",
-           paste(parNames[setdiff(seq_len(max(.have)), .have)], collapse=", "),
-           " while giving a later one", call.=FALSE)
-    }
     .out <- .out[.used]
   }
   .out

@@ -798,6 +798,266 @@ test_that("every Stan and camelCase spelling normalizes to the canonical one", {
   }
 })
 
+test_that("the distribution name helpers behave", {
+
+  .camel <- lotri:::.lotriSnakeToCamel
+
+  expect_equal(.camel("inv_wishart"), "invWishart")
+  expect_equal(.camel("scaled_inv_chi_square"), "scaledInvChiSquare")
+  expect_equal(.camel("neg_binomial_2"), "negBinomial2")
+  ## a name with no underscore is unchanged
+  expect_equal(.camel("gumbel"), "gumbel")
+  expect_equal(.camel(c("std_normal", "normal")), c("stdNormal", "normal"))
+
+  .look <- lotri:::.lotriPriorLookup
+
+  ## each of the four spellings finds the same row
+  expect_equal(.look("dnorm")$stanName, "normal")
+  expect_equal(.look("normal")$stanName, "normal")
+  expect_equal(.look("invWishart")$stanName, "inv_wishart")
+  expect_equal(.look("inv_wishart")$stanName, "inv_wishart")
+  expect_null(.look("notADistribution"))
+
+  .sug <- lotri:::.lotriPriorSuggest
+
+  ## a near miss suggests, something unrecognisable does not
+  expect_true(grepl("did you mean", .sug("dnorml")))
+  expect_equal(.sug("zzzzzzzzzzqqqqqq"), "")
+})
+
+test_that("the prior family classifier separates the omega prior forms", {
+
+  .fam <- lotri:::.lotriPriorFamily
+
+  expect_equal(.fam("invWishart(4)"), "wishart")
+  expect_equal(.fam("wishart(4)"), "wishart")
+  expect_equal(.fam("dnorm(0, 1)"), "normal")
+  expect_equal(.fam("stdNormal()"), "normal")
+  expect_equal(.fam("multiNormal(0, 1)"), "normal")
+  ## anything else is neither, and so never trips the both check
+  expect_equal(.fam("dgamma(2, 1)"), "other")
+  expect_equal(.fam("lkjCorr(2)"), "other")
+  ## an unparsable or unknown prior is not silently a family
+  expect_equal(.fam("this is not a call("), "other")
+  expect_equal(.fam("notADistribution(1)"), "other")
+  expect_true(is.na(.fam(NA_character_)))
+})
+
+test_that("malformed prior calls are rejected", {
+
+  ## a distribution given as a bare name is called with no arguments
+  expect_equal(lotriEst(lotri({ tka <- 1; prior(tka) ~ stdNormal }))$prior,
+               "stdNormal()")
+
+  ## something that is not a call at all
+  expect_error(lotri({ tka <- 1; prior(tka) ~ 1 }))
+
+  ## a namespaced call is not a distribution name
+  expect_error(lotri({ tka <- 1; prior(tka) ~ stats::dnorm(0, 1) }))
+
+  ## the same argument given twice
+  expect_error(lotri({ tka <- 1; prior(tka) ~ dnorm(mean=0, mean=1) }))
+
+  ## a multivariate prior needs more than one parameter
+  expect_error(lotri({ tka <- 1; prior(tka) ~ multiNormal(0, 1) }),
+               "more than one parameter")
+
+  ## unit support conflicts with a parameter bounded outside [0, 1]
+  expect_error(lotri({ tka <- c(0, 1, 10); prior(tka) ~ dbeta(2, 2) }),
+               "0, 1")
+})
+
+test_that("priors work on conditioned (IOV) models", {
+
+  ## the omega is a list of matrices here rather than one matrix, which
+  ## is the path a model with an occasion level takes
+  m <- lotri({
+    eta.cl ~ 0.3
+    iov.cl ~ 0.1 | occ
+    prior(eta.cl) ~ dgamma(2, 1)
+  })
+
+  expect_true(inherits(m, "lotri") || inherits(m, "list"))
+  ## the prior landed on the id level matrix, not the occasion one
+  expect_equal(attr(m$id, "lotriPriors"), "dgamma(2, 1)")
+  expect_null(attr(m$occ, "lotriPriors"))
+
+  ## and it renders for the list form too
+  .l <- vapply(as.list(as.expression(m)[[2]])[-1],
+               function(x) paste(deparse(x), collapse=" "), character(1),
+               USE.NAMES=FALSE)
+  expect_true("prior(eta.cl) ~ dgamma(2, 1)" %in% .l)
+})
+
+test_that("labels and priors survive a repeated matrix", {
+
+  ## `list(mat, n)` repeats a block, and the per parameter character
+  ## attributes have to be repeated with it
+  .m <- lotri({ a + b ~ c(1, 0.1, 1) })
+  attr(.m, "lotriLabels") <- c("La", "Lb")
+  attr(.m, "lotriPriors") <- c("dgamma(1, 1)", NA_character_)
+  class(.m) <- c("lotriFix", class(.m))
+
+  .r <- lotriMat(list(list(.m, 2)), format="ETA[%d]", start=1L)
+
+  expect_equal(dim(.r)[1], 4L)
+  expect_equal(attr(.r, "lotriLabels"), c("La", "Lb", "La", "Lb"))
+  expect_equal(attr(.r, "lotriPriors"),
+               c("dgamma(1, 1)", NA, "dgamma(1, 1)", NA))
+})
+
+test_that("the prior parsing helpers handle the odd shapes", {
+
+  .lhs <- lotri:::.lotriTildeLhsNames
+
+  expect_equal(.lhs(quote(a)), "a")
+  expect_equal(.lhs(quote(a + b + c)), c("a", "b", "c"))
+  ## anything that is not a name or a sum of names has no names
+  expect_null(.lhs(quote(f(a))))
+  expect_null(.lhs(quote(a + f(b))))
+  expect_null(.lhs(quote(1)))
+
+  .whole <- lotri:::.lotriIsWholeOmegaPriorLine
+
+  expect_true(.whole(quote(~invWishart(4))))
+  expect_false(.whole(quote(~c(40))))
+  ## a namespaced call is not a distribution name
+  expect_false(.whole(quote(~stats::rnorm(1))))
+  expect_false(.whole(quote(~a)))
+  expect_false(.whole(quote(a ~ 1)))
+
+  .blk <- lotri:::.lotriBlockIndexes
+  .m <- lotri({ a + b ~ c(1, 0.1, 1); d ~ 1 })
+  ## starting anywhere in a block finds the whole block, including
+  ## extending left from the end of it
+  expect_equal(.blk(.m, 1), 1:2)
+  expect_equal(.blk(.m, 2), 1:2)
+  expect_equal(.blk(.m, 3), 3L)
+
+  .are <- lotri:::.lotriNamesAreBlock
+  expect_true(.are(.m, c("a", "b")))
+  expect_false(.are(.m, c("a", "d")))
+  ## a name that is not in the matrix at all
+  expect_false(.are(.m, c("a", "nope")))
+
+  .strip <- lotri:::.lotriStripOm
+  expect_equal(.strip(c("om.a", "om.b")), c("a", "b"))
+  expect_null(.strip(c("om.a", "b")))
+  expect_null(.strip("a"))
+  ## `om.` on its own is not a name
+  expect_null(.strip("om."))
+})
+
+test_that("prior() argument validation", {
+
+  ## a quoted name works the same as a bare one
+  expect_equal(lotriEst(lotri({ tka <- 1; prior("tka") ~ dnorm(0, 10) }))$prior,
+               "dnorm(0, 10)")
+
+  ## anything that is not a parameter name is rejected.  These are
+  ## reported per line and then re-thrown as the generic "lotri syntax
+  ## errors above", so the message itself is not matched here
+  expect_error(lotri({ tka <- 1; prior(f(tka)) ~ dnorm(0, 10) }))
+  expect_error(lotri({ tka <- 1; prior(1) ~ dnorm(0, 10) }))
+
+  ## naming the same parameter twice in one prior
+  expect_error(lotri({
+    tka <- 1
+    tcl <- 2
+    prior(tka, tka) ~ multiNormal(0, lotri(tka + tcl ~ c(1, 0.1, 1)))
+  }))
+
+  ## and an empty prior()
+  expect_error(lotri({ tka <- 1; prior() ~ dnorm(0, 10) }))
+})
+
+test_that("deparsing tolerates a prior it cannot parse", {
+
+  ## a hand mangled prior must not stop the object printing; it is
+  ## simply not treated as a multivariate one
+  m <- lotri({ tka <- 1; tcl <- 2; prior(tka) ~ dnorm(0, 10) })
+  .e <- lotriEst(m)
+  .e$prior[1] <- "this is not a call("
+  attr(m, "lotriEst") <- .e
+
+  ## it warns and leaves that prior out rather than refusing to print
+  expect_warning(as.expression(m), "cannot deparse")
+  .e <- suppressWarnings(as.expression(m))
+  .l <- vapply(as.list(.e[[2]])[-1],
+               function(x) paste(deparse(x), collapse=" "), character(1),
+               USE.NAMES=FALSE)
+  expect_false(any(grepl("prior(", .l, fixed=TRUE)))
+  ## the rest of the block is still there
+  expect_true("tka <- 1" %in% .l)
+})
+
+test_that("two priors reaching the same parameter is an error", {
+
+  ## the same parameter named by two different prior statements, so the
+  ## duplicate is only found once they are resolved
+  expect_error(lotri({
+    tka <- 1
+    tcl <- 2
+    prior(tka, tcl) ~ multiNormal(0, lotri(tka + tcl ~ c(1, 0.1, 1)))
+    prior(tka) ~ dnorm(0, 10)
+  }), "more than one prior")
+
+  expect_error(lotri({
+    eta.a + eta.b ~ c(1,
+                      0.1, 1)
+    prior(eta.a, eta.b) ~ lkjCorr(2)
+    prior(eta.a) ~ dgamma(1, 1)
+  }), "more than one prior")
+})
+
+test_that("an older seven column lotriEst still concatenates", {
+
+  ## a `lotriEst` built before the prior column existed has to keep
+  ## working when blocks are combined, since the C code reads it
+  ## positionally
+  .a <- lotri({ tka <- 1; e1 ~ 0.1 })
+  .old <- lotriEst(.a)
+  .old$prior <- NULL
+  expect_equal(length(.old), 7L)
+  attr(.a, "lotriEst") <- .old
+
+  .b <- lotri({ tcl <- 2; e2 ~ 0.2 })
+
+  .r <- lotriMat(list(.a, .b))
+  .est <- attr(.r, "lotriEst")
+
+  ## the merged frame has the column, filled in as NA for the old block
+  expect_true(any(names(.est) == "prior"))
+  expect_equal(.est$name, c("tka", "tcl"))
+  expect_true(is.na(.est$prior[1]))
+})
+
+test_that("printing shows the priors on a matrix", {
+
+  m <- lotri({
+    eta.cl + eta.v ~ c(0.1,
+                       0.01, 0.2)
+    prior(eta.cl, eta.v) ~ invWishart(4)
+  })
+
+  .out <- paste(capture.output(print(m)), collapse="\n")
+  expect_true(grepl("prior distributions", .out, fixed=TRUE))
+  expect_true(grepl("invWishart(4)", .out, fixed=TRUE))
+  ## and the attribute is not dumped raw underneath the matrix
+  expect_false(grepl("attr(,\"lotriPriors\")", .out, fixed=TRUE))
+
+  ## a model with estimates as well still prints both parts
+  m2 <- lotri({
+    tka <- 1
+    eta.ka ~ 0.3
+    prior(tka) ~ dnorm(0, 10)
+    prior(eta.ka) ~ dgamma(2, 1)
+  })
+  .out2 <- paste(capture.output(print(m2)), collapse="\n")
+  expect_true(grepl("dnorm(0, 10)", .out2, fixed=TRUE))
+  expect_true(grepl("dgamma(2, 1)", .out2, fixed=TRUE))
+})
+
 test_that("labels follow the matrix when rcm re-orders it", {
 
   ## regression: the labels used to stay in parse order while the
