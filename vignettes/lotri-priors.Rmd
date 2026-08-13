@@ -323,3 +323,20 @@ lotriPriorDists()$stanName[lotriPriorDists()$name == .fn]
 ```
 
 which is enough to write `target += normal_lpdf(tka | 0, 10);`.
+
+## A prior must never be silently ignored
+
+The one thing a consumer of this column must *not* do is skip it.  If a
+method cannot use a prior, quietly ignoring it means the fit does something
+other than what the model says, with nothing to tell the user.  A prior that
+is present should either be used or be an error.
+
+`rxode2` provides the assertions for this, so an estimation method can
+declare what it supports in one line:
+
+- `assertRxUiNoPriors()` for a method that cannot use priors at all
+- `assertRxUiNormalPriors()` for a method that supports priors, but only
+  normal ones
+
+Note that these live in `rxode2` rather than here, because what counts as
+supported is a property of the estimation method, not of the specification.
