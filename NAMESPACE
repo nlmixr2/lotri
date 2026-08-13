@@ -21,11 +21,14 @@ export(lotriIsBlockMat)
 export(lotriMat)
 export(lotriMatInv)
 export(lotriNearPD)
+export(lotriPriorDists)
 export(lotriSep)
 export(rcm)
 importFrom(methods,is)
 importFrom(stats,setNames)
-importFrom(utils,.DollarNames)
-importFrom(utils,assignInMyNamespace)
-importFrom(utils,str)
+importFrom(utils,
+  .DollarNames,
+  assignInMyNamespace,
+  str
+)
 useDynLib(lotri, .registration = TRUE)

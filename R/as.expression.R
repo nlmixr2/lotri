@@ -304,6 +304,56 @@ lotriDataFrameToLotriExpression <- function(data, useIni=FALSE) { # nolint
   as.expression(.l, useIni=useIni)
 }
 
+#' Build the `prior(name) ~ dist(...)` lines
+#'
+#' Priors are emitted as a trailing group, which is safe because the
+#' syntax names its target and is therefore order independent.
+#'
+#' @param est `lotriEst` data frame (may be NULL)
+#' @param mat matrix or list of matrices (may be NULL)
+#' @return list of quoted prior lines
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriGetPriorLines <- function(est, mat) {
+  .ret <- list()
+  .add <- function(nms, txt) {
+    .ret[[length(.ret) + 1L]] <<-
+      str2lang(paste0("prior(", paste(nms, collapse=", "), ") ~ ", txt))
+  }
+  if (!is.null(est) && any(names(est) == "prior")) {
+    for (.i in seq_along(est$name)) {
+      if (!is.na(est$prior[.i])) .add(est$name[.i], est$prior[.i])
+    }
+  }
+  .mats <- NULL
+  if (is.matrix(mat)) {
+    .mats <- list(mat)
+  } else if (inherits(mat, "list") || inherits(mat, "lotri")) {
+    .mats <- as.list(mat)
+  }
+  for (.m in .mats) {
+    if (!is.matrix(.m)) next
+    .p <- attr(.m, "lotriPriors")
+    if (is.null(.p)) next
+    .dn <- dimnames(.m)[[1]]
+    for (.i in seq_along(.p)) {
+      if (is.na(.p[.i])) next
+      .nms <- .dn[.i]
+      .fn <- try(str2lang(.p[.i])[[1]], silent=TRUE)
+      if (!inherits(.fn, "try-error")) {
+        .dist <- .lotriPriorLookup(as.character(.fn))
+        if (!is.null(.dist) && .dist$kind %in% c("matrix", "multivariate")) {
+          ## a block prior is stored on the first diagonal of the block,
+          ## so recover the rest of the block for the round trip
+          .nms <- .dn[.lotriBlockIndexes(.m, .i)]
+        }
+      }
+      .add(.nms, .p[.i])
+    }
+  }
+  .ret
+}
+
 #' @export
 as.expression.lotriFix <- function(x, ...) {
   .lst <- list(...)
@@ -321,14 +371,17 @@ as.expression.lotriFix <- function(x, ...) {
   .mat <- .l
   attr(.mat, "lotriEst") <- NULL
   class(.mat) <- NULL
+  .priorLines <- .lotriGetPriorLines(.est, .mat)
   if (!.lst$plusNames) {
     as.call(list(ifelse(.lst$useIni, quote(`ini`), quote(`lotri`)),
                  as.call(c(list(quote(`{`)), .lotriGetPopLinesFromDf(.est),
-                           .lotriGetEtaLineForm(.mat, nameEst=.lst$nameEst)))))
+                           .lotriGetEtaLineForm(.mat, nameEst=.lst$nameEst),
+                           .priorLines))))
   } else {
     as.call(list(ifelse(.lst$useIni, quote(`ini`), quote(`lotri`)),
                  as.call(c(list(quote(`{`)), .lotriGetPopLinesFromDf(.est),
-                           .lotriGetEtaMatEltPlusForm(.mat)))))
+                           .lotriGetEtaMatEltPlusForm(.mat),
+                           .priorLines))))
   }
 }
 

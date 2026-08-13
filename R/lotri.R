@@ -766,6 +766,181 @@ NULL
     .fcallTildeLhsSum(x, env)
   }
 }
+#' Is this expression a `prior(name) ~ dist(...)` line?
+#'
+#' @param x language object to test
+#' @return TRUE when this is a prior specification line
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriIsPriorLine <- function(x) {
+  is.call(x) && length(x) == 3L &&
+    identical(x[[1]], quote(`~`)) &&
+    is.call(x[[2]]) && identical(x[[2]][[1]], quote(`prior`))
+}
+
+#' Collect a `prior(name) ~ dist(...)` line
+#'
+#' The prior is validated here (so syntax errors are reported with the
+#' line they occurred on) but it is *resolved* against the parameters
+#' later, once the matrix and any `rcm` re-ordering are complete.
+#'
+#' @param x language object of the prior line
+#' @param env parsing environment
+#' @return nothing, called for the side effect on `env$priors`
+#' @noRd
+#' @author Matthew L. Fidler
+.fCallPrior <- function(x, env) {
+  .lhs <- as.list(x[[2]])[-1]
+  if (length(.lhs) == 0L) {
+    stop("'prior()' requires at least one parameter name", call.=FALSE)
+  }
+  .nm <- vapply(.lhs, function(y) {
+    if (is.name(y)) return(as.character(y))
+    if (is.character(y) && length(y) == 1L) return(y)
+    stop("'prior()' arguments must be parameter names, not '",
+         .deparse1(y), "'", call.=FALSE) # nolint
+  }, character(1), USE.NAMES=FALSE)
+  .dup <- unique(.nm[duplicated(.nm)])
+  if (length(.dup) > 0) {
+    stop("duplicated parameter(s) in 'prior()': '", paste(.dup, collapse="', '"), "'",
+         call.=FALSE)
+  }
+  env$priors <- c(env$priors,
+                  list(list(names=.nm, info=.lotriPriorNormalize(x[[3]]))))
+  invisible()
+}
+
+#' Do these names make up exactly one covariance block of `mat`?
+#'
+#' @param mat matrix to check
+#' @param nms character vector of names
+#' @return boolean
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriNamesAreBlock <- function(mat, nms) {
+  .dn <- dimnames(mat)[[1]]
+  .i <- match(nms, .dn)
+  if (anyNA(.i)) return(FALSE)
+  .i <- sort(.i)
+  ## the names have to be *exactly* one block; a set of unconnected
+  ## diagonal elements is a set of 1x1 blocks, not a single block
+  identical(as.integer(.lotriBlockIndexes(mat, .i[1])), as.integer(.i))
+}
+
+#' Indexes of the covariance block containing element `i`
+#'
+#' @param mat matrix to examine
+#' @param i index of an element in the block
+#' @return integer vector of the indexes making up the block
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriBlockIndexes <- function(mat, i) {
+  .n <- dim(mat)[1]
+  .lo <- i
+  .hi <- i
+  repeat {
+    .changed <- FALSE
+    if (.lo > 1L && any(mat[seq(.lo, .hi), .lo - 1L] != 0)) {
+      .lo <- .lo - 1L
+      .changed <- TRUE
+    }
+    if (.hi < .n && any(mat[seq(.lo, .hi), .hi + 1L] != 0)) {
+      .hi <- .hi + 1L
+      .changed <- TRUE
+    }
+    if (!.changed) break
+  }
+  seq(.lo, .hi)
+}
+
+#' Resolve the collected priors against the estimates and matrices
+#'
+#' Priors are matched by *name* (never by position) so that they are
+#' unaffected by any `rcm` re-ordering of the matrix.  Priors on
+#' population estimates become the `prior` column of the `lotriEst`
+#' data frame; priors on etas (and on covariance blocks) become the
+#' `lotriPriors` attribute of the matrix they belong to, stored on the
+#' first diagonal element of the block.
+#'
+#' @param ret matrix or list of matrices
+#' @param est `lotriEst` data frame (may be NULL)
+#' @param priors list collected by `.fCallPrior()`
+#' @return list with the amended `ret` and `est`
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriResolvePriors <- function(ret, est, priors) {
+  if (length(priors) == 0L) return(list(ret=ret, est=est))
+  .isList <- !is.matrix(ret) && (inherits(ret, "list") || inherits(ret, "lotri"))
+  .mats <- if (.isList) as.list(ret) else list(ret)
+  .pri <- lapply(.mats, function(m) {
+    if (!is.matrix(m)) return(character(0))
+    rep(NA_character_, dim(m)[1])
+  })
+  .seen <- character(0)
+  for (.p in priors) {
+    .nm <- .p$names
+    .info <- .p$info
+    .key <- paste(sort(.nm), collapse=",")
+    if (.key %in% .seen) {
+      stop("more than one prior given for '", paste(.nm, collapse=", "), "'",
+           call.=FALSE)
+    }
+    .seen <- c(.seen, .key)
+    if (!is.null(est) && all(.nm %in% est$name)) {
+      .w <- match(.nm, est$name)
+      .lotriPriorCheckTarget(.info, .nm, est$lower[.w], est$upper[.w], isBlock=FALSE)
+      if (!is.na(est$prior[.w])) {
+        stop("more than one prior given for '", .nm, "'", call.=FALSE)
+      }
+      est$prior[.w] <- .info$text
+      next
+    }
+    .found <- FALSE
+    for (.k in seq_along(.mats)) {
+      .m <- .mats[[.k]]
+      if (!is.matrix(.m)) next
+      .dn <- dimnames(.m)[[1]]
+      if (is.null(.dn) || !all(.nm %in% .dn)) next
+      .isBlock <- length(.nm) > 1L
+      if (.isBlock && !.lotriNamesAreBlock(.m, .nm)) {
+        stop("'", paste(.nm, collapse=", "),
+             "' is not a single covariance block, so it cannot share a prior",
+             call.=FALSE)
+      }
+      .lotriPriorCheckTarget(.info, .nm, isBlock=.isBlock)
+      .at <- min(match(.nm, .dn))
+      if (!is.na(.pri[[.k]][.at])) {
+        stop("more than one prior given for '", paste(.nm, collapse=", "), "'",
+             call.=FALSE)
+      }
+      .pri[[.k]][.at] <- .info$text
+      .found <- TRUE
+      break
+    }
+    if (!.found) {
+      stop("prior given for unknown parameter(s): '",
+           paste(.nm, collapse="', '"), "'", call.=FALSE)
+    }
+  }
+  for (.k in seq_along(.mats)) {
+    if (all(is.na(.pri[[.k]]))) next
+    .m <- .mats[[.k]]
+    attr(.m, "lotriPriors") <- .pri[[.k]]
+    if (!inherits(.m, "lotriFix")) {
+      class(.m) <- c("lotriFix", class(.m))
+    }
+    .mats[[.k]] <- .m
+  }
+  if (.isList) {
+    .attr <- attributes(ret)
+    ret <- .mats
+    attributes(ret) <- .attr
+  } else {
+    ret <- .mats[[1]]
+  }
+  list(ret=ret, est=est)
+}
+
 #' This handles the `~` operator in the lotri DSL.
 #'
 #'
@@ -775,7 +950,12 @@ NULL
 #' @noRd
 #' @author Matthew L. Fidler
 .fCall <- function(x, env) {
-  if (identical(x[[1]], quote(`~`))) {
+  if (.lotriIsPriorLine(x)) {
+    ## Note this is checked *before* the `~` branch below so that
+    ## `.lotriEnv$lastTilde` is not changed; otherwise a `label()`
+    ## following a prior would be applied to the last matrix row.
+    .fCallPrior(x, env)
+  } else if (identical(x[[1]], quote(`~`))) {
     .lotriEnv$lastTilde <- TRUE
     .fCallTilde(x, env)
   } else if (identical(x[[1]], quote(`{`))) {
@@ -1150,10 +1330,16 @@ NULL
   dimnames(.retU) <- list(env$names, env$names)
   if (is.logical(env$rcm) && env$rcm && .n >= 1 &&
         !lotriIsBlockMat(.ret)) { # nolint
+    .old <- env$names
     .ret <- rcm(.ret) # nolint
     env$names <- dimnames(.ret)[[1]]
     .retF <- .retF[env$names, env$names]
     .retU <- .retU[env$names, env$names]
+    ## the labels are stored in parse order, so they have to follow the
+    ## permutation too (otherwise they end up on the wrong parameter)
+    if (!is.null(env$labels)) {
+      env$labels <- env$labels[match(env$names, .old)]
+    }
   }
   if (env$isCov) {
     .assertErrZeroDiag(.ret, cnd)
@@ -1394,6 +1580,7 @@ NULL
 #'   elements `ret` (the resulting matrix or list of matrices), `est`
 #'   (data frame of fixed estimates), and `done` (boolean indicating
 #'   if the evaluation is complete).
+#' @noRd
 #' @author Matthew L. Fidler
 .lotriExprResult <- function(sX, cov, rcm, fun, default, call, envir) {
   .env <- new.env(parent = emptyenv())
@@ -1413,7 +1600,8 @@ NULL
   .f(sX, .env)
   .printErr(.env) # nolint
   if (!is.null(.env$matrix)) {
-    return(list(ret=.env$matrix, est=.est, done=TRUE))
+    .res <- .lotriResolvePriors(.env$matrix, .est, .env$priors)
+    return(list(ret=.res$ret, est=.res$est, done=TRUE))
   }
   if (length(.env$cnd) == 0L) {
     .ret <- .lotriGetMatrixFromEnv(.env, fun=.env$fun)
@@ -1422,7 +1610,10 @@ NULL
     .ret <- .lotriExprCnd(.env, call, cov, rcm, default, envir)
     .done <- TRUE
   }
-  list(ret=.ret, est=.est, done=.done)
+  ## resolved last so that priors are matched by name against the
+  ## final (possibly `rcm` re-ordered) matrix
+  .res <- .lotriResolvePriors(.ret, .est, .env$priors)
+  list(ret=.res$ret, est=.res$est, done=.done)
 }
 #' Finalize the lotri expression result
 #'
@@ -1621,6 +1812,29 @@ NULL
 #'  The matrices are concatenated into a block diagonal matrix, like
 #'  \code{\link[Matrix]{bdiag}}, but allows expressions to specify
 #'  matrices easier.
+#'
+#'  Population estimates can be given with
+#'
+#'  name <- estimate
+#'
+#'  or with bounds, \code{name <- c(lower, estimate, upper)}
+#'
+#'  A prior distribution can be put on any of these with
+#'
+#'  prior(name) ~ dist(...)
+#'
+#'  Since the statement names what it applies to, prior lines can be
+#'  put anywhere in the block.  A prior can be given for a population
+#'  estimate, for a single eta, or for a whole covariance block:
+#'
+#'  prior(eta1, eta2) ~ lkj_corr(2)
+#'
+#'  The distributions understood are listed by
+#'  \code{\link{lotriPriorDists}}; the R name is used when R
+#'  parameterizes the distribution the same way 'Stan' does and the
+#'  'Stan' name otherwise.  Bounds are not repeated in the prior; a
+#'  parameter declared as \code{c(0, 1)} with a \code{dcauchy(0, 5)}
+#'  prior is a half-Cauchy.
 #'
 #'
 #' @examples

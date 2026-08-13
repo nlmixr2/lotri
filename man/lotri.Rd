@@ -69,6 +69,29 @@ This can take an R matrix, a list including matrices or
  The matrices are concatenated into a block diagonal matrix, like
  \code{\link[Matrix]{bdiag}}, but allows expressions to specify
  matrices easier.
+
+ Population estimates can be given with
+
+ name <- estimate
+
+ or with bounds, \code{name <- c(lower, estimate, upper)}
+
+ A prior distribution can be put on any of these with
+
+ prior(name) ~ dist(...)
+
+ Since the statement names what it applies to, prior lines can be
+ put anywhere in the block.  A prior can be given for a population
+ estimate, for a single eta, or for a whole covariance block:
+
+ prior(eta1, eta2) ~ lkj_corr(2)
+
+ The distributions understood are listed by
+ \code{\link{lotriPriorDists}}; the R name is used when R
+ parameterizes the distribution the same way 'Stan' does and the
+ 'Stan' name otherwise.  Bounds are not repeated in the prior; a
+ parameter declared as \code{c(0, 1)} with a \code{dcauchy(0, 5)}
+ prior is a half-Cauchy.
 }
 \examples{
 

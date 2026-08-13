@@ -1,3 +1,53 @@
+# lotri 1.0.6 (development)
+
+## New features
+
+* Prior distributions can now be specified in a `lotri({})` (and
+  therefore `ini({})`) block with `prior(name) ~ dist(...)`, ie:
+
+```r
+lotri({
+  tka <- 0.45
+  tcl <- c(0, 1, 10)
+  eta.cl + eta.v ~ c(0.1,
+                     0.01, 0.2)
+  prior(tka) ~ dnorm(0, 10)
+  prior(tcl) ~ dlnorm(1, 0.5)
+  prior(eta.cl, eta.v) ~ lkj_corr(2)
+})
+```
+
+  Because the statement names its target, prior lines may be given
+  anywhere in the block.  Priors may be put on population estimates,
+  on individual etas, and on whole covariance blocks (with the
+  matrix-valued distributions like `lkj_corr()` and `inv_wishart()`).
+
+  The R spelling of a distribution is used whenever R parameterizes it
+  the same way 'Stan' does (`dnorm()`, `dlnorm()`, `dgamma()`, ...);
+  the 'Stan' spelling is also accepted and is the canonical name when
+  there is no faithful R equivalent (`student_t()`, `lkj_corr()`,
+  `inv_wishart()`, ...).  Both positional and named arguments work.
+  `lotri` validates the distribution name, its arity, and its support
+  against the parameter's bounds; it does not generate any 'Stan' code.
+
+* Added `lotriPriorDists()` which returns the table of supported
+  distributions (including the 'Stan' name for each), so that
+  downstream packages can generate the corresponding 'Stan' code.
+
+* The `lotriEst` data frame and `as.data.frame()` output gained a
+  `prior` column.
+
+## Bug fixes
+
+* Labels now follow the matrix when `rcm=TRUE` re-orders it.
+  Previously the labels stayed in the order they were parsed in while
+  the matrix was permuted, so they were applied to the wrong
+  parameters.
+
+* `lotriLabels` are no longer dropped when matrices are combined (ie
+  `lotri(mat1, mat2)` or `lotriMat()`); they are now concatenated in C
+  along with the matrix itself.
+
 # lotri 1.0.5
 
 * Fixed rchk issues and small bugs found while linting

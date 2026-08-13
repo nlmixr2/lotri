@@ -4,6 +4,8 @@
   .env <- new.env(parent=emptyenv())
   .env$eta1 <- eta1
   if (inherits(mat, "matrix")) {
+    .priors <- attr(mat, "lotriPriors")
+    .matNames <- dimnames(mat)[[1]]
     .lst2 <- lotriMatInv(mat) # nolint
     for (.i in seq_along(.lst2)) {
       .curMat <- .lst2[[.i]]
@@ -24,6 +26,12 @@
           } else {
             .fix <- FALSE
           }
+          .curPrior <- NA_character_
+          if (.j == .k && !is.null(.priors)) {
+            ## priors are matched by name so they survive `rcm`
+            .wp <- match(.n[.j], .matNames)
+            if (!is.na(.wp)) .curPrior <- .priors[.wp]
+          }
           .df3 <- rbind(.df3,
                         data.frame(ntheta=NA_integer_,
                                    neta1=.env$eta1 + .j - 1,
@@ -35,6 +43,7 @@
                                    fix=.fix,
                                    label=NA_integer_,
                                    backTransform=NA_character_,
+                                   prior=.curPrior,
                                    condition=default))
         }
       }
@@ -80,7 +89,11 @@ as.data.frame.lotriFix <- function(x, row.names = NULL, optional = FALSE, ...,
                       .ret
                     }))
   }
-  .ord <- c("ntheta", "neta1", "neta2", "name", "lower", "est", "upper", "fix", "label", "backTransform", "condition")
+  .ord <- c("ntheta", "neta1", "neta2", "name", "lower", "est", "upper", "fix", "label", "backTransform", "condition", "prior")
+  if (!is.null(.df) && !any(names(.df) == "prior")) {
+    ## `rep()` so that a zero row estimate frame stays zero row
+    .df$prior <- rep(NA_character_, nrow(.df))
+  }
   .df <- rbind(.df, .df3)
   if (length(.df) == 0) {
     return(data.frame(ntheta=integer(0),
@@ -93,7 +106,8 @@ as.data.frame.lotriFix <- function(x, row.names = NULL, optional = FALSE, ...,
                       fix=numeric(0),
                       label=character(0),
                       backTransform=character(0),
-                      condition=character(0)))
+                      condition=character(0),
+                      prior=character(0)))
   }
   if (!is.null(attr(x, "lotriLabels"))) {
     .lab <- attr(x, "lotriLabels")

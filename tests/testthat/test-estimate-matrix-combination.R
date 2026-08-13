@@ -29,7 +29,8 @@ test_that("Combined estimates and matrix", {
                               upper = c(Inf, 2, Inf, 2, 2),
                               fix = c(FALSE, FALSE, TRUE, TRUE, TRUE),
                               label = c("a label",NA, NA, NA, NA),
-                              backTransform = c("exp", NA, NA, NA, NA)),
+                              backTransform = c("exp", NA, NA, NA, NA),
+                              prior = rep(NA_character_, 5)),
                          row.names = c(NA,-5L), class = "data.frame"))
   fix2 <- fix1
   attr(fix2, "lotriEst") <- NULL
@@ -51,7 +52,8 @@ test_that("Combined estimates and matrix", {
                               upper = Inf,
                               fix = FALSE,
                               label = "matt",
-                              backTransform = "exp"),
+                              backTransform = "exp",
+                              prior = NA_character_),
                          row.names = c(NA, -1L),
                          class = "data.frame"))
   

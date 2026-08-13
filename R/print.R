@@ -21,6 +21,7 @@ print.lotriFix <- function(x, ...) {
     .lotriUnfix <- attr(.tmp, "lotriUnfix")
     .lotriEst <- attr(.tmp, "lotriEst")
     .lotriLabels <- attr(.tmp, "lotriLabels")
+    .lotriPriors <- attr(.tmp, "lotriPriors")
     if (all(.dim == 0L) && !is.null(.lotriEst)) {
       cat("Lotri Estimates (get with `lotriEst()`):\n")
       print(.lotriEst)
@@ -30,6 +31,7 @@ print.lotriFix <- function(x, ...) {
     attr(.tmp, "lotriEst") <- NULL
     attr(.tmp, "lotriUnfix") <- NULL
     attr(.tmp, "lotriLabels") <- NULL
+    attr(.tmp, "lotriPriors") <- NULL
     .w <- which(.cls == "lotriFix")
     .cls <- .cls[-.w]
     class(.tmp) <- NULL # Note that a matrix doesn't actually have a class
@@ -49,6 +51,11 @@ print.lotriFix <- function(x, ...) {
       print(.lotriLabels)
       cat("\n")
     }
+    if (!is.null(.lotriPriors)) {
+      cat("\nThis matrix has prior distributions:\n")
+      print(.lotriPriors)
+      cat("\n")
+    }
   } else {
     ## lotri or list
     .lotriEst <- attr(x, "lotriEst")
@@ -60,6 +67,7 @@ print.lotriFix <- function(x, ...) {
     y <- x
     attr(y, "lotriEst") <- NULL
     attr(y, "lotriLabels") <- NULL
+    attr(y, "lotriPriors") <- NULL
     .cls <- class(y)
     .cls <- .cls[.cls != "lotriFix"]
     class(y) <- .cls

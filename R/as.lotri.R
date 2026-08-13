@@ -55,6 +55,17 @@ as.lotri.matrix <- function(x, ..., default = "") {
     attr(.mat, "lotriLabels") <- .labels
     .hasLab <- TRUE
   }
+  if (any(names(x) == "prior")) {
+    x$prior <- as.character(x$prior)
+    .priors <- vapply(seq_len(dim(.mat)[1]),
+                      function(.i) {
+                        x$prior[x$neta1 == .i & x$neta2 == .i]
+                      }, character(1), USE.NAMES = FALSE)
+    if (!all(is.na(.priors))) {
+      attr(.mat, "lotriPriors") <- .priors
+      .hasLab <- TRUE
+    }
+  }
   if (any(.matF) || .hasLab) {
     attr(.mat, "lotriFix") <- .matF
     class(.mat) <- c("lotriFix", class(.mat))
@@ -71,8 +82,14 @@ as.lotri.data.frame <- function(x, ..., default="") {
     stop("the required names in the data.frame are not present; This needs:\n",
          "  name, lower, est, upper, fix, label, backTransform\n", call.=FALSE)
   }
+  ## `prior` is optional so that data frames created before priors were
+  ## supported still convert
+  if (!any(names(x) == "prior")) {
+    x$prior <- rep(NA_character_, nrow(x))
+  }
   .lotriEst <- x[which(!is.na(x$ntheta)), c("name", "lower", "est", "upper",
-                                            "fix", "label", "backTransform")]
+                                            "fix", "label", "backTransform",
+                                            "prior")]
   .lotriMatDf <- x[which(is.na(x$ntheta)), ]
   .cnd <- unique(.lotriMatDf$condition)
   if (length(.cnd) == 1) {
