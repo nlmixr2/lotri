@@ -84,7 +84,7 @@ This can take an R matrix, a list including matrices or
  put anywhere in the block.  A prior can be given for a population
  estimate, for a single eta, or for a whole covariance block:
 
- prior(eta1, eta2) ~ lkj_corr(2)
+ prior(eta1, eta2) ~ lkjCorr(2)
 
  Normal priors also have a shorthand that reuses the matrix syntax:
  when the name on the left of a \code{~} is a population estimate
@@ -104,11 +104,19 @@ This can take an R matrix, a list including matrices or
  estimate; it is not the prior mean.
 
  The distributions understood are listed by
- \code{\link{lotriPriorDists}}; the R name is used when R
- parameterizes the distribution the same way 'Stan' does and the
- 'Stan' name otherwise.  Bounds are not repeated in the prior; a
- parameter declared as \code{c(0, 1)} with a \code{dcauchy(0, 5)}
- prior is a half-Cauchy.
+ \code{\link{lotriPriorDists}}.  Each has three accepted spellings:
+ the R name where R parameterizes it the same way 'Stan' does
+ (\code{dnorm()}), the camelCase name (\code{invWishart()}), and the
+ 'Stan' name (\code{inv_wishart()}).  The canonical one is the R name
+ where there is a faithful one and the camelCase name otherwise.
+
+ Bounds are not repeated in the prior; a parameter declared as
+ \code{c(0, 1)} with a \code{dcauchy(0, 5)} prior is a half-Cauchy.
+
+ The scale matrix of the Wishart family is optional, since the block
+ it is put on already is that matrix, so
+ \code{prior(eta1, eta2) ~ invWishart(4)} gives just the degrees of
+ freedom (the \code{$OMEGAPD} of a NONMEM NWPRI model).
 }
 \examples{
 

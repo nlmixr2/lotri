@@ -59,12 +59,16 @@
   ## simplex
   "|dirichlet|alpha|simplex|multivariate",
   ## correlation/covariance matrices
+  ## a `?` marks an optional parameter.  The scale matrix of the Wishart
+  ## family is optional because the block it is put on already *is* that
+  ## matrix, so `inv_wishart(4)` gives just the degrees of freedom (this
+  ## is the NONMEM `$OMEGAPD` of an NWPRI model)
   "|lkj_corr|eta|corr|matrix",
   "|lkj_corr_cholesky|eta|corr|matrix",
-  "|wishart|nu,Sigma|cov|matrix",
-  "|inv_wishart|nu,Sigma|cov|matrix",
-  "|wishart_cholesky|nu,L_S|cov|matrix",
-  "|inv_wishart_cholesky|nu,L_S|cov|matrix",
+  "|wishart|nu,Sigma?|cov|matrix",
+  "|inv_wishart|nu,Sigma?|cov|matrix",
+  "|wishart_cholesky|nu,L_S?|cov|matrix",
+  "|inv_wishart_cholesky|nu,L_S?|cov|matrix",
   ## multivariate
   "|multi_normal|mu,Sigma|real|multivariate",
   "|multi_normal_prec|mu,Omega|real|multivariate",
@@ -92,6 +96,22 @@
   "dhyper"="hypergeometric: R and Stan order the arguments differently",
   "dwilcox"="")
 
+#' Turn a 'Stan' snake_case distribution name into camelCase
+#'
+#' @param x character vector of snake_case names
+#' @return the camelCase equivalent, ie `inv_wishart` -> `invWishart`
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriSnakeToCamel <- function(x) {
+  vapply(x, function(.x) {
+    .p <- strsplit(.x, "_", fixed=TRUE)[[1]]
+    if (length(.p) <= 1L) return(.x)
+    paste0(.p[1],
+           paste(toupper(substring(.p[-1], 1, 1)), substring(.p[-1], 2),
+                 sep="", collapse=""))
+  }, character(1), USE.NAMES=FALSE)
+}
+
 .lotriDistTable <- local({
   .l <- strsplit(.lotriDistDefs, "|", fixed=TRUE)
   .get <- function(i, j) {
@@ -102,15 +122,25 @@
   }
   .rName <- .get(seq_along(.l), 1)
   .stanName <- .get(seq_along(.l), 2)
-  .parNames <- .get(seq_along(.l), 3)
+  .parNamesRaw <- .get(seq_along(.l), 3)
+  .split <- lapply(.parNamesRaw, function(x) {
+    if (!nzchar(x)) return(character(0))
+    strsplit(x, ",", fixed=TRUE)[[1]]
+  })
+  ## a trailing `?` marks the parameter as optional
+  .opt <- lapply(.split, function(x) grepl("?", x, fixed=TRUE))
+  .split <- lapply(.split, function(x) sub("?", "", x, fixed=TRUE))
+  .camelName <- .lotriSnakeToCamel(.stanName)
   data.frame(rName=ifelse(nzchar(.rName), .rName, NA_character_),
              stanName=.stanName,
-             name=ifelse(nzchar(.rName), .rName, .stanName),
-             parNames=.parNames,
-             nPar=vapply(.parNames, function(x) {
-               if (!nzchar(x)) return(0L)
-               length(strsplit(x, ",", fixed=TRUE)[[1]])
-             }, integer(1), USE.NAMES=FALSE),
+             camelName=.camelName,
+             ## the R name wins when R parameterizes it the same way;
+             ## otherwise the camelCase spelling is canonical, matching
+             ## the rest of the package
+             name=ifelse(nzchar(.rName), .rName, .camelName),
+             parNames=vapply(.split, paste, character(1), collapse=","),
+             nPar=vapply(.split, length, integer(1), USE.NAMES=FALSE),
+             nReq=vapply(.opt, function(x) sum(!x), integer(1), USE.NAMES=FALSE),
              support=.get(seq_along(.l), 4),
              kind=.get(seq_along(.l), 5),
              stringsAsFactors=FALSE)
@@ -150,6 +180,8 @@ lotriPriorDists <- function() {
 .lotriPriorLookup <- function(nm) {
   .w <- which(.lotriDistTable$name == nm)
   if (length(.w) == 1L) return(.lotriDistTable[.w, ])
+  .w <- which(.lotriDistTable$camelName == nm)
+  if (length(.w) == 1L) return(.lotriDistTable[.w, ])
   .w <- which(.lotriDistTable$stanName == nm)
   if (length(.w) == 1L) return(.lotriDistTable[.w, ])
   .w <- which(!is.na(.lotriDistTable$rName) & .lotriDistTable$rName == nm)
@@ -182,7 +214,7 @@ lotriPriorDists <- function() {
 #' @return list of language objects in canonical order
 #' @noRd
 #' @author Matthew L. Fidler
-.lotriPriorMatchArgs <- function(argList, parNames, distName) {
+.lotriPriorMatchArgs <- function(argList, parNames, distName, nReq=length(parNames)) {
   .nArg <- length(argList)
   .nPar <- length(parNames)
   .argNames <- names(argList)
@@ -219,9 +251,23 @@ lotriPriorDists <- function() {
     .out[[.free[.j]]] <- argList[[.pos[.j]]]
     .used[.free[.j]] <- TRUE
   }
-  if (!all(.used)) {
+  ## the required arguments always have to be there
+  if (nReq > 0L && !all(.used[seq_len(nReq)])) {
+    .miss <- parNames[seq_len(nReq)][!.used[seq_len(nReq)]]
     stop("'", distName, "' is missing argument(s): ",
-         paste(parNames[!.used], collapse=", "), call.=FALSE)
+         paste(.miss, collapse=", "), call.=FALSE)
+  }
+  ## an optional argument may only be left off the end, otherwise the
+  ## positional meaning of what follows it would be ambiguous
+  if (.nPar > nReq) {
+    .have <- which(.used)
+    if (length(.have) > 0L && !identical(as.integer(.have),
+                                         seq_len(max(.have)))) {
+      stop("'", distName, "' cannot skip the argument(s) ",
+           paste(parNames[setdiff(seq_len(max(.have)), .have)], collapse=", "),
+           " while giving a later one", call.=FALSE)
+    }
+    .out <- .out[.used]
   }
   .out
 }
@@ -260,12 +306,12 @@ lotriPriorDists <- function() {
     .parNames <- strsplit(.dist$parNames, ",", fixed=TRUE)[[1]]
   }
   .args <- as.list(x)[-1]
-  .args <- .lotriPriorMatchArgs(.args, .parNames, .dist$name)
+  .args <- .lotriPriorMatchArgs(.args, .parNames, .dist$name, nReq=.dist$nReq)
   .txt <- paste0(.dist$name, "(",
                  paste(vapply(.args, .deparse1, character(1), USE.NAMES=FALSE),
                        collapse=", "), ")")
   list(name=.dist$name, stanName=.dist$stanName, support=.dist$support,
-       kind=.dist$kind, text=.txt)
+       kind=.dist$kind, args=.args, text=.txt)
 }
 
 #' Check a normalized prior against its target
@@ -279,15 +325,32 @@ lotriPriorDists <- function() {
 #' @noRd
 #' @author Matthew L. Fidler
 .lotriPriorCheckTarget <- function(info, names, lower=NA_real_, upper=NA_real_,
-                                   isBlock=FALSE) {
+                                   isBlock=FALSE, inMatrix=FALSE) {
   .n <- length(names)
   .what <- paste0("'", paste(names, collapse=", "), "'")
   if (info$kind == "matrix") {
-    ## lkj_corr()/wishart() and friends are priors on a matrix, so they
-    ## need an actual covariance block
-    if (!isBlock || .n < 2L) {
-      stop("prior '", info$name, "' applies to a covariance block, but ", .what,
-           " is a single parameter", call.=FALSE)
+    ## lkj_corr()/wishart() and friends are priors on a matrix, so the
+    ## target has to be part of one
+    if (!inMatrix) {
+      stop("prior '", info$name, "' applies to a covariance matrix, but ",
+           .what, " is a population estimate", call.=FALSE)
+    }
+    ## a 1x1 covariance block is fine (an inverse Wishart of dimension
+    ## one is an inverse gamma, which is what NWPRI puts on a diagonal
+    ## omega), but a correlation matrix needs at least two
+    if (info$support == "corr" && .n < 2L) {
+      stop("prior '", info$name, "' is a correlation matrix prior, so ", .what,
+           " needs to be a block of more than one parameter", call.=FALSE)
+    }
+    ## a Wishart is only proper when the degrees of freedom exceed the
+    ## dimension minus one, and both are known here
+    if (info$support == "cov" && length(info$args) >= 1L) {
+      .nu <- info$args[[1]]
+      if (is.numeric(.nu) && length(.nu) == 1L && .nu <= .n - 1) {
+        stop("prior '", info$name, "' on a ", .n, "x", .n, " block needs ",
+             "degrees of freedom greater than ", .n - 1, ", but ", .nu,
+             " was given", call.=FALSE)
+      }
     }
   } else if (info$kind == "multivariate") {
     ## multi_normal() and friends are priors on a vector of parameters,

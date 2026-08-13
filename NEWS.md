@@ -13,22 +13,41 @@ lotri({
                      0.01, 0.2)
   prior(tka) ~ dnorm(0, 10)
   prior(tcl) ~ dlnorm(1, 0.5)
-  prior(eta.cl, eta.v) ~ lkj_corr(2)
+  prior(eta.cl, eta.v) ~ lkjCorr(2)
 })
 ```
 
   Because the statement names its target, prior lines may be given
   anywhere in the block.  Priors may be put on population estimates,
   on individual etas, and on whole covariance blocks (with the
-  matrix-valued distributions like `lkj_corr()` and `inv_wishart()`).
+  matrix-valued distributions like `lkjCorr()` and `invWishart()`).
 
-  The R spelling of a distribution is used whenever R parameterizes it
-  the same way 'Stan' does (`dnorm()`, `dlnorm()`, `dgamma()`, ...);
-  the 'Stan' spelling is also accepted and is the canonical name when
-  there is no faithful R equivalent (`student_t()`, `lkj_corr()`,
-  `inv_wishart()`, ...).  Both positional and named arguments work.
-  `lotri` validates the distribution name, its arity, and its support
-  against the parameter's bounds; it does not generate any 'Stan' code.
+  Every distribution has three accepted spellings: the R name where R
+  parameterizes it the same way 'Stan' does (`dnorm()`, `dlnorm()`,
+  `dgamma()`), the camelCase name (`invWishart()`, `lkjCorr()`,
+  `studentT()`), and the 'Stan' name itself (`inv_wishart()`,
+  `lkj_corr()`, `student_t()`).  The canonical spelling, which is what
+  is stored and printed back, is the R one where there is a faithful
+  one and the camelCase one otherwise.  Both positional and named
+  arguments work.  `lotri` validates the distribution name, its arity,
+  and its support against the parameter's bounds; it does not generate
+  any 'Stan' code.
+
+* An inverse Wishart prior on an omega block can be given by its
+  degrees of freedom alone, since the block it is put on already is the
+  scale matrix.  This is the `$OMEGAP`/`$OMEGAPD` pair of a NONMEM
+  `NWPRI` model:
+
+```r
+lotri({
+  eta.cl + eta.v ~ c(0.1,
+                     0.01, 0.2)
+  prior(eta.cl, eta.v) ~ invWishart(4)
+})
+```
+
+  It works on a 1x1 block too (an inverse Wishart of dimension one is
+  an inverse gamma), and an improper `nu <= p - 1` is an error.
 
 * Because normal priors are so common they also have a shorthand that
   reuses the matrix syntax: putting a *population estimate* on the left

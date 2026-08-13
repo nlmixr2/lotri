@@ -42,7 +42,7 @@ test_that("priors can be given on etas and on covariance blocks", {
 
   ## the block prior is stored on the first diagonal of the block
   expect_equal(attr(m, "lotriPriors"),
-               c("lkj_corr(2)", NA, "dgamma(2, 1)"))
+               c("lkjCorr(2)", NA, "dgamma(2, 1)"))
 })
 
 test_that("prior lines are order independent", {
@@ -102,7 +102,7 @@ test_that("priors round trip through as.expression() and as.data.frame()", {
 
   .df <- as.data.frame(m)
   expect_equal(.df$prior,
-               c("dnorm(0, 10)", "dlnorm(1, 0.5)", "lkj_corr(2)", NA, NA,
+               c("dnorm(0, 10)", "dlnorm(1, 0.5)", "lkjCorr(2)", NA, NA,
                  "dgamma(2, 1)"))
 
   ## and back from the data frame
@@ -215,7 +215,7 @@ test_that("a correlated theta prior is a multivariate normal", {
     tv ~ c(0.01, 1)
   })
 
-  .expect <- "multi_normal(0, lotri(tcl + tv ~ c(1, 0.01, 1)))"
+  .expect <- "multiNormal(0, lotri(tcl + tv ~ c(1, 0.01, 1)))"
   expect_equal(lotriEst(m)$prior, c(NA_character_, .expect, .expect))
 
   ## and the plus form gives the same thing
@@ -241,7 +241,7 @@ test_that("theta priors accept the matrix transformations", {
   })
 
   expect_equal(lotriEst(m)$prior[1],
-               "multi_normal(0, lotri(tcl + tv ~ c(4, 0.5, 9)))")
+               "multiNormal(0, lotri(tcl + tv ~ c(4, 0.5, 9)))")
 
   ## var() is the default meaning
   m2 <- lotri({
@@ -403,14 +403,91 @@ test_that("lotriPriorDists() describes the supported distributions", {
   .d <- lotriPriorDists()
 
   expect_true(inherits(.d, "data.frame"))
-  expect_true(all(c("rName", "stanName", "name", "parNames", "nPar",
-                    "support", "kind") %in% names(.d)))
+  expect_true(all(c("rName", "stanName", "camelName", "name", "parNames",
+                    "nPar", "nReq", "support", "kind") %in% names(.d)))
   ## the canonical name is the R one when it is a faithful alias
   expect_equal(.d$name[.d$stanName == "normal"], "dnorm")
-  ## and the Stan one when there is no faithful R equivalent
-  expect_equal(.d$name[.d$stanName == "student_t"], "student_t")
+  ## and the camelCase one when there is no faithful R equivalent
+  expect_equal(.d$name[.d$stanName == "student_t"], "studentT")
+  expect_equal(.d$name[.d$stanName == "inv_wishart"], "invWishart")
+  expect_equal(.d$name[.d$stanName == "lkj_corr"], "lkjCorr")
+  ## a name with no underscore is the same either way
+  expect_equal(.d$camelName[.d$stanName == "gumbel"], "gumbel")
   expect_true("lkj_corr" %in% .d$stanName)
   expect_true("inv_wishart" %in% .d$stanName)
+  ## every canonical name is distinct
+  expect_equal(anyDuplicated(.d$name), 0L)
+})
+
+test_that("camelCase and Stan spellings are the same prior", {
+
+  ## camelCase is canonical, the Stan snake_case is an accepted alias
+  .camel <- lotri({
+    e1 + e2 ~ c(1,
+                0.1, 1)
+    prior(e1, e2) ~ invWishart(4)
+  })
+  .snake <- lotri({
+    e1 + e2 ~ c(1,
+                0.1, 1)
+    prior(e1, e2) ~ inv_wishart(4)
+  })
+
+  expect_equal(.camel, .snake)
+  expect_equal(attr(.camel, "lotriPriors")[1], "invWishart(4)")
+
+  .a <- lotri({ tka <- 1; prior(tka) ~ studentT(3, 0, 10) })
+  .b <- lotri({ tka <- 1; prior(tka) ~ student_t(3, 0, 10) })
+  expect_equal(.a, .b)
+  expect_equal(lotriEst(.a)$prior, "studentT(3, 0, 10)")
+})
+
+test_that("omega degrees of freedom can be given on their own", {
+
+  ## the scale matrix is the block itself, so only the degrees of
+  ## freedom are needed (the NWPRI $OMEGAPD)
+  m <- lotri({
+    eta.cl + eta.v ~ c(0.1,
+                       0.01, 0.2)
+    eta.ka ~ 0.3
+    prior(eta.cl, eta.v) ~ invWishart(4)
+    prior(eta.ka) ~ invWishart(2)
+  })
+
+  expect_equal(attr(m, "lotriPriors"),
+               c("invWishart(4)", NA, "invWishart(2)"))
+
+  ## it round trips
+  expect_equal(as.data.frame(eval(as.expression(m))), as.data.frame(m))
+
+  ## an explicit scale matrix still works
+  expect_error(lotri({
+    e1 + e2 ~ c(1,
+                0.1, 1)
+    prior(e1, e2) ~ invWishart(4, lotri(e1 + e2 ~ c(2,
+                                                    0.5, 2)))
+  }), NA)
+
+  ## the degrees of freedom are required
+  expect_error(lotri({
+    e1 + e2 ~ c(1, 0.1, 1)
+    prior(e1, e2) ~ invWishart()
+  }))
+
+  ## an improper prior is caught, since nu must exceed the dimension - 1
+  expect_error(lotri({
+    e1 + e2 ~ c(1, 0.1, 1)
+    prior(e1, e2) ~ invWishart(1)
+  }), "degrees of freedom")
+
+  ## but a 1x1 block only needs nu > 0, since that is an inverse gamma
+  expect_error(lotri({ e1 ~ 1; prior(e1) ~ invWishart(1) }), NA)
+  expect_error(lotri({ e1 ~ 1; prior(e1) ~ invWishart(0) }))
+
+  ## a correlation matrix prior still needs a real block
+  expect_error(lotri({ e1 ~ 1; prior(e1) ~ lkjCorr(2) }))
+  ## and a matrix prior cannot go on a population estimate
+  expect_error(lotri({ tka <- 1; prior(tka) ~ invWishart(4) }))
 })
 
 test_that("labels follow the matrix when rcm re-orders it", {
