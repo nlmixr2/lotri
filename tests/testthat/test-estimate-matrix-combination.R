@@ -29,7 +29,8 @@ test_that("Combined estimates and matrix", {
                               upper = c(Inf, 2, Inf, 2, 2),
                               fix = c(FALSE, FALSE, TRUE, TRUE, TRUE),
                               label = c("a label",NA, NA, NA, NA),
-                              backTransform = c("exp", NA, NA, NA, NA)),
+                              backTransform = c("exp", NA, NA, NA, NA),
+                              prior = rep(NA_character_, 5)),
                          row.names = c(NA,-5L), class = "data.frame"))
   fix2 <- fix1
   attr(fix2, "lotriEst") <- NULL
@@ -51,7 +52,8 @@ test_that("Combined estimates and matrix", {
                               upper = Inf,
                               fix = FALSE,
                               label = "matt",
-                              backTransform = "exp"),
+                              backTransform = "exp",
+                              prior = NA_character_),
                          row.names = c(NA, -1L),
                          class = "data.frame"))
   
@@ -72,6 +74,15 @@ test_that("Combined estimates and matrix", {
     })
   ))
   
-  # Don't allow dupliate parameters with a mixed matrix/estimate
-  expect_error(lotri({b=3;b~0.4}))
+  # `b=3;b~0.4` used to be a duplicate parameter error.  It is now the
+  # shorthand for a normal prior on the estimate `b`, so it parses and
+  # `b` stays an estimate rather than becoming an eta.
+  .b <- lotri({b=3;b~0.4})
+  expect_equal(lotriEst(.b)$name, "b")
+  expect_equal(lotriEst(.b)$prior, paste0("dnorm(0, ", sqrt(0.4), ")"))
+  expect_equal(dim(.b)[1], 0L)
+
+  # A mixed matrix/estimate is still a duplicate error when the names are
+  # not all estimates, since then it really is a matrix
+  expect_error(lotri({b=3; b + c ~ c(1, 0.1, 1)}))
 })

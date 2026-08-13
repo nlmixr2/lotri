@@ -766,6 +766,449 @@ NULL
     .fcallTildeLhsSum(x, env)
   }
 }
+#' Is this expression a `prior(name) ~ dist(...)` line?
+#'
+#' @param x language object to test
+#' @return TRUE when this is a prior specification line
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriIsPriorLine <- function(x) {
+  is.call(x) && length(x) == 3L &&
+    identical(x[[1]], quote(`~`)) &&
+    is.call(x[[2]]) && identical(x[[2]][[1]], quote(`prior`))
+}
+
+#' Collect a `prior(name) ~ dist(...)` line
+#'
+#' The prior is validated here (so syntax errors are reported with the
+#' line they occurred on) but it is *resolved* against the parameters
+#' later, once the matrix and any `rcm` re-ordering are complete.
+#'
+#' @param x language object of the prior line
+#' @param env parsing environment
+#' @return nothing, called for the side effect on `env$priors`
+#' @noRd
+#' @author Matthew L. Fidler
+.fCallPrior <- function(x, env) {
+  .lhs <- as.list(x[[2]])[-1]
+  if (length(.lhs) == 0L) {
+    stop("'prior()' requires at least one parameter name", call.=FALSE)
+  }
+  .nm <- vapply(.lhs, function(y) {
+    if (is.name(y)) return(as.character(y))
+    if (is.character(y) && length(y) == 1L) return(y)
+    stop("'prior()' arguments must be parameter names, not '",
+         .deparse1(y), "'", call.=FALSE) # nolint
+  }, character(1), USE.NAMES=FALSE)
+  .dup <- unique(.nm[duplicated(.nm)])
+  if (length(.dup) > 0) {
+    stop("duplicated parameter(s) in 'prior()': '", paste(.dup, collapse="', '"), "'",
+         call.=FALSE)
+  }
+  env$priors <- c(env$priors,
+                  list(list(names=.nm, info=.lotriPriorNormalize(x[[3]]))))
+  invisible()
+}
+
+#' Names on the left hand side of a `~`
+#'
+#' @param x left hand side language object, ie `a` or `a + b + c`
+#' @return character vector of names, or NULL when the left hand side is
+#'   not a name or a sum of names
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriTildeLhsNames <- function(x) {
+  if (is.name(x)) return(as.character(x))
+  if (is.call(x) && identical(x[[1]], quote(`+`)) && length(x) == 3L) {
+    .l <- .lotriTildeLhsNames(x[[2]])
+    .r <- .lotriTildeLhsNames(x[[3]])
+    if (is.null(.l) || is.null(.r)) return(NULL)
+    return(c(.l, .r))
+  }
+  NULL
+}
+
+#' Is this a `~invWishart(4)` whole omega prior line?
+#'
+#' A one sided `~` with a matrix valued distribution applies that prior
+#' to every block of the omega, which saves naming each block when they
+#' all share the same degrees of freedom.
+#'
+#' @param x language object to test
+#' @return TRUE when this is a whole omega prior
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriIsWholeOmegaPriorLine <- function(x) {
+  if (!(is.call(x) && length(x) == 2L && identical(x[[1]], quote(`~`)))) {
+    return(FALSE)
+  }
+  .r <- x[[2]]
+  if (!is.call(.r)) return(FALSE)
+  .nm <- as.character(.r[[1]])
+  if (length(.nm) != 1L) return(FALSE)
+  .d <- .lotriPriorLookup(.nm)
+  ## only the matrix valued distributions; `~c(40)` stays an error
+  !is.null(.d) && .d$kind == "matrix"
+}
+
+#' Collect a `~invWishart(4)` whole omega prior
+#'
+#' @param x language object of the prior line
+#' @param env parsing environment
+#' @return nothing, called for the side effect on `env$wholeOmegaPrior`
+#' @noRd
+#' @author Matthew L. Fidler
+.fCallWholeOmegaPrior <- function(x, env) {
+  env$wholeOmegaPrior <- c(env$wholeOmegaPrior,
+                           list(.lotriPriorNormalize(x[[2]])))
+  invisible()
+}
+
+#' Strip the `om.` prefix used to name an omega element
+#'
+#' In a NONMEM `TNPRI` model the prior is over the omega elements as
+#' well as the thetas, so the elements need names of their own.  `om.`
+#' prepended to a between subject variability names its omega element,
+#' ie `om.eta.cl` is the omega element of `eta.cl`.
+#'
+#' @param nm character vector of names
+#' @return the names with `om.` removed, or NULL when they are not all
+#'   `om.` prefixed
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriStripOm <- function(nm) {
+  if (length(nm) > 0L && all(grepl("^om[.].", nm))) {
+    return(sub("^om[.]", "", nm))
+  }
+  NULL
+}
+
+#' Is this an `om.eta ~ variance` normal prior line?
+#'
+#' @param x language object to test
+#' @return TRUE when every name on the left is `om.` prefixed
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriIsOmegaPriorLine <- function(x) {
+  if (!(is.call(x) && length(x) == 3L && identical(x[[1]], quote(`~`)))) {
+    return(FALSE)
+  }
+  if (is.call(x[[3]]) && identical(x[[3]][[1]], quote(`|`))) return(FALSE)
+  .nm <- .lotriTildeLhsNames(x[[2]])
+  !is.null(.nm) && !is.null(.lotriStripOm(.nm))
+}
+
+#' Handle the `om.eta ~ variance` normal prior shorthand
+#'
+#' Kept in its own environment so that an omega prior line never joins a
+#' population estimate prior block, or an eta matrix, by accident.
+#'
+#' @param x language object of the prior line
+#' @param env parsing environment
+#' @return nothing, called for the side effect on `env$omegaPriorEnv`
+#' @noRd
+#' @author Matthew L. Fidler
+.fCallOmegaPrior <- function(x, env) {
+  if (is.null(env$omegaPriorEnv)) {
+    env$omegaPriorEnv <- .lotriNewPriorEnv()
+  }
+  .fCallTilde(x, env$omegaPriorEnv)
+  invisible()
+}
+
+#' A scratch environment for accumulating normal prior lines
+#'
+#' @return a new environment set up for `.fCallTilde()`
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriNewPriorEnv <- function() {
+  .env <- new.env(parent = emptyenv())
+  .env$isCov <- FALSE
+  .env$fun <- NULL
+  .env$rcm <- FALSE
+  .env$df <- NULL
+  .env$lastN <- 0
+  .env$eta1 <- 0L
+  .env$cnd <- character()
+  .env$names <- character(0)
+  .env$labels <- character(0)
+  .env
+}
+
+#' Is this a `theta ~ variance` normal prior line?
+#'
+#' A `~` whose left hand side names only *population estimates* cannot be
+#' a matrix specification (the names would collide with the estimates), so
+#' it is taken as the shorthand for a normal prior on those estimates.
+#'
+#' @param x language object to test
+#' @param env parsing environment, which carries the estimate names
+#' @return TRUE when this is the normal prior shorthand
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriIsThetaPriorLine <- function(x, env) {
+  if (!(is.call(x) && length(x) == 3L && identical(x[[1]], quote(`~`)))) {
+    return(FALSE)
+  }
+  if (is.null(env$thetaNames)) return(FALSE)
+  ## a conditioned block (`| id`) is always a matrix, never a prior
+  if (is.call(x[[3]]) && identical(x[[3]][[1]], quote(`|`))) return(FALSE)
+  .nm <- .lotriTildeLhsNames(x[[2]])
+  !is.null(.nm) && all(.nm %in% env$thetaNames)
+}
+
+#' Handle the `theta ~ variance` normal prior shorthand
+#'
+#' `tka ~ 1` is a `dnorm(0, 1)` prior on `tka`, and
+#' `tcl + tv ~ c(1, 0, 1)` is a multivariate normal prior on `tcl` and
+#' `tv` with a zero mean vector.  The estimate given with `<-` stays the
+#' initial estimate; it is not the prior mean.
+#'
+#' @param x language object of the prior line
+#' @param env parsing environment
+#' @return nothing, called for the side effect on `env$priors`
+#' @noRd
+#' @author Matthew L. Fidler
+.fCallThetaPrior <- function(x, env) {
+  if (is.null(env$thetaPriorEnv)) {
+    env$thetaPriorEnv <- .lotriNewPriorEnv()
+  }
+  ## fed through the ordinary matrix parser so that every matrix
+  ## spelling works here too: the plus form, the per row line form
+  ## (`tcl ~ 1; tv ~ c(0.01, 1)`), and `sd()`/`cor()`/`chol()`
+  .fCallTilde(x, env$thetaPriorEnv)
+  invisible()
+}
+
+#' Turn the accumulated `theta ~ variance` lines into priors
+#'
+#' The lines are collected into one matrix so that the per row line form
+#' builds up a block the same way it does for etas.  The matrix is then
+#' split into its blocks: a 1x1 block is a univariate normal prior and a
+#' larger block is a multivariate normal prior with a zero mean vector.
+#'
+#' @param env parsing environment
+#' @return nothing, called for the side effect on `env$priors`
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriThetaPriorsFromEnv <- function(env, which="thetaPriorEnv") {
+  if (is.null(env[[which]])) return(invisible())
+  .mat <- .lotriGetMatrixFromEnv(env[[which]])
+  if (dim(.mat)[1] == 0L) return(invisible())
+  attr(.mat, "lotriFix") <- NULL
+  attr(.mat, "lotriUnfix") <- NULL
+  attr(.mat, "lotriLabels") <- NULL
+  class(.mat) <- NULL
+  for (.blk in lotriMatInv(.mat)) { # nolint
+    .nm <- dimnames(.blk)[[1]]
+    ## unnamed so that the deparsed prior is `dnorm(0, 1)` and not
+    ## `dnorm(0, c(tcl = 1))`
+    .d <- unname(diag(.blk))
+    .w <- which(.d == 0)
+    if (length(.w) > 0L) {
+      stop("a normal prior on '", paste(.nm[.w], collapse="', '"),
+           "' cannot have zero variance; did you mean 'fix()'?", call.=FALSE)
+    }
+    .w <- which(.d < 0)
+    if (length(.w) > 0L) {
+      stop("a normal prior on '", paste(.nm[.w], collapse="', '"),
+           "' cannot have a negative variance", call.=FALSE)
+    }
+    if (length(.nm) == 1L) {
+      .txt <- paste0("dnorm(0, ", .deparse1(sqrt(.d[1])), ")") # nolint
+    } else {
+      ## the covariance is kept as the lotri expression that built it,
+      ## which is valid R and round trips exactly
+      .txt <- paste0("multiNormal(0, lotri(",
+                     .deparse1(.lotriGetEtaMatEltPlusForm(.blk)[[1]]), "))") # nolint
+    }
+    env$priors <- c(env$priors,
+                    list(list(names=.nm, info=.lotriPriorNormalize(str2lang(.txt)))))
+  }
+  invisible()
+}
+
+#' Do these names make up exactly one covariance block of `mat`?
+#'
+#' @param mat matrix to check
+#' @param nms character vector of names
+#' @return boolean
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriNamesAreBlock <- function(mat, nms) {
+  .dn <- dimnames(mat)[[1]]
+  .i <- match(nms, .dn)
+  if (anyNA(.i)) return(FALSE)
+  .i <- sort(.i)
+  ## the names have to be *exactly* one block; a set of unconnected
+  ## diagonal elements is a set of 1x1 blocks, not a single block
+  identical(as.integer(.lotriBlockIndexes(mat, .i[1])), as.integer(.i))
+}
+
+#' Indexes of the covariance block containing element `i`
+#'
+#' @param mat matrix to examine
+#' @param i index of an element in the block
+#' @return integer vector of the indexes making up the block
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriBlockIndexes <- function(mat, i) {
+  .n <- dim(mat)[1]
+  .lo <- i
+  .hi <- i
+  repeat {
+    .changed <- FALSE
+    if (.lo > 1L && any(mat[seq(.lo, .hi), .lo - 1L] != 0)) {
+      .lo <- .lo - 1L
+      .changed <- TRUE
+    }
+    if (.hi < .n && any(mat[seq(.lo, .hi), .hi + 1L] != 0)) {
+      .hi <- .hi + 1L
+      .changed <- TRUE
+    }
+    if (!.changed) break
+  }
+  seq(.lo, .hi)
+}
+
+#' Resolve the collected priors against the estimates and matrices
+#'
+#' Priors are matched by *name* (never by position) so that they are
+#' unaffected by any `rcm` re-ordering of the matrix.  Priors on
+#' population estimates become the `prior` column of the `lotriEst`
+#' data frame; priors on etas (and on covariance blocks) become the
+#' `lotriPriors` attribute of the matrix they belong to, stored on the
+#' first diagonal element of the block.
+#'
+#' @param ret matrix or list of matrices
+#' @param est `lotriEst` data frame (may be NULL)
+#' @param priors list collected by `.fCallPrior()`
+#' @return list with the amended `ret` and `est`
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriResolvePriors <- function(ret, est, priors, wholePriors=NULL) {
+  if (length(priors) == 0L && length(wholePriors) == 0L) {
+    return(list(ret=ret, est=est))
+  }
+  .isList <- !is.matrix(ret) && (inherits(ret, "list") || inherits(ret, "lotri"))
+  .mats <- if (.isList) as.list(ret) else list(ret)
+  ## `~invWishart(4)` names no block, so expand it to one entry per block
+  ## and let the ordinary resolution below validate each of them
+  if (length(wholePriors) > 0L) {
+    .expand <- list()
+    for (.wp in wholePriors) {
+      for (.k in seq_along(.mats)) {
+        .m <- .mats[[.k]]
+        if (!is.matrix(.m) || dim(.m)[1] == 0L) next
+        .dn <- dimnames(.m)[[1]]
+        .i <- 1L
+        while (.i <= length(.dn)) {
+          .idx <- .lotriBlockIndexes(.m, .i)
+          .expand[[length(.expand) + 1L]] <- list(names=.dn[.idx], info=.wp)
+          .i <- max(.idx) + 1L
+        }
+      }
+    }
+    if (length(.expand) == 0L) {
+      stop("'~", wholePriors[[1]]$text,
+           "' was given but the model has no omega to apply it to",
+           call.=FALSE)
+    }
+    priors <- c(.expand, priors)
+  }
+  .pri <- lapply(.mats, function(m) {
+    if (!is.matrix(m)) return(character(0))
+    rep(NA_character_, dim(m)[1])
+  })
+  .seen <- character(0)
+  for (.p in priors) {
+    .nm <- .p$names
+    .info <- .p$info
+    .key <- paste(sort(.nm), collapse=",")
+    if (.key %in% .seen) {
+      stop("more than one prior given for '", paste(.nm, collapse=", "), "'",
+           call.=FALSE)
+    }
+    .seen <- c(.seen, .key)
+    if (!is.null(est) && all(.nm %in% est$name)) {
+      .w <- match(.nm, est$name)
+      .lotriPriorCheckTarget(.info, .nm, est$lower[.w], est$upper[.w],
+                             isBlock=FALSE, inMatrix=FALSE)
+      if (any(!is.na(est$prior[.w]))) {
+        stop("more than one prior given for '",
+             paste(.nm[!is.na(est$prior[.w])], collapse="', '"), "'", call.=FALSE)
+      }
+      est$prior[.w] <- .info$text
+      next
+    }
+    .found <- FALSE
+    ## `om.eta.cl` names the omega element of `eta.cl`
+    .om <- .lotriStripOm(.nm)
+    for (.k in seq_along(.mats)) {
+      .m <- .mats[[.k]]
+      if (!is.matrix(.m)) next
+      .dn <- dimnames(.m)[[1]]
+      if (is.null(.dn)) next
+      if (!all(.nm %in% .dn)) {
+        if (is.null(.om) || !all(.om %in% .dn)) next
+        .nm <- .om
+      }
+      .isBlock <- length(.nm) > 1L
+      if (.isBlock && !.lotriNamesAreBlock(.m, .nm)) {
+        stop("'", paste(.nm, collapse=", "),
+             "' is not a single covariance block, so it cannot share a prior",
+             call.=FALSE)
+      }
+      .lotriPriorCheckTarget(.info, .nm, isBlock=.isBlock, inMatrix=TRUE)
+      .at <- min(match(.nm, .dn))
+      if (!is.na(.pri[[.k]][.at])) {
+        stop("more than one prior given for '", paste(.nm, collapse=", "), "'",
+             call.=FALSE)
+      }
+      .pri[[.k]][.at] <- .info$text
+      .found <- TRUE
+      break
+    }
+    if (!.found) {
+      stop("prior given for unknown parameter(s): '",
+           paste(.nm, collapse="', '"), "'", call.=FALSE)
+    }
+  }
+  ## degrees of freedom on an omega (a NONMEM NWPRI) and a normal prior
+  ## on the omega values (a NONMEM TNPRI) are alternative ways of saying
+  ## the same thing, so a model cannot carry both
+  .fam <- unlist(lapply(.pri, .lotriPriorFamily))
+  if (any(.fam == "wishart", na.rm=TRUE) && any(.fam == "normal", na.rm=TRUE)) {
+    stop("a model cannot have both degrees of freedom (ie 'invWishart()') ",
+         "and a normal prior (ie 'om.eta ~ 0.1') on its omegas; these are ",
+         "alternatives, not additions", call.=FALSE)
+  }
+  for (.k in seq_along(.mats)) {
+    if (all(is.na(.pri[[.k]]))) next
+    .m <- .mats[[.k]]
+    attr(.m, "lotriPriors") <- .pri[[.k]]
+    if (!inherits(.m, "lotriFix")) {
+      class(.m) <- c("lotriFix", class(.m))
+    }
+    .mats[[.k]] <- .m
+  }
+  if (.isList) {
+    .attr <- attributes(ret)
+    ret <- .mats
+    attributes(ret) <- .attr
+    ## the list itself has to be a `lotriFix` as well, or `as.expression()`
+    ## and `print()` dispatch to the default methods and the priors are
+    ## never shown
+    if (any(vapply(.pri, function(p) any(!is.na(p)), logical(1))) &&
+          !inherits(ret, "lotriFix")) {
+      class(ret) <- c("lotriFix", class(ret))
+    }
+  } else {
+    ret <- .mats[[1]]
+  }
+  list(ret=ret, est=est)
+}
+
 #' This handles the `~` operator in the lotri DSL.
 #'
 #'
@@ -775,7 +1218,24 @@ NULL
 #' @noRd
 #' @author Matthew L. Fidler
 .fCall <- function(x, env) {
-  if (identical(x[[1]], quote(`~`))) {
+  if (.lotriIsPriorLine(x)) {
+    ## Note this is checked *before* the `~` branch below so that
+    ## `.lotriEnv$lastTilde` is not changed; otherwise a `label()`
+    ## following a prior would be applied to the last matrix row.
+    .fCallPrior(x, env)
+  } else if (.lotriIsWholeOmegaPriorLine(x)) {
+    ## `~invWishart(4)` gives every omega block the same prior
+    .fCallWholeOmegaPrior(x, env)
+  } else if (.lotriIsOmegaPriorLine(x)) {
+    ## `om.eta.cl ~ 0.01` is a normal prior on the omega element of
+    ## `eta.cl`, which is what a NONMEM TNPRI model needs
+    .fCallOmegaPrior(x, env)
+  } else if (.lotriIsThetaPriorLine(x, env)) {
+    ## `tka ~ 1` where `tka` is a population estimate is a normal prior,
+    ## not an eta; checked before `lastTilde` is set for the same reason
+    ## as the `prior()` branch above
+    .fCallThetaPrior(x, env)
+  } else if (identical(x[[1]], quote(`~`))) {
     .lotriEnv$lastTilde <- TRUE
     .fCallTilde(x, env)
   } else if (identical(x[[1]], quote(`{`))) {
@@ -1150,10 +1610,16 @@ NULL
   dimnames(.retU) <- list(env$names, env$names)
   if (is.logical(env$rcm) && env$rcm && .n >= 1 &&
         !lotriIsBlockMat(.ret)) { # nolint
+    .old <- env$names
     .ret <- rcm(.ret) # nolint
     env$names <- dimnames(.ret)[[1]]
     .retF <- .retF[env$names, env$names]
     .retU <- .retU[env$names, env$names]
+    ## the labels are stored in parse order, so they have to follow the
+    ## permutation too (otherwise they end up on the wrong parameter)
+    if (!is.null(env$labels)) {
+      env$labels <- env$labels[match(env$names, .old)]
+    }
   }
   if (env$isCov) {
     .assertErrZeroDiag(.ret, cnd)
@@ -1394,6 +1860,7 @@ NULL
 #'   elements `ret` (the resulting matrix or list of matrices), `est`
 #'   (data frame of fixed estimates), and `done` (boolean indicating
 #'   if the evaluation is complete).
+#' @noRd
 #' @author Matthew L. Fidler
 .lotriExprResult <- function(sX, cov, rcm, fun, default, call, envir) {
   .env <- new.env(parent = emptyenv())
@@ -1410,10 +1877,16 @@ NULL
   .env$.hasErr <- .envT$.hasErr
   .env$.err <- .envT$.err
   .env$.lines <- .envT$.lines
+  ## the estimate names are needed while walking the `~` side so that
+  ## `tka ~ 1` can be told apart from an eta specification
+  .env$thetaNames <- .est$name
   .f(sX, .env)
   .printErr(.env) # nolint
+  .lotriThetaPriorsFromEnv(.env)
+  .lotriThetaPriorsFromEnv(.env, "omegaPriorEnv")
   if (!is.null(.env$matrix)) {
-    return(list(ret=.env$matrix, est=.est, done=TRUE))
+    .res <- .lotriResolvePriors(.env$matrix, .est, .env$priors, .env$wholeOmegaPrior)
+    return(list(ret=.res$ret, est=.res$est, done=TRUE))
   }
   if (length(.env$cnd) == 0L) {
     .ret <- .lotriGetMatrixFromEnv(.env, fun=.env$fun)
@@ -1422,7 +1895,10 @@ NULL
     .ret <- .lotriExprCnd(.env, call, cov, rcm, default, envir)
     .done <- TRUE
   }
-  list(ret=.ret, est=.est, done=.done)
+  ## resolved last so that priors are matched by name against the
+  ## final (possibly `rcm` re-ordered) matrix
+  .res <- .lotriResolvePriors(.ret, .est, .env$priors, .env$wholeOmegaPrior)
+  list(ret=.res$ret, est=.res$est, done=.done)
 }
 #' Finalize the lotri expression result
 #'
@@ -1621,6 +2097,54 @@ NULL
 #'  The matrices are concatenated into a block diagonal matrix, like
 #'  \code{\link[Matrix]{bdiag}}, but allows expressions to specify
 #'  matrices easier.
+#'
+#'  Population estimates can be given with
+#'
+#'  name <- estimate
+#'
+#'  or with bounds, \code{name <- c(lower, estimate, upper)}
+#'
+#'  A prior distribution can be put on any of these with
+#'
+#'  prior(name) ~ dist(...)
+#'
+#'  Since the statement names what it applies to, prior lines can be
+#'  put anywhere in the block.  A prior can be given for a population
+#'  estimate, for a single eta, or for a whole covariance block:
+#'
+#'  prior(eta1, eta2) ~ lkjCorr(2)
+#'
+#'  Normal priors also have a shorthand that reuses the matrix syntax:
+#'  when the name on the left of a \code{~} is a population estimate
+#'  (instead of an eta), it is a normal prior with a zero mean and the
+#'  given variance
+#'
+#'  tka ~ 4
+#'
+#'  tcl + tv ~ c(1,
+#'               0.01, 1)
+#'
+#'  The first is a normal prior on \code{tka} with a standard deviation
+#'  of 2 and the second a multivariate normal prior on \code{tcl} and
+#'  \code{tv} with a zero mean vector.  Every matrix spelling works,
+#'  including the per row line form and the \code{sd()}/\code{cor()}
+#'  transformations.  The estimate given with \code{<-} stays the initial
+#'  estimate; it is not the prior mean.
+#'
+#'  The distributions understood are listed by
+#'  \code{\link{lotriPriorDists}}.  Each has three accepted spellings:
+#'  the R name where R parameterizes it the same way 'Stan' does
+#'  (\code{dnorm()}), the camelCase name (\code{invWishart()}), and the
+#'  'Stan' name (\code{inv_wishart()}).  The canonical one is the R name
+#'  where there is a faithful one and the camelCase name otherwise.
+#'
+#'  Bounds are not repeated in the prior; a parameter declared as
+#'  \code{c(0, 1)} with a \code{dcauchy(0, 5)} prior is a half-Cauchy.
+#'
+#'  The scale matrix of the Wishart family is optional, since the block
+#'  it is put on already is that matrix, so
+#'  \code{prior(eta1, eta2) ~ invWishart(4)} gives just the degrees of
+#'  freedom (the \code{$OMEGAPD} of a NONMEM NWPRI model).
 #'
 #'
 #' @examples

@@ -51,7 +51,8 @@ test_that("as.data.frame", {
                               upper = c(Inf, 2,  Inf, 2, 2, Inf, 2, Inf, 2, 2, Inf, Inf, Inf, Inf, Inf, Inf), fix = c(FALSE, FALSE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE),
                               label = c("a label", NA, NA, NA, NA, "b label", NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
                               backTransform = c("exp", NA, NA, NA, NA, "expit", NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
-                              condition = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, "id", "id", "id", "id", "id", "id")),
+                              condition = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, "id", "id", "id", "id", "id", "id"),
+                              prior = rep(NA_character_, 16)),
                          class = "data.frame", row.names = c(NA, -16L)))
 
   expect_equal(as.lotri(c1df), c1)
@@ -89,7 +90,8 @@ test_that("as.data.frame", {
                               upper = c(Inf, 2, Inf, 2, 2,  Inf, 2, Inf, 2, 2, Inf, Inf, Inf, Inf, Inf, Inf), fix = c(FALSE, FALSE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE),
                               label = c("a label", NA, NA, NA, NA, "b label", NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
                               backTransform = c("exp", NA, NA, NA, NA, "expit", NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
-                              condition = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, "id", "id", "id", "occ", "occ", "occ")),
+                              condition = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, "id", "id", "id", "occ", "occ", "occ"),
+                              prior = rep(NA_character_, 16)),
                          class = "data.frame",
                          row.names = c(NA, -16L)))
 

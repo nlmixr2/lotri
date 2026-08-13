@@ -1,3 +1,127 @@
+# lotri 1.0.6 (development)
+
+## New features
+
+* Prior distributions can now be specified in a `lotri({})` (and
+  therefore `ini({})`) block with `prior(name) ~ dist(...)`, ie:
+
+```r
+lotri({
+  tka <- 0.45
+  tcl <- c(0, 1, 10)
+  eta.cl + eta.v ~ c(0.1,
+                     0.01, 0.2)
+  prior(tka) ~ dnorm(0, 10)
+  prior(tcl) ~ dlnorm(1, 0.5)
+  prior(eta.cl, eta.v) ~ lkjCorr(2)
+})
+```
+
+  Because the statement names its target, prior lines may be given
+  anywhere in the block.  Priors may be put on population estimates,
+  on individual etas, and on whole covariance blocks (with the
+  matrix-valued distributions like `lkjCorr()` and `invWishart()`).
+
+  Every distribution has three accepted spellings: the R name where R
+  parameterizes it the same way 'Stan' does (`dnorm()`, `dlnorm()`,
+  `dgamma()`), the camelCase name (`invWishart()`, `lkjCorr()`,
+  `studentT()`), and the 'Stan' name itself (`inv_wishart()`,
+  `lkj_corr()`, `student_t()`).  The canonical spelling, which is what
+  is stored and printed back, is the R one where there is a faithful
+  one and the camelCase one otherwise.  Both positional and named
+  arguments work.  `lotri` validates the distribution name, its arity,
+  and its support against the parameter's bounds; it does not generate
+  any 'Stan' code.
+
+* An inverse Wishart prior on an omega block can be given by its
+  degrees of freedom alone, since the block it is put on already is the
+  scale matrix.  This is the `$OMEGAP`/`$OMEGAPD` pair of a NONMEM
+  `NWPRI` model:
+
+```r
+lotri({
+  eta.cl + eta.v ~ c(0.1,
+                     0.01, 0.2)
+  prior(eta.cl, eta.v) ~ invWishart(4)
+})
+```
+
+  It works on a 1x1 block too (an inverse Wishart of dimension one is
+  an inverse gamma), and an improper `nu <= p - 1` is an error.
+
+* A normal prior can be put on the omega values themselves, which is
+  what a NONMEM `TNPRI` model needs.  `om.` prepended to a between
+  subject variability names its omega element, so the normal prior
+  shorthand can be used on it:
+
+```r
+lotri({
+  eta.cl ~ 0.3
+  eta.v ~ 0.1
+  om.eta.cl ~ 0.01
+  om.eta.v ~ 0.04
+})
+```
+
+  The omega itself is untouched; only the prior is added.  Correlated
+  omega priors work the same way, including the per row line form.  An
+  `om.` name has to match a real between subject variability and never
+  creates one.  `prior(om.eta.cl)` and `prior(eta.cl)` mean the same
+  thing; the `om.` spelling exists so the shorthand has a name to put
+  on the left of a `~`, since `eta.cl ~ ...` already means the omega
+  value.
+
+  Degrees of freedom and a normal prior are alternative ways of putting
+  a prior on an omega, so a model that gives both is an error.
+
+* Because normal priors are so common they also have a shorthand that
+  reuses the matrix syntax: putting a *population estimate* on the left
+  of a `~` gives it a normal prior with a zero mean and the given
+  variance.
+
+```r
+lotri({
+  tka <- 1
+  tcl <- 3
+  tv <- 4
+  tka ~ 4          # tka ~ N(0, sd=2)
+  tcl + tv ~ c(1,  # (tcl, tv) ~ MVN(0, Sigma)
+               0.01, 1)
+})
+```
+
+  All of the matrix spellings work here, including the per row line form
+  (`tcl ~ 1; tv ~ c(0.01, 1)`) and the `sd()`, `var()`, `cor()`, `cov()`
+  and `chol()` transformations.  The `<-` value remains the initial
+  estimate; it is not the prior mean.  An uncorrelated block simply
+  becomes independent normal priors.  A zero variance is an error.
+
+  Note this changes behavior: `lotri({b <- 3; b ~ 0.4})` used to be a
+  "duplicated parameter" error and is now a normal prior on `b`.  A name
+  that is not an estimate still specifies an eta as before.
+
+* Added `lotriPriorDists()` which returns the table of supported
+  distributions (including the 'Stan' name for each), so that
+  downstream packages can generate the corresponding 'Stan' code.
+
+* The `lotriEst` data frame and `as.data.frame()` output gained a
+  `prior` column.
+
+## Bug fixes
+
+* Labels now follow the matrix when `rcm=TRUE` re-orders it.
+  Previously the labels stayed in the order they were parsed in while
+  the matrix was permuted, so they were applied to the wrong
+  parameters.
+
+* `lotriLabels` are no longer dropped when matrices are combined (ie
+  `lotri(mat1, mat2)` or `lotriMat()`); they are now concatenated in C
+  along with the matrix itself.
+
+* `as.expression()` now works on a `lotri` object that has only
+  population estimates and no matrix; it used to fail with "second
+  argument must be a list".
+
 # lotri 1.0.5
 
 * Fixed rchk issues and small bugs found while linting

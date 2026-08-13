@@ -69,6 +69,54 @@ This can take an R matrix, a list including matrices or
  The matrices are concatenated into a block diagonal matrix, like
  \code{\link[Matrix]{bdiag}}, but allows expressions to specify
  matrices easier.
+
+ Population estimates can be given with
+
+ name <- estimate
+
+ or with bounds, \code{name <- c(lower, estimate, upper)}
+
+ A prior distribution can be put on any of these with
+
+ prior(name) ~ dist(...)
+
+ Since the statement names what it applies to, prior lines can be
+ put anywhere in the block.  A prior can be given for a population
+ estimate, for a single eta, or for a whole covariance block:
+
+ prior(eta1, eta2) ~ lkjCorr(2)
+
+ Normal priors also have a shorthand that reuses the matrix syntax:
+ when the name on the left of a \code{~} is a population estimate
+ (instead of an eta), it is a normal prior with a zero mean and the
+ given variance
+
+ tka ~ 4
+
+ tcl + tv ~ c(1,
+              0.01, 1)
+
+ The first is a normal prior on \code{tka} with a standard deviation
+ of 2 and the second a multivariate normal prior on \code{tcl} and
+ \code{tv} with a zero mean vector.  Every matrix spelling works,
+ including the per row line form and the \code{sd()}/\code{cor()}
+ transformations.  The estimate given with \code{<-} stays the initial
+ estimate; it is not the prior mean.
+
+ The distributions understood are listed by
+ \code{\link{lotriPriorDists}}.  Each has three accepted spellings:
+ the R name where R parameterizes it the same way 'Stan' does
+ (\code{dnorm()}), the camelCase name (\code{invWishart()}), and the
+ 'Stan' name (\code{inv_wishart()}).  The canonical one is the R name
+ where there is a faithful one and the camelCase name otherwise.
+
+ Bounds are not repeated in the prior; a parameter declared as
+ \code{c(0, 1)} with a \code{dcauchy(0, 5)} prior is a half-Cauchy.
+
+ The scale matrix of the Wishart family is optional, since the block
+ it is put on already is that matrix, so
+ \code{prior(eta1, eta2) ~ invWishart(4)} gives just the degrees of
+ freedom (the \code{$OMEGAPD} of a NONMEM NWPRI model).
 }
 \examples{
 

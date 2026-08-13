@@ -61,8 +61,8 @@ SEXP _lotriEstDf(SEXP lst_, R_xlen_t totNum) {
   R_xlen_t i0 = 0;
   int pro = 0;
   R_xlen_t lstLen = Rf_xlength(lst_);
-  SEXP ret  = PROTECT(Rf_allocVector(VECSXP, 7)); pro++;
-  SEXP retN = PROTECT(Rf_allocVector(STRSXP, 7)); pro++;
+  SEXP ret  = PROTECT(Rf_allocVector(VECSXP, 8)); pro++;
+  SEXP retN = PROTECT(Rf_allocVector(STRSXP, 8)); pro++;
 
   SET_STRING_ELT(retN, 0, Rf_mkChar("name"));
   SEXP name = PROTECT(Rf_allocVector(STRSXP, totNum)); pro++;
@@ -96,6 +96,10 @@ SEXP _lotriEstDf(SEXP lst_, R_xlen_t totNum) {
   SEXP backTransform = PROTECT(Rf_allocVector(STRSXP, totNum)); pro++;
   SET_VECTOR_ELT(ret, 6, backTransform);
 
+  SET_STRING_ELT(retN, 7, Rf_mkChar("prior"));
+  SEXP prior = PROTECT(Rf_allocVector(STRSXP, totNum)); pro++;
+  SET_VECTOR_ELT(ret, 7, prior);
+
   for (R_xlen_t listCnt = 0; listCnt < lstLen; ++listCnt) {
     SEXP curV = Rf_getAttrib(VECTOR_ELT(lst_, listCnt), Rf_install("lotriEst"));
     if (!Rf_isNull(curV)) {
@@ -106,6 +110,14 @@ SEXP _lotriEstDf(SEXP lst_, R_xlen_t totNum) {
       int *fixIn = INTEGER(VECTOR_ELT(curV, 4));
       SEXP labelIn = VECTOR_ELT(curV, 5);
       SEXP backTransformIn = VECTOR_ELT(curV, 6);
+      // The prior column was added after the other 7; a lotriEst
+      // coming from an older object (or from another package) can
+      // still be 7 long, so it has to be read defensively.
+      SEXP priorIn = R_NilValue;
+      if (Rf_xlength(curV) > 7) {
+	priorIn = VECTOR_ELT(curV, 7);
+	if (TYPEOF(priorIn) != STRSXP) priorIn = R_NilValue;
+      }
       R_xlen_t inLen = Rf_length(nameIn);
       for (R_xlen_t inCnt = 0; inCnt < inLen; ++inCnt) {
 	SET_STRING_ELT(name, i0, STRING_ELT(nameIn, inCnt));
@@ -115,6 +127,11 @@ SEXP _lotriEstDf(SEXP lst_, R_xlen_t totNum) {
 	fix[i0] = fixIn[inCnt];
 	SET_STRING_ELT(label, i0, STRING_ELT(labelIn, inCnt));
 	SET_STRING_ELT(backTransform, i0, STRING_ELT(backTransformIn, inCnt));
+	if (Rf_isNull(priorIn)) {
+	  SET_STRING_ELT(prior, i0, NA_STRING);
+	} else {
+	  SET_STRING_ELT(prior, i0, STRING_ELT(priorIn, inCnt));
+	}
 	i0++;
       }
     }
@@ -191,6 +208,10 @@ SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum, SEXP matCls) {
     doCls = 1;
     Rf_setAttrib(ret, Rf_install("lotriFix"), retF);
   }
+  // Carry the per-parameter character attributes across the
+  // concatenation; these used to be silently dropped here.
+  doCls |= lotriSetStrAttr(ret, "lotriLabels", li.lst, len, totdim, &pro);
+  doCls |= lotriSetStrAttr(ret, "lotriPriors", li.lst, len, totdim, &pro);
   if (liEst) {
     doCls = 1;
     SEXP liEstSEXP = PROTECT(_lotriEstDf(lst_, liEst)); pro++;

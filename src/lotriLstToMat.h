@@ -103,6 +103,62 @@ static inline void lotriLstToMatFillInMatrixBand(double *retd, int *retf, int ns
   }
 }
 
+/* Per-parameter character attributes (`lotriLabels`, `lotriPriors`)
+   are stored on each block in the same order as the block's dimnames,
+   so they are concatenated with the same banding walk that builds the
+   matrix itself.  Without this they would simply be dropped whenever
+   blocks are combined. */
+static inline int lotriLstHasStrAttr(SEXP lst, R_xlen_t len, const char *what) {
+  for (R_xlen_t i = 0; i < len; ++i) {
+    SEXP cur = VECTOR_ELT(lst, i);
+    if (TYPEOF(cur) == VECSXP) cur = VECTOR_ELT(cur, 0);
+    SEXP curAttr = Rf_getAttrib(cur, Rf_install(what));
+    if (TYPEOF(curAttr) == STRSXP && Rf_length(curAttr) == Rf_ncols(cur)) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
+static inline void lotriLstToMatFillInStrAttr(SEXP out, const char *what,
+					      SEXP lst, R_xlen_t len) {
+  int curBand = 0;
+  for (R_xlen_t i = 0; i < len; ++i) {
+    SEXP cur = VECTOR_ELT(lst, i);
+    int nsame = 1;
+    if (TYPEOF(cur) == VECSXP) {
+      nsame = isSingleInt(VECTOR_ELT(cur, 1), 1);
+      cur = VECTOR_ELT(cur, 0);
+    }
+    int totN = Rf_ncols(cur);
+    SEXP curAttr = PROTECT(Rf_getAttrib(cur, Rf_install(what)));
+    int has = (TYPEOF(curAttr) == STRSXP && Rf_length(curAttr) == totN);
+    for (int cursame = nsame; cursame--;) {
+      for (int j = 0; j < totN; ++j) {
+	if (has) {
+	  SET_STRING_ELT(out, curBand + j, STRING_ELT(curAttr, j));
+	} else {
+	  SET_STRING_ELT(out, curBand + j, NA_STRING);
+	}
+      }
+      curBand += totN;
+    }
+    UNPROTECT(1);
+  }
+}
+
+/* Attach one concatenated character attribute to the assembled matrix,
+   when any of the blocks carried it.  Returns 1 when it was set, so the
+   caller knows the result needs the `lotriFix` class. */
+static inline int lotriSetStrAttr(SEXP ret, const char *what, SEXP lst,
+				  R_xlen_t len, int totdim, int *pro) {
+  if (!lotriLstHasStrAttr(lst, len, what)) return 0;
+  SEXP out = PROTECT(Rf_allocVector(STRSXP, totdim)); (*pro)++;
+  lotriLstToMatFillInStrAttr(out, what, lst, len);
+  Rf_setAttrib(ret, Rf_install(what), out);
+  return 1;
+}
+
 static inline void lotriLstToMatFillInFullMatrix(double *retd, int *retf, int *totdim, SEXP retN,
 						 int *curBand, R_xlen_t *len, lotriInfo *li, int *named) {
   SEXP sameS, dimnames, colnames, curFixed = R_NilValue;

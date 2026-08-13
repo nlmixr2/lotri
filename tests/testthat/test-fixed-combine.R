@@ -33,7 +33,8 @@ test_that("combine fix1 and fix2", {
                               upper = c(Inf, 2, Inf, 2, 2, Inf, 2, Inf, 2, 2),
                               fix = c(FALSE, FALSE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, TRUE, TRUE),
                               label = c("a label", NA, NA, NA, NA, "b label", NA, NA, NA, NA),
-                              backTransform = c("exp", NA, NA, NA, NA, "expit", NA, NA, NA, NA)),
+                              backTransform = c("exp", NA, NA, NA, NA, "expit", NA, NA, NA, NA),
+                              prior = rep(NA_character_, 10)),
                          class = "data.frame", row.names = c(NA, 10L)))
 
   class(c1) <- NULL
@@ -68,7 +69,8 @@ test_that("combine fix1 and fix2", {
                               upper = c(Inf, 2, Inf, 2, 2),
                               fix = c(FALSE, FALSE, TRUE, TRUE, TRUE),
                               label = c("a label", NA, NA, NA, NA),
-                              backTransform = c("exp", NA, NA, NA, NA)),
+                              backTransform = c("exp", NA, NA, NA, NA),
+                              prior = rep(NA_character_, 5)),
                          class = "data.frame", row.names = c(NA, 5L)))
 
   expect_equal(lotriEst(c1, drop=TRUE),

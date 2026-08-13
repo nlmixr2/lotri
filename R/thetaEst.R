@@ -178,6 +178,14 @@
         .lst[[length(.lst)]] <- .df0
         env$df <- .lst
       }
+    } else if (.lotriIsPriorLine(x)) {
+      ## `prior(name) ~ dist(...)` is handled in .f()/.fCall().
+      ##
+      ## It is intercepted here so that (1) the recursion below does not
+      ## walk into the distribution arguments and pick up an assignment
+      ## such as `dnorm(mean <- 0, sd = 1)` as a new estimate, and (2)
+      ## `env$assign` is left alone so a `label()` after a prior line
+      ## still attaches to the preceding estimate.
     } else if  (identical(x[[1]], quote(`<-`)) ||
                   identical(x[[1]], quote(`=`))) {
       env$assign <- TRUE
@@ -186,6 +194,7 @@
       if (inherits(.df, "data.frame")) {
         env$df <- c(env$df, list(data.frame(name=.name, .df, label=NA_character_,
                                             backTransform=NA_character_,
+                                            prior=NA_character_,
                                             stringsAsFactors = FALSE)))
       } else {
         env$err <- c(env$err, paste0("estimate syntax unsupported: ", .name, " ", deparse(x[[1]]), " ", .df))
