@@ -314,6 +314,32 @@ lotriPriorDists <- function() {
        kind=.dist$kind, args=.args, text=.txt)
 }
 
+#' Which family does a stored prior belong to?
+#'
+#' Used to keep the two mutually exclusive ways of putting a prior on an
+#' omega apart: degrees of freedom (the Wishart family, a NONMEM `NWPRI`)
+#' and a normal prior on the omega values (a NONMEM `TNPRI`).
+#'
+#' @param txt prior as stored in the `prior` column
+#' @return `"wishart"`, `"normal"` or `"other"`
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriPriorFamily <- function(txt) {
+  vapply(txt, function(.t) {
+    if (is.na(.t)) return(NA_character_)
+    .fn <- try(str2lang(.t)[[1]], silent=TRUE)
+    if (inherits(.fn, "try-error")) return("other")
+    .dist <- .lotriPriorLookup(as.character(.fn))
+    if (is.null(.dist)) return("other")
+    if (.dist$kind == "matrix" && .dist$support == "cov") return("wishart")
+    if (.dist$stanName %in% c("normal", "std_normal", "multi_normal",
+                              "multi_normal_cholesky", "multi_normal_prec")) {
+      return("normal")
+    }
+    "other"
+  }, character(1), USE.NAMES=FALSE)
+}
+
 #' Check a normalized prior against its target
 #'
 #' @param info result of `.lotriPriorNormalize()`

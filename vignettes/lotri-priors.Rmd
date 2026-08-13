@@ -222,6 +222,19 @@ Naming the eta directly means the same thing, so `prior(om.eta.cl)` and
 shorthand has a name to put on the left of the `~`, since `eta.cl ~ ...`
 already means the omega value itself.
 
+The two are alternatives, not additions, so a model that gives an omega both
+degrees of freedom and a normal prior is rejected:
+
+```{r error=TRUE}
+lotri({
+  eta.cl + eta.v ~ c(0.3,
+                     0.01, 0.1)
+  eta.ka ~ 0.5
+  prior(eta.cl, eta.v) ~ invWishart(4)
+  om.eta.ka ~ 0.01
+})
+```
+
 ### One block at a time
 
 The names have to be *exactly* one block.  Two unrelated diagonal elements

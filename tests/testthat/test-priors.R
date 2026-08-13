@@ -569,6 +569,49 @@ test_that("a NWPRI and a TNPRI omega prior are distinguishable", {
   expect_true(grepl("^multiNormal", attr(.tn, "lotriPriors")[1]))
 })
 
+test_that("an omega cannot have both degrees of freedom and a normal prior", {
+
+  ## NWPRI and TNPRI are alternative ways of putting a prior on the
+  ## omega, so a model picks one
+  expect_error(lotri({
+    eta.cl + eta.v ~ c(0.3,
+                       0.01, 0.1)
+    eta.ka ~ 0.5
+    prior(eta.cl, eta.v) ~ invWishart(4)
+    om.eta.ka ~ 0.01
+  }), "alternatives")
+
+  ## the same thing said the other way round
+  expect_error(lotri({
+    eta.cl ~ 0.3
+    eta.ka ~ 0.5
+    om.eta.cl ~ 0.01
+    prior(eta.ka) ~ invWishart(2)
+  }))
+
+  ## either one on its own is fine
+  expect_error(lotri({
+    eta.cl + eta.v ~ c(0.3,
+                       0.01, 0.1)
+    prior(eta.cl, eta.v) ~ invWishart(4)
+  }), NA)
+  expect_error(lotri({
+    eta.cl ~ 0.3
+    eta.v ~ 0.1
+    om.eta.cl ~ 0.01
+    om.eta.v ~ 0.04
+  }), NA)
+
+  ## and a prior that is neither family does not trip the check
+  expect_error(lotri({
+    eta.cl + eta.v ~ c(0.3,
+                       0.01, 0.1)
+    eta.ka ~ 0.5
+    prior(eta.cl, eta.v) ~ invWishart(4)
+    prior(eta.ka) ~ dgamma(2, 1)
+  }), NA)
+})
+
 test_that("labels follow the matrix when rcm re-orders it", {
 
   ## regression: the labels used to stay in parse order while the

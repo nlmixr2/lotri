@@ -1112,6 +1112,15 @@ NULL
            paste(.nm, collapse="', '"), "'", call.=FALSE)
     }
   }
+  ## degrees of freedom on an omega (a NONMEM NWPRI) and a normal prior
+  ## on the omega values (a NONMEM TNPRI) are alternative ways of saying
+  ## the same thing, so a model cannot carry both
+  .fam <- unlist(lapply(.pri, .lotriPriorFamily))
+  if (any(.fam == "wishart", na.rm=TRUE) && any(.fam == "normal", na.rm=TRUE)) {
+    stop("a model cannot have both degrees of freedom (ie 'invWishart()') ",
+         "and a normal prior (ie 'om.eta ~ 0.1') on its omegas; these are ",
+         "alternatives, not additions", call.=FALSE)
+  }
   for (.k in seq_along(.mats)) {
     if (all(is.na(.pri[[.k]]))) next
     .m <- .mats[[.k]]

@@ -71,6 +71,9 @@ lotri({
   on the left of a `~`, since `eta.cl ~ ...` already means the omega
   value.
 
+  Degrees of freedom and a normal prior are alternative ways of putting
+  a prior on an omega, so a model that gives both is an error.
+
 * Because normal priors are so common they also have a shorthand that
   reuses the matrix syntax: putting a *population estimate* on the left
   of a `~` gives it a normal prior with a zero mean and the given
