@@ -1,0 +1,325 @@
+---
+title: "Prior distributions in lotri"
+author: "Matthew Fidler"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Prior distributions in lotri}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+library(lotri)
+```
+
+# Why priors are in `lotri`
+
+A `lotri({})` block is the `ini({})` block of a `nlmixr2` model.  Until now
+it could only say what a parameter *is* -- an estimate, optional bounds, a
+`fix` flag, a label -- but not what is believed about it beforehand.
+
+Bayesian estimation methods need that missing piece.  This adds a way to
+attach a prior distribution to any parameter in the block.
+
+`lotri` deliberately stops at parsing, validating and storing the prior.  It
+does not evaluate the density and it does not generate any 'Stan' code; that
+is the job of the package doing the estimation.  What `lotri` guarantees is
+that by the time the estimation code sees a prior, the distribution exists,
+has the right number of arguments, and does not contradict the parameter's
+bounds.
+
+# The syntax
+
+A prior is given with `prior(name) ~ dist(...)`:
+
+```{r}
+m <- lotri({
+  tka <- 0.45
+  tcl <- c(0, 1, 10)
+
+  prior(tka) ~ dnorm(0, 10)
+  prior(tcl) ~ dlnorm(1, 0.5)
+})
+
+lotriEst(m)
+```
+
+Because the statement names the parameter it applies to, prior lines are
+**order independent**.  These two blocks are the same:
+
+```{r}
+m1 <- lotri({
+  tka <- 0.45
+  prior(tka) ~ dnorm(0, 10)
+})
+
+m2 <- lotri({
+  prior(tka) ~ dnorm(0, 10)
+  tka <- 0.45
+})
+
+identical(m1, m2)
+```
+
+That matters in practice: you can keep all the priors together at the bottom
+of a long block instead of interleaving them with the estimates.
+
+# What a prior can be attached to
+
+## Population parameters
+
+```{r}
+lotriEst(lotri({
+  tka <- 0.45
+  prior(tka) ~ dnorm(0, 10)
+}))
+```
+
+## A single between subject variability term
+
+```{r}
+m <- lotri({
+  eta.ka ~ 0.3
+  prior(eta.ka) ~ dgamma(2, 1)
+})
+
+attr(m, "lotriPriors")
+```
+
+## A whole covariance block
+
+Correlation and covariance matrices have their own distributions, and those
+apply to the block rather than to any one element.  Give every name in the
+block:
+
+```{r}
+m <- lotri({
+  eta.cl + eta.v ~ c(0.1,
+                     0.01, 0.2)
+  prior(eta.cl, eta.v) ~ lkj_corr(2)
+})
+
+attr(m, "lotriPriors")
+```
+
+The prior is stored on the first diagonal element of the block it belongs
+to, which is why only the first entry is filled in above.
+
+The names have to be *exactly* one block.  Two unrelated diagonal elements
+are two 1x1 blocks, not one 2x2 block, so this is an error:
+
+```{r error=TRUE}
+lotri({
+  eta.a ~ 1
+  eta.b ~ 1
+  prior(eta.a, eta.b) ~ lkj_corr(2)
+})
+```
+
+# Distribution names
+
+The R name is canonical whenever R parameterizes the distribution the same
+way 'Stan' does.  When there is no faithful R equivalent, the 'Stan' name is
+canonical.  Both spellings are always accepted on input and are normalized to
+the canonical one, so these give the same result:
+
+```{r}
+a <- lotri({ tka <- 0.45; prior(tka) ~ dnorm(0, 10) })
+b <- lotri({ tka <- 0.45; prior(tka) ~ normal(0, 10) })
+
+identical(a, b)
+lotriEst(a)$prior
+```
+
+Arguments may be positional or named, in any order:
+
+```{r}
+lotriEst(lotri({
+  tka <- 0.45
+  prior(tka) ~ dnorm(sd=10, mean=0)
+}))$prior
+```
+
+## Why `dt()` is not `student_t()`
+
+The one place where an R name is *refused* is `dt()`.  R's `dt(x, df, ncp)`
+is the standardized (or noncentral) t, while the 'Stan'
+`student_t(nu, mu, sigma)` is a location-scale t.  They are different
+distributions, so aliasing them would silently change the model:
+
+```{r error=TRUE}
+lotri({
+  tka <- 0.45
+  prior(tka) ~ dt(3)
+})
+```
+
+Use `student_t()` with its own parameterization instead:
+
+```{r}
+lotriEst(lotri({
+  tka <- 0.45
+  prior(tka) ~ student_t(3, 0, 10)
+}))$prior
+```
+
+## The supported distributions
+
+`lotriPriorDists()` returns the whole table, including the 'Stan' name for
+each distribution, which is what a package generating 'Stan' code needs:
+
+```{r}
+d <- lotriPriorDists()
+nrow(d)
+head(d, 10)
+```
+
+The `kind` column says what a distribution may be attached to --
+`univariate` for a single parameter, `matrix` and `multivariate` for a
+covariance block:
+
+```{r}
+subset(d, kind == "matrix", select=c(name, stanName, parNames))
+```
+
+# Bounds and truncated priors
+
+The bounds are not repeated in the prior.  They already live on the
+parameter, so a symmetric distribution on a parameter bounded below by zero
+*is* a half distribution:
+
+```{r}
+m <- lotri({
+  propSd <- c(0, 0.1)
+  prior(propSd) ~ dcauchy(0, 5)
+})
+
+as.data.frame(m)[, c("name", "lower", "est", "upper", "prior")]
+```
+
+Here `propSd` has `lower = 0` and a Cauchy prior, so it is a half-Cauchy.  A
+package generating 'Stan' code has everything it needs to emit the
+`T[0, ]` truncation.
+
+Because the bounds are known, `lotri` can also check that the prior does not
+contradict them.  A distribution with positive support on a parameter that
+allows negative values is an error:
+
+```{r error=TRUE}
+lotri({
+  a <- c(-10, 1, 10)
+  prior(a) ~ dlnorm(0, 1)
+})
+```
+
+# What else is checked
+
+Unknown distributions are rejected, with a suggestion when there is an
+obvious near match:
+
+```{r error=TRUE}
+lotri({ a <- 1; prior(a) ~ dnorml(0, 1) })
+```
+
+So are the wrong number of arguments, and argument names that do not belong
+to the distribution:
+
+```{r error=TRUE}
+lotri({ a <- 1; prior(a) ~ dnorm(0) })
+```
+
+```{r error=TRUE}
+lotri({ a <- 1; prior(a) ~ dnorm(mu=0, sd=1) })
+```
+
+A matrix-valued distribution on a single parameter, a univariate one on a
+block, a prior on a parameter that does not exist, and two priors on the
+same parameter are all errors as well.
+
+# Getting the priors back out
+
+Priors round trip.  They appear in the `prior` column of the estimate data
+frame and of `as.data.frame()`, and they are printed back as valid `lotri`
+code:
+
+```{r}
+m <- lotri({
+  tka <- 0.45
+  label("Ka")
+  tcl <- c(0, 1, 10)
+
+  eta.cl + eta.v ~ c(0.1,
+                     0.01, 0.2)
+  eta.ka ~ 0.3
+
+  prior(tka) ~ dnorm(0, 10)
+  prior(tcl) ~ dlnorm(1, 0.5)
+  prior(eta.ka) ~ dgamma(2, 1)
+  prior(eta.cl, eta.v) ~ lkj_corr(2)
+})
+
+as.data.frame(m)[, c("name", "est", "condition", "prior")]
+```
+
+```{r}
+as.expression(m)
+```
+
+Note that the block prior comes back as `prior(eta.cl, eta.v)`, with the
+whole block recovered, not just the element it was stored on.  Since the
+deparsed form is valid input, it can be fed straight back in:
+
+```{r}
+identical(as.data.frame(eval(as.expression(m))), as.data.frame(m))
+```
+
+Priors are matched to parameters **by name**, never by position, so they are
+unaffected by the matrix re-ordering that `lotri` does when `rcm=TRUE` (which
+is what `nlmixr2` uses):
+
+```{r}
+m <- lotri({
+  a ~ 1
+  b ~ c(0, 1)
+  c ~ c(0.5, 0, 1)
+  prior(a) ~ dgamma(1, 1)
+}, rcm=TRUE)
+
+dimnames(m)[[1]]
+attr(m, "lotriPriors")
+```
+
+The matrix has been re-ordered, and the prior has followed `a` rather than
+staying on the first row.
+
+# Using this downstream
+
+A package that generates 'Stan' code needs two things from `lotri`, and both
+are available:
+
+1. the prior itself, from the `prior` column of `as.data.frame()` (which is
+   the `$iniDf` of a `nlmixr2` model) together with that row's `lower` and
+   `upper` for any truncation, and
+2. the 'Stan' spelling of the distribution, from `lotriPriorDists()`.
+
+```{r}
+m <- lotri({
+  tka <- 0.45
+  prior(tka) ~ dnorm(0, 10)
+})
+
+.df <- as.data.frame(m)
+.p <- .df$prior[!is.na(.df$prior)]
+.p
+
+## map the canonical name to the Stan one
+.fn <- as.character(str2lang(.p)[[1]])
+lotriPriorDists()$stanName[lotriPriorDists()$name == .fn]
+```
+
+which is enough to write `target += normal_lpdf(tka | 0, 10);`.
