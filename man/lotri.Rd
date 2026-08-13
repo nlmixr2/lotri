@@ -86,6 +86,23 @@ This can take an R matrix, a list including matrices or
 
  prior(eta1, eta2) ~ lkj_corr(2)
 
+ Normal priors also have a shorthand that reuses the matrix syntax:
+ when the name on the left of a \code{~} is a population estimate
+ (instead of an eta), it is a normal prior with a zero mean and the
+ given variance
+
+ tka ~ 4
+
+ tcl + tv ~ c(1,
+              0.01, 1)
+
+ The first is a normal prior on \code{tka} with a standard deviation
+ of 2 and the second a multivariate normal prior on \code{tcl} and
+ \code{tv} with a zero mean vector.  Every matrix spelling works,
+ including the per row line form and the \code{sd()}/\code{cor()}
+ transformations.  The estimate given with \code{<-} stays the initial
+ estimate; it is not the prior mean.
+
  The distributions understood are listed by
  \code{\link{lotriPriorDists}}; the R name is used when R
  parameterizes the distribution the same way 'Stan' does and the

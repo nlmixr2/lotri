@@ -810,6 +810,127 @@ NULL
   invisible()
 }
 
+#' Names on the left hand side of a `~`
+#'
+#' @param x left hand side language object, ie `a` or `a + b + c`
+#' @return character vector of names, or NULL when the left hand side is
+#'   not a name or a sum of names
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriTildeLhsNames <- function(x) {
+  if (is.name(x)) return(as.character(x))
+  if (is.call(x) && identical(x[[1]], quote(`+`)) && length(x) == 3L) {
+    .l <- .lotriTildeLhsNames(x[[2]])
+    .r <- .lotriTildeLhsNames(x[[3]])
+    if (is.null(.l) || is.null(.r)) return(NULL)
+    return(c(.l, .r))
+  }
+  NULL
+}
+
+#' Is this a `theta ~ variance` normal prior line?
+#'
+#' A `~` whose left hand side names only *population estimates* cannot be
+#' a matrix specification (the names would collide with the estimates), so
+#' it is taken as the shorthand for a normal prior on those estimates.
+#'
+#' @param x language object to test
+#' @param env parsing environment, which carries the estimate names
+#' @return TRUE when this is the normal prior shorthand
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriIsThetaPriorLine <- function(x, env) {
+  if (!(is.call(x) && length(x) == 3L && identical(x[[1]], quote(`~`)))) {
+    return(FALSE)
+  }
+  if (is.null(env$thetaNames)) return(FALSE)
+  ## a conditioned block (`| id`) is always a matrix, never a prior
+  if (is.call(x[[3]]) && identical(x[[3]][[1]], quote(`|`))) return(FALSE)
+  .nm <- .lotriTildeLhsNames(x[[2]])
+  !is.null(.nm) && all(.nm %in% env$thetaNames)
+}
+
+#' Handle the `theta ~ variance` normal prior shorthand
+#'
+#' `tka ~ 1` is a `dnorm(0, 1)` prior on `tka`, and
+#' `tcl + tv ~ c(1, 0, 1)` is a multivariate normal prior on `tcl` and
+#' `tv` with a zero mean vector.  The estimate given with `<-` stays the
+#' initial estimate; it is not the prior mean.
+#'
+#' @param x language object of the prior line
+#' @param env parsing environment
+#' @return nothing, called for the side effect on `env$priors`
+#' @noRd
+#' @author Matthew L. Fidler
+.fCallThetaPrior <- function(x, env) {
+  if (is.null(env$thetaPriorEnv)) {
+    .env2 <- new.env(parent = emptyenv())
+    .env2$isCov <- FALSE
+    .env2$fun <- NULL
+    .env2$rcm <- FALSE
+    .env2$df <- NULL
+    .env2$lastN <- 0
+    .env2$eta1 <- 0L
+    .env2$cnd <- character()
+    .env2$names <- character(0)
+    .env2$labels <- character(0)
+    env$thetaPriorEnv <- .env2
+  }
+  ## fed through the ordinary matrix parser so that every matrix
+  ## spelling works here too: the plus form, the per row line form
+  ## (`tcl ~ 1; tv ~ c(0.01, 1)`), and `sd()`/`cor()`/`chol()`
+  .fCallTilde(x, env$thetaPriorEnv)
+  invisible()
+}
+
+#' Turn the accumulated `theta ~ variance` lines into priors
+#'
+#' The lines are collected into one matrix so that the per row line form
+#' builds up a block the same way it does for etas.  The matrix is then
+#' split into its blocks: a 1x1 block is a univariate normal prior and a
+#' larger block is a multivariate normal prior with a zero mean vector.
+#'
+#' @param env parsing environment
+#' @return nothing, called for the side effect on `env$priors`
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriThetaPriorsFromEnv <- function(env) {
+  if (is.null(env$thetaPriorEnv)) return(invisible())
+  .mat <- .lotriGetMatrixFromEnv(env$thetaPriorEnv)
+  if (dim(.mat)[1] == 0L) return(invisible())
+  attr(.mat, "lotriFix") <- NULL
+  attr(.mat, "lotriUnfix") <- NULL
+  attr(.mat, "lotriLabels") <- NULL
+  class(.mat) <- NULL
+  for (.blk in lotriMatInv(.mat)) { # nolint
+    .nm <- dimnames(.blk)[[1]]
+    ## unnamed so that the deparsed prior is `dnorm(0, 1)` and not
+    ## `dnorm(0, c(tcl = 1))`
+    .d <- unname(diag(.blk))
+    .w <- which(.d == 0)
+    if (length(.w) > 0L) {
+      stop("a normal prior on '", paste(.nm[.w], collapse="', '"),
+           "' cannot have zero variance; did you mean 'fix()'?", call.=FALSE)
+    }
+    .w <- which(.d < 0)
+    if (length(.w) > 0L) {
+      stop("a normal prior on '", paste(.nm[.w], collapse="', '"),
+           "' cannot have a negative variance", call.=FALSE)
+    }
+    if (length(.nm) == 1L) {
+      .txt <- paste0("dnorm(0, ", .deparse1(sqrt(.d[1])), ")") # nolint
+    } else {
+      ## the covariance is kept as the lotri expression that built it,
+      ## which is valid R and round trips exactly
+      .txt <- paste0("multi_normal(0, lotri(",
+                     .deparse1(.lotriGetEtaMatEltPlusForm(.blk)[[1]]), "))") # nolint
+    }
+    env$priors <- c(env$priors,
+                    list(list(names=.nm, info=.lotriPriorNormalize(str2lang(.txt)))))
+  }
+  invisible()
+}
+
 #' Do these names make up exactly one covariance block of `mat`?
 #'
 #' @param mat matrix to check
@@ -889,8 +1010,9 @@ NULL
     if (!is.null(est) && all(.nm %in% est$name)) {
       .w <- match(.nm, est$name)
       .lotriPriorCheckTarget(.info, .nm, est$lower[.w], est$upper[.w], isBlock=FALSE)
-      if (!is.na(est$prior[.w])) {
-        stop("more than one prior given for '", .nm, "'", call.=FALSE)
+      if (any(!is.na(est$prior[.w]))) {
+        stop("more than one prior given for '",
+             paste(.nm[!is.na(est$prior[.w])], collapse="', '"), "'", call.=FALSE)
       }
       est$prior[.w] <- .info$text
       next
@@ -955,6 +1077,11 @@ NULL
     ## `.lotriEnv$lastTilde` is not changed; otherwise a `label()`
     ## following a prior would be applied to the last matrix row.
     .fCallPrior(x, env)
+  } else if (.lotriIsThetaPriorLine(x, env)) {
+    ## `tka ~ 1` where `tka` is a population estimate is a normal prior,
+    ## not an eta; checked before `lastTilde` is set for the same reason
+    ## as the `prior()` branch above
+    .fCallThetaPrior(x, env)
   } else if (identical(x[[1]], quote(`~`))) {
     .lotriEnv$lastTilde <- TRUE
     .fCallTilde(x, env)
@@ -1597,8 +1724,12 @@ NULL
   .env$.hasErr <- .envT$.hasErr
   .env$.err <- .envT$.err
   .env$.lines <- .envT$.lines
+  ## the estimate names are needed while walking the `~` side so that
+  ## `tka ~ 1` can be told apart from an eta specification
+  .env$thetaNames <- .est$name
   .f(sX, .env)
   .printErr(.env) # nolint
+  .lotriThetaPriorsFromEnv(.env)
   if (!is.null(.env$matrix)) {
     .res <- .lotriResolvePriors(.env$matrix, .est, .env$priors)
     return(list(ret=.res$ret, est=.res$est, done=TRUE))
@@ -1828,6 +1959,23 @@ NULL
 #'  estimate, for a single eta, or for a whole covariance block:
 #'
 #'  prior(eta1, eta2) ~ lkj_corr(2)
+#'
+#'  Normal priors also have a shorthand that reuses the matrix syntax:
+#'  when the name on the left of a \code{~} is a population estimate
+#'  (instead of an eta), it is a normal prior with a zero mean and the
+#'  given variance
+#'
+#'  tka ~ 4
+#'
+#'  tcl + tv ~ c(1,
+#'               0.01, 1)
+#'
+#'  The first is a normal prior on \code{tka} with a standard deviation
+#'  of 2 and the second a multivariate normal prior on \code{tcl} and
+#'  \code{tv} with a zero mean vector.  Every matrix spelling works,
+#'  including the per row line form and the \code{sd()}/\code{cor()}
+#'  transformations.  The estimate given with \code{<-} stays the initial
+#'  estimate; it is not the prior mean.
 #'
 #'  The distributions understood are listed by
 #'  \code{\link{lotriPriorDists}}; the R name is used when R

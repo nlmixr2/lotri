@@ -282,10 +282,19 @@ lotriPriorDists <- function() {
                                    isBlock=FALSE) {
   .n <- length(names)
   .what <- paste0("'", paste(names, collapse=", "), "'")
-  if (info$kind %in% c("matrix", "multivariate")) {
+  if (info$kind == "matrix") {
+    ## lkj_corr()/wishart() and friends are priors on a matrix, so they
+    ## need an actual covariance block
     if (!isBlock || .n < 2L) {
       stop("prior '", info$name, "' applies to a covariance block, but ", .what,
            " is a single parameter", call.=FALSE)
+    }
+  } else if (info$kind == "multivariate") {
+    ## multi_normal() and friends are priors on a vector of parameters,
+    ## so they work on a covariance block *or* a group of estimates
+    if (.n < 2L) {
+      stop("prior '", info$name, "' applies to more than one parameter, but ",
+           .what, " is a single parameter", call.=FALSE)
     }
   } else if (.n > 1L) {
     stop("prior '", info$name, "' is univariate and cannot be applied to the block ",

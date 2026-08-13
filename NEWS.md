@@ -30,6 +30,32 @@ lotri({
   `lotri` validates the distribution name, its arity, and its support
   against the parameter's bounds; it does not generate any 'Stan' code.
 
+* Because normal priors are so common they also have a shorthand that
+  reuses the matrix syntax: putting a *population estimate* on the left
+  of a `~` gives it a normal prior with a zero mean and the given
+  variance.
+
+```r
+lotri({
+  tka <- 1
+  tcl <- 3
+  tv <- 4
+  tka ~ 4          # tka ~ N(0, sd=2)
+  tcl + tv ~ c(1,  # (tcl, tv) ~ MVN(0, Sigma)
+               0.01, 1)
+})
+```
+
+  All of the matrix spellings work here, including the per row line form
+  (`tcl ~ 1; tv ~ c(0.01, 1)`) and the `sd()`, `var()`, `cor()`, `cov()`
+  and `chol()` transformations.  The `<-` value remains the initial
+  estimate; it is not the prior mean.  An uncorrelated block simply
+  becomes independent normal priors.  A zero variance is an error.
+
+  Note this changes behavior: `lotri({b <- 3; b ~ 0.4})` used to be a
+  "duplicated parameter" error and is now a normal prior on `b`.  A name
+  that is not an estimate still specifies an eta as before.
+
 * Added `lotriPriorDists()` which returns the table of supported
   distributions (including the 'Stan' name for each), so that
   downstream packages can generate the corresponding 'Stan' code.
@@ -47,6 +73,10 @@ lotri({
 * `lotriLabels` are no longer dropped when matrices are combined (ie
   `lotri(mat1, mat2)` or `lotriMat()`); they are now concatenated in C
   along with the matrix itself.
+
+* `as.expression()` now works on a `lotri` object that has only
+  population estimates and no matrix; it used to fail with "second
+  argument must be a list".
 
 # lotri 1.0.5
 

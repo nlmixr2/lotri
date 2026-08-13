@@ -211,7 +211,11 @@
         }
       })
     })
-    do.call(`c`, unlist(.l))
+    ## a matrix with no etas at all (ie an estimate only lotri) gives an
+    ## empty list here, and `do.call(c, NULL)` is an error
+    .u <- unlist(.l)
+    if (is.null(.u)) return(NULL)
+    do.call(`c`, .u)
   } else if (inherits(x, "list")) {
     .n <- names(x)
     do.call("c", lapply(.n, function(nme) {
@@ -320,9 +324,28 @@ lotriDataFrameToLotriExpression <- function(data, useIni=FALSE) { # nolint
     .ret[[length(.ret) + 1L]] <<-
       str2lang(paste0("prior(", paste(nms, collapse=", "), ") ~ ", txt))
   }
+  .isMultiPrior <- function(txt) {
+    .fn <- try(str2lang(txt)[[1]], silent=TRUE)
+    if (inherits(.fn, "try-error")) return(FALSE)
+    .dist <- .lotriPriorLookup(as.character(.fn))
+    !is.null(.dist) && .dist$kind %in% c("matrix", "multivariate")
+  }
   if (!is.null(est) && any(names(est) == "prior")) {
+    .done <- rep(FALSE, length(est$name))
     for (.i in seq_along(est$name)) {
-      if (!is.na(est$prior[.i])) .add(est$name[.i], est$prior[.i])
+      if (.done[.i] || is.na(est$prior[.i])) next
+      .txt <- est$prior[.i]
+      if (.isMultiPrior(.txt)) {
+        ## a multivariate prior is stored on every estimate it covers, so
+        ## the group is recovered by the estimates that share it
+        .w <- which(!is.na(est$prior) & est$prior == .txt)
+      } else {
+        ## two estimates can legitimately have the same univariate prior,
+        ## so those must stay separate lines
+        .w <- .i
+      }
+      .done[.w] <- TRUE
+      .add(est$name[.w], .txt)
     }
   }
   .mats <- NULL

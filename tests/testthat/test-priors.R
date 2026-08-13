@@ -163,6 +163,153 @@ test_that("priors are matched by name so rcm re-ordering is safe", {
   expect_equal(attr(m, "lotriPriors")[.w], "dgamma(1, 1)")
 })
 
+test_that("a theta on the left of ~ is a normal prior, not an eta", {
+
+  m <- lotri({
+    tka <- 1
+    tka ~ 4
+  })
+
+  ## the variance is 4, so the sd of the prior is 2, and the mean is zero
+  expect_equal(lotriEst(m)$prior, "dnorm(0, 2)")
+  ## it did not become an eta
+  expect_equal(dim(m)[1], 0L)
+  ## and the estimate is untouched
+  expect_equal(lotriEst(m)$est, 1)
+})
+
+test_that("an uncorrelated theta prior block is independent normals", {
+
+  m <- lotri({
+    tka <- 1
+    tcl <- 3
+    tv <- 4
+    tcl + tv ~ c(1,
+                 0, 1)
+  })
+
+  expect_equal(lotriEst(m)$prior,
+               c(NA_character_, "dnorm(0, 1)", "dnorm(0, 1)"))
+
+  ## which is the same thing as saying it one row at a time
+  m2 <- lotri({
+    tka <- 1
+    tcl <- 3
+    tv <- 4
+    tcl ~ 1
+    tv ~ c(0, 1)
+  })
+
+  expect_equal(m, m2)
+})
+
+test_that("a correlated theta prior is a multivariate normal", {
+
+  ## the line (per row) form has to build up the block, exactly like it
+  ## does for etas
+  m <- lotri({
+    tka <- 1
+    tcl <- 3
+    tv <- 4
+    tcl ~ 1
+    tv ~ c(0.01, 1)
+  })
+
+  .expect <- "multi_normal(0, lotri(tcl + tv ~ c(1, 0.01, 1)))"
+  expect_equal(lotriEst(m)$prior, c(NA_character_, .expect, .expect))
+
+  ## and the plus form gives the same thing
+  m2 <- lotri({
+    tka <- 1
+    tcl <- 3
+    tv <- 4
+    tcl + tv ~ c(1,
+                 0.01, 1)
+  })
+
+  expect_equal(m, m2)
+})
+
+test_that("theta priors accept the matrix transformations", {
+
+  ## sd(2) and sd(3) are variances of 4 and 9
+  m <- lotri({
+    tcl <- 3
+    tv <- 4
+    tcl + tv ~ sd(2,
+                  0.5, 3)
+  })
+
+  expect_equal(lotriEst(m)$prior[1],
+               "multi_normal(0, lotri(tcl + tv ~ c(4, 0.5, 9)))")
+
+  ## var() is the default meaning
+  m2 <- lotri({
+    tcl <- 3
+    tv <- 4
+    tcl + tv ~ var(4,
+                   0.5, 9)
+  })
+
+  expect_equal(m, m2)
+
+  ## a single theta with an sd
+  m3 <- lotri({ tka <- 1; tka ~ sd(2) })
+  expect_equal(lotriEst(m3)$prior, "dnorm(0, 2)")
+})
+
+test_that("theta priors round trip", {
+
+  m <- lotri({
+    tka <- 1
+    tcl <- 3
+    tv <- 4
+    tka ~ 4
+    tcl ~ 1
+    tv ~ c(0.01, 1)
+  })
+
+  expect_equal(as.data.frame(eval(as.expression(m))), as.data.frame(m))
+
+  ## the multivariate prior comes back as one line naming the group
+  expect_true(any(grepl("prior(tcl, tv)", vapply(as.list(as.expression(m)[[2]])[-1],
+                                                 deparse1, character(1)),
+                        fixed=TRUE)))
+})
+
+test_that("estimate only lotri objects can be deparsed", {
+  ## regression: this used to fail with "second argument must be a list"
+  expect_error(as.expression(lotri({ a <- 1; b <- 2 })), NA)
+})
+
+test_that("bad theta priors are errors", {
+
+  ## zero variance is degenerate
+  expect_error(lotri({ tka <- 1; tka ~ 0 }), "zero variance")
+
+  ## as is a negative one
+  expect_error(lotri({ tka <- 1; tka ~ -1 }))
+
+  ## and a theta cannot have both a shorthand and an explicit prior
+  expect_error(lotri({
+    tka <- 1
+    tka ~ 4
+    prior(tka) ~ dnorm(0, 10)
+  }))
+})
+
+test_that("a name that is not an estimate is still an eta", {
+
+  ## the shorthand must not change how ordinary matrices are parsed
+  m <- lotri({
+    tka <- 1
+    eta.ka ~ 0.6
+  })
+
+  expect_equal(dimnames(m)[[1]], "eta.ka")
+  expect_true(is.na(lotriEst(m)$prior))
+})
+
 test_that("bad priors are errors", {
 
   ## unknown distribution

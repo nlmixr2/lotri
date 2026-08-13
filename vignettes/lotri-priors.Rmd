@@ -121,6 +121,101 @@ lotri({
 })
 ```
 
+# The normal prior shorthand
+
+Normal priors are by far the most common, so they have a shorthand that
+reuses the matrix syntax you already know.  Putting a **population
+estimate** on the left of a `~` gives it a normal prior:
+
+```{r}
+lotriEst(lotri({
+  tka <- 1
+  tka ~ 4
+}))
+```
+
+The number on the right is a **variance**, so `tka ~ 4` is a normal prior
+with a standard deviation of 2.  The mean is always zero; the `<-` value
+stays the initial estimate and is *not* the prior mean.
+
+This is unambiguous because a name cannot be both an estimate and an eta --
+that combination used to be an error.
+
+## More than one parameter
+
+The full matrix syntax works, so a covariance between the priors is written
+the same way a covariance between etas is:
+
+```{r}
+m <- lotri({
+  tka <- 1
+  tcl <- 3
+  tv  <- 4
+  tcl + tv ~ c(1,
+               0.01, 1)
+})
+
+lotriEst(m)$prior
+```
+
+That is a multivariate normal with a zero mean vector.  The covariance is
+kept as the `lotri` expression that built it, which is valid R and round
+trips exactly.
+
+The per-row line form builds up the block, exactly as it does for etas:
+
+```{r}
+m2 <- lotri({
+  tka <- 1
+  tcl <- 3
+  tv  <- 4
+  tcl ~ 1
+  tv ~ c(0.01, 1)
+})
+
+identical(m, m2)
+```
+
+When the parameters are uncorrelated the result is simply independent
+normal priors, since that is what an MVN with a diagonal covariance is:
+
+```{r}
+lotriEst(lotri({
+  tcl <- 3
+  tv  <- 4
+  tcl + tv ~ c(1,
+               0, 1)
+}))$prior
+```
+
+## Transformations
+
+`sd()`, `var()`, `cor()`, `cov()` and `chol()` all work here too, so the
+prior can be written whichever way is most natural:
+
+```{r}
+lotriEst(lotri({
+  tcl <- 3
+  tv  <- 4
+  tcl + tv ~ sd(2,
+                0.5, 3)
+}))$prior
+```
+
+`sd(2, ..., 3)` gives variances of 4 and 9, as the stored prior shows.
+
+## Zero variance
+
+A zero variance is a point mass rather than a prior, so it is rejected
+rather than quietly accepted:
+
+```{r error=TRUE}
+lotri({
+  tka <- 1
+  tka ~ 0
+})
+```
+
 # Distribution names
 
 The R name is canonical whenever R parameterizes the distribution the same
