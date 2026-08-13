@@ -69,6 +69,10 @@ identical(m1, m2)
 That matters in practice: you can keep all the priors together at the bottom
 of a long block instead of interleaving them with the estimates.
 
+`prior()` is the general form and works for any distribution.  Normal priors
+are common enough to have a shorthand as well, which is covered below in
+[the normal prior shorthand](#the-normal-prior-shorthand).
+
 # What a prior can be attached to
 
 ## Population parameters
@@ -431,7 +435,9 @@ declare what it supports in one line:
 
 - `assertRxUiNoPriors()` for a method that cannot use priors at all
 - `assertRxUiNormalPriors()` for a method that supports priors, but only
-  normal ones
+  normal ones -- `dnorm()`, `std_normal()` and the `multi_normal()` family,
+  which is what the shorthand above produces when the parameters are
+  correlated.  A covariance matrix prior such as `lkj_corr()` is rejected.
 
 Note that these live in `rxode2` rather than here, because what counts as
 supported is a property of the estimation method, not of the specification.
