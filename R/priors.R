@@ -307,6 +307,32 @@ lotriPriorDists <- function() {
        kind=.dist$kind, args=.args, text=.txt)
 }
 
+#' Names of the covariance a stored prior carries
+#'
+#' A `multiNormal(mu, lotri(a + b ~ c(...)))` keeps the covariance as the
+#' `lotri` expression that built it, which names every member of the
+#' block in order.  This pulls those names back out.
+#'
+#' @param txt prior as stored in the `prior` column
+#' @return character vector of names, or `NULL` when the prior carries no
+#'   `lotri()` covariance
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriPriorCovNames <- function(txt) {
+  if (length(txt) != 1L || is.na(txt)) return(NULL)
+  .e <- try(str2lang(txt), silent=TRUE)
+  if (inherits(.e, "try-error") || !is.call(.e)) return(NULL)
+  for (.a in as.list(.e)[-1]) {
+    if (!(is.call(.a) && identical(.a[[1]], quote(`lotri`)))) next
+    .b <- .a[[2]]
+    ## `lotri({ a + b ~ c(...) })` and `lotri(a + b ~ c(...))` both occur
+    if (is.call(.b) && identical(.b[[1]], quote(`{`))) .b <- .b[[2]]
+    if (!(is.call(.b) && identical(.b[[1]], quote(`~`)))) return(NULL)
+    return(.lotriTildeLhsNames(.b[[2]]))
+  }
+  NULL
+}
+
 #' Which family does a stored prior belong to?
 #'
 #' Used to keep the two mutually exclusive ways of putting a prior on an

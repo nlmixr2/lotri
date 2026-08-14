@@ -916,6 +916,53 @@ NULL
   invisible()
 }
 
+#' Is this a joint population estimate + `om.` omega element prior line?
+#'
+#' A NONMEM `TNPRI` model puts the thetas and the omega elements in one
+#' variance matrix, so a prior block may name both, ie
+#' `tcl + om.eta.cl ~ c(1, 0.02, 0.01)`.  Every name has to be either a
+#' population estimate or an `om.` name, and there has to be at least one
+#' of each -- a line that is entirely one kind is handled by
+#' `.lotriIsThetaPriorLine()` or `.lotriIsOmegaPriorLine()`.
+#'
+#' @param x language object to test
+#' @param env parsing environment, which carries the estimate names
+#' @return TRUE when this is a mixed prior line
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriIsJointPriorLine <- function(x, env) {
+  if (!(is.call(x) && length(x) == 3L && identical(x[[1]], quote(`~`)))) {
+    return(FALSE)
+  }
+  if (is.null(env$thetaNames)) return(FALSE)
+  ## a conditioned block (`| id`) is always a matrix, never a prior
+  if (is.call(x[[3]]) && identical(x[[3]][[1]], quote(`|`))) return(FALSE)
+  .nm <- .lotriTildeLhsNames(x[[2]])
+  if (is.null(.nm) || length(.nm) < 2L) return(FALSE)
+  .isOm <- grepl("^om[.].", .nm)
+  .isTh <- .nm %in% env$thetaNames
+  any(.isOm) && any(.isTh) && all(.isOm | .isTh)
+}
+
+#' Handle a joint population estimate + `om.` prior line
+#'
+#' Kept in its own environment for the same reason the other two are: a
+#' joint block must not merge into either the estimate prior block or the
+#' omega prior block.
+#'
+#' @param x language object of the prior line
+#' @param env parsing environment
+#' @return nothing, called for the side effect on `env$jointPriorEnv`
+#' @noRd
+#' @author Matthew L. Fidler
+.fCallJointPrior <- function(x, env) {
+  if (is.null(env$jointPriorEnv)) {
+    env$jointPriorEnv <- .lotriNewPriorEnv()
+  }
+  .fCallTilde(x, env$jointPriorEnv)
+  invisible()
+}
+
 #' A scratch environment for accumulating normal prior lines
 #'
 #' @return a new environment set up for `.fCallTilde()`
@@ -998,6 +1045,25 @@ NULL
   .m <- unname(means[nms])
   .m[is.na(.m)] <- 0.0
   .m
+}
+
+#' Diagonal of the eta matrix being accumulated, keyed by `om.` name
+#'
+#' A joint TNPRI block puts a prior on the omega *elements*, so those
+#' entries are centered on the omega values the model already gives, the
+#' same way a theta entry is centered on its estimate.  Read straight off
+#' the accumulated triplets rather than through
+#' `.lotriGetMatrixFromEnv()`, which mutates the environment.
+#'
+#' @param env parsing environment
+#' @return named numeric vector keyed by `om.<eta>`, or `NULL`
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriOmegaDiagMeans <- function(env) {
+  if (is.null(env$df) || length(env$df$i) == 0L) return(NULL)
+  .w <- which(env$df$i == env$df$j)
+  if (length(.w) == 0L) return(NULL)
+  setNames(as.double(env$df$x[.w]), paste0("om.", env$names[env$df$i[.w]]))
 }
 
 #' Turn the accumulated `theta ~ variance` lines into priors
@@ -1114,6 +1180,60 @@ NULL
 #' @return list with the amended `ret` and `est`
 #' @noRd
 #' @author Matthew L. Fidler
+#' Resolve a joint population estimate + `om.` omega element prior
+#'
+#' The block spans two places -- the estimate table and the omega matrix
+#' -- so it is stored once, on the first name of the block, rather than
+#' being split.  The covariance keeps every name (`om.` prefix included)
+#' so a consumer can recover which entries are omega elements.
+#'
+#' @param nm character vector of the block's names, in order
+#' @param isOm logical, which of `nm` are `om.` prefixed
+#' @param info normalized prior
+#' @param est `lotriEst` data frame
+#' @param mats list of matrices making up the result
+#' @param pri list of per matrix prior character vectors
+#' @return list with the amended `est` and `pri`
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriResolveJointPrior <- function(nm, isOm, info, est, mats, pri) {
+  ## every `om.` name has to be a real between subject variability; it
+  ## never quietly creates one
+  .eta <- sub("^om[.]", "", nm[isOm])
+  .at <- NA_integer_
+  for (.k in seq_along(mats)) {
+    .m <- mats[[.k]]
+    if (!is.matrix(.m)) next
+    .dn <- dimnames(.m)[[1]]
+    if (is.null(.dn) || !all(.eta %in% .dn)) next
+    .at <- .k
+    break
+  }
+  if (is.na(.at)) {
+    stop("prior given for unknown omega element(s): '",
+         paste(nm[isOm], collapse="', '"), "'", call.=FALSE)
+  }
+  .w <- match(nm[!isOm], est$name)
+  .lotriPriorCheckTarget(info, nm, est$lower[.w], est$upper[.w],
+                         isBlock=FALSE, inMatrix=FALSE)
+  ## stored on the first name of the block, wherever that name lives
+  if (isOm[1]) {
+    .dn <- dimnames(mats[[.at]])[[1]]
+    .i <- match(sub("^om[.]", "", nm[1]), .dn)
+    if (!is.na(pri[[.at]][.i])) {
+      stop("more than one prior given for '", nm[1], "'", call.=FALSE)
+    }
+    pri[[.at]][.i] <- info$text
+  } else {
+    .i <- match(nm[1], est$name)
+    if (!is.na(est$prior[.i])) {
+      stop("more than one prior given for '", nm[1], "'", call.=FALSE)
+    }
+    est$prior[.i] <- info$text
+  }
+  list(est=est, pri=pri)
+}
+
 .lotriResolvePriors <- function(ret, est, priors, wholePriors=NULL) {
   if (length(priors) == 0L && length(wholePriors) == 0L) {
     return(list(ret=ret, est=est))
@@ -1149,6 +1269,7 @@ NULL
     rep(NA_character_, dim(m)[1])
   })
   .seen <- character(0)
+  .jointOnOmega <- FALSE
   for (.p in priors) {
     .nm <- .p$names
     .info <- .p$info
@@ -1158,6 +1279,20 @@ NULL
            call.=FALSE)
     }
     .seen <- c(.seen, .key)
+    ## a joint theta + `om.` block: one multivariate normal spanning the
+    ## estimates and the omega elements, which is what a NONMEM TNPRI
+    ## variance matrix is.  It is stored once, on the first name of the
+    ## block, and the covariance keeps every name so a consumer can split
+    ## it back apart.
+    .isOm <- grepl("^om[.].", .nm)
+    if (!is.null(est) && any(.isOm) && any(.nm %in% est$name) &&
+          all(.isOm | .nm %in% est$name)) {
+      .res <- .lotriResolveJointPrior(.nm, .isOm, .info, est, .mats, .pri)
+      est <- .res$est
+      .pri <- .res$pri
+      .jointOnOmega <- TRUE
+      next
+    }
     if (!is.null(est) && all(.nm %in% est$name)) {
       .w <- match(.nm, est$name)
       .lotriPriorCheckTarget(.info, .nm, est$lower[.w], est$upper[.w],
@@ -1206,7 +1341,8 @@ NULL
   ## on the omega values (a NONMEM TNPRI) are alternative ways of saying
   ## the same thing, so a model cannot carry both
   .fam <- unlist(lapply(.pri, .lotriPriorFamily))
-  if (any(.fam == "wishart", na.rm=TRUE) && any(.fam == "normal", na.rm=TRUE)) {
+  if (any(.fam == "wishart", na.rm=TRUE) &&
+        (any(.fam == "normal", na.rm=TRUE) || .jointOnOmega)) {
     stop("a model cannot have both degrees of freedom (ie 'invWishart()') ",
          "and a normal prior (ie 'om.eta ~ 0.1') on its omegas; these are ",
          "alternatives, not additions", call.=FALSE)
@@ -1254,6 +1390,12 @@ NULL
   } else if (.lotriIsWholeOmegaPriorLine(x)) {
     ## `~invWishart(4)` gives every omega block the same prior
     .fCallWholeOmegaPrior(x, env)
+  } else if (.lotriIsJointPriorLine(x, env)) {
+    ## `tcl + om.eta.cl ~ c(...)` is one multivariate normal over a theta
+    ## and an omega element, which is the joint variance a NONMEM TNPRI
+    ## model uses; checked before the two single kind branches, which each
+    ## require every name to be of their own kind
+    .fCallJointPrior(x, env)
   } else if (.lotriIsOmegaPriorLine(x)) {
     ## `om.eta.cl ~ 0.01` is a normal prior on the omega element of
     ## `eta.cl`, which is what a NONMEM TNPRI model needs
@@ -1918,6 +2060,10 @@ NULL
   }
   .lotriThetaPriorsFromEnv(.env, means=.thetaMeans)
   .lotriThetaPriorsFromEnv(.env, "omegaPriorEnv")
+  ## a joint block is centered on what the model already says: the
+  ## estimate for a theta name, the omega value for an `om.` name
+  .lotriThetaPriorsFromEnv(.env, "jointPriorEnv",
+                           means=c(.thetaMeans, .lotriOmegaDiagMeans(.env)))
   if (!is.null(.env$matrix)) {
     .res <- .lotriResolvePriors(.env$matrix, .est, .env$priors, .env$wholeOmegaPrior)
     return(list(ret=.res$ret, est=.res$est, done=TRUE))

@@ -1141,3 +1141,98 @@ test_that("labels survive combining lotri matrices", {
 
   expect_equal(attr(ab, "lotriLabels"), c("L1", "L2"))
 })
+
+test_that("a joint theta + om. block is one multivariate normal", {
+
+  ## A NONMEM TNPRI model puts the thetas and the omega elements in one
+  ## variance matrix, so a prior block may name both.
+  m <- lotri({
+    tcl <- 1
+    eta.cl ~ 0.3
+    tcl + om.eta.cl ~ c(0.01,
+                        0.002, 0.005)
+  })
+
+  .expect <- paste0("multiNormal(c(1, 0.3), ",
+                    "lotri(tcl + om.eta.cl ~ c(0.01, 0.002, 0.005)))")
+
+  ## stored once, on the first name of the block, since the block spans
+  ## both the estimates and the omega
+  expect_equal(lotriEst(m)$prior, .expect)
+  expect_null(attr(m, "lotriPriors"))
+
+  ## centered on what the model already says: the estimate for `tcl` and
+  ## the omega value for `om.eta.cl`
+  expect_equal(lotriEst(m)$est, 1)
+  expect_equal(unname(as.matrix(m)[1, 1]), 0.3)
+
+  ## naming the block with prior() means the same thing
+  m2 <- lotri({
+    tcl <- 1
+    eta.cl ~ 0.3
+    prior(tcl, om.eta.cl) ~ multiNormal(c(1, 0.3),
+                                        lotri(tcl + om.eta.cl ~ c(0.01,
+                                                                  0.002, 0.005)))
+  })
+  expect_equal(lotriEst(m2)$prior, .expect)
+
+  ## and it round trips, which needs the rendered prior() to name every
+  ## member of the block rather than only where it is stored
+  expect_equal(as.data.frame(eval(as.expression(m))), as.data.frame(m))
+  expect_equal(as.data.frame(as.lotri(as.data.frame(m))), as.data.frame(m))
+})
+
+test_that("a joint prior is checked like any other", {
+
+  ## an om. name still has to be a real between subject variability
+  expect_error(lotri({
+    tcl <- 1
+    eta.cl ~ 0.3
+    tcl + om.eta.nope ~ c(0.01,
+                          0.002, 0.005)
+  }), "unknown omega element")
+
+  ## degrees of freedom and a normal prior on the omegas stay
+  ## alternatives, even when the normal one arrives in a joint block
+  expect_error(lotri({
+    tcl <- 1
+    eta.cl ~ 0.3
+    prior(eta.cl) ~ invWishart(4)
+    tcl + om.eta.cl ~ c(0.01,
+                        0.002, 0.005)
+  }), "alternatives, not additions")
+
+  ## a line that is entirely one kind is not joint, and keeps its own
+  ## meaning
+  expect_equal(lotriEst(lotri({ tcl <- 1; tv <- 2; tcl + tv ~ c(1, 0.1, 1) }))$prior[1],
+               "multiNormal(c(1, 2), lotri(tcl + tv ~ c(1, 0.1, 1)))")
+  expect_equal(attr(lotri({
+    eta.cl + eta.v ~ c(0.3,
+                       0.01, 0.1)
+    om.eta.cl + om.eta.v ~ c(0.01,
+                             0.001, 0.02)
+  }), "lotriPriors")[1],
+  "multiNormal(0, lotri(om.eta.cl + om.eta.v ~ c(0.01, 0.001, 0.02)))")
+})
+
+test_that("a joint block may name omega elements that are not one block", {
+
+  ## A pure `om.` prior has to be exactly one covariance block, because
+  ## it is a prior on that block.  A joint block is not -- a TNPRI
+  ## variance matrix covers whichever thetas and omega elements it likes
+  ## -- so unrelated elements are allowed here.
+  m <- lotri({
+    tcl <- 1
+    eta.cl ~ 0.3
+    eta.v ~ 0.1
+    tcl + om.eta.cl + om.eta.v ~ c(0.01,
+                                   0.002, 0.005,
+                                   0.001, 0.0005, 0.004)
+  })
+
+  expect_equal(lotriEst(m)$prior,
+               paste0("multiNormal(c(1, 0.3, 0.1), lotri(tcl + om.eta.cl + ",
+                      "om.eta.v ~ c(0.01, 0.002, 0.005, 0.001, 5e-04, 0.004)))"))
+  ## the omega itself is untouched -- only a prior was added
+  expect_equal(unname(diag(as.matrix(m))), c(0.3, 0.1))
+})
