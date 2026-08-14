@@ -107,6 +107,28 @@ lotri({
 * The `lotriEst` data frame and `as.data.frame()` output gained a
   `prior` column.
 
+* `prior()` also takes the normal prior shorthand, so
+  `prior(tka) ~ 0.1` means what `tka ~ 0.1` means:
+
+```r
+lotri({
+  tka <- 0.45
+  prior(tka) ~ 0.1          # dnorm(0.45, sqrt(0.1))
+  prior(tcl, tv) ~ c(1,     # multivariate, centered on the estimates
+                     0.01, 1)
+})
+```
+
+  Every matrix spelling works here as it does bare, an uncorrelated
+  group becomes independent normal priors, and the mean is what the
+  model already says.  The point is that a bare `~` cannot be used
+  everywhere -- piping onto a model reads `tka ~ 0.1` as changing the
+  estimate -- so the `prior()` flag gives the shorthand a spelling that
+  works when piping too.
+
+  A namespaced distribution such as `stats::dnorm(0, 1)` is now an
+  error rather than being evaluated as a variance.
+
 ## Bug fixes
 
 * Labels now follow the matrix when `rcm=TRUE` re-orders it.

@@ -902,10 +902,15 @@ test_that("malformed prior calls are rejected", {
   expect_equal(lotriEst(lotri({ tka <- 1; prior(tka) ~ stdNormal }))$prior,
                "stdNormal()")
 
-  ## something that is not a call at all
-  expect_error(lotri({ tka <- 1; prior(tka) ~ 1 }))
+  ## a bare number is not malformed any more -- it is the normal prior
+  ## shorthand, the same as `tka ~ 1` means
+  expect_equal(lotriEst(lotri({ tka <- 1; prior(tka) ~ 1 }))$prior,
+               lotriEst(lotri({ tka <- 1; tka ~ 1 }))$prior)
 
-  ## a namespaced call is not a distribution name
+  ## a namespaced distribution is refused rather than evaluated as a
+  ## variance, which is what the shorthand would otherwise make of it
+  ## (reported per line, then re-thrown as the generic "lotri syntax
+  ## errors above", so the message itself is not matched here)
   expect_error(lotri({ tka <- 1; prior(tka) ~ stats::dnorm(0, 1) }))
 
   ## the same argument given twice
@@ -1330,4 +1335,53 @@ test_that("a joint block finds its omega in a later nesting level", {
     tcl + om.eta.nope ~ c(0.02,
                           0.002, 0.005)
   }), "unknown omega element")
+})
+
+test_that("prior() can take the normal prior shorthand", {
+
+  ## `prior(tka) ~ 0.1` means what `tka ~ 0.1` means.  The bare form
+  ## cannot be used everywhere -- piping onto a model already reads
+  ## `tka ~ 0.1` as changing the estimate -- so the `prior()` flag gives
+  ## the shorthand a spelling that works there too.
+  .p <- function(m) {
+    .e <- lotriEst(m); .a <- attr(m, "lotriPriors")
+    c(if (!is.null(.e)) .e$prior, if (!is.null(.a)) .a)
+  }
+
+  expect_equal(.p(lotri({ tka <- 1; prior(tka) ~ 0.1 })),
+               .p(lotri({ tka <- 1; tka ~ 0.1 })))
+
+  ## a correlated group is the same multivariate normal either way
+  expect_equal(.p(lotri({ tcl <- 1; tv <- 2; prior(tcl, tv) ~ c(1, 0.01, 1) })),
+               .p(lotri({ tcl <- 1; tv <- 2; tcl + tv ~ c(1, 0.01, 1) })))
+
+  ## and an uncorrelated one becomes independent normals, as it does bare
+  expect_equal(.p(lotri({ tcl <- 1; tv <- 2; prior(tcl, tv) ~ c(1, 0, 1) })),
+               .p(lotri({ tcl <- 1; tv <- 2; tcl + tv ~ c(1, 0, 1) })))
+
+  ## the transformations work here too
+  expect_equal(lotriEst(lotri({ tka <- 1; prior(tka) ~ sd(2) }))$prior,
+               "dnorm(1, 2)")
+
+  ## an `om.` name puts it on the omega element, as the bare form does
+  expect_equal(.p(lotri({ eta.cl ~ 0.3; prior(om.eta.cl) ~ 0.01 })),
+               .p(lotri({ eta.cl ~ 0.3; om.eta.cl ~ 0.01 })))
+
+  ## a distribution on the right is still a distribution
+  expect_equal(lotriEst(lotri({ tka <- 1; prior(tka) ~ dnorm(0, 10) }))$prior,
+               "dnorm(0, 10)")
+
+  ## and the variance is still checked
+  expect_error(lotri({ tka <- 1; prior(tka) ~ 0 }))
+  expect_error(lotri({ tka <- 1; prior(tka) ~ -1 }))
+})
+
+test_that("the two omega spellings agree under the shorthand", {
+
+  ## `prior(eta.cl)` and `prior(om.eta.cl)` are documented as the same
+  ## thing, so the shorthand has to center both on the omega value
+  .a <- lotri({ eta.cl ~ 0.3; prior(om.eta.cl) ~ 0.01 })
+  .b <- lotri({ eta.cl ~ 0.3; prior(eta.cl) ~ 0.01 })
+  expect_equal(attr(.a, "lotriPriors"), attr(.b, "lotriPriors"))
+  expect_equal(attr(.b, "lotriPriors"), "dnorm(0.3, 0.1)")
 })

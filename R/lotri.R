@@ -789,6 +789,27 @@ NULL
 #' @return nothing, called for the side effect on `env$priors`
 #' @noRd
 #' @author Matthew L. Fidler
+#' Is the right hand side of a prior a distribution call?
+#'
+#' Anything that is not a distribution is taken as a variance
+#' specification, ie the normal prior shorthand written under `prior()`.
+#'
+#' @param x right hand side language object
+#' @return TRUE when it names a supported distribution
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriPriorRhsIsDist <- function(x) {
+  .nm <- NULL
+  if (is.name(x)) {
+    .nm <- as.character(x)
+  } else if (is.call(x)) {
+    .h <- as.character(x[[1]])
+    if (length(.h) == 1L) .nm <- .h
+  }
+  if (is.null(.nm)) return(FALSE)
+  !is.null(.lotriPriorLookup(.nm))
+}
+
 .fCallPrior <- function(x, env) {
   .lhs <- as.list(x[[2]])[-1]
   if (length(.lhs) == 0L) {
@@ -804,6 +825,33 @@ NULL
   if (length(.dup) > 0) {
     stop("duplicated parameter(s) in 'prior()': '", paste(.dup, collapse="', '"), "'",
          call.=FALSE)
+  }
+  ## `prior(tka) ~ stats::dnorm(0, 1)` would otherwise fall through to
+  ## the shorthand below and be *evaluated*, silently becoming a variance
+  ## of 0.24 rather than the distribution that was plainly meant
+  .rhs <- x[[3]]
+  if (is.call(.rhs) && is.call(.rhs[[1]]) && length(.rhs[[1]]) == 3L &&
+        (identical(.rhs[[1]][[1]], quote(`::`)) ||
+           identical(.rhs[[1]][[1]], quote(`:::`)))) {
+    .fn <- as.character(.rhs[[1]][[3]])
+    if (length(.fn) == 1L && !is.null(.lotriPriorLookup(.fn))) {
+      stop("a prior distribution is not namespaced; write '", .fn,
+           "(...)' rather than '", .deparse1(.rhs[[1]]), "(...)'", # nolint
+           call.=FALSE)
+    }
+  }
+  if (!.lotriPriorRhsIsDist(x[[3]])) {
+    ## `prior(tka) ~ 0.1` is the normal prior shorthand written under a
+    ## `prior()`.  In a block `tka ~ 0.1` already means this, but the
+    ## `prior()` form works where a bare `~` cannot: piping onto a model,
+    ## where `tka ~ 0.1` has always meant "change the estimate".
+    ##
+    ## Held until the walk is over: a shorthand prior is centered on what
+    ## the model already says, and those values are only known once every
+    ## estimate and omega has been parsed.
+    env$priorShorthand <- c(env$priorShorthand,
+                            list(list(names=.nm, rhs=x[[3]])))
+    return(invisible())
   }
   env$priors <- c(env$priors,
                   list(list(names=.nm, info=.lotriPriorNormalize(x[[3]]))))
@@ -1103,36 +1151,101 @@ NULL
   class(.mat) <- NULL
   for (.blk in lotriMatInv(.mat)) { # nolint
     .nm <- dimnames(.blk)[[1]]
-    ## unnamed so that the deparsed prior is `dnorm(0, 1)` and not
-    ## `dnorm(0, c(tcl = 1))`
-    .d <- unname(diag(.blk))
-    .w <- which(.d == 0)
-    if (length(.w) > 0L) {
-      stop("a normal prior on '", paste(.nm[.w], collapse="', '"),
-           "' cannot have zero variance; did you mean 'fix()'?", call.=FALSE)
-    }
-    .w <- which(.d < 0)
-    if (length(.w) > 0L) {
-      stop("a normal prior on '", paste(.nm[.w], collapse="', '"),
-           "' cannot have a negative variance", call.=FALSE)
-    }
-    .mu <- .lotriPriorMeans(.nm, means)
-    if (length(.nm) == 1L) {
-      .txt <- paste0("dnorm(", .deparse1(.mu), ", ", # nolint
-                     .deparse1(sqrt(.d[1])), ")")
-    } else {
-      ## an all zero mean vector stays the scalar `0` it has always been
-      ## deparsed as, so only a real mean widens the text
-      .muTxt <- if (all(.mu == 0)) "0" else .deparse1(.mu)
-      ## the covariance is kept as the lotri expression that built it,
-      ## which is valid R and round trips exactly
-      .txt <- paste0("multiNormal(", .muTxt, ", lotri(", # nolint
-                     .deparse1(.lotriGetEtaMatEltPlusForm(.blk)[[1]]), "))")
-    }
     env$priors <- c(env$priors,
-                    list(list(names=.nm, info=.lotriPriorNormalize(str2lang(.txt)))))
+                    list(list(names=.nm,
+                              info=.lotriPriorNormalize(
+                                str2lang(.lotriNormalPriorText(.blk, means))))))
   }
   invisible()
+}
+
+#' Turn the held `prior(name) ~ variance` lines into priors
+#'
+#' Run once the walk is over, so the means the shorthand centers on are
+#' known.  An uncorrelated group becomes independent normal priors, the
+#' same as the bare shorthand gives.
+#'
+#' @param env parsing environment
+#' @param means named vector of prior means
+#' @return nothing, called for the side effect on `env$priors`
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriPriorShorthandFromEnv <- function(env, means=NULL) {
+  if (is.null(env$priorShorthand)) return(invisible())
+  ## `prior(eta.cl)` and `prior(om.eta.cl)` name the same thing, so an
+  ## omega mean has to be reachable under either spelling; without this
+  ## the bare name centers on zero and the `om.` one on the omega value
+  if (!is.null(means)) {
+    .om <- grep("^om[.].", names(means), value=TRUE)
+    if (length(.om) > 0L) {
+      .alias <- means[.om]
+      names(.alias) <- sub("^om[.]", "", .om)
+      .alias <- .alias[!(names(.alias) %in% names(means))]
+      means <- c(means, .alias)
+    }
+  }
+  for (.p in env$priorShorthand) {
+    .env2 <- .lotriNewPriorEnv()
+    .fCallTilde(as.call(list(quote(`~`),
+                             str2lang(paste(.p$names, collapse=" + ")),
+                             .p$rhs)),
+                .env2)
+    .mat <- .lotriGetMatrixFromEnv(.env2)
+    if (dim(.mat)[1] != length(.p$names)) {
+      stop("the variance given to 'prior(", paste(.p$names, collapse=", "),
+           ")' does not match the number of parameters", call.=FALSE)
+    }
+    attr(.mat, "lotriFix") <- NULL
+    attr(.mat, "lotriUnfix") <- NULL
+    attr(.mat, "lotriLabels") <- NULL
+    class(.mat) <- NULL
+    for (.blk in lotriMatInv(.mat)) { # nolint
+      env$priors <- c(env$priors,
+                      list(list(names=dimnames(.blk)[[1]],
+                                info=.lotriPriorNormalize(
+                                  str2lang(.lotriNormalPriorText(.blk, means))))))
+    }
+  }
+  invisible()
+}
+
+#' The normal prior a variance specification stands for
+#'
+#' Shared by the two ways of writing it: a bare `tka ~ 0.1` line, and a
+#' `prior(tka) ~ 0.1` which is the only form available when piping.
+#'
+#' @param blk one covariance block, with dimnames
+#' @param means named vector of prior means, or NULL for all zero
+#' @return the prior as text, ie `"dnorm(0, 1)"`
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriNormalPriorText <- function(blk, means=NULL) {
+  .nm <- dimnames(blk)[[1]]
+  ## unnamed so that the deparsed prior is `dnorm(0, 1)` and not
+  ## `dnorm(0, c(tcl = 1))`
+  .d <- unname(diag(blk))
+  .w <- which(.d == 0)
+  if (length(.w) > 0L) {
+    stop("a normal prior on '", paste(.nm[.w], collapse="', '"),
+         "' cannot have zero variance; did you mean 'fix()'?", call.=FALSE)
+  }
+  .w <- which(.d < 0)
+  if (length(.w) > 0L) {
+    stop("a normal prior on '", paste(.nm[.w], collapse="', '"),
+         "' cannot have a negative variance", call.=FALSE)
+  }
+  .mu <- .lotriPriorMeans(.nm, means)
+  if (length(.nm) == 1L) {
+    return(paste0("dnorm(", .deparse1(.mu), ", ", # nolint
+                  .deparse1(sqrt(.d[1])), ")")) # nolint
+  }
+  ## an all zero mean vector stays the scalar `0` it has always been
+  ## deparsed as, so only a real mean widens the text
+  .muTxt <- if (all(.mu == 0)) "0" else .deparse1(.mu) # nolint
+  ## the covariance is kept as the lotri expression that built it, which
+  ## is valid R and round trips exactly
+  paste0("multiNormal(", .muTxt, ", lotri(",
+         .deparse1(.lotriGetEtaMatEltPlusForm(blk)[[1]]), "))") # nolint
 }
 
 #' Do these names make up exactly one covariance block of `mat`?
@@ -2079,6 +2192,8 @@ NULL
   .lotriThetaPriorsFromEnv(.env, "omegaPriorEnv", means=.omegaMeans)
   .lotriThetaPriorsFromEnv(.env, "jointPriorEnv",
                            means=c(.thetaMeans, .omegaMeans))
+  ## `prior(tka) ~ 0.1` centers the same way, and can name either kind
+  .lotriPriorShorthandFromEnv(.env, means=c(.thetaMeans, .omegaMeans))
   if (!is.null(.env$matrix)) {
     .res <- .lotriResolvePriors(.env$matrix, .est, .env$priors, .env$wholeOmegaPrior)
     return(list(ret=.res$ret, est=.res$est, done=TRUE))
