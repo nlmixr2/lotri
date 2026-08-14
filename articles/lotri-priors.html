@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">lotri</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.6</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.7</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -65,7 +65,7 @@
                         <h4 data-toc-skip class="author">Matthew
 Fidler</h4>
             
-            <h4 data-toc-skip class="date">2026-08-13</h4>
+            <h4 data-toc-skip class="date">2026-08-14</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/nlmixr2/lotri/blob/main/vignettes/lotri-priors.Rmd" class="external-link"><code>vignettes/lotri-priors.Rmd</code></a></small>
       <div class="d-none name"><code>lotri-priors.Rmd</code></div>
@@ -277,10 +277,11 @@ its omega element:</p>
 <span><span class="op">}</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"lotriPriors"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "dnorm(0, 0.1)" "dnorm(0, 0.2)"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "dnorm(0.3, 0.1)" "dnorm(0.1, 0.2)"</span></span></code></pre></div>
 <p><code>om.eta.cl ~ 0.01</code> reads exactly like the shorthand for a
-population estimate: a normal prior with a zero mean and a variance of
-0.01. The omega itself is untouched – only the prior was added:</p>
+population estimate: a normal prior with a variance of 0.01, centered on
+the omega value the model already gives. The omega itself is untouched –
+only the prior was added:</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/diag.html" class="external-link">diag</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span></span>
 <span><span class="co">#&gt; eta.cl  eta.v </span></span>
@@ -296,7 +297,7 @@ form:</p>
 <span><span class="op">}</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">m2</span>, <span class="st">"lotriPriors"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span></span>
-<span><span class="co">#&gt; [1] "multiNormal(0, lotri(om.eta.cl + om.eta.v ~ c(0.01, 0.001, 0.02)))"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "multiNormal(c(0.3, 0.1), lotri(om.eta.cl + om.eta.v ~ c(0.01, 0.001, 0.02)))"</span></span></code></pre></div>
 <p>An <code>om.</code> name has to match a real between subject
 variability; it never quietly creates one:</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
@@ -325,12 +326,64 @@ omega both degrees of freedom and a normal prior is rejected:</p>
 <span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> a model cannot have both degrees of freedom (ie 'invWishart()') and a normal prior (ie 'om.eta ~ 0.1') on its omegas; these are alternatives, not additions</span></span></code></pre></div>
 </div>
 <div class="section level4">
+<h4 id="one-joint-block-over-thetas-and-omega-elements">One joint block over thetas and omega elements<a class="anchor" aria-label="anchor" href="#one-joint-block-over-thetas-and-omega-elements"></a>
+</h4>
+<p>A <code>TNPRI</code> variance matrix does not stop at the omegas – it
+covers the thetas <em>and</em> the omega elements together, with
+covariances between them. A block may therefore name both:</p>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span></span>
+<span>  <span class="va">tcl</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
+<span>  <span class="va">eta.cl</span> <span class="op">~</span> <span class="fl">0.3</span></span>
+<span>  <span class="va">tcl</span> <span class="op">+</span> <span class="va">om.eta.cl</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.01</span>,</span>
+<span>                      <span class="fl">0.002</span>, <span class="fl">0.005</span><span class="op">)</span></span>
+<span><span class="op">}</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/lotriEst.html">lotriEst</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span><span class="op">$</span><span class="va">prior</span></span>
+<span><span class="co">#&gt; [1] "multiNormal(c(1, 0.3), lotri(tcl + om.eta.cl ~ c(0.01, 0.002, 0.005)))"</span></span></code></pre></div>
+<p>The mean is what the model already says: the estimate for
+<code>tcl</code>, the omega value for <code>om.eta.cl</code>. The prior
+is stored once, on the first name of the block, because the block spans
+two places – the estimates and the omega – and there is no one row that
+owns it. The covariance keeps every name, so the members are recovered
+from it rather than from where it is stored:</p>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"lotriPriors"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; NULL</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/diag.html" class="external-link">diag</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span></span>
+<span><span class="co">#&gt; eta.cl </span></span>
+<span><span class="co">#&gt;    0.3</span></span></code></pre></div>
+<p>Naming the block with <code>prior()</code> means the same thing:</p>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/lotriEst.html">lotriEst</a></span><span class="op">(</span><span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span></span>
+<span>  <span class="va">tcl</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
+<span>  <span class="va">eta.cl</span> <span class="op">~</span> <span class="fl">0.3</span></span>
+<span>  <span class="fu">prior</span><span class="op">(</span><span class="va">tcl</span>, <span class="va">om.eta.cl</span><span class="op">)</span> <span class="op">~</span> <span class="fu">multiNormal</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">0.3</span><span class="op">)</span>,</span>
+<span>                                      <span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="va">tcl</span> <span class="op">+</span> <span class="va">om.eta.cl</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.01</span>,</span>
+<span>                                                                <span class="fl">0.002</span>, <span class="fl">0.005</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="op">}</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">prior</span></span>
+<span><span class="co">#&gt; [1] "multiNormal(c(1, 0.3), lotri(tcl + om.eta.cl ~ c(0.01, 0.002, 0.005)))"</span></span></code></pre></div>
+<p>Unlike a prior on the omega itself, a joint block does not have to be
+one covariance block – a <code>TNPRI</code> matrix covers whichever
+elements it likes:</p>
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/lotriEst.html">lotriEst</a></span><span class="op">(</span><span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span></span>
+<span>  <span class="va">tcl</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
+<span>  <span class="va">eta.cl</span> <span class="op">~</span> <span class="fl">0.3</span></span>
+<span>  <span class="va">eta.v</span> <span class="op">~</span> <span class="fl">0.1</span></span>
+<span>  <span class="va">tcl</span> <span class="op">+</span> <span class="va">om.eta.cl</span> <span class="op">+</span> <span class="va">om.eta.v</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.01</span>,</span>
+<span>                                 <span class="fl">0.002</span>, <span class="fl">0.005</span>,</span>
+<span>                                 <span class="fl">0.001</span>, <span class="fl">0.0005</span>, <span class="fl">0.004</span><span class="op">)</span></span>
+<span><span class="op">}</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">prior</span></span>
+<span><span class="co">#&gt; [1] "multiNormal(c(1, 0.3, 0.1), lotri(tcl + om.eta.cl + om.eta.v ~ c(0.01, 0.002, 0.005, 0.001, 5e-04, 0.004)))"</span></span></code></pre></div>
+</div>
+<div class="section level4">
 <h4 id="one-block-at-a-time">One block at a time<a class="anchor" aria-label="anchor" href="#one-block-at-a-time"></a>
 </h4>
 <p>The names have to be <em>exactly</em> one block. Two unrelated
 diagonal elements are two 1x1 blocks, not one 2x2 block, so this is an
 error:</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="va">eta.a</span> <span class="op">~</span> <span class="fl">1</span></span>
 <span>  <span class="va">eta.b</span> <span class="op">~</span> <span class="fl">1</span></span>
@@ -348,17 +401,20 @@ error:</p>
 that reuses the matrix syntax you already know. Putting a
 <strong>population estimate</strong> on the left of a <code>~</code>
 gives it a normal prior:</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/lotriEst.html">lotriEst</a></span><span class="op">(</span><span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="va">tka</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
 <span>  <span class="va">tka</span> <span class="op">~</span> <span class="fl">4</span></span>
 <span><span class="op">}</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   name lower est upper   fix label backTransform       prior</span></span>
-<span><span class="co">#&gt; 1  tka  -Inf   1   Inf FALSE  &lt;NA&gt;          &lt;NA&gt; dnorm(0, 2)</span></span></code></pre></div>
+<span><span class="co">#&gt; 1  tka  -Inf   1   Inf FALSE  &lt;NA&gt;          &lt;NA&gt; dnorm(1, 2)</span></span></code></pre></div>
 <p>The number on the right is a <strong>variance</strong>, so
 <code>tka ~ 4</code> is a normal prior with a standard deviation of 2.
-The mean is always zero; the <code>&lt;-</code> value stays the initial
-estimate and is <em>not</em> the prior mean.</p>
+The mean is the <code>&lt;-</code> estimate, so the prior is centered on
+what the model already says the parameter is – the pair a NONMEM
+<code>NWPRI</code> model writes as <code>$THETAP</code> and
+<code>$THETAPV</code>. Write <code>prior(tka) ~ dnorm(mu, sd)</code>
+when the prior is <em>not</em> centered there.</p>
 <p>This is unambiguous because a name cannot be both an estimate and an
 eta – that combination used to be an error.</p>
 <div class="section level3">
@@ -366,7 +422,7 @@ eta – that combination used to be an error.</p>
 </h3>
 <p>The full matrix syntax works, so a covariance between the priors is
 written the same way a covariance between etas is:</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="va">tka</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
 <span>  <span class="va">tcl</span> <span class="op">&lt;-</span> <span class="fl">3</span></span>
@@ -376,16 +432,16 @@ written the same way a covariance between etas is:</p>
 <span><span class="op">}</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/lotriEst.html">lotriEst</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span><span class="op">$</span><span class="va">prior</span></span>
-<span><span class="co">#&gt; [1] NA                                               </span></span>
-<span><span class="co">#&gt; [2] "multiNormal(0, lotri(tcl + tv ~ c(1, 0.01, 1)))"</span></span>
-<span><span class="co">#&gt; [3] "multiNormal(0, lotri(tcl + tv ~ c(1, 0.01, 1)))"</span></span></code></pre></div>
-<p>That is a multivariate normal with a zero mean vector. The covariance
-is kept as the <code>lotri</code> expression that built it, which is
-valid R and round trips exactly.</p>
+<span><span class="co">#&gt; [1] NA                                                     </span></span>
+<span><span class="co">#&gt; [2] "multiNormal(c(3, 4), lotri(tcl + tv ~ c(1, 0.01, 1)))"</span></span>
+<span><span class="co">#&gt; [3] "multiNormal(c(3, 4), lotri(tcl + tv ~ c(1, 0.01, 1)))"</span></span></code></pre></div>
+<p>That is a multivariate normal whose mean vector is the estimates. The
+covariance is kept as the <code>lotri</code> expression that built it,
+which is valid R and round trips exactly.</p>
 <p>The matrix means exactly what it means for etas: the off-diagonal is
 a <strong>covariance</strong>, not a correlation. A prior block and an
 eta block written the same way give the same matrix:</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">.eta</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span> <span class="va">a</span> <span class="op">+</span> <span class="va">b</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,</span>
 <span>                          <span class="fl">0.5</span>, <span class="fl">2</span><span class="op">)</span> <span class="op">}</span><span class="op">)</span></span>
 <span></span>
@@ -402,7 +458,7 @@ eta block written the same way give the same matrix:</p>
 <span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
 <p>The per-row line form builds up the block, exactly as it does for
 etas:</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">m2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="va">tka</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
 <span>  <span class="va">tcl</span> <span class="op">&lt;-</span> <span class="fl">3</span></span>
@@ -416,14 +472,14 @@ etas:</p>
 <p>When the parameters are uncorrelated the result is simply independent
 normal priors, since that is what an MVN with a diagonal covariance
 is:</p>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/lotriEst.html">lotriEst</a></span><span class="op">(</span><span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="va">tcl</span> <span class="op">&lt;-</span> <span class="fl">3</span></span>
 <span>  <span class="va">tv</span>  <span class="op">&lt;-</span> <span class="fl">4</span></span>
 <span>  <span class="va">tcl</span> <span class="op">+</span> <span class="va">tv</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,</span>
 <span>               <span class="fl">0</span>, <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">prior</span></span>
-<span><span class="co">#&gt; [1] "dnorm(0, 1)" "dnorm(0, 1)"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "dnorm(3, 1)" "dnorm(4, 1)"</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="transformations">Transformations<a class="anchor" aria-label="anchor" href="#transformations"></a>
@@ -431,15 +487,15 @@ is:</p>
 <p><code><a href="https://rdrr.io/r/stats/sd.html" class="external-link">sd()</a></code>, <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">var()</a></code>, <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cor()</a></code>,
 <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cov()</a></code> and <code><a href="https://rdrr.io/pkg/Matrix/man/chol-methods.html" class="external-link">chol()</a></code> all work here too, so the
 prior can be written whichever way is most natural:</p>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/lotriEst.html">lotriEst</a></span><span class="op">(</span><span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="va">tcl</span> <span class="op">&lt;-</span> <span class="fl">3</span></span>
 <span>  <span class="va">tv</span>  <span class="op">&lt;-</span> <span class="fl">4</span></span>
 <span>  <span class="va">tcl</span> <span class="op">+</span> <span class="va">tv</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/stats/sd.html" class="external-link">sd</a></span><span class="op">(</span><span class="fl">2</span>,</span>
 <span>                <span class="fl">0.5</span>, <span class="fl">3</span><span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">prior</span></span>
-<span><span class="co">#&gt; [1] "multiNormal(0, lotri(tcl + tv ~ c(4, 0.5, 9)))"</span></span>
-<span><span class="co">#&gt; [2] "multiNormal(0, lotri(tcl + tv ~ c(4, 0.5, 9)))"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "multiNormal(c(3, 4), lotri(tcl + tv ~ c(4, 0.5, 9)))"</span></span>
+<span><span class="co">#&gt; [2] "multiNormal(c(3, 4), lotri(tcl + tv ~ c(4, 0.5, 9)))"</span></span></code></pre></div>
 <p><code>sd(2, ..., 3)</code> gives variances of 4 and 9, as the stored
 prior shows.</p>
 </div>
@@ -448,7 +504,7 @@ prior shows.</p>
 </h3>
 <p>A zero variance is a point mass rather than a prior, so it is
 rejected rather than quietly accepted:</p>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="va">tka</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
 <span>  <span class="va">tka</span> <span class="op">~</span> <span class="fl">0</span></span>
@@ -480,7 +536,7 @@ written the way the rest of this package is written –
 <p>The canonical one – what gets stored and printed back – is the R name
 when there is a faithful one, and the camelCase name otherwise.
 Whichever you write, you get the same thing:</p>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">a</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span> <span class="va">tka</span> <span class="op">&lt;-</span> <span class="fl">0.45</span>; <span class="fu">prior</span><span class="op">(</span><span class="va">tka</span><span class="op">)</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">dnorm</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">10</span><span class="op">)</span> <span class="op">}</span><span class="op">)</span></span>
 <span><span class="va">b</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span> <span class="va">tka</span> <span class="op">&lt;-</span> <span class="fl">0.45</span>; <span class="fu">prior</span><span class="op">(</span><span class="va">tka</span><span class="op">)</span> <span class="op">~</span> <span class="fu">normal</span><span class="op">(</span><span class="fl">0</span>, <span class="fl">10</span><span class="op">)</span> <span class="op">}</span><span class="op">)</span></span>
 <span></span>
@@ -488,7 +544,7 @@ Whichever you write, you get the same thing:</p>
 <span><span class="co">#&gt; [1] TRUE</span></span>
 <span><span class="fu"><a href="../reference/lotriEst.html">lotriEst</a></span><span class="op">(</span><span class="va">a</span><span class="op">)</span><span class="op">$</span><span class="va">prior</span></span>
 <span><span class="co">#&gt; [1] "dnorm(0, 10)"</span></span></code></pre></div>
-<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">.camel</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span> <span class="va">e1</span> <span class="op">~</span> <span class="fl">1</span>; <span class="fu">prior</span><span class="op">(</span><span class="va">e1</span><span class="op">)</span> <span class="op">~</span> <span class="fu">invWishart</span><span class="op">(</span><span class="fl">2</span><span class="op">)</span> <span class="op">}</span><span class="op">)</span></span>
 <span><span class="va">.stan</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span> <span class="va">e1</span> <span class="op">~</span> <span class="fl">1</span>; <span class="fu">prior</span><span class="op">(</span><span class="va">e1</span><span class="op">)</span> <span class="op">~</span> <span class="fu">inv_wishart</span><span class="op">(</span><span class="fl">2</span><span class="op">)</span> <span class="op">}</span><span class="op">)</span></span>
 <span></span>
@@ -497,7 +553,7 @@ Whichever you write, you get the same thing:</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">.camel</span>, <span class="st">"lotriPriors"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "invWishart(2)"</span></span></code></pre></div>
 <p>Arguments may be positional or named, in any order:</p>
-<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/lotriEst.html">lotriEst</a></span><span class="op">(</span><span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="va">tka</span> <span class="op">&lt;-</span> <span class="fl">0.45</span></span>
 <span>  <span class="fu">prior</span><span class="op">(</span><span class="va">tka</span><span class="op">)</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">dnorm</a></span><span class="op">(</span>sd<span class="op">=</span><span class="fl">10</span>, mean<span class="op">=</span><span class="fl">0</span><span class="op">)</span></span>
@@ -511,7 +567,7 @@ Whichever you write, you get the same thing:</p>
 (or noncentral) t, while <code>studentT(nu, mu, sigma)</code> (the
 ‘Stan’ <code>student_t</code>) is a location-scale t. They are different
 distributions, so aliasing them would silently change the model:</p>
-<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="va">tka</span> <span class="op">&lt;-</span> <span class="fl">0.45</span></span>
 <span>  <span class="fu">prior</span><span class="op">(</span><span class="va">tka</span><span class="op">)</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/stats/TDist.html" class="external-link">dt</a></span><span class="op">(</span><span class="fl">3</span><span class="op">)</span></span>
@@ -527,7 +583,7 @@ distributions, so aliasing them would silently change the model:</p>
 <span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> lotri syntax errors above</span></span></code></pre></div>
 <p>Use <code>studentT()</code> with its own parameterization
 instead:</p>
-<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/lotriEst.html">lotriEst</a></span><span class="op">(</span><span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="va">tka</span> <span class="op">&lt;-</span> <span class="fl">0.45</span></span>
 <span>  <span class="fu">prior</span><span class="op">(</span><span class="va">tka</span><span class="op">)</span> <span class="op">~</span> <span class="fu">studentT</span><span class="op">(</span><span class="fl">3</span>, <span class="fl">0</span>, <span class="fl">10</span><span class="op">)</span></span>
@@ -540,7 +596,7 @@ instead:</p>
 <p><code><a href="../reference/lotriPriorDists.html">lotriPriorDists()</a></code> returns the whole table, including the
 ‘Stan’ name for each distribution, which is what a package generating
 ‘Stan’ code needs:</p>
-<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">d</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lotriPriorDists.html">lotriPriorDists</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">d</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 47</span></span>
@@ -570,7 +626,7 @@ instead:</p>
 <p>The <code>kind</code> column says what a distribution may be attached
 to – <code>univariate</code> for a single parameter, <code>matrix</code>
 and <code>multivariate</code> for a covariance block:</p>
-<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">d</span>, <span class="va">kind</span> <span class="op">==</span> <span class="st">"matrix"</span>, select<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">name</span>, <span class="va">stanName</span>, <span class="va">parNames</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                  name             stanName parNames</span></span>
 <span><span class="co">#&gt; 29            lkjCorr             lkj_corr      eta</span></span>
@@ -587,7 +643,7 @@ and <code>multivariate</code> for a covariance block:</p>
 <p>The bounds are not repeated in the prior. They already live on the
 parameter, so a symmetric distribution on a parameter bounded below by
 zero <em>is</em> a half distribution:</p>
-<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="va">propSd</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0.1</span><span class="op">)</span></span>
 <span>  <span class="fu">prior</span><span class="op">(</span><span class="va">propSd</span><span class="op">)</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/stats/Cauchy.html" class="external-link">dcauchy</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">5</span><span class="op">)</span></span>
@@ -602,7 +658,7 @@ everything it needs to emit the <code>T[0, ]</code> truncation.</p>
 <p>Because the bounds are known, <code>lotri</code> can also check that
 the prior does not contradict them. A distribution with positive support
 on a parameter that allows negative values is an error:</p>
-<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="va">a</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">10</span>, <span class="fl">1</span>, <span class="fl">10</span><span class="op">)</span></span>
 <span>  <span class="fu">prior</span><span class="op">(</span><span class="va">a</span><span class="op">)</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/stats/Lognormal.html" class="external-link">dlnorm</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span><span class="op">)</span></span>
@@ -615,7 +671,7 @@ on a parameter that allows negative values is an error:</p>
 </h2>
 <p>Unknown distributions are rejected, with a suggestion when there is
 an obvious near match:</p>
-<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span> <span class="va">a</span> <span class="op">&lt;-</span> <span class="fl">1</span>; <span class="fu">prior</span><span class="op">(</span><span class="va">a</span><span class="op">)</span> <span class="op">~</span> <span class="fu">dnorml</span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span><span class="op">)</span> <span class="op">}</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">lotri syntax error:</span></span></span>
 <span><span class="co"><span style="font-weight: bold;">#&gt; =================================================================================</span></span></span>
@@ -628,7 +684,7 @@ an obvious near match:</p>
 <span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> lotri syntax errors above</span></span></code></pre></div>
 <p>So are the wrong number of arguments, and argument names that do not
 belong to the distribution:</p>
-<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span> <span class="va">a</span> <span class="op">&lt;-</span> <span class="fl">1</span>; <span class="fu">prior</span><span class="op">(</span><span class="va">a</span><span class="op">)</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">dnorm</a></span><span class="op">(</span><span class="fl">0</span><span class="op">)</span> <span class="op">}</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">lotri syntax error:</span></span></span>
 <span><span class="co"><span style="font-weight: bold;">#&gt; =================================================================================</span></span></span>
@@ -639,7 +695,7 @@ belong to the distribution:</p>
 <span><span class="co">#&gt; <span style="font-weight: bold;">=================================================================================</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BBBB00; font-weight: bold;">Error</span><span style="font-weight: bold;">:</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BBBB00;">!</span> lotri syntax errors above</span></span></code></pre></div>
-<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span> <span class="va">a</span> <span class="op">&lt;-</span> <span class="fl">1</span>; <span class="fu">prior</span><span class="op">(</span><span class="va">a</span><span class="op">)</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">dnorm</a></span><span class="op">(</span>mu<span class="op">=</span><span class="fl">0</span>, sd<span class="op">=</span><span class="fl">1</span><span class="op">)</span> <span class="op">}</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">lotri syntax error:</span></span></span>
 <span><span class="co"><span style="font-weight: bold;">#&gt; =================================================================================</span></span></span>
@@ -660,7 +716,7 @@ on the same parameter are all errors as well.</p>
 <p>Priors round trip. They appear in the <code>prior</code> column of
 the estimate data frame and of <code><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame()</a></code>, and they
 are printed back as valid <code>lotri</code> code:</p>
-<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="va">tka</span> <span class="op">&lt;-</span> <span class="fl">0.45</span></span>
 <span>  <span class="fu">label</span><span class="op">(</span><span class="st">"Ka"</span><span class="op">)</span></span>
@@ -684,7 +740,7 @@ are printed back as valid <code>lotri</code> code:</p>
 <span><span class="co">#&gt; 4 (eta.cl,eta.v) 0.01        id           &lt;NA&gt;</span></span>
 <span><span class="co">#&gt; 5          eta.v 0.20        id           &lt;NA&gt;</span></span>
 <span><span class="co">#&gt; 6         eta.ka 0.30        id   dgamma(2, 1)</span></span></code></pre></div>
-<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/expression.html" class="external-link">as.expression</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span></span>
 <span><span class="co">#&gt; lotri({</span></span>
 <span><span class="co">#&gt;     tka &lt;- 0.45</span></span>
@@ -702,14 +758,14 @@ are printed back as valid <code>lotri</code> code:</p>
 <code>prior(eta.cl, eta.v)</code>, with the whole block recovered, not
 just the element it was stored on. Since the deparsed form is valid
 input, it can be fed straight back in:</p>
-<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/eval.html" class="external-link">eval</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/expression.html" class="external-link">as.expression</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
 <p>Priors are matched to parameters <strong>by name</strong>, never by
 position, so they are unaffected by the matrix re-ordering that
 <code>lotri</code> does when <code>rcm=TRUE</code> (which is what
 <code>nlmixr2</code> uses):</p>
-<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="va">a</span> <span class="op">~</span> <span class="fl">1</span></span>
 <span>  <span class="va">b</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span><span class="op">)</span></span>
@@ -737,7 +793,7 @@ and <code>upper</code> for any truncation, and</li>
 <li>the ‘Stan’ spelling of the distribution, from
 <code><a href="../reference/lotriPriorDists.html">lotriPriorDists()</a></code>.</li>
 </ol>
-<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="va">tka</span> <span class="op">&lt;-</span> <span class="fl">0.45</span></span>
 <span>  <span class="fu">prior</span><span class="op">(</span><span class="va">tka</span><span class="op">)</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">dnorm</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">10</span><span class="op">)</span></span>

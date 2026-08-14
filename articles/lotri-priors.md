@@ -236,12 +236,13 @@ m <- lotri({
 })
 
 attr(m, "lotriPriors")
-#> [1] "dnorm(0, 0.1)" "dnorm(0, 0.2)"
+#> [1] "dnorm(0.3, 0.1)" "dnorm(0.1, 0.2)"
 ```
 
 `om.eta.cl ~ 0.01` reads exactly like the shorthand for a population
-estimate: a normal prior with a zero mean and a variance of 0.01. The
-omega itself is untouched – only the prior was added:
+estimate: a normal prior with a variance of 0.01, centered on the omega
+value the model already gives. The omega itself is untouched – only the
+prior was added:
 
 ``` r
 
@@ -263,7 +264,7 @@ m2 <- lotri({
 })
 
 attr(m2, "lotriPriors")[1]
-#> [1] "multiNormal(0, lotri(om.eta.cl + om.eta.v ~ c(0.01, 0.001, 0.02)))"
+#> [1] "multiNormal(c(0.3, 0.1), lotri(om.eta.cl + om.eta.v ~ c(0.01, 0.001, 0.02)))"
 ```
 
 An `om.` name has to match a real between subject variability; it never
@@ -300,6 +301,72 @@ lotri({
 #> ! a model cannot have both degrees of freedom (ie 'invWishart()') and a normal prior (ie 'om.eta ~ 0.1') on its omegas; these are alternatives, not additions
 ```
 
+#### One joint block over thetas and omega elements
+
+A `TNPRI` variance matrix does not stop at the omegas – it covers the
+thetas *and* the omega elements together, with covariances between them.
+A block may therefore name both:
+
+``` r
+
+m <- lotri({
+  tcl <- 1
+  eta.cl ~ 0.3
+  tcl + om.eta.cl ~ c(0.01,
+                      0.002, 0.005)
+})
+
+lotriEst(m)$prior
+#> [1] "multiNormal(c(1, 0.3), lotri(tcl + om.eta.cl ~ c(0.01, 0.002, 0.005)))"
+```
+
+The mean is what the model already says: the estimate for `tcl`, the
+omega value for `om.eta.cl`. The prior is stored once, on the first name
+of the block, because the block spans two places – the estimates and the
+omega – and there is no one row that owns it. The covariance keeps every
+name, so the members are recovered from it rather than from where it is
+stored:
+
+``` r
+
+attr(m, "lotriPriors")
+#> NULL
+diag(m)
+#> eta.cl 
+#>    0.3
+```
+
+Naming the block with `prior()` means the same thing:
+
+``` r
+
+lotriEst(lotri({
+  tcl <- 1
+  eta.cl ~ 0.3
+  prior(tcl, om.eta.cl) ~ multiNormal(c(1, 0.3),
+                                      lotri(tcl + om.eta.cl ~ c(0.01,
+                                                                0.002, 0.005)))
+}))$prior
+#> [1] "multiNormal(c(1, 0.3), lotri(tcl + om.eta.cl ~ c(0.01, 0.002, 0.005)))"
+```
+
+Unlike a prior on the omega itself, a joint block does not have to be
+one covariance block – a `TNPRI` matrix covers whichever elements it
+likes:
+
+``` r
+
+lotriEst(lotri({
+  tcl <- 1
+  eta.cl ~ 0.3
+  eta.v ~ 0.1
+  tcl + om.eta.cl + om.eta.v ~ c(0.01,
+                                 0.002, 0.005,
+                                 0.001, 0.0005, 0.004)
+}))$prior
+#> [1] "multiNormal(c(1, 0.3, 0.1), lotri(tcl + om.eta.cl + om.eta.v ~ c(0.01, 0.002, 0.005, 0.001, 5e-04, 0.004)))"
+```
+
 #### One block at a time
 
 The names have to be *exactly* one block. Two unrelated diagonal
@@ -329,12 +396,15 @@ lotriEst(lotri({
   tka ~ 4
 }))
 #>   name lower est upper   fix label backTransform       prior
-#> 1  tka  -Inf   1   Inf FALSE  <NA>          <NA> dnorm(0, 2)
+#> 1  tka  -Inf   1   Inf FALSE  <NA>          <NA> dnorm(1, 2)
 ```
 
 The number on the right is a **variance**, so `tka ~ 4` is a normal
-prior with a standard deviation of 2. The mean is always zero; the `<-`
-value stays the initial estimate and is *not* the prior mean.
+prior with a standard deviation of 2. The mean is the `<-` estimate, so
+the prior is centered on what the model already says the parameter is –
+the pair a NONMEM `NWPRI` model writes as `$THETAP` and `$THETAPV`.
+Write `prior(tka) ~ dnorm(mu, sd)` when the prior is *not* centered
+there.
 
 This is unambiguous because a name cannot be both an estimate and an eta
 – that combination used to be an error.
@@ -355,14 +425,14 @@ m <- lotri({
 })
 
 lotriEst(m)$prior
-#> [1] NA                                               
-#> [2] "multiNormal(0, lotri(tcl + tv ~ c(1, 0.01, 1)))"
-#> [3] "multiNormal(0, lotri(tcl + tv ~ c(1, 0.01, 1)))"
+#> [1] NA                                                     
+#> [2] "multiNormal(c(3, 4), lotri(tcl + tv ~ c(1, 0.01, 1)))"
+#> [3] "multiNormal(c(3, 4), lotri(tcl + tv ~ c(1, 0.01, 1)))"
 ```
 
-That is a multivariate normal with a zero mean vector. The covariance is
-kept as the `lotri` expression that built it, which is valid R and round
-trips exactly.
+That is a multivariate normal whose mean vector is the estimates. The
+covariance is kept as the `lotri` expression that built it, which is
+valid R and round trips exactly.
 
 The matrix means exactly what it means for etas: the off-diagonal is a
 **covariance**, not a correlation. A prior block and an eta block
@@ -413,7 +483,7 @@ lotriEst(lotri({
   tcl + tv ~ c(1,
                0, 1)
 }))$prior
-#> [1] "dnorm(0, 1)" "dnorm(0, 1)"
+#> [1] "dnorm(3, 1)" "dnorm(4, 1)"
 ```
 
 ### Transformations
@@ -433,8 +503,8 @@ lotriEst(lotri({
   tcl + tv ~ sd(2,
                 0.5, 3)
 }))$prior
-#> [1] "multiNormal(0, lotri(tcl + tv ~ c(4, 0.5, 9)))"
-#> [2] "multiNormal(0, lotri(tcl + tv ~ c(4, 0.5, 9)))"
+#> [1] "multiNormal(c(3, 4), lotri(tcl + tv ~ c(4, 0.5, 9)))"
+#> [2] "multiNormal(c(3, 4), lotri(tcl + tv ~ c(4, 0.5, 9)))"
 ```
 
 `sd(2, ..., 3)` gives variances of 4 and 9, as the stored prior shows.
