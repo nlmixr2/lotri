@@ -119,9 +119,22 @@ lotri({
 })
 ```
 
-  Every matrix spelling works here as it does bare, an uncorrelated
-  group becomes independent normal priors, and the mean is what the
-  model already says.  The point is that a bare `~` cannot be used
+  Every matrix spelling works here as it does bare, including the per
+  row line form, so a covariance can be built up a line at a time:
+
+```r
+lotri({
+  tcl <- 3
+  tv <- 4
+  prior(tcl) ~ 1
+  prior(tv) ~ c(0.001, 1)   # same 2x2 as `tcl ~ 1; tv ~ c(0.001, 1)`
+})
+```
+
+  An uncorrelated group becomes independent normal priors, and the mean
+  is what the model already says.  Note the line form is the one place a
+  prior line is *not* order independent, since a row leans on the line
+  before it.  The point is that a bare `~` cannot be used
   everywhere -- piping onto a model reads `tka ~ 0.1` as changing the
   estimate -- so the `prior()` flag gives the shorthand a spelling that
   works when piping too.

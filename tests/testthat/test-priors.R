@@ -1385,3 +1385,45 @@ test_that("the two omega spellings agree under the shorthand", {
   expect_equal(attr(.a, "lotriPriors"), attr(.b, "lotriPriors"))
   expect_equal(attr(.b, "lotriPriors"), "dnorm(0.3, 0.1)")
 })
+
+test_that("prior() shorthand builds a block line by line", {
+
+  ## the per row line form works under `prior()` too, so a covariance
+  ## can be built up the same way the bare form builds one
+  .p <- function(m) { .e <- lotriEst(m); c(if (!is.null(.e)) .e$prior, attr(m, "lotriPriors")) }
+
+  expect_equal(
+    .p(lotri({ tcl <- 3; tv <- 4; prior(tcl) ~ 1; prior(tv) ~ c(0.001, 1) })),
+    .p(lotri({ tcl <- 3; tv <- 4; tcl ~ 1; tv ~ c(0.001, 1) })))
+
+  ## and it is the same block the plus form gives
+  expect_equal(
+    .p(lotri({ tcl <- 3; tv <- 4; prior(tcl) ~ 1; prior(tv) ~ c(0.001, 1) })),
+    .p(lotri({ tcl <- 3; tv <- 4; prior(tcl, tv) ~ c(1, 0.001, 1) })))
+
+  ## unrelated single parameters do not get pulled into one block
+  expect_equal(
+    lotriEst(lotri({ tka <- 1; tcl <- 3; prior(tka) ~ 0.1; prior(tcl) ~ 1 }))$prior,
+    c("dnorm(1, 0.316227766016838)", "dnorm(3, 1)"))
+
+  ## a block can be built alongside a scalar prior
+  .m <- lotri({
+    tka <- 1
+    tcl <- 3
+    tv <- 4
+    prior(tka) ~ 0.1
+    prior(tcl) ~ 1
+    prior(tv) ~ c(0.001, 1)
+  })
+  expect_true(grepl("^dnorm", lotriEst(.m)$prior[1]))
+  expect_true(all(grepl("^multiNormal", lotriEst(.m)$prior[2:3])))
+
+  ## the om. spelling accumulates the same way
+  expect_equal(
+    .p(lotri({ eta.cl + eta.v ~ c(0.3, 0.01, 0.1)
+               prior(om.eta.cl) ~ 0.01
+               prior(om.eta.v) ~ c(0.001, 0.02) })),
+    .p(lotri({ eta.cl + eta.v ~ c(0.3, 0.01, 0.1)
+               om.eta.cl ~ 0.01
+               om.eta.v ~ c(0.001, 0.02) })))
+})

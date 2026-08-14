@@ -846,11 +846,19 @@ NULL
     ## `prior()` form works where a bare `~` cannot: piping onto a model,
     ## where `tka ~ 0.1` has always meant "change the estimate".
     ##
-    ## Held until the walk is over: a shorthand prior is centered on what
-    ## the model already says, and those values are only known once every
-    ## estimate and omega has been parsed.
-    env$priorShorthand <- c(env$priorShorthand,
-                            list(list(names=.nm, rhs=x[[3]])))
+    ## Fed through the ordinary matrix parser into one accumulating
+    ## environment, so consecutive lines build a block the way the bare
+    ## line form does: `prior(tcl) ~ 1; prior(tv) ~ c(0.001, 1)` is the
+    ## same 2x2 as `tcl ~ 1; tv ~ c(0.001, 1)`.  Note this is the one
+    ## place a prior line is *not* order independent, because the row
+    ## form has to lean on the line before it.
+    if (is.null(env$priorShorthandEnv)) {
+      env$priorShorthandEnv <- .lotriNewPriorEnv()
+    }
+    .fCallTilde(as.call(list(quote(`~`),
+                             str2lang(paste(.nm, collapse=" + ")),
+                             x[[3]])),
+                env$priorShorthandEnv)
     return(invisible())
   }
   env$priors <- c(env$priors,
@@ -1170,43 +1178,23 @@ NULL
 #' @return nothing, called for the side effect on `env$priors`
 #' @noRd
 #' @author Matthew L. Fidler
-.lotriPriorShorthandFromEnv <- function(env, means=NULL) {
-  if (is.null(env$priorShorthand)) return(invisible())
-  ## `prior(eta.cl)` and `prior(om.eta.cl)` name the same thing, so an
-  ## omega mean has to be reachable under either spelling; without this
-  ## the bare name centers on zero and the `om.` one on the omega value
-  if (!is.null(means)) {
-    .om <- grep("^om[.].", names(means), value=TRUE)
-    if (length(.om) > 0L) {
-      .alias <- means[.om]
-      names(.alias) <- sub("^om[.]", "", .om)
-      .alias <- .alias[!(names(.alias) %in% names(means))]
-      means <- c(means, .alias)
-    }
-  }
-  for (.p in env$priorShorthand) {
-    .env2 <- .lotriNewPriorEnv()
-    .fCallTilde(as.call(list(quote(`~`),
-                             str2lang(paste(.p$names, collapse=" + ")),
-                             .p$rhs)),
-                .env2)
-    .mat <- .lotriGetMatrixFromEnv(.env2)
-    if (dim(.mat)[1] != length(.p$names)) {
-      stop("the variance given to 'prior(", paste(.p$names, collapse=", "),
-           ")' does not match the number of parameters", call.=FALSE)
-    }
-    attr(.mat, "lotriFix") <- NULL
-    attr(.mat, "lotriUnfix") <- NULL
-    attr(.mat, "lotriLabels") <- NULL
-    class(.mat) <- NULL
-    for (.blk in lotriMatInv(.mat)) { # nolint
-      env$priors <- c(env$priors,
-                      list(list(names=dimnames(.blk)[[1]],
-                                info=.lotriPriorNormalize(
-                                  str2lang(.lotriNormalPriorText(.blk, means))))))
-    }
-  }
-  invisible()
+#' Make an omega mean reachable under either spelling
+#'
+#' `prior(eta.cl)` and `prior(om.eta.cl)` name the same thing, so a
+#' shorthand written either way has to center on the same omega value.
+#'
+#' @param means named vector of prior means, or NULL
+#' @return `means` with each `om.x` also available as `x`
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriPriorMeanAlias <- function(means) {
+  if (is.null(means)) return(means)
+  .om <- grep("^om[.].", names(means), value=TRUE)
+  if (length(.om) == 0L) return(means)
+  .alias <- means[.om]
+  names(.alias) <- sub("^om[.]", "", .om)
+  .alias <- .alias[!(names(.alias) %in% names(means))]
+  c(means, .alias)
 }
 
 #' The normal prior a variance specification stands for
@@ -2192,8 +2180,10 @@ NULL
   .lotriThetaPriorsFromEnv(.env, "omegaPriorEnv", means=.omegaMeans)
   .lotriThetaPriorsFromEnv(.env, "jointPriorEnv",
                            means=c(.thetaMeans, .omegaMeans))
-  ## `prior(tka) ~ 0.1` centers the same way, and can name either kind
-  .lotriPriorShorthandFromEnv(.env, means=c(.thetaMeans, .omegaMeans))
+  ## `prior(tka) ~ 0.1` centers the same way, and can name either kind,
+  ## so the omega means have to be reachable without the `om.` too
+  .lotriThetaPriorsFromEnv(.env, "priorShorthandEnv",
+                           means=.lotriPriorMeanAlias(c(.thetaMeans, .omegaMeans)))
   if (!is.null(.env$matrix)) {
     .res <- .lotriResolvePriors(.env$matrix, .est, .env$priors, .env$wholeOmegaPrior)
     return(list(ret=.res$ret, est=.res$est, done=TRUE))
