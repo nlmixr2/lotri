@@ -216,8 +216,9 @@ attr(m, "lotriPriors")
 ```
 
 `om.eta.cl ~ 0.01` reads exactly like the shorthand for a population
-estimate: a normal prior with a zero mean and a variance of 0.01.  The omega
-itself is untouched -- only the prior was added:
+estimate: a normal prior with a variance of 0.01, centered on the omega
+value the model already gives.  The omega itself is untouched -- only the
+prior was added:
 
 ```{r}
 diag(m)

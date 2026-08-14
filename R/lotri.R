@@ -2058,12 +2058,13 @@ NULL
   if (!is.null(.est)) {
     .thetaMeans <- setNames(as.double(.est$est), .est$name)
   }
+  ## every normal prior shorthand is centered on what the model already
+  ## says: the estimate for a theta name, the omega value for an `om.` one
+  .omegaMeans <- .lotriOmegaDiagMeans(.env)
   .lotriThetaPriorsFromEnv(.env, means=.thetaMeans)
-  .lotriThetaPriorsFromEnv(.env, "omegaPriorEnv")
-  ## a joint block is centered on what the model already says: the
-  ## estimate for a theta name, the omega value for an `om.` name
+  .lotriThetaPriorsFromEnv(.env, "omegaPriorEnv", means=.omegaMeans)
   .lotriThetaPriorsFromEnv(.env, "jointPriorEnv",
-                           means=c(.thetaMeans, .lotriOmegaDiagMeans(.env)))
+                           means=c(.thetaMeans, .omegaMeans))
   if (!is.null(.env$matrix)) {
     .res <- .lotriResolvePriors(.env$matrix, .est, .env$priors, .env$wholeOmegaPrior)
     return(list(ret=.res$ret, est=.res$est, done=TRUE))

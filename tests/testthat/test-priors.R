@@ -217,13 +217,13 @@ test_that("the shorthand centers on the estimate, an explicit dnorm does not", {
   }))$prior[1],
   "multiNormal(0, lotri(tcl + tv ~ c(1, 0.01, 1)))")
 
-  ## an `om.` prior is on the omega element, which the shorthand does not
-  ## re-center -- it keeps the zero mean it has always had
+  ## an `om.` prior is on the omega element, so it is centered on the
+  ## omega value the same way a theta one is centered on its estimate
   expect_equal(attr(lotri({
     eta.cl ~ 0.3
     om.eta.cl ~ 0.01
   }), "lotriPriors")[1],
-  paste0("dnorm(0, ", sqrt(0.01), ")"))
+  paste0("dnorm(0.3, ", sqrt(0.01), ")"))
 })
 
 test_that("an uncorrelated theta prior block is independent normals", {
@@ -553,14 +553,14 @@ test_that("om. names put a prior on the omega elements", {
   ## the omega itself is unchanged; only priors were added
   expect_equal(dimnames(m)[[1]], c("eta.cl", "eta.v"))
   expect_equal(as.numeric(diag(m)), c(0.3, 0.1))
-  expect_equal(attr(m, "lotriPriors"), c("dnorm(0, 0.1)", "dnorm(0, 0.2)"))
+  expect_equal(attr(m, "lotriPriors"), c("dnorm(0.3, 0.1)", "dnorm(0.1, 0.2)"))
 
   ## `prior()` accepts the same names
   m2 <- lotri({
     eta.cl ~ 0.3
     eta.v ~ 0.1
-    prior(om.eta.cl) ~ dnorm(0, 0.1)
-    prior(om.eta.v) ~ dnorm(0, 0.2)
+    prior(om.eta.cl) ~ dnorm(0.3, 0.1)
+    prior(om.eta.v) ~ dnorm(0.1, 0.2)
   })
   expect_equal(m, m2)
 
@@ -568,8 +568,8 @@ test_that("om. names put a prior on the omega elements", {
   m3 <- lotri({
     eta.cl ~ 0.3
     eta.v ~ 0.1
-    prior(eta.cl) ~ dnorm(0, 0.1)
-    prior(eta.v) ~ dnorm(0, 0.2)
+    prior(eta.cl) ~ dnorm(0.3, 0.1)
+    prior(eta.v) ~ dnorm(0.1, 0.2)
   })
   expect_equal(m, m3)
 })
@@ -584,7 +584,8 @@ test_that("om. names support a correlated prior and round trip", {
   })
 
   expect_equal(attr(m, "lotriPriors")[1],
-               "multiNormal(0, lotri(om.eta.cl + om.eta.v ~ c(0.01, 0.001, 0.02)))")
+               paste0("multiNormal(c(0.3, 0.1), lotri(om.eta.cl + om.eta.v ~ ",
+                      "c(0.01, 0.001, 0.02)))"))
   expect_true(is.na(attr(m, "lotriPriors")[2]))
 
   expect_equal(as.data.frame(eval(as.expression(m))), as.data.frame(m))
@@ -755,7 +756,7 @@ test_that("as.expression() renders every prior form correctly", {
                 })))
 
   ## an om. prior prints against the eta it belongs to
-  expect_true("prior(eta.cl) ~ dnorm(0, 0.1)" %in%
+  expect_true("prior(eta.cl) ~ dnorm(0.3, 0.1)" %in%
                 .lines(lotri({ eta.cl ~ 0.3; om.eta.cl ~ 0.01 })))
 
   ## whatever spelling went in, the canonical one comes out
@@ -1212,7 +1213,8 @@ test_that("a joint prior is checked like any other", {
     om.eta.cl + om.eta.v ~ c(0.01,
                              0.001, 0.02)
   }), "lotriPriors")[1],
-  "multiNormal(0, lotri(om.eta.cl + om.eta.v ~ c(0.01, 0.001, 0.02)))")
+  paste0("multiNormal(c(0.3, 0.1), lotri(om.eta.cl + om.eta.v ~ ",
+         "c(0.01, 0.001, 0.02)))"))
 })
 
 test_that("a joint block may name omega elements that are not one block", {
