@@ -1178,21 +1178,6 @@ NULL
   seq(.lo, .hi)
 }
 
-#' Resolve the collected priors against the estimates and matrices
-#'
-#' Priors are matched by *name* (never by position) so that they are
-#' unaffected by any `rcm` re-ordering of the matrix.  Priors on
-#' population estimates become the `prior` column of the `lotriEst`
-#' data frame; priors on etas (and on covariance blocks) become the
-#' `lotriPriors` attribute of the matrix they belong to, stored on the
-#' first diagonal element of the block.
-#'
-#' @param ret matrix or list of matrices
-#' @param est `lotriEst` data frame (may be NULL)
-#' @param priors list collected by `.fCallPrior()`
-#' @return list with the amended `ret` and `est`
-#' @noRd
-#' @author Matthew L. Fidler
 #' Resolve a joint population estimate + `om.` omega element prior
 #'
 #' The block spans two places -- the estimate table and the omega matrix
@@ -1248,6 +1233,21 @@ NULL
   list(est=est, pri=pri)
 }
 
+#' Resolve the collected priors against the estimates and matrices
+#'
+#' Priors are matched by *name* (never by position) so that they are
+#' unaffected by any `rcm` re-ordering of the matrix.  Priors on
+#' population estimates become the `prior` column of the `lotriEst`
+#' data frame; priors on etas (and on covariance blocks) become the
+#' `lotriPriors` attribute of the matrix they belong to, stored on the
+#' first diagonal element of the block.
+#'
+#' @param ret matrix or list of matrices
+#' @param est `lotriEst` data frame (may be NULL)
+#' @param priors list collected by `.fCallPrior()`
+#' @return list with the amended `ret` and `est`
+#' @noRd
+#' @author Matthew L. Fidler
 .lotriResolvePriors <- function(ret, est, priors, wholePriors=NULL) {
   if (length(priors) == 0L && length(wholePriors) == 0L) {
     return(list(ret=ret, est=est))
