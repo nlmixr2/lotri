@@ -339,11 +339,26 @@ lotriDataFrameToLotriExpression <- function(data, useIni=FALSE) { # nolint
     .dist <- .lotriPriorLookup(as.character(.fn))
     !is.null(.dist) && .dist$kind %in% c("matrix", "multivariate")
   }
+  ## A joint theta + `om.` block is stored once, on the first name of the
+  ## block, and the block spans both the estimates and the omega -- so
+  ## neither of the loops below can recover its members.  Its covariance
+  ## names every one of them, and an `om.` name marks it as joint.
+  .jointNames <- function(txt) {
+    .nms <- .lotriPriorCovNames(txt)
+    if (is.null(.nms) || !any(grepl("^om[.].", .nms))) return(NULL)
+    .nms
+  }
   if (!is.null(est) && any(names(est) == "prior")) {
     .done <- rep(FALSE, length(est$name))
     for (.i in seq_along(est$name)) {
       if (.done[.i] || is.na(est$prior[.i])) next
       .txt <- est$prior[.i]
+      .jnt <- .jointNames(.txt)
+      if (!is.null(.jnt)) {
+        .done[.i] <- TRUE
+        .add(.jnt, .txt)
+        next
+      }
       if (.isMultiPrior(.txt)) {
         ## a multivariate prior is stored on every estimate it covers, so
         ## the group is recovered by the estimates that share it
@@ -371,6 +386,11 @@ lotriDataFrameToLotriExpression <- function(data, useIni=FALSE) { # nolint
     for (.i in seq_along(.p)) {
       if (is.na(.p[.i])) next
       .nms <- .dn[.i]
+      .jnt <- .jointNames(.p[.i])
+      if (!is.null(.jnt)) {
+        .add(.jnt, .p[.i])
+        next
+      }
       .fn <- try(str2lang(.p[.i])[[1]], silent=TRUE)
       if (!inherits(.fn, "try-error")) {
         .dist <- .lotriPriorLookup(as.character(.fn))

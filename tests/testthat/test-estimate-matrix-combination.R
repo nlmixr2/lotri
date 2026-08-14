@@ -79,7 +79,7 @@ test_that("Combined estimates and matrix", {
   # `b` stays an estimate rather than becoming an eta.
   .b <- lotri({b=3;b~0.4})
   expect_equal(lotriEst(.b)$name, "b")
-  expect_equal(lotriEst(.b)$prior, paste0("dnorm(0, ", sqrt(0.4), ")"))
+  expect_equal(lotriEst(.b)$prior, paste0("dnorm(3, ", sqrt(0.4), ")"))
   expect_equal(dim(.b)[1], 0L)
 
   # A mixed matrix/estimate is still a duplicate error when the names are
