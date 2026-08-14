@@ -1060,10 +1060,23 @@ NULL
 #' @noRd
 #' @author Matthew L. Fidler
 .lotriOmegaDiagMeans <- function(env) {
-  if (is.null(env$df) || length(env$df$i) == 0L) return(NULL)
-  .w <- which(env$df$i == env$df$j)
-  if (length(.w) == 0L) return(NULL)
-  setNames(as.double(env$df$x[.w]), paste0("om.", env$names[env$df$i[.w]]))
+  .one <- function(e) {
+    if (!is.environment(e) || is.null(e$df) || length(e$df$i) == 0L) {
+      return(NULL)
+    }
+    ## every matrix spec carries its diagonal, so this cannot come back
+    ## empty through the DSL
+    .w <- which(e$df$i == e$df$j)
+    setNames(as.double(e$df$x[.w]), paste0("om.", e$names[e$df$i[.w]]))
+  }
+  ## a conditioned model keeps one sub environment per level, so an `om.`
+  ## name often belongs to a level rather than to the unconditioned part
+  .ret <- .one(env)
+  for (.c in env$cnd) {
+    .ret <- c(.ret, .one(env[[.c]]))
+  }
+  if (length(.ret) == 0L) return(NULL)
+  .ret
 }
 
 #' Turn the accumulated `theta ~ variance` lines into priors
@@ -1203,8 +1216,9 @@ NULL
   .at <- NA_integer_
   for (.k in seq_along(mats)) {
     .m <- mats[[.k]]
-    if (!is.matrix(.m)) next
-    .dn <- dimnames(.m)[[1]]
+    .dn <- if (is.matrix(.m)) dimnames(.m)[[1]] else NULL
+    ## a multi level model has one matrix per level, so the eta is often
+    ## not in the first one
     if (is.null(.dn) || !all(.eta %in% .dn)) next
     .at <- .k
     break

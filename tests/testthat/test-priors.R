@@ -1238,3 +1238,96 @@ test_that("a joint block may name omega elements that are not one block", {
   ## the omega itself is untouched -- only a prior was added
   expect_equal(unname(diag(as.matrix(m))), c(0.3, 0.1))
 })
+
+test_that("a joint block may start at the om. name", {
+
+  ## The block is stored on its *first* name, and that name can be either
+  ## kind -- so which of the two places it lands in depends on the order
+  ## the block was written in.
+  m <- lotri({
+    tcl <- 1
+    eta.cl ~ 0.3
+    om.eta.cl + tcl ~ c(0.005,
+                        0.002, 0.02)
+  })
+
+  .expect <- paste0("multiNormal(c(0.3, 1), ",
+                    "lotri(om.eta.cl + tcl ~ c(0.005, 0.002, 0.02)))")
+
+  ## it went to the omega rather than to the estimate table
+  expect_equal(attr(m, "lotriPriors")[1], .expect)
+  expect_true(is.na(lotriEst(m)$prior))
+
+  ## and it still round trips, since the members come from the covariance
+  expect_equal(as.data.frame(eval(as.expression(m))), as.data.frame(m))
+})
+
+test_that("a joint block cannot double up on the name it is stored at", {
+
+  ## whichever of the two places the block lands in, something already
+  ## there is a duplicate rather than an overwrite
+  expect_error(lotri({
+    tcl <- 1
+    eta.cl ~ 0.3
+    tcl ~ 4
+    tcl + om.eta.cl ~ c(0.02,
+                        0.002, 0.005)
+  }), "more than one prior given for 'tcl'")
+
+  expect_error(lotri({
+    tcl <- 1
+    eta.cl ~ 0.3
+    om.eta.cl ~ 0.01
+    om.eta.cl + tcl ~ c(0.005,
+                        0.002, 0.02)
+  }), "more than one prior given for 'om.eta.cl'")
+})
+
+test_that("the covariance names come back out of a stored prior", {
+
+  ## how the members of a block are recovered, since a block prior is
+  ## stored only once
+  expect_equal(.lotri$.lotriPriorCovNames(
+    "multiNormal(0, lotri(a + b ~ c(1, 0.1, 1)))"), c("a", "b"))
+
+  ## `lotri({...})` and `lotri(...)` both occur
+  expect_equal(.lotri$.lotriPriorCovNames(
+    "multiNormal(0, lotri({a + b ~ c(1, 0.1, 1)}))"), c("a", "b"))
+
+  ## anything that is not a covariance carrying prior has no names
+  expect_null(.lotri$.lotriPriorCovNames(NA_character_))
+  expect_null(.lotri$.lotriPriorCovNames(c("a", "b")))
+  expect_null(.lotri$.lotriPriorCovNames("dnorm(0, 1)"))
+  expect_null(.lotri$.lotriPriorCovNames("multiNormal(0, lotri(1))"))
+  expect_null(.lotri$.lotriPriorCovNames("this is not parseable ("))
+})
+
+test_that("a joint block finds its omega in a later nesting level", {
+
+  ## A multi level model has one matrix per level, so the `om.` name is
+  ## often not in the first one -- the search has to walk past it.
+  m <- lotri({
+    tcl <- 1
+    eta.cl ~ 0.3 | id
+    eta.o ~ 0.1 | occ
+    tcl + om.eta.o ~ c(0.02,
+                       0.002, 0.005)
+  })
+
+  expect_equal(lotriEst(m)$prior,
+               paste0("multiNormal(c(1, 0.1), ",
+                      "lotri(tcl + om.eta.o ~ c(0.02, 0.002, 0.005)))"))
+
+  ## the omegas themselves are untouched
+  expect_equal(as.numeric(m$id), 0.3)
+  expect_equal(as.numeric(m$occ), 0.1)
+
+  ## an om. name that is in no level at all is still an error
+  expect_error(lotri({
+    tcl <- 1
+    eta.cl ~ 0.3 | id
+    eta.o ~ 0.1 | occ
+    tcl + om.eta.nope ~ c(0.02,
+                          0.002, 0.005)
+  }), "unknown omega element")
+})
