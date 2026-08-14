@@ -1,8 +1,8 @@
-# lotri 1.0.6 (development)
+# lotri 1.0.5
 
 ## New features
 
-* Prior distributions can now be specified in a `lotri({})` (and
+*  Prior distributions can now be specified in a `lotri({})` (and
   therefore `ini({})`) block with `prior(name) ~ dist(...)`, ie:
 
 ```r
@@ -121,8 +121,6 @@ lotri({
 * `as.expression()` now works on a `lotri` object that has only
   population estimates and no matrix; it used to fail with "second
   argument must be a list".
-
-# lotri 1.0.5
 
 * Fixed rchk issues and small bugs found while linting
 
