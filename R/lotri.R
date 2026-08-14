@@ -959,10 +959,10 @@ NULL
 
 #' Handle the `theta ~ variance` normal prior shorthand
 #'
-#' `tka ~ 1` is a `dnorm(0, 1)` prior on `tka`, and
+#' `tka <- 0.45; tka ~ 1` is a `dnorm(0.45, 1)` prior on `tka`, and
 #' `tcl + tv ~ c(1, 0, 1)` is a multivariate normal prior on `tcl` and
-#' `tv` with a zero mean vector.  The estimate given with `<-` stays the
-#' initial estimate; it is not the prior mean.
+#' `tv` centered on their estimates.  The number on the `~` is the
+#' variance; the mean is the estimate given with `<-`.
 #'
 #' @param x language object of the prior line
 #' @param env parsing environment
@@ -980,18 +980,41 @@ NULL
   invisible()
 }
 
+#' Prior means for a set of names, defaulting to zero
+#'
+#' A normal prior written with the shorthand is centered on what the
+#' model already says the parameter is, so the mean comes from the
+#' estimates rather than being fixed at zero.  A name with no estimate
+#' to look up (which cannot happen for the shorthand, since the line is
+#' only recognized when every name is an estimate) falls back to zero.
+#'
+#' @param nms character vector of parameter names
+#' @param means named numeric vector of means, or `NULL` for all zero
+#' @return numeric vector the same length as `nms`
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriPriorMeans <- function(nms, means) {
+  if (is.null(means)) return(rep(0.0, length(nms)))
+  .m <- unname(means[nms])
+  .m[is.na(.m)] <- 0.0
+  .m
+}
+
 #' Turn the accumulated `theta ~ variance` lines into priors
 #'
 #' The lines are collected into one matrix so that the per row line form
 #' builds up a block the same way it does for etas.  The matrix is then
 #' split into its blocks: a 1x1 block is a univariate normal prior and a
-#' larger block is a multivariate normal prior with a zero mean vector.
+#' larger block is a multivariate normal prior.  Both are centered on the
+#' estimates, so `tka <- 0.45; tka ~ 1` is `dnorm(0.45, 1)`.
 #'
 #' @param env parsing environment
+#' @param which name of the scratch environment holding the lines
+#' @param means named numeric vector of prior means, or `NULL` for zero
 #' @return nothing, called for the side effect on `env$priors`
 #' @noRd
 #' @author Matthew L. Fidler
-.lotriThetaPriorsFromEnv <- function(env, which="thetaPriorEnv") {
+.lotriThetaPriorsFromEnv <- function(env, which="thetaPriorEnv", means=NULL) {
   if (is.null(env[[which]])) return(invisible())
   .mat <- .lotriGetMatrixFromEnv(env[[which]])
   if (dim(.mat)[1] == 0L) return(invisible())
@@ -1014,13 +1037,18 @@ NULL
       stop("a normal prior on '", paste(.nm[.w], collapse="', '"),
            "' cannot have a negative variance", call.=FALSE)
     }
+    .mu <- .lotriPriorMeans(.nm, means)
     if (length(.nm) == 1L) {
-      .txt <- paste0("dnorm(0, ", .deparse1(sqrt(.d[1])), ")") # nolint
+      .txt <- paste0("dnorm(", .deparse1(.mu), ", ", # nolint
+                     .deparse1(sqrt(.d[1])), ")")
     } else {
+      ## an all zero mean vector stays the scalar `0` it has always been
+      ## deparsed as, so only a real mean widens the text
+      .muTxt <- if (all(.mu == 0)) "0" else .deparse1(.mu)
       ## the covariance is kept as the lotri expression that built it,
       ## which is valid R and round trips exactly
-      .txt <- paste0("multiNormal(0, lotri(",
-                     .deparse1(.lotriGetEtaMatEltPlusForm(.blk)[[1]]), "))") # nolint
+      .txt <- paste0("multiNormal(", .muTxt, ", lotri(", # nolint
+                     .deparse1(.lotriGetEtaMatEltPlusForm(.blk)[[1]]), "))")
     }
     env$priors <- c(env$priors,
                     list(list(names=.nm, info=.lotriPriorNormalize(str2lang(.txt)))))
@@ -1882,7 +1910,13 @@ NULL
   .env$thetaNames <- .est$name
   .f(sX, .env)
   .printErr(.env) # nolint
-  .lotriThetaPriorsFromEnv(.env)
+  ## a shorthand normal prior is centered on the estimate, so `tka <-
+  ## 0.45; tka ~ 1` is `dnorm(0.45, 1)`
+  .thetaMeans <- NULL
+  if (!is.null(.est)) {
+    .thetaMeans <- setNames(as.double(.est$est), .est$name)
+  }
+  .lotriThetaPriorsFromEnv(.env, means=.thetaMeans)
   .lotriThetaPriorsFromEnv(.env, "omegaPriorEnv")
   if (!is.null(.env$matrix)) {
     .res <- .lotriResolvePriors(.env$matrix, .est, .env$priors, .env$wholeOmegaPrior)

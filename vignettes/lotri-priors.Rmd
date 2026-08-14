@@ -291,8 +291,10 @@ lotriEst(lotri({
 ```
 
 The number on the right is a **variance**, so `tka ~ 4` is a normal prior
-with a standard deviation of 2.  The mean is always zero; the `<-` value
-stays the initial estimate and is *not* the prior mean.
+with a standard deviation of 2.  The mean is the `<-` estimate, so the prior
+is centered on what the model already says the parameter is -- the pair a
+NONMEM `NWPRI` model writes as `$THETAP` and `$THETAPV`.  Write
+`prior(tka) ~ dnorm(mu, sd)` when the prior is *not* centered there.
 
 This is unambiguous because a name cannot be both an estimate and an eta --
 that combination used to be an error.
@@ -314,9 +316,9 @@ m <- lotri({
 lotriEst(m)$prior
 ```
 
-That is a multivariate normal with a zero mean vector.  The covariance is
-kept as the `lotri` expression that built it, which is valid R and round
-trips exactly.
+That is a multivariate normal whose mean vector is the estimates.  The
+covariance is kept as the `lotri` expression that built it, which is valid R
+and round trips exactly.
 
 The matrix means exactly what it means for etas: the off-diagonal is a
 **covariance**, not a correlation.  A prior block and an eta block written
