@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">lotri</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.7</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,9 +37,9 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="1.0.6" id="lotri-106-development">lotri 1.0.6 (development)<a class="anchor" aria-label="anchor" href="#lotri-106-development"></a></h2>
+<h2 class="pkg-version" data-toc-text="1.0.5" id="lotri-105">lotri 1.0.5<a class="anchor" aria-label="anchor" href="#lotri-105"></a></h2>
 <div class="section level3">
-<h3 id="new-features-1-0-6">New features<a class="anchor" aria-label="anchor" href="#new-features-1-0-6"></a></h3>
+<h3 id="new-features-1-0-5">New features<a class="anchor" aria-label="anchor" href="#new-features-1-0-5"></a></h3>
 <ul><li>Prior distributions can now be specified in a <code>lotri({})</code> (and therefore <code>ini({})</code>) block with <code>prior(name) ~ dist(...)</code>, ie:</li>
 </ul><div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span></span>
@@ -87,16 +87,13 @@
 <li><p>The <code>lotriEst</code> data frame and <code><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame()</a></code> output gained a <code>prior</code> column.</p></li>
 </ul></div>
 <div class="section level3">
-<h3 id="bug-fixes-1-0-6">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-0-6"></a></h3>
+<h3 id="bug-fixes-1-0-5">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-0-5"></a></h3>
 <ul><li><p>Labels now follow the matrix when <code>rcm=TRUE</code> re-orders it. Previously the labels stayed in the order they were parsed in while the matrix was permuted, so they were applied to the wrong parameters.</p></li>
 <li><p><code>lotriLabels</code> are no longer dropped when matrices are combined (ie <code>lotri(mat1, mat2)</code> or <code><a href="../reference/lotriMat.html">lotriMat()</a></code>); they are now concatenated in C along with the matrix itself.</p></li>
 <li><p><code><a href="https://rdrr.io/r/base/expression.html" class="external-link">as.expression()</a></code> now works on a <code>lotri</code> object that has only population estimates and no matrix; it used to fail with “second argument must be a list”.</p></li>
+<li><p>Fixed rchk issues and small bugs found while linting</p></li>
 </ul></div>
 </div>
-    <div class="section level2">
-<h2 class="pkg-version" data-toc-text="1.0.5" id="lotri-105">lotri 1.0.5<a class="anchor" aria-label="anchor" href="#lotri-105"></a></h2>
-<ul><li>Fixed rchk issues and small bugs found while linting</li>
-</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.0.4" id="lotri-104">lotri 1.0.4<a class="anchor" aria-label="anchor" href="#lotri-104"></a></h2><p class="text-muted">CRAN release: 2026-05-14</p>
 <ul><li><p>Fix unsigned integer underflow in <code>rcm.cpp</code>: when called with a 0-row matrix, <code>n-1</code> would wrap to <code>UWORD_MAX</code> causing an infinite loop; added an early-return guard for <code>n == 0</code>.</p></li>

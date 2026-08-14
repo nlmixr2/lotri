@@ -1,6 +1,6 @@
 # Changelog
 
-## lotri 1.0.6 (development)
+## lotri 1.0.5
 
 ### New features
 
@@ -136,8 +136,6 @@ that is not an estimate still specifies an eta as before.
 - [`as.expression()`](https://rdrr.io/r/base/expression.html) now works
   on a `lotri` object that has only population estimates and no matrix;
   it used to fail with “second argument must be a list”.
-
-## lotri 1.0.5
 
 - Fixed rchk issues and small bugs found while linting
 
