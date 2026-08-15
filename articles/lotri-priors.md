@@ -595,7 +595,8 @@ lotri({
 #> =================================================================================
 #> :001: tka <- 0.45
 #> lotri error:
-#>    'dt' is not supported because it is parameterized differently than student_t: R's 'dt()' is the standardized (or noncentral) t, while Stan's 'student_t(nu, mu, sigma)' is a location-scale t; use the Stan name and parameterization instead
+#>    bad matrix expression: 'tka ~ dt(3)'
+#>      matrix expression should be 'name ~ c(lower-tri)'
 #> :002: prior(tka) ~ dt(3)
 #> =================================================================================
 #> Error:
@@ -713,7 +714,8 @@ lotri({ a <- 1; prior(a) ~ dnorml(0, 1) })
 #> =================================================================================
 #> :001: a <- 1
 #> lotri error:
-#>    unknown prior distribution 'dnorml'; did you mean 'dnorm'?
+#>    bad matrix expression: 'a ~ dnorml(0, 1)'
+#>      matrix expression should be 'name ~ c(lower-tri)'
 #> :002: prior(a) ~ dnorml(0, 1)
 #> =================================================================================
 #> Error:

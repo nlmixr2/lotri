@@ -65,7 +65,7 @@
                         <h4 data-toc-skip class="author">Matthew
 Fidler</h4>
             
-            <h4 data-toc-skip class="date">2026-08-14</h4>
+            <h4 data-toc-skip class="date">2026-08-15</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/nlmixr2/lotri/blob/main/vignettes/lotri-priors.Rmd" class="external-link"><code>vignettes/lotri-priors.Rmd</code></a></small>
       <div class="d-none name"><code>lotri-priors.Rmd</code></div>
@@ -576,7 +576,8 @@ distributions, so aliasing them would silently change the model:</p>
 <span><span class="co"><span style="font-weight: bold;">#&gt; =================================================================================</span></span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">:001</span>: tka &lt;- 0.45</span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">lotri error:</span></span></span>
-<span><span class="co">#&gt;    'dt' is not supported because it is parameterized differently than student_t: R's 'dt()' is the standardized (or noncentral) t, while Stan's 'student_t(nu, mu, sigma)' is a location-scale t; use the Stan name and parameterization instead</span></span>
+<span><span class="co">#&gt;    bad matrix expression: 'tka ~ dt(3)'</span></span>
+<span><span class="co">#&gt;      matrix expression should be 'name ~ c(lower-tri)'</span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">:002</span>: prior(tka) ~ dt(3)</span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">=================================================================================</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BBBB00; font-weight: bold;">Error</span><span style="font-weight: bold;">:</span></span></span>
@@ -677,7 +678,8 @@ an obvious near match:</p>
 <span><span class="co"><span style="font-weight: bold;">#&gt; =================================================================================</span></span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">:001</span>: a &lt;- 1</span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">lotri error:</span></span></span>
-<span><span class="co">#&gt;    unknown prior distribution 'dnorml'; did you mean 'dnorm'?</span></span>
+<span><span class="co">#&gt;    bad matrix expression: 'a ~ dnorml(0, 1)'</span></span>
+<span><span class="co">#&gt;      matrix expression should be 'name ~ c(lower-tri)'</span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">:002</span>: prior(a) ~ dnorml(0, 1)</span></span>
 <span><span class="co">#&gt; <span style="font-weight: bold;">=================================================================================</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BBBB00; font-weight: bold;">Error</span><span style="font-weight: bold;">:</span></span></span>
