@@ -1068,6 +1068,134 @@ test_that("two priors reaching the same parameter is an error", {
   }), "more than one prior")
 })
 
+test_that("a prior on a fixed parameter is an error", {
+
+  ## a fixed parameter is a constant, so a prior on it is refused where
+  ## the model is defined instead of surfacing downstream in whatever
+  ## consumes the priors (nlmixr2/lotri#52)
+  expect_error(lotri({
+    tka <- fix(1)
+    prior(tka) ~ dnorm(1, 1)
+  }), "fixed parameter.*'tka'")
+
+  ## the multivariate case from the original report
+  expect_error(lotri({
+    tcl <- 1
+    tv <- fix(3)
+    prior(tcl, tv) ~ multiNormal(c(1, 3), lotri(tcl + tv ~ c(1, 0.01, 1)))
+  }), "fixed parameter.*'tv'")
+
+  ## a fixed omega element
+  expect_error(lotri({
+    eta.cl ~ fix(0.1)
+    om.eta.cl ~ 0.01
+  }), "fixed parameter.*'eta.cl'")
+
+  ## a fixed member of an omega block prior
+  expect_error(lotri({
+    eta.a + eta.b ~ c(1,
+                      0.1, fix(1))
+    prior(eta.a, eta.b) ~ lkjCorr(2)
+  }), "fixed parameter.*'eta.b'")
+
+  ## a joint theta + om. block naming a fixed omega element
+  expect_error(lotri({
+    tcl <- 1
+    eta.cl ~ fix(0.1)
+    prior(tcl, om.eta.cl) ~ multiNormal(c(1, 0.1),
+                                        lotri(tcl + om.eta.cl ~ c(1, 0.01, 1)))
+  }), "fixed parameter.*'om.eta.cl'")
+
+  ## a joint theta + om. block naming a fixed theta element
+  expect_error(lotri({
+    tcl <- fix(1)
+    eta.cl ~ 0.1
+    prior(tcl, om.eta.cl) ~ multiNormal(c(1, 0.1),
+                                        lotri(tcl + om.eta.cl ~ c(1, 0.01, 1)))
+  }), "fixed parameter.*'tcl'")
+
+  ## a fixed covariance within a block prior, even though every
+  ## variance in the block is free
+  expect_error(lotri({
+    eta.a + eta.b ~ c(1,
+                      fix(0.1), 1)
+    prior(eta.a, eta.b) ~ lkjCorr(2)
+  }), "fixed covariance")
+
+  ## the same, but the block is the omega side of a joint theta + om.
+  ## block prior
+  expect_error(lotri({
+    tcl <- 1
+    eta.a + eta.b ~ c(1,
+                      fix(0.1), 1)
+    prior(tcl, om.eta.a, om.eta.b) ~ multiNormal(c(1, 1, 1),
+      lotri(tcl + om.eta.a + om.eta.b ~ c(1, 0.01,1, 0.01,0.01,1)))
+  }), "fixed covariance")
+
+  ## the implicit `~invWishart(4)` shorthand applies to every free
+  ## block, so it quietly skips one that is entirely fixed instead of
+  ## erroring the way an explicit `prior()` on it would
+  expect_error(lotri({
+    eta.a ~ 0.1
+    eta.b ~ fix(0.1)
+    ~invWishart(4)
+  }), NA)
+
+  ## ... but it still refuses a block that is only partially fixed,
+  ## since the joint density it implies cannot hold a constant
+  expect_error(lotri({
+    eta.a + eta.b ~ c(1,
+                      0.1, fix(1))
+    ~invWishart(4)
+  }), "fixed parameter.*'eta.b'")
+
+  ## ... and a block whose variances are fixed but whose covariance is
+  ## still free is partially fixed too, not "entirely fixed" -- it
+  ## still has to error rather than being silently skipped
+  expect_error(lotri({
+    eta.a + eta.b ~ c(fix(1),
+                      0.1, fix(1))
+    ~invWishart(4)
+  }), "fixed parameter")
+
+  ## ... and the other way around: free variances but a fixed
+  ## covariance is caught by the shorthand too, not just an explicit
+  ## `prior()` on the block
+  expect_error(lotri({
+    eta.a + eta.b ~ c(1,
+                      fix(0.1), 1)
+    ~invWishart(4)
+  }), "fixed covariance")
+
+  ## `rcm=TRUE` reorders the matrix, but the fix lookup is by name, not
+  ## position, so it still finds the right parameter after reordering
+  expect_error(lotri({
+    eta.a + eta.b + eta.c ~ c(1,
+                              0, 1,
+                              0.1, 0, fix(1))
+    prior(eta.c) ~ dnorm(0, 1)
+  }, rcm=TRUE), "fixed parameter.*'eta.c'")
+
+  ## a non-fixed parameter still works
+  expect_error(lotri({
+    tka <- 1
+    prior(tka) ~ dnorm(1, 1)
+  }), NA)
+})
+
+test_that("the fixed-lookup helpers ignore a name outside the matrix", {
+
+  ## these are only ever called with names drawn from the matrix itself,
+  ## but a name that is not among its dimnames is a "not fixed" for all
+  ## three helpers rather than an indexing error
+  m <- lotri({ eta.a ~ fix(0.1); eta.b ~ 0.2 })
+
+  expect_equal(.lotri$.lotriMatFixedDiag(m, c("eta.a", "nope")),
+               c(TRUE, FALSE))
+  expect_false(.lotri$.lotriMatFixedCov(m, c("eta.a", "nope")))
+  expect_false(.lotri$.lotriMatEntirelyFixed(m, c("eta.a", "nope")))
+})
+
 test_that("an older seven column lotriEst still concatenates", {
 
   ## a `lotriEst` built before the prior column existed has to keep

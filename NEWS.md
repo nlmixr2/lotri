@@ -144,6 +144,18 @@ lotri({
 
 ## Bug fixes
 
+* A `prior()` given for a fixed (`fix()`ed) parameter is now an error
+  at resolution time, naming the parameter, instead of parsing and
+  building cleanly and only surfacing as a problem in whatever
+  consumes the priors.  A fixed parameter is a constant, so it cannot
+  carry a prior; this applies to a univariate prior row, a member of a
+  multivariate prior, and an omega-block member on a fixed omega
+  element alike, and also to a block prior (`lkjCorr()`,
+  `invWishart()`) whose block has a fixed covariance even if every
+  variance in it is free.  The implicit `~invWishart(4)` shorthand,
+  which applies to every omega block in the model, quietly skips a
+  block that is entirely fixed instead (#52).
+
 * Labels now follow the matrix when `rcm=TRUE` re-orders it.
   Previously the labels stayed in the order they were parsed in while
   the matrix was permuted, so they were applied to the wrong

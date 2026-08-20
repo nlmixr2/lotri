@@ -425,3 +425,53 @@ lotriPriorDists <- function() {
   }
   invisible()
 }
+
+#' Check that a prior does not target a fixed parameter
+#'
+#' A fixed parameter is a constant, not something that is sampled or
+#' estimated, so a prior on it is a statement about a quantity that
+#' cannot vary.  Silently dropping the prior would mis-state the model
+#' (a multivariate prior would have to be replaced by the conditional
+#' density of the free members given the fixed one), so this is refused
+#' where the model is defined instead of surfacing downstream in
+#' whatever consumes the priors.
+#'
+#' @param names character vector of parameter name(s) the prior targets
+#' @param fixed logical vector, the same length as `names`, giving the
+#'   fix status of each one
+#' @return nothing, called for the error checking side effect
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriPriorCheckNotFixed <- function(names, fixed) {
+  .w <- which(fixed)
+  if (length(.w) > 0L) {
+    stop("prior given for fixed parameter(s): '",
+         paste(names[.w], collapse="', '"),
+         "'; a fixed parameter is a constant and cannot carry a prior",
+         call.=FALSE)
+  }
+  invisible()
+}
+
+#' Check that a block prior does not target a fixed covariance
+#'
+#' A block prior (`lkjCorr()`, `invWishart()`, ...) models every
+#' covariance between the block's members, not just their variances, so
+#' it is refused the same way when one of those covariances is fixed --
+#' even if every variance in the block is free.
+#'
+#' @param names character vector of the block's names, used only for
+#'   the error message
+#' @param fixedCov TRUE when any covariance among `names` is fixed
+#' @return nothing, called for the error checking side effect
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriPriorCheckNotFixedCov <- function(names, fixedCov) {
+  if (isTRUE(fixedCov)) {
+    stop("prior given for a block with a fixed covariance among '",
+         paste(names, collapse="', '"),
+         "'; a fixed covariance is a constant and cannot carry a prior",
+         call.=FALSE)
+  }
+  invisible()
+}
