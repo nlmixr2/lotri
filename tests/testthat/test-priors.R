@@ -1220,6 +1220,93 @@ test_that("a joint prior is checked like any other", {
   }), "lotriPriors")[1],
   paste0("multiNormal(c(0.3, 0.1), lotri(om.eta.cl + om.eta.v ~ ",
          "c(0.01, 0.001, 0.02)))"))
+
+  ## a `+` joint prior block is not mistaken for the next row of an
+  ## ordinary matrix already open in the main environment, even when its
+  ## element count happens to coincide with that block's running count
+  ## (here the matrix reaches 2 rows built up one at a time, and the
+  ## joint prior's own 3 elements would otherwise look like a valid 3rd
+  ## row of that same matrix)
+  m <- lotri({
+    eta.cl ~ 0.3
+    eta.v ~ c(0.01, 0.1)
+    om.eta.cl + om.eta.v ~ c(0.01,
+                             0.001, 0.02)
+  })
+  expect_equal(dim(m), c(2L, 2L))
+  expect_equal(attr(m, "lotriPriors")[1],
+               paste0("multiNormal(c(0.3, 0.1), lotri(om.eta.cl + om.eta.v ~ ",
+                      "c(0.01, 0.001, 0.02)))"))
+})
+
+test_that("a single completed row never counts as an open matrix block for the tie check", {
+
+  ## a bare scalar row (`eta.c ~ 0.3`) always leaves `env$lastN` at 1,
+  ## whether or not anything is actually still open for continuation --
+  ## it is not, here, since `eta.c` is already a finished 1x1 block on
+  ## its own.  A `lastN` of 1 must not be treated as "the main matrix
+  ## has an open block this row could continue", or an ordinary,
+  ## unrelated correlated `om.` prior chain becomes wrongly ambiguous
+  ## purely because its own row happens to be 2 elements long too
+  m <- lotri({
+    eta.a + eta.b ~ c(0.1,
+                      0.02, 0.2)
+    eta.c ~ 0.3
+    om.eta.a ~ 1
+    om.eta.b ~ c(0.1, 0.2)
+  })
+  expect_true(grepl("^multiNormal", attr(m, "lotriPriors")[1]))
+})
+
+test_that("a row that could continue either an omega prior chain or the open matrix errors instead of guessing", {
+
+  ## `om.eta.v ~ c(...)` here is a valid next row of *both* the
+  ## `om.eta.a`/`om.eta.b` prior chain (its own running count of 2) and
+  ## the `tka`/`tcl` matrix that has genuinely been built up row by row
+  ## to a running count of 2 -- `eta.v` is also a real, already-declared
+  ## eta (part of the `eta.a + eta.b + eta.v` block), so the name alone
+  ## cannot rule out the prior either.  Silently picking one would risk
+  ## dropping whichever row was not chosen, so this fails loudly and
+  ## names the unambiguous alternative spelling instead
+  expect_message(
+    expect_error(
+      lotri({
+        eta.a + eta.b + eta.v ~ c(1, 2, 3, 4, 5, 6)
+        om.eta.a ~ 1
+        om.eta.b ~ c(0.1, 0.2)
+        tka ~ 1
+        tcl ~ c(0.1, 2)
+        om.eta.v ~ c(0.1, 0.2, 3)
+      }),
+      "lotri syntax errors above"
+    ),
+    "ambiguous"
+  )
+})
+
+test_that("an om.-named matrix row is unaffected by an unrelated omega prior chain earlier in the block", {
+
+  ## a hand written `om.` prior chain and a real matrix whose own
+  ## parameter happens to be `om.`-prefixed (as `lotriAsExpression()`
+  ## writes for the omega element of a combined theta+omega covariance
+  ## matrix, see #53) can coexist in the same block: `om.eta.v` here
+  ## never names a separately declared eta (unlike the prior chain's
+  ## own `om.eta.a`/`om.eta.b`, which do), so it is never even a
+  ## candidate for the prior chain and keeps continuing the matrix it
+  ## is actually part of
+  m <- lotri({
+    eta.a + eta.b ~ c(0.1,
+                      0.02, 0.2)
+    om.eta.a ~ 1
+    om.eta.b ~ c(0.1, 0.2)
+
+    tka ~ c(tka = 1)
+    tcl ~ c(tka = 0.1, tcl = 2)
+    tv ~ c(tka = 0.1, tcl = 0.2, tv = 3)
+    om.eta.v ~ c(tka = 0.1, tcl = 0.2, tv = 0.3, om.eta.v = 4)
+  })
+  expect_equal(dimnames(m)[[1]], c("eta.a", "eta.b", "tka", "tcl", "tv", "om.eta.v"))
+  expect_true(grepl("^multiNormal", attr(m, "lotriPriors")[1]))
 })
 
 test_that("a joint block may name omega elements that are not one block", {
