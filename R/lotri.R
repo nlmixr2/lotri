@@ -980,6 +980,11 @@ NULL
   if (is.call(x[[3]]) && identical(x[[3]][[1]], quote(`|`))) return(FALSE)
   .nm <- .lotriTildeLhsNames(x[[2]])
   if (is.null(.nm) || is.null(.lotriStripOm(.nm))) return(FALSE)
+  ## a `+`-summed left hand side always declares a whole new prior block
+  ## at once (the same way ordinary matrix syntax does), never a
+  ## continuation of one already open in the main environment, so it is
+  ## unambiguously the joint prior shorthand
+  if (length(.nm) > 1L) return(TRUE)
   .len <- .lotriRhsLen(x[[3]])
   ## a single value always starts a fresh block, for a prior row just as
   ## much as for an ordinary matrix row, so it stays ambiguous in favor
@@ -988,7 +993,9 @@ NULL
   if (is.na(.len) || .len == 1L) return(TRUE)
   ## a multi-element right hand side is only a valid row of *some*
   ## block if it continues one already open; prefer the joint omega
-  ## prior block's own running count, and fall through to the ordinary
+  ## prior block's own running count -- this also covers a fresh
+  ## `om.x ~ c(...)` line that grows an already-started chain by more
+  ## than one element at once -- and fall through to the ordinary
   ## matrix row handling only when it does not fit there but does fit
   ## the block already open in the main environment
   .priorLastN <- if (is.null(env$omegaPriorEnv)) 0L else env$omegaPriorEnv$lastN

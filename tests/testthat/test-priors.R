@@ -1220,6 +1220,74 @@ test_that("a joint prior is checked like any other", {
   }), "lotriPriors")[1],
   paste0("multiNormal(c(0.3, 0.1), lotri(om.eta.cl + om.eta.v ~ ",
          "c(0.01, 0.001, 0.02)))"))
+
+  ## a `+` joint prior block is not mistaken for the next row of an
+  ## ordinary matrix already open in the main environment, even when its
+  ## element count happens to coincide with that block's running count
+  ## (here the matrix reaches 2 rows built up one at a time, and the
+  ## joint prior's own 3 elements would otherwise look like a valid 3rd
+  ## row of that same matrix)
+  m <- lotri({
+    eta.cl ~ 0.3
+    eta.v ~ c(0.01, 0.1)
+    om.eta.cl + om.eta.v ~ c(0.01,
+                             0.001, 0.02)
+  })
+  expect_equal(dim(m), c(2L, 2L))
+  expect_equal(attr(m, "lotriPriors")[1],
+               paste0("multiNormal(c(0.3, 0.1), lotri(om.eta.cl + om.eta.v ~ ",
+                      "c(0.01, 0.001, 0.02)))"))
+})
+
+test_that("a row-by-row omega prior chain keeps growing even when an unrelated matrix reaches the same size", {
+
+  ## the per row line form documented for the `om.` prior shorthand
+  ## grows the *same* chain one name at a time (`om.eta.a ~ 1;
+  ## om.eta.b ~ c(...)`; see "om. names support a correlated prior and
+  ## round trip" above), and that keeps being the right reading even
+  ## when an unrelated matrix built up alongside it happens to reach an
+  ## identical running row count at the same point -- `eta.a`, `eta.b`,
+  ## `eta.c` are declared as three separate 1x1 blocks, so a prior
+  ## spanning all three is invalid, but it fails with *that*
+  ## validation error rather than silently landing in the unrelated
+  ## `tka`/`tcl` matrix instead
+  expect_error(
+    lotri({
+      eta.a ~ 0.1
+      eta.b ~ 0.2
+      eta.c ~ 0.3
+      om.eta.a ~ 1
+      om.eta.b ~ c(0.1, 0.2)
+      tka ~ 1
+      tcl ~ c(0.1, 0.2)
+      om.eta.c ~ c(0.1, 0.2, 0.3)
+    }),
+    "not a single covariance block"
+  )
+})
+
+test_that("an om.-named matrix row is unaffected by an unrelated omega prior chain earlier in the block", {
+
+  ## a hand written `om.` prior chain and a real matrix whose own
+  ## parameter happens to be `om.`-prefixed (as `lotriAsExpression()`
+  ## writes for the omega element of a combined theta+omega covariance
+  ## matrix, see #53) can coexist in the same block: the matrix row
+  ## keeps continuing the matrix it is actually part of, not whatever
+  ## prior chain is running elsewhere, even though both happen to
+  ## reach the same running row count
+  m <- lotri({
+    eta.a + eta.b ~ c(0.1,
+                      0.02, 0.2)
+    om.eta.a ~ 1
+    om.eta.b ~ c(0.1, 0.2)
+
+    tka ~ c(tka = 1)
+    tcl ~ c(tka = 0.1, tcl = 2)
+    tv ~ c(tka = 0.1, tcl = 0.2, tv = 3)
+    om.eta.v ~ c(tka = 0.1, tcl = 0.2, tv = 0.3, om.eta.v = 4)
+  })
+  expect_equal(dimnames(m)[[1]], c("eta.a", "eta.b", "tka", "tcl", "tv", "om.eta.v"))
+  expect_true(grepl("^multiNormal", attr(m, "lotriPriors")[1]))
 })
 
 test_that("a joint block may name omega elements that are not one block", {
