@@ -1239,31 +1239,39 @@ test_that("a joint prior is checked like any other", {
                       "c(0.01, 0.001, 0.02)))"))
 })
 
-test_that("a row-by-row omega prior chain keeps growing even when an unrelated matrix reaches the same size", {
+test_that("a row that could continue either an omega prior chain or the open matrix errors instead of guessing", {
 
-  ## the per row line form documented for the `om.` prior shorthand
-  ## grows the *same* chain one name at a time (`om.eta.a ~ 1;
-  ## om.eta.b ~ c(...)`; see "om. names support a correlated prior and
-  ## round trip" above), and that keeps being the right reading even
-  ## when an unrelated matrix built up alongside it happens to reach an
-  ## identical running row count at the same point -- `eta.a`, `eta.b`,
-  ## `eta.c` are declared as three separate 1x1 blocks, so a prior
-  ## spanning all three is invalid, but it fails with *that*
-  ## validation error rather than silently landing in the unrelated
-  ## `tka`/`tcl` matrix instead
-  expect_error(
-    lotri({
-      eta.a ~ 0.1
-      eta.b ~ 0.2
-      eta.c ~ 0.3
-      om.eta.a ~ 1
-      om.eta.b ~ c(0.1, 0.2)
-      tka ~ 1
-      tcl ~ c(0.1, 0.2)
-      om.eta.c ~ c(0.1, 0.2, 0.3)
-    }),
-    "not a single covariance block"
+  ## `om.eta.b ~ c(0.1, 0.2)` here is a valid next row of *both* the
+  ## `om.eta.a`/`om.eta.b` prior chain (its own running count) and the
+  ## matrix that `eta.c` just opened (`eta.c`'s own running count) --
+  ## `eta.b` is also a real, already-declared eta, so the name alone
+  ## cannot rule out the prior either.  Silently picking one would risk
+  ## dropping whichever row was not chosen, so this fails loudly and
+  ## names the unambiguous alternative spelling instead
+  expect_message(
+    expect_error(
+      lotri({
+        eta.a ~ 0.1
+        eta.b ~ 0.2
+        eta.c ~ 0.3
+        om.eta.a ~ 1
+        om.eta.b ~ c(0.1, 0.2)
+      }),
+      "lotri syntax errors above"
+    ),
+    "ambiguous"
   )
+
+  ## spelled with the `+` block form instead -- unambiguously the joint
+  ## prior shorthand regardless of what is open in the main matrix --
+  ## the same correlated prior is not ambiguous
+  m <- lotri({
+    eta.a + eta.b ~ c(0.1,
+                      0.02, 0.2)
+    eta.c ~ 0.3
+    om.eta.a + om.eta.b ~ c(1, 0.1, 0.2)
+  })
+  expect_true(grepl("^multiNormal", attr(m, "lotriPriors")[1]))
 })
 
 test_that("an om.-named matrix row is unaffected by an unrelated omega prior chain earlier in the block", {

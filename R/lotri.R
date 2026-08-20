@@ -991,16 +991,41 @@ NULL
   ## of the prior (the long-standing behavior for every `om.x ~ value`
   ## line)
   if (is.na(.len) || .len == 1L) return(TRUE)
-  ## a multi-element right hand side is only a valid row of *some*
-  ## block if it continues one already open; prefer the joint omega
-  ## prior block's own running count -- this also covers a fresh
+  ## the shorthand always puts a prior on an eta that already exists
+  ## elsewhere in the matrix -- an `om.` line never creates one (see
+  ## "om. names must match a between subject variability" below).  So
+  ## when the stripped target is not a name the main matrix has already
+  ## declared, this cannot be a valid prior target regardless of how
+  ## its row count compares to anything, and is unambiguously an
+  ## ordinary matrix row that simply happens to be `om.`-named (as
+  ## `lotriAsExpression()` writes for the omega element of a combined
+  ## theta+omega covariance matrix, see #53)
+  if (!(.lotriStripOm(.nm) %in% env$names)) return(FALSE)
+  ## otherwise the target is a real eta, so the row is a plausible
+  ## prior row too; only the element count -- matched against each
+  ## block's own running count -- can settle it.  Prefer the joint
+  ## omega prior block's own running count (this also covers a fresh
   ## `om.x ~ c(...)` line that grows an already-started chain by more
-  ## than one element at once -- and fall through to the ordinary
-  ## matrix row handling only when it does not fit there but does fit
-  ## the block already open in the main environment
+  ## than one element at once), and fall through to the ordinary matrix
+  ## row handling only when it does not fit there but does fit the
+  ## block already open in the main environment
   .priorLastN <- if (is.null(env$omegaPriorEnv)) 0L else env$omegaPriorEnv$lastN
-  if (.len == .priorLastN + 1L) return(TRUE)
-  !(env$lastN != 0L && .len == env$lastN + 1L)
+  .matchesPrior <- .len == .priorLastN + 1L
+  .matchesMain <- env$lastN != 0L && .len == env$lastN + 1L
+  if (.matchesPrior && .matchesMain) {
+    ## genuinely ambiguous: this row would validly continue *both* the
+    ## joint omega prior block and the matrix already open in the main
+    ## environment.  Rather than silently guessing (and possibly
+    ## dropping the row that was not chosen), fail loudly -- `prior()`
+    ## names its target explicitly, so it is never ambiguous this way
+    stop("'", .deparse1(x), # nolint
+         "' is ambiguous: it could continue either the joint omega ",
+         "prior block or the matrix already open here; write it as ",
+         "'prior(", .lotriStripOm(.nm), ") ~ ...' to put a prior on it unambiguously",
+         call.=FALSE)
+  }
+  if (.matchesPrior) return(TRUE)
+  !.matchesMain
 }
 
 #' Handle the `om.eta ~ variance` normal prior shorthand
