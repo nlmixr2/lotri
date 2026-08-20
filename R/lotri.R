@@ -939,19 +939,61 @@ NULL
   NULL
 }
 
+#' Number of matrix elements a `~` right hand side would parse to
+#'
+#' `om.`-prefixed lines are ambiguous: `om.eta.cl ~ c(...)` is either the
+#' next row of the joint omega prior block's own running triangular
+#' build up, or it is simply the next row of whatever ordinary matrix
+#' block is open in the main environment (an `om.`-prefixed name is a
+#' perfectly ordinary matrix parameter name, e.g. the omega element of a
+#' combined theta+omega covariance matrix written by
+#' `lotriAsExpression()`).  Only the element count -- matched against
+#' each block's own running count -- can tell the two apart.
+#'
+#' @param x right hand side language object of a `~` line
+#' @return integer element count, or `NA_integer_` when it cannot be
+#'   determined without triggering a downstream parse error
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriRhsLen <- function(x) {
+  .n <- try(length(.lotriParseMat(x, env=new.env(parent=emptyenv()), noMat=TRUE)[[1]]),
+            silent=TRUE)
+  if (inherits(.n, "try-error")) return(NA_integer_)
+  .n
+}
+
 #' Is this an `om.eta ~ variance` normal prior line?
 #'
 #' @param x language object to test
-#' @return TRUE when every name on the left is `om.` prefixed
+#' @param env parsing environment, which carries the running element
+#'   count of any joint omega prior block already in progress
+#' @return TRUE when every name on the left is `om.` prefixed and the
+#'   right hand side is a plausible next row of the joint omega prior
+#'   block (rather than of an ordinary matrix block already open in
+#'   `env`)
 #' @noRd
 #' @author Matthew L. Fidler
-.lotriIsOmegaPriorLine <- function(x) {
+.lotriIsOmegaPriorLine <- function(x, env) {
   if (!(is.call(x) && length(x) == 3L && identical(x[[1]], quote(`~`)))) {
     return(FALSE)
   }
   if (is.call(x[[3]]) && identical(x[[3]][[1]], quote(`|`))) return(FALSE)
   .nm <- .lotriTildeLhsNames(x[[2]])
-  !is.null(.nm) && !is.null(.lotriStripOm(.nm))
+  if (is.null(.nm) || is.null(.lotriStripOm(.nm))) return(FALSE)
+  .len <- .lotriRhsLen(x[[3]])
+  ## a single value always starts a fresh block, for a prior row just as
+  ## much as for an ordinary matrix row, so it stays ambiguous in favor
+  ## of the prior (the long-standing behavior for every `om.x ~ value`
+  ## line)
+  if (is.na(.len) || .len == 1L) return(TRUE)
+  ## a multi-element right hand side is only a valid row of *some*
+  ## block if it continues one already open; prefer the joint omega
+  ## prior block's own running count, and fall through to the ordinary
+  ## matrix row handling only when it does not fit there but does fit
+  ## the block already open in the main environment
+  .priorLastN <- if (is.null(env$omegaPriorEnv)) 0L else env$omegaPriorEnv$lastN
+  if (.len == .priorLastN + 1L) return(TRUE)
+  !(env$lastN != 0L && .len == env$lastN + 1L)
 }
 
 #' Handle the `om.eta ~ variance` normal prior shorthand
@@ -1511,7 +1553,7 @@ NULL
     ## model uses; checked before the two single kind branches, which each
     ## require every name to be of their own kind
     .fCallJointPrior(x, env)
-  } else if (.lotriIsOmegaPriorLine(x)) {
+  } else if (.lotriIsOmegaPriorLine(x, env)) {
     ## `om.eta.cl ~ 0.01` is a normal prior on the omega element of
     ## `eta.cl`, which is what a NONMEM TNPRI model needs
     .fCallOmegaPrior(x, env)
