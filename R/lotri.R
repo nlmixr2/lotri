@@ -1298,6 +1298,31 @@ NULL
   }, logical(1), USE.NAMES=FALSE)
 }
 
+#' Whether any covariance (off-diagonal) entry among a set of names is fixed
+#'
+#' Diagonal (variance) fix status is checked name-by-name by
+#' `.lotriMatFixedDiag()`; a block prior like `lkjCorr()`/`invWishart()`
+#' also models the covariances *between* the block's members, so it has
+#' to be refused when one of those is fixed even though every variance
+#' in the block is free.
+#'
+#' @param m matrix, possibly carrying a `lotriFix` attribute
+#' @param names character vector of the block's names
+#' @return TRUE if any off-diagonal entry among `names` is fixed
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriMatFixedCov <- function(m, names) {
+  if (length(names) < 2L) return(FALSE)
+  .fx <- attr(m, "lotriFix")
+  if (is.null(.fx)) return(FALSE)
+  .dn <- dimnames(m)[[1]]
+  .idx <- match(names, .dn)
+  if (any(is.na(.idx))) return(FALSE)
+  .sub <- .fx[.idx, .idx, drop=FALSE]
+  diag(.sub) <- FALSE
+  any(.sub)
+}
+
 #' Resolve a joint population estimate + `om.` omega element prior
 #'
 #' The block spans two places -- the estimate table and the omega matrix
@@ -1337,6 +1362,7 @@ NULL
                          isBlock=FALSE, inMatrix=FALSE)
   .lotriPriorCheckNotFixed(nm[!isOm], est$fix[.w])
   .lotriPriorCheckNotFixed(nm[isOm], .lotriMatFixedDiag(mats[[.at]], .eta))
+  .lotriPriorCheckNotFixedCov(nm[isOm], .lotriMatFixedCov(mats[[.at]], .eta))
   ## stored on the first name of the block, wherever that name lives
   if (isOm[1]) {
     .dn <- dimnames(mats[[.at]])[[1]]
@@ -1388,7 +1414,13 @@ NULL
         .i <- 1L
         while (.i <= length(.dn)) {
           .idx <- .lotriBlockIndexes(.m, .i)
-          .expand[[length(.expand) + 1L]] <- list(names=.dn[.idx], info=.wp)
+          ## a block that is entirely fixed is already a constant; the
+          ## implicit shorthand applies to every free block, so it
+          ## quietly skips one instead of erroring the way an explicit
+          ## `prior(om.eta) ~ ...` on a fixed element does below
+          if (!all(.lotriMatFixedDiag(.m, .dn[.idx]))) {
+            .expand[[length(.expand) + 1L]] <- list(names=.dn[.idx], info=.wp)
+          }
           .i <- max(.idx) + 1L
         }
       }
@@ -1461,6 +1493,7 @@ NULL
       }
       .lotriPriorCheckTarget(.info, .nm, isBlock=.isBlock, inMatrix=TRUE)
       .lotriPriorCheckNotFixed(.nm, .lotriMatFixedDiag(.m, .nm))
+      .lotriPriorCheckNotFixedCov(.nm, .lotriMatFixedCov(.m, .nm))
       .at <- min(match(.nm, .dn))
       if (!is.na(.pri[[.k]][.at])) {
         stop("more than one prior given for '", paste(.nm, collapse=", "), "'",

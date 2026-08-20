@@ -1106,6 +1106,39 @@ test_that("a prior on a fixed parameter is an error", {
                                         lotri(tcl + om.eta.cl ~ c(1, 0.01, 1)))
   }), "fixed parameter.*'om.eta.cl'")
 
+  ## a joint theta + om. block naming a fixed theta element
+  expect_error(lotri({
+    tcl <- fix(1)
+    eta.cl ~ 0.1
+    prior(tcl, om.eta.cl) ~ multiNormal(c(1, 0.1),
+                                        lotri(tcl + om.eta.cl ~ c(1, 0.01, 1)))
+  }), "fixed parameter.*'tcl'")
+
+  ## a fixed covariance within a block prior, even though every
+  ## variance in the block is free
+  expect_error(lotri({
+    eta.a + eta.b ~ c(1,
+                      fix(0.1), 1)
+    prior(eta.a, eta.b) ~ lkjCorr(2)
+  }), "fixed covariance")
+
+  ## the implicit `~invWishart(4)` shorthand applies to every free
+  ## block, so it quietly skips one that is entirely fixed instead of
+  ## erroring the way an explicit `prior()` on it would
+  expect_error(lotri({
+    eta.a ~ 0.1
+    eta.b ~ fix(0.1)
+    ~invWishart(4)
+  }), NA)
+
+  ## ... but it still refuses a block that is only partially fixed,
+  ## since the joint density it implies cannot hold a constant
+  expect_error(lotri({
+    eta.a + eta.b ~ c(1,
+                      0.1, fix(1))
+    ~invWishart(4)
+  }), "fixed parameter.*'eta.b'")
+
   ## a non-fixed parameter still works
   expect_error(lotri({
     tka <- 1

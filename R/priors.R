@@ -452,3 +452,26 @@ lotriPriorDists <- function() {
   }
   invisible()
 }
+
+#' Check that a block prior does not target a fixed covariance
+#'
+#' A block prior (`lkjCorr()`, `invWishart()`, ...) models every
+#' covariance between the block's members, not just their variances, so
+#' it is refused the same way when one of those covariances is fixed --
+#' even if every variance in the block is free.
+#'
+#' @param names character vector of the block's names, used only for
+#'   the error message
+#' @param fixedCov TRUE when any covariance among `names` is fixed
+#' @return nothing, called for the error checking side effect
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriPriorCheckNotFixedCov <- function(names, fixedCov) {
+  if (isTRUE(fixedCov)) {
+    stop("prior given for a block with a fixed covariance among '",
+         paste(names, collapse="', '"),
+         "'; a fixed covariance is a constant and cannot carry a prior",
+         call.=FALSE)
+  }
+  invisible()
+}
