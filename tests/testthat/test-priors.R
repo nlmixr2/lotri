@@ -1183,6 +1183,19 @@ test_that("a prior on a fixed parameter is an error", {
   }), NA)
 })
 
+test_that("the fixed-lookup helpers ignore a name outside the matrix", {
+
+  ## these are only ever called with names drawn from the matrix itself,
+  ## but a name that is not among its dimnames is a "not fixed" for all
+  ## three helpers rather than an indexing error
+  m <- lotri({ eta.a ~ fix(0.1); eta.b ~ 0.2 })
+
+  expect_equal(.lotri$.lotriMatFixedDiag(m, c("eta.a", "nope")),
+               c(TRUE, FALSE))
+  expect_false(.lotri$.lotriMatFixedCov(m, c("eta.a", "nope")))
+  expect_false(.lotri$.lotriMatEntirelyFixed(m, c("eta.a", "nope")))
+})
+
 test_that("an older seven column lotriEst still concatenates", {
 
   ## a `lotriEst` built before the prior column existed has to keep
