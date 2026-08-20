@@ -1239,39 +1239,49 @@ test_that("a joint prior is checked like any other", {
                       "c(0.01, 0.001, 0.02)))"))
 })
 
+test_that("a single completed row never counts as an open matrix block for the tie check", {
+
+  ## a bare scalar row (`eta.c ~ 0.3`) always leaves `env$lastN` at 1,
+  ## whether or not anything is actually still open for continuation --
+  ## it is not, here, since `eta.c` is already a finished 1x1 block on
+  ## its own.  A `lastN` of 1 must not be treated as "the main matrix
+  ## has an open block this row could continue", or an ordinary,
+  ## unrelated correlated `om.` prior chain becomes wrongly ambiguous
+  ## purely because its own row happens to be 2 elements long too
+  m <- lotri({
+    eta.a + eta.b ~ c(0.1,
+                      0.02, 0.2)
+    eta.c ~ 0.3
+    om.eta.a ~ 1
+    om.eta.b ~ c(0.1, 0.2)
+  })
+  expect_true(grepl("^multiNormal", attr(m, "lotriPriors")[1]))
+})
+
 test_that("a row that could continue either an omega prior chain or the open matrix errors instead of guessing", {
 
-  ## `om.eta.b ~ c(0.1, 0.2)` here is a valid next row of *both* the
-  ## `om.eta.a`/`om.eta.b` prior chain (its own running count) and the
-  ## matrix that `eta.c` just opened (`eta.c`'s own running count) --
-  ## `eta.b` is also a real, already-declared eta, so the name alone
+  ## `om.eta.v ~ c(...)` here is a valid next row of *both* the
+  ## `om.eta.a`/`om.eta.b` prior chain (its own running count of 2) and
+  ## the `tka`/`tcl` matrix that has genuinely been built up row by row
+  ## to a running count of 2 -- `eta.v` is also a real, already-declared
+  ## eta (part of the `eta.a + eta.b + eta.v` block), so the name alone
   ## cannot rule out the prior either.  Silently picking one would risk
   ## dropping whichever row was not chosen, so this fails loudly and
   ## names the unambiguous alternative spelling instead
   expect_message(
     expect_error(
       lotri({
-        eta.a ~ 0.1
-        eta.b ~ 0.2
-        eta.c ~ 0.3
+        eta.a + eta.b + eta.v ~ c(1, 2, 3, 4, 5, 6)
         om.eta.a ~ 1
         om.eta.b ~ c(0.1, 0.2)
+        tka ~ 1
+        tcl ~ c(0.1, 2)
+        om.eta.v ~ c(0.1, 0.2, 3)
       }),
       "lotri syntax errors above"
     ),
     "ambiguous"
   )
-
-  ## spelled with the `+` block form instead -- unambiguously the joint
-  ## prior shorthand regardless of what is open in the main matrix --
-  ## the same correlated prior is not ambiguous
-  m <- lotri({
-    eta.a + eta.b ~ c(0.1,
-                      0.02, 0.2)
-    eta.c ~ 0.3
-    om.eta.a + om.eta.b ~ c(1, 0.1, 0.2)
-  })
-  expect_true(grepl("^multiNormal", attr(m, "lotriPriors")[1]))
 })
 
 test_that("an om.-named matrix row is unaffected by an unrelated omega prior chain earlier in the block", {

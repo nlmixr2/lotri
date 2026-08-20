@@ -884,6 +884,38 @@ NULL
   NULL
 }
 
+#' Every plain (non-`om.`) name on the left of a `~` anywhere in a block
+#'
+#' The omega prior shorthand's target has to already be a real eta, but
+#' a block does not have to declare that eta before the `om.` line that
+#' targets it -- `prior()` lines are explicitly order independent, and
+#' there is nothing that makes the shorthand different.  This walks the
+#' whole block once up front (mirroring `.parseThetaEst()`'s up-front
+#' pass for population estimates) so the check does not depend on
+#' whether the eta happens to have been parsed yet.
+#'
+#' @param x language object, typically the whole `{...}` block
+#' @return character vector of every plain eta name declared anywhere
+#'   in `x`
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriAllEtaLhsNames <- function(x) {
+  .names <- character(0)
+  .walk <- function(y) {
+    if (!is.call(y)) return(invisible())
+    if (identical(y[[1]], quote(`{`))) {
+      for (.i in seq_along(y)[-1]) .walk(y[[.i]])
+    } else if (identical(y[[1]], quote(`~`)) && length(y) == 3L) {
+      .nm <- .lotriTildeLhsNames(y[[2]])
+      if (!is.null(.nm)) {
+        .names <<- c(.names, .nm[!grepl("^om[.].", .nm)])
+      }
+    }
+  }
+  .walk(x)
+  unique(.names)
+}
+
 #' Is this a `~invWishart(4)` whole omega prior line?
 #'
 #' A one sided `~` with a matrix valued distribution applies that prior
@@ -994,13 +1026,15 @@ NULL
   ## the shorthand always puts a prior on an eta that already exists
   ## elsewhere in the matrix -- an `om.` line never creates one (see
   ## "om. names must match a between subject variability" below).  So
-  ## when the stripped target is not a name the main matrix has already
-  ## declared, this cannot be a valid prior target regardless of how
-  ## its row count compares to anything, and is unambiguously an
-  ## ordinary matrix row that simply happens to be `om.`-named (as
-  ## `lotriAsExpression()` writes for the omega element of a combined
-  ## theta+omega covariance matrix, see #53)
-  if (!(.lotriStripOm(.nm) %in% env$names)) return(FALSE)
+  ## when the stripped target is not a name declared *anywhere* in the
+  ## block (checked against a full up-front scan, not just what has
+  ## been parsed so far -- prior lines, like `prior()` lines, are not
+  ## required to follow their target's declaration), this cannot be a
+  ## valid prior target regardless of how its row count compares to
+  ## anything, and is unambiguously an ordinary matrix row that simply
+  ## happens to be `om.`-named (as `lotriAsExpression()` writes for the
+  ## omega element of a combined theta+omega covariance matrix, see #53)
+  if (!(.lotriStripOm(.nm) %in% env$etaLhsNames)) return(FALSE)
   ## otherwise the target is a real eta, so the row is a plausible
   ## prior row too; only the element count -- matched against each
   ## block's own running count -- can settle it.  Prefer the joint
@@ -1008,10 +1042,15 @@ NULL
   ## `om.x ~ c(...)` line that grows an already-started chain by more
   ## than one element at once), and fall through to the ordinary matrix
   ## row handling only when it does not fit there but does fit the
-  ## block already open in the main environment
+  ## block already open in the main environment.  A main `lastN` of
+  ## exactly 1 is excluded -- every single scalar row leaves it at 1
+  ## whether or not anything is actually still open for continuation
+  ## (a `+`-declared block does not reset it either), so it is not a
+  ## reliable signal on its own; two or more is only reachable through
+  ## an actual multi-row continuation
   .priorLastN <- if (is.null(env$omegaPriorEnv)) 0L else env$omegaPriorEnv$lastN
   .matchesPrior <- .len == .priorLastN + 1L
-  .matchesMain <- env$lastN != 0L && .len == env$lastN + 1L
+  .matchesMain <- env$lastN >= 2L && .len == env$lastN + 1L
   if (.matchesPrior && .matchesMain) {
     ## genuinely ambiguous: this row would validly continue *both* the
     ## joint omega prior block and the matrix already open in the main
@@ -2239,6 +2278,7 @@ NULL
   ## the estimate names are needed while walking the `~` side so that
   ## `tka ~ 1` can be told apart from an eta specification
   .env$thetaNames <- .est$name
+  .env$etaLhsNames <- .lotriAllEtaLhsNames(sX)
   .f(sX, .env)
   .printErr(.env) # nolint
   ## a shorthand normal prior is centered on the estimate, so `tka <-
