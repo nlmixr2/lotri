@@ -1427,3 +1427,60 @@ test_that("prior() shorthand builds a block line by line", {
                om.eta.cl ~ 0.01
                om.eta.v ~ c(0.001, 0.02) })))
 })
+
+test_that("an `om.` name can still be an ordinary matrix row", {
+
+  ## `om.` is a prior shorthand, but it is also an ordinary R name, and
+  ## nlmixr2est uses it for every FOCEi covariance matrix: the omega elements
+  ## sit beside the thetas as `om.<eta>` rows.  Such a matrix is written back
+  ## out one row per name (`name ~ c(col = value, ...)`, which is what
+  ## `rxode2::rxUiDeparse()` emits), so that form has to keep parsing as a
+  ## matrix or a saved fit can never be reloaded.
+
+  ## the smallest case: one `om.` row covarying with one theta
+  expect_equal(
+    lotri({ tka ~ c(tka = 1)
+            om.eta.ka ~ c(tka = 0.1, om.eta.ka = 2) }),
+    matrix(c(1, 0.1, 0.1, 2), 2, 2,
+           dimnames = list(c("tka", "om.eta.ka"), c("tka", "om.eta.ka"))))
+
+  ## more than one `om.` row, with a plain row before them
+  .nm <- c("tcl", "om.eta.cl", "om.eta.v")
+  expect_equal(
+    lotri({ tcl ~ c(tcl = 2)
+            om.eta.cl ~ c(tcl = 0.1, om.eta.cl = 3)
+            om.eta.v ~ c(tcl = 0.2, om.eta.cl = 0.3, om.eta.v = 4) }),
+    matrix(c(2, 0.1, 0.2,
+             0.1, 3, 0.3,
+             0.2, 0.3, 4), 3, 3, dimnames = list(.nm, .nm)))
+
+  ## a block where every row is `om.` named is still a matrix
+  expect_equal(
+    lotri({ om.eta.cl ~ c(om.eta.cl = 3)
+            om.eta.v ~ c(om.eta.cl = 0.3, om.eta.v = 4) }),
+    matrix(c(3, 0.3, 0.3, 4), 2, 2,
+           dimnames = list(c("om.eta.cl", "om.eta.v"),
+                           c("om.eta.cl", "om.eta.v"))))
+
+  ## the other shape a written-out matrix takes: a block diagonal, whose
+  ## triangles are unnamed and simply keep growing by one element a row.  This
+  ## is what nlmixr2est's SAEM covariance deparses to, and an `om.` row lands
+  ## in the middle of a triangle rather than starting one
+  .nm2 <- c("tcl", "tv", "add.err", "om.eta.cl")
+  expect_equal(
+    lotri({ tcl ~ 1
+            tv ~ c(0.1, 2)
+            add.err ~ 3
+            om.eta.cl ~ c(0.2, 4) }),
+    matrix(c(1,   0.1, 0,   0,
+             0.1, 2,   0,   0,
+             0,   0,   3,   0.2,
+             0,   0,   0.2, 4), 4, 4, dimnames = list(.nm2, .nm2)))
+
+  ## a bare variance on the right is still the prior shorthand
+  expect_equal(
+    lotriEst(lotri({ eta.cl ~ 0.3
+                     om.eta.cl ~ 0.01 })),
+    lotriEst(lotri({ eta.cl ~ 0.3
+                     prior(om.eta.cl) ~ 0.01 })))
+})

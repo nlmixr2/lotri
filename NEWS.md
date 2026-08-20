@@ -1,5 +1,19 @@
 # lotri 1.0.5
 
+## Bug fixes
+
+* An `om.` prefixed name can be an ordinary matrix row again.  `om.<eta>` is
+  the shorthand for a prior on an omega element, but it is also just an R
+  name, and nlmixr2est uses it for every covariance matrix it reports -- the
+  omega elements sit beside the thetas as `om.<eta>` rows.  Such a row was
+  taken for a prior and pulled out of the block, leaving behind something that
+  no longer formed a lower triangle, so the matrix failed to parse.  Any
+  written-out fit containing one could not be read back (`nlmixr2save` caches,
+  for instance).  A line is now kept as a matrix row when it takes either shape
+  a written-out matrix has: naming its columns (`om.eta.cl ~ c(tcl = 0.1,
+  om.eta.cl = 3)`), or continuing the lower triangle being accumulated.  A bare
+  variance (`om.eta.cl ~ 0.01`) is still the prior shorthand.
+
 ## New features
 
 *  Prior distributions can now be specified in a `lotri({})` (and

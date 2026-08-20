@@ -939,17 +939,72 @@ NULL
   NULL
 }
 
+#' Is the right hand side a named `c()`, ie a matrix row?
+#'
+#' `name ~ c(other = value, ..., name = value)` is how a row of a matrix
+#' block names the columns it covaries with -- it is what `as.expression()`
+#' writes out, so it is the form a deparsed matrix round trips through.  No
+#' prior shorthand uses that form: a normal prior takes a bare variance
+#' (`om.eta.cl ~ 0.01`) and a joint block takes an unnamed lower triangle
+#' (`tcl + om.eta.cl ~ c(1, 0.02, 0.01)`).  So names on the right settle it.
+#'
+#' @param x language object of the right hand side
+#' @return `TRUE` when this is a matrix row rather than a prior
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriIsNamedMatrixRow <- function(x) {
+  if (!(is.call(x) && identical(x[[1]], quote(`c`)))) return(FALSE)
+  .nm <- names(x)
+  length(.nm) > 1L && any(nzchar(.nm[-1]))
+}
+
+#' Does this line continue the matrix block being accumulated?
+#'
+#' `.fCallTilde()` grows a block while each `name ~ c(...)` holds exactly one
+#' more element than the row before it (`env$lastN + 1`); that is how a block
+#' diagonal matrix is written out, one lower triangle after another.  A row in
+#' the middle of such a run belongs to the matrix no matter what it is called.
+#'
+#' @param x language object of the whole `~` line
+#' @param env parsing environment, which carries `lastN`
+#' @return `TRUE` when this line is the next row of the block in progress
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriContinuesMatrixRow <- function(x, env) {
+  if (!is.name(x[[2]])) return(FALSE)
+  .lastN <- env$lastN
+  if (is.null(.lastN) || length(.lastN) != 1L || is.na(.lastN) || .lastN == 0L) {
+    return(FALSE)
+  }
+  ## only a plain `c()` of numbers is evaluated here -- a distribution call on
+  ## the right is a prior, and must not be run just to measure it
+  if (!(is.call(x[[3]]) && identical(x[[3]][[1]], quote(`c`)))) return(FALSE)
+  .r <- try(eval(x[[3]], envir=.lotriParentEnv), silent=TRUE)
+  if (inherits(.r, "try-error") || !is.numeric(.r)) return(FALSE)
+  length(.r) == .lastN + 1L
+}
+
 #' Is this an `om.eta ~ variance` normal prior line?
 #'
 #' @param x language object to test
 #' @return TRUE when every name on the left is `om.` prefixed
 #' @noRd
 #' @author Matthew L. Fidler
-.lotriIsOmegaPriorLine <- function(x) {
+.lotriIsOmegaPriorLine <- function(x, env) {
   if (!(is.call(x) && length(x) == 3L && identical(x[[1]], quote(`~`)))) {
     return(FALSE)
   }
   if (is.call(x[[3]]) && identical(x[[3]][[1]], quote(`|`))) return(FALSE)
+  ## `om.` is only a prior shorthand.  A matrix whose ROW is named `om.`
+  ## something -- which nlmixr2est produces for every covariance it reports,
+  ## where `om.eta.cl` is the omega element sitting beside the thetas -- must
+  ## stay a matrix, or the row is pulled out into the prior environment and the
+  ## block left behind no longer forms a lower triangle.  Unlike the theta and
+  ## joint branches there is no `env$thetaNames` to gate this one on, so the
+  ## line itself has to settle it, in the two shapes a written-out matrix takes:
+  ## a row that names its columns, and a row that continues a lower triangle.
+  if (.lotriIsNamedMatrixRow(x[[3]])) return(FALSE)
+  if (.lotriContinuesMatrixRow(x, env)) return(FALSE)
   .nm <- .lotriTildeLhsNames(x[[2]])
   !is.null(.nm) && !is.null(.lotriStripOm(.nm))
 }
@@ -1511,7 +1566,7 @@ NULL
     ## model uses; checked before the two single kind branches, which each
     ## require every name to be of their own kind
     .fCallJointPrior(x, env)
-  } else if (.lotriIsOmegaPriorLine(x)) {
+  } else if (.lotriIsOmegaPriorLine(x, env)) {
     ## `om.eta.cl ~ 0.01` is a normal prior on the omega element of
     ## `eta.cl`, which is what a NONMEM TNPRI model needs
     .fCallOmegaPrior(x, env)
