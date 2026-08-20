@@ -1158,6 +1158,24 @@ test_that("a prior on a fixed parameter is an error", {
     ~invWishart(4)
   }), "fixed parameter")
 
+  ## ... and the other way around: free variances but a fixed
+  ## covariance is caught by the shorthand too, not just an explicit
+  ## `prior()` on the block
+  expect_error(lotri({
+    eta.a + eta.b ~ c(1,
+                      fix(0.1), 1)
+    ~invWishart(4)
+  }), "fixed covariance")
+
+  ## `rcm=TRUE` reorders the matrix, but the fix lookup is by name, not
+  ## position, so it still finds the right parameter after reordering
+  expect_error(lotri({
+    eta.a + eta.b + eta.c ~ c(1,
+                              0, 1,
+                              0.1, 0, fix(1))
+    prior(eta.c) ~ dnorm(0, 1)
+  }, rcm=TRUE), "fixed parameter.*'eta.c'")
+
   ## a non-fixed parameter still works
   expect_error(lotri({
     tka <- 1
