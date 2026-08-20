@@ -1279,6 +1279,25 @@ NULL
   seq(.lo, .hi)
 }
 
+#' Fixed status of a set of diagonal (eta) names within a matrix
+#'
+#' @param m matrix, possibly carrying a `lotriFix` attribute (a same
+#'   shaped logical matrix marking which elements are fixed)
+#' @param names character vector of diagonal names to look up
+#' @return logical vector, the same length and order as `names`
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriMatFixedDiag <- function(m, names) {
+  .fx <- attr(m, "lotriFix")
+  if (is.null(.fx)) return(rep(FALSE, length(names)))
+  .dn <- dimnames(m)[[1]]
+  vapply(names, function(.n) {
+    .i <- match(.n, .dn)
+    if (is.na(.i)) return(FALSE)
+    isTRUE(.fx[.i, .i])
+  }, logical(1), USE.NAMES=FALSE)
+}
+
 #' Resolve a joint population estimate + `om.` omega element prior
 #'
 #' The block spans two places -- the estimate table and the omega matrix
@@ -1316,6 +1335,8 @@ NULL
   .w <- match(nm[!isOm], est$name)
   .lotriPriorCheckTarget(info, nm, est$lower[.w], est$upper[.w],
                          isBlock=FALSE, inMatrix=FALSE)
+  .lotriPriorCheckNotFixed(nm[!isOm], est$fix[.w])
+  .lotriPriorCheckNotFixed(nm[isOm], .lotriMatFixedDiag(mats[[.at]], .eta))
   ## stored on the first name of the block, wherever that name lives
   if (isOm[1]) {
     .dn <- dimnames(mats[[.at]])[[1]]
@@ -1412,6 +1433,7 @@ NULL
       .w <- match(.nm, est$name)
       .lotriPriorCheckTarget(.info, .nm, est$lower[.w], est$upper[.w],
                              isBlock=FALSE, inMatrix=FALSE)
+      .lotriPriorCheckNotFixed(.nm, est$fix[.w])
       if (any(!is.na(est$prior[.w]))) {
         stop("more than one prior given for '",
              paste(.nm[!is.na(est$prior[.w])], collapse="', '"), "'", call.=FALSE)
@@ -1438,6 +1460,7 @@ NULL
              call.=FALSE)
       }
       .lotriPriorCheckTarget(.info, .nm, isBlock=.isBlock, inMatrix=TRUE)
+      .lotriPriorCheckNotFixed(.nm, .lotriMatFixedDiag(.m, .nm))
       .at <- min(match(.nm, .dn))
       if (!is.na(.pri[[.k]][.at])) {
         stop("more than one prior given for '", paste(.nm, collapse=", "), "'",

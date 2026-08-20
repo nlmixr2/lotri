@@ -1068,6 +1068,51 @@ test_that("two priors reaching the same parameter is an error", {
   }), "more than one prior")
 })
 
+test_that("a prior on a fixed parameter is an error", {
+
+  ## a fixed parameter is a constant, so a prior on it is refused where
+  ## the model is defined instead of surfacing downstream in whatever
+  ## consumes the priors (nlmixr2/lotri#52)
+  expect_error(lotri({
+    tka <- fix(1)
+    prior(tka) ~ dnorm(1, 1)
+  }), "fixed parameter.*'tka'")
+
+  ## the multivariate case from the original report
+  expect_error(lotri({
+    tcl <- 1
+    tv <- fix(3)
+    prior(tcl, tv) ~ multiNormal(c(1, 3), lotri(tcl + tv ~ c(1, 0.01, 1)))
+  }), "fixed parameter.*'tv'")
+
+  ## a fixed omega element
+  expect_error(lotri({
+    eta.cl ~ fix(0.1)
+    om.eta.cl ~ 0.01
+  }), "fixed parameter.*'eta.cl'")
+
+  ## a fixed member of an omega block prior
+  expect_error(lotri({
+    eta.a + eta.b ~ c(1,
+                      0.1, fix(1))
+    prior(eta.a, eta.b) ~ lkjCorr(2)
+  }), "fixed parameter.*'eta.b'")
+
+  ## a joint theta + om. block naming a fixed omega element
+  expect_error(lotri({
+    tcl <- 1
+    eta.cl ~ fix(0.1)
+    prior(tcl, om.eta.cl) ~ multiNormal(c(1, 0.1),
+                                        lotri(tcl + om.eta.cl ~ c(1, 0.01, 1)))
+  }), "fixed parameter.*'om.eta.cl'")
+
+  ## a non-fixed parameter still works
+  expect_error(lotri({
+    tka <- 1
+    prior(tka) ~ dnorm(1, 1)
+  }), NA)
+})
+
 test_that("an older seven column lotriEst still concatenates", {
 
   ## a `lotriEst` built before the prior column existed has to keep
