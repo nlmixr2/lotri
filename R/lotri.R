@@ -1323,6 +1323,29 @@ NULL
   any(.sub)
 }
 
+#' Whether a block has nothing left in it that could take a prior
+#'
+#' Used only to decide whether the implicit `~invWishart(4)` shorthand
+#' quietly skips a block instead of applying to it: every variance *and*
+#' every covariance in the block has to be fixed, not just the
+#' diagonal, or the block still has a free entry that the shorthand
+#' would otherwise silently leave without a prior.
+#'
+#' @param m matrix, possibly carrying a `lotriFix` attribute
+#' @param names character vector of the block's names
+#' @return TRUE when every entry among `names` (diagonal and
+#'   off-diagonal alike) is fixed
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriMatEntirelyFixed <- function(m, names) {
+  .fx <- attr(m, "lotriFix")
+  if (is.null(.fx)) return(FALSE)
+  .dn <- dimnames(m)[[1]]
+  .idx <- match(names, .dn)
+  if (any(is.na(.idx))) return(FALSE)
+  all(.fx[.idx, .idx, drop=FALSE])
+}
+
 #' Resolve a joint population estimate + `om.` omega element prior
 #'
 #' The block spans two places -- the estimate table and the omega matrix
@@ -1418,7 +1441,7 @@ NULL
           ## implicit shorthand applies to every free block, so it
           ## quietly skips one instead of erroring the way an explicit
           ## `prior(om.eta) ~ ...` on a fixed element does below
-          if (!all(.lotriMatFixedDiag(.m, .dn[.idx]))) {
+          if (!.lotriMatEntirelyFixed(.m, .dn[.idx])) {
             .expand[[length(.expand) + 1L]] <- list(names=.dn[.idx], info=.wp)
           }
           .i <- max(.idx) + 1L
