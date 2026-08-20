@@ -1289,10 +1289,11 @@ test_that("an om.-named matrix row is unaffected by an unrelated omega prior cha
   ## a hand written `om.` prior chain and a real matrix whose own
   ## parameter happens to be `om.`-prefixed (as `lotriAsExpression()`
   ## writes for the omega element of a combined theta+omega covariance
-  ## matrix, see #53) can coexist in the same block: the matrix row
-  ## keeps continuing the matrix it is actually part of, not whatever
-  ## prior chain is running elsewhere, even though both happen to
-  ## reach the same running row count
+  ## matrix, see #53) can coexist in the same block: `om.eta.v` here
+  ## never names a separately declared eta (unlike the prior chain's
+  ## own `om.eta.a`/`om.eta.b`, which do), so it is never even a
+  ## candidate for the prior chain and keeps continuing the matrix it
+  ## is actually part of
   m <- lotri({
     eta.a + eta.b ~ c(0.1,
                       0.02, 0.2)

@@ -1047,7 +1047,13 @@ NULL
   ## whether or not anything is actually still open for continuation
   ## (a `+`-declared block does not reset it either), so it is not a
   ## reliable signal on its own; two or more is only reachable through
-  ## an actual multi-row continuation
+  ## an actual multi-row continuation.  This does mean a genuine 2-row
+  ## matrix whose *second* row is the first `om.`-prefixed line of the
+  ## block (`lastN == 1` at that point) still resolves in favor of the
+  ## prior when the stripped target also happens to be a real,
+  ## separately declared eta -- the same pre-existing, unresolvable
+  ## ambiguity as any other single-value `om.` line (see above); this
+  ## was already true before this row ever reached this branch
   .priorLastN <- if (is.null(env$omegaPriorEnv)) 0L else env$omegaPriorEnv$lastN
   .matchesPrior <- .len == .priorLastN + 1L
   .matchesMain <- env$lastN >= 2L && .len == env$lastN + 1L
