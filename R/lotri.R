@@ -884,6 +884,38 @@ NULL
   NULL
 }
 
+#' Every plain (non-`om.`) name on the left of a `~` anywhere in a block
+#'
+#' The omega prior shorthand's target has to already be a real eta, but
+#' a block does not have to declare that eta before the `om.` line that
+#' targets it -- `prior()` lines are explicitly order independent, and
+#' there is nothing that makes the shorthand different.  This walks the
+#' whole block once up front (mirroring `.parseThetaEst()`'s up-front
+#' pass for population estimates) so the check does not depend on
+#' whether the eta happens to have been parsed yet.
+#'
+#' @param x language object, typically the whole `{...}` block
+#' @return character vector of every plain eta name declared anywhere
+#'   in `x`
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriAllEtaLhsNames <- function(x) {
+  .names <- character(0)
+  .walk <- function(y) {
+    if (!is.call(y)) return(invisible())
+    if (identical(y[[1]], quote(`{`))) {
+      for (.i in seq_along(y)[-1]) .walk(y[[.i]])
+    } else if (identical(y[[1]], quote(`~`)) && length(y) == 3L) {
+      .nm <- .lotriTildeLhsNames(y[[2]])
+      if (!is.null(.nm)) {
+        .names <<- c(.names, .nm[!grepl("^om[.].", .nm)])
+      }
+    }
+  }
+  .walk(x)
+  unique(.names)
+}
+
 #' Is this a `~invWishart(4)` whole omega prior line?
 #'
 #' A one sided `~` with a matrix valued distribution applies that prior
@@ -939,19 +971,106 @@ NULL
   NULL
 }
 
+#' Number of matrix elements a `~` right hand side would parse to
+#'
+#' `om.`-prefixed lines are ambiguous: `om.eta.cl ~ c(...)` is either the
+#' next row of the joint omega prior block's own running triangular
+#' build up, or it is simply the next row of whatever ordinary matrix
+#' block is open in the main environment (an `om.`-prefixed name is a
+#' perfectly ordinary matrix parameter name, e.g. the omega element of a
+#' combined theta+omega covariance matrix written by
+#' `lotriAsExpression()`).  Only the element count -- matched against
+#' each block's own running count -- can tell the two apart.
+#'
+#' @param x right hand side language object of a `~` line
+#' @return integer element count, or `NA_integer_` when it cannot be
+#'   determined without triggering a downstream parse error
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriRhsLen <- function(x) {
+  .n <- try(length(.lotriParseMat(x, env=new.env(parent=emptyenv()), noMat=TRUE)[[1]]),
+            silent=TRUE)
+  if (inherits(.n, "try-error")) return(NA_integer_)
+  .n
+}
+
 #' Is this an `om.eta ~ variance` normal prior line?
 #'
 #' @param x language object to test
-#' @return TRUE when every name on the left is `om.` prefixed
+#' @param env parsing environment, which carries the running element
+#'   count of any joint omega prior block already in progress
+#' @return TRUE when every name on the left is `om.` prefixed and the
+#'   right hand side is a plausible next row of the joint omega prior
+#'   block (rather than of an ordinary matrix block already open in
+#'   `env`)
 #' @noRd
 #' @author Matthew L. Fidler
-.lotriIsOmegaPriorLine <- function(x) {
+.lotriIsOmegaPriorLine <- function(x, env) {
   if (!(is.call(x) && length(x) == 3L && identical(x[[1]], quote(`~`)))) {
     return(FALSE)
   }
   if (is.call(x[[3]]) && identical(x[[3]][[1]], quote(`|`))) return(FALSE)
   .nm <- .lotriTildeLhsNames(x[[2]])
-  !is.null(.nm) && !is.null(.lotriStripOm(.nm))
+  if (is.null(.nm) || is.null(.lotriStripOm(.nm))) return(FALSE)
+  ## a `+`-summed left hand side always declares a whole new prior block
+  ## at once (the same way ordinary matrix syntax does), never a
+  ## continuation of one already open in the main environment, so it is
+  ## unambiguously the joint prior shorthand
+  if (length(.nm) > 1L) return(TRUE)
+  .len <- .lotriRhsLen(x[[3]])
+  ## a single value always starts a fresh block, for a prior row just as
+  ## much as for an ordinary matrix row, so it stays ambiguous in favor
+  ## of the prior (the long-standing behavior for every `om.x ~ value`
+  ## line)
+  if (is.na(.len) || .len == 1L) return(TRUE)
+  ## the shorthand always puts a prior on an eta that already exists
+  ## elsewhere in the matrix -- an `om.` line never creates one (see
+  ## "om. names must match a between subject variability" below).  So
+  ## when the stripped target is not a name declared *anywhere* in the
+  ## block (checked against a full up-front scan, not just what has
+  ## been parsed so far -- prior lines, like `prior()` lines, are not
+  ## required to follow their target's declaration), this cannot be a
+  ## valid prior target regardless of how its row count compares to
+  ## anything, and is unambiguously an ordinary matrix row that simply
+  ## happens to be `om.`-named (as `lotriAsExpression()` writes for the
+  ## omega element of a combined theta+omega covariance matrix, see #53)
+  if (!(.lotriStripOm(.nm) %in% env$etaLhsNames)) return(FALSE)
+  ## otherwise the target is a real eta, so the row is a plausible
+  ## prior row too; only the element count -- matched against each
+  ## block's own running count -- can settle it.  Prefer the joint
+  ## omega prior block's own running count (this also covers a fresh
+  ## `om.x ~ c(...)` line that grows an already-started chain by more
+  ## than one element at once), and fall through to the ordinary matrix
+  ## row handling only when it does not fit there but does fit the
+  ## block already open in the main environment.  A main `lastN` of
+  ## exactly 1 is excluded -- every single scalar row leaves it at 1
+  ## whether or not anything is actually still open for continuation
+  ## (a `+`-declared block does not reset it either), so it is not a
+  ## reliable signal on its own; two or more is only reachable through
+  ## an actual multi-row continuation.  This does mean a genuine 2-row
+  ## matrix whose *second* row is the first `om.`-prefixed line of the
+  ## block (`lastN == 1` at that point) still resolves in favor of the
+  ## prior when the stripped target also happens to be a real,
+  ## separately declared eta -- the same pre-existing, unresolvable
+  ## ambiguity as any other single-value `om.` line (see above); this
+  ## was already true before this row ever reached this branch
+  .priorLastN <- if (is.null(env$omegaPriorEnv)) 0L else env$omegaPriorEnv$lastN
+  .matchesPrior <- .len == .priorLastN + 1L
+  .matchesMain <- env$lastN >= 2L && .len == env$lastN + 1L
+  if (.matchesPrior && .matchesMain) {
+    ## genuinely ambiguous: this row would validly continue *both* the
+    ## joint omega prior block and the matrix already open in the main
+    ## environment.  Rather than silently guessing (and possibly
+    ## dropping the row that was not chosen), fail loudly -- `prior()`
+    ## names its target explicitly, so it is never ambiguous this way
+    stop("'", .deparse1(x), # nolint
+         "' is ambiguous: it could continue either the joint omega ",
+         "prior block or the matrix already open here; write it as ",
+         "'prior(", .lotriStripOm(.nm), ") ~ ...' to put a prior on it unambiguously",
+         call.=FALSE)
+  }
+  if (.matchesPrior) return(TRUE)
+  !.matchesMain
 }
 
 #' Handle the `om.eta ~ variance` normal prior shorthand
@@ -1511,7 +1630,7 @@ NULL
     ## model uses; checked before the two single kind branches, which each
     ## require every name to be of their own kind
     .fCallJointPrior(x, env)
-  } else if (.lotriIsOmegaPriorLine(x)) {
+  } else if (.lotriIsOmegaPriorLine(x, env)) {
     ## `om.eta.cl ~ 0.01` is a normal prior on the omega element of
     ## `eta.cl`, which is what a NONMEM TNPRI model needs
     .fCallOmegaPrior(x, env)
@@ -2165,6 +2284,7 @@ NULL
   ## the estimate names are needed while walking the `~` side so that
   ## `tka ~ 1` can be told apart from an eta specification
   .env$thetaNames <- .est$name
+  .env$etaLhsNames <- .lotriAllEtaLhsNames(sX)
   .f(sX, .env)
   .printErr(.env) # nolint
   ## a shorthand normal prior is centered on the estimate, so `tka <-
