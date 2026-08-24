@@ -144,6 +144,14 @@ lotri({
 
 ## Bug fixes
 
+* `lotri` now requires 'armadillo4r' 15.4.2 or newer.  The 'Armadillo'
+  headers shipped with older 'armadillo4r' releases discard the return
+  value of a `std::uniform_int_distribution` draw, which the 'libc++'
+  shipped with 'clang' 23 now marks `[[nodiscard]]`.  That made `R CMD
+  check` report a significant compilation warning -- and so a check
+  `WARNING` -- on CRAN's clang-trunk flavour, even though none of
+  `lotri`'s own sources were involved (#57).
+
 * A `prior()` given for a fixed (`fix()`ed) parameter is now an error
   at resolution time, naming the parameter, instead of parsing and
   building cleanly and only surfacing as a problem in whatever

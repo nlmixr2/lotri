@@ -46,5 +46,5 @@ NeedsCompilation: yes
 Language: en-US
 LinkingTo:
     cpp4r,
-    armadillo4r
+    armadillo4r (>= 15.4.2)
 Config/roxygen2/version: 8.1.0
