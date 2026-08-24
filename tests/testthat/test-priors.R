@@ -1309,6 +1309,49 @@ test_that("an om.-named matrix row is unaffected by an unrelated omega prior cha
   expect_true(grepl("^multiNormal", attr(m, "lotriPriors")[1]))
 })
 
+test_that("an unevaluable omega row right hand side stays ambiguous in favor of the prior", {
+
+  ## when the row length cannot even be determined (here, a `c(...)`
+  ## element that references an undefined name), the row cannot be
+  ## checked against either block's running count. It defaults to the
+  ## long-standing prior interpretation, the same as any other
+  ## right hand side `.lotriRhsLen()` cannot evaluate, and the real
+  ## error surfaces from the actual parse instead
+  expect_message(
+    expect_error(
+      lotri({
+        eta.a ~ 1
+        om.eta.a ~ c(1, thisNameDoesNotExist)
+      }),
+      "lotri syntax errors above"
+    ),
+    "thisNameDoesNotExist"
+  )
+})
+
+test_that("an omega row whose length fits neither block still defaults to the prior", {
+
+  ## `om.eta.a`'s target (`eta.a`) is a real, declared eta, so the row
+  ## is a plausible prior row, but its length (3) matches neither the
+  ## prior chain's own running count (a fresh chain expects 1) nor the
+  ## main matrix's (each bare scalar row is its own closed 1x1 block,
+  ## so there is no open block to continue at all). With neither count
+  ## settling it, this defaults to the prior, the same as the
+  ## long-standing behavior for any line that cannot be tied to the
+  ## matrix already open in the main environment
+  expect_message(
+    expect_error(
+      lotri({
+        eta.a ~ 0.3
+        eta.b ~ 0.4
+        om.eta.a ~ c(1, 2, 3)
+      }),
+      "lotri syntax errors above"
+    ),
+    "number named variables and lower triangular matrix size do not match"
+  )
+})
+
 test_that("a joint block may name omega elements that are not one block", {
 
   ## A pure `om.` prior has to be exactly one covariance block, because
