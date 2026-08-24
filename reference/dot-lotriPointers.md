@@ -23,33 +23,33 @@ Matthew L. Fidler
 
 .lotriPointers()
 #> $lotriLstToMat
-#> <pointer: 0x7fa0d8cec8d0>
+#> <pointer: 0x7f639482e8d0>
 #> 
 #> $asLotriMat
-#> <pointer: 0x7fa0d8cea5c0>
+#> <pointer: 0x7f639482c5c0>
 #> 
 #> $lotriSep
-#> <pointer: 0x7fa0d8cee710>
+#> <pointer: 0x7f6394830710>
 #> 
 #> $lotriAllNames
-#> <pointer: 0x7fa0d8ceecc0>
+#> <pointer: 0x7f6394830cc0>
 #> 
 #> $lotriGetBounds
-#> <pointer: 0x7fa0d8ceac70>
+#> <pointer: 0x7f639482cc70>
 #> 
 #> $lotriMaxNu
-#> <pointer: 0x7fa0d8cee1a0>
+#> <pointer: 0x7f63948301a0>
 #> 
 #> $isLotri
-#> <pointer: 0x7fa0d8ceeb90>
+#> <pointer: 0x7f6394830b90>
 #> 
 #> $lotriRcm
-#> <pointer: 0x7fa0d8cf92b0>
+#> <pointer: 0x7f639483b2b0>
 #> 
 #> $lotriNearPDc
-#> <pointer: 0x7fa0d8cf3dd0>
+#> <pointer: 0x7f6394835dd0>
 #> 
 #> $lotriNearPDsexp
-#> <pointer: 0x7fa0d8cf47e0>
+#> <pointer: 0x7f63948367e0>
 #> 
 ```
