@@ -152,6 +152,18 @@ lotri({
   `WARNING` -- on CRAN's clang-trunk flavour, even though none of
   `lotri`'s own sources were involved (#57).
 
+* `src/nearPD.cpp` and `src/rcm.cpp` now include `<algorithm>`,
+  `<cmath>` and `<cstddef>` for the `std::fill`/`std::fill_n`,
+  `std::max`, `std::abs` and `std::size_t` they use directly, instead
+  of relying on the 'Armadillo' headers to drag them in.  'libc++' has
+  been steadily dropping transitive includes, and clang 23's is where
+  that started breaking packages (#57).
+
+* The `trace=TRUE` iteration message in `lotriNearPD()` printed an
+  `arma::uword` with `%lld`; it now uses `%llu` with an explicit cast,
+  so the format matches the argument on every 'Armadillo' word-size
+  configuration (#57).
+
 * The test suite no longer calls `structure()` with the deprecated
   special names `.Dim`, `.Dimnames` and `.Names`; it uses `dim`,
   `dimnames` and `names` instead.  This clears the "Found calls to

@@ -1,5 +1,7 @@
 #include <cpp4r.hpp>
 #include <armadillo4r.hpp>
+// std::fill_n is used directly below; see the note in nearPD.cpp.
+#include <algorithm>
 // Function to perform the RCM algorithm
 extern "C" SEXP _lotri_rcm_(SEXP As) {
   int pro = 0;
