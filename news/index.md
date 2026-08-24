@@ -160,6 +160,18 @@ rather than being evaluated as a variance.
 
 ### Bug fixes
 
+- [`lotri()`](https://nlmixr2.github.io/lotri/reference/lotri.md) can
+  now re-parse the named [`c()`](https://rdrr.io/r/base/c.html) form
+  that
+  [`lotriAsExpression()`](https://nlmixr2.github.io/lotri/reference/lotriAsExpression.md)/[`as.expression()`](https://rdrr.io/r/base/expression.html)
+  writes for a matrix above `nameEst`’s size threshold when a later
+  row’s names reach back into an earlier, already-closed block – as
+  happens for a combined theta+omega covariance matrix, where every
+  omega row names all the preceding theta rows too. Previously an
+  `om.`-prefixed row in that position was always misread as the `om.`
+  normal prior shorthand instead of the next row of the matrix itself
+  ([\#53](https://github.com/nlmixr2/lotri/issues/53)).
+
 - Labels now follow the matrix when `rcm=TRUE` re-orders it. Previously
   the labels stayed in the order they were parsed in while the matrix
   was permuted, so they were applied to the wrong parameters.
