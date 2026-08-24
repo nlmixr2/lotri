@@ -38,8 +38,8 @@ test_that("Combined estimates and matrix", {
   
   expect_equal(fix2,
                structure(c(1, 0.5, 0.5, 1),
-                         .Dim = c(2L, 2L),
-                         .Dimnames = list(c("f", "g"), c("f", "g"))))
+                         dim = c(2L, 2L),
+                         dimnames = list(c("f", "g"), c("f", "g"))))
   
   fix2 <- lotri({
     a = c(3); label(matt); backTransform(exp) #nolint

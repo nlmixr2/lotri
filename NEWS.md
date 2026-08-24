@@ -144,6 +144,32 @@ lotri({
 
 ## Bug fixes
 
+* `lotri` now requires 'armadillo4r' 15.4.2 or newer.  The 'Armadillo'
+  headers shipped with older 'armadillo4r' releases discard the return
+  value of a `std::uniform_int_distribution` draw, which the 'libc++'
+  shipped with 'clang' 23 now marks `[[nodiscard]]`.  That made `R CMD
+  check` report a significant compilation warning -- and so a check
+  `WARNING` -- on CRAN's clang-trunk flavour, even though none of
+  `lotri`'s own sources were involved (#57).
+
+* `src/nearPD.cpp` and `src/rcm.cpp` now include `<algorithm>`,
+  `<cmath>` and `<cstddef>` for the `std::fill`/`std::fill_n`,
+  `std::max`, `std::abs` and `std::size_t` they use directly, instead
+  of relying on the 'Armadillo' headers to drag them in.  'libc++' has
+  been steadily dropping transitive includes, and clang 23's is where
+  that started breaking packages (#57).
+
+* The `trace=TRUE` iteration message in `lotriNearPD()` printed an
+  `arma::uword` with `%lld`; it now uses `%llu` with an explicit cast,
+  so the format matches the argument on every 'Armadillo' word-size
+  configuration (#57).
+
+* The test suite no longer calls `structure()` with the deprecated
+  special names `.Dim`, `.Dimnames` and `.Names`; it uses `dim`,
+  `dimnames` and `names` instead.  This clears the "Found calls to
+  structure() using deprecated special names" `NOTE` on the r-devel
+  check flavours (#57).
+
 * A `prior()` given for a fixed (`fix()`ed) parameter is now an error
   at resolution time, naming the parameter, instead of parsing and
   building cleanly and only surfacing as a problem in whatever

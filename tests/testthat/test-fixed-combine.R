@@ -41,8 +41,8 @@ test_that("combine fix1 and fix2", {
   attr(c1, "lotriEst") <- NULL
 
   expect_equal(c1, structure(c(1, 0.5, 0, 0, 0.5, 1, 0, 0, 0, 0, 1, 0.5, 0, 0, 0.5, 1),
-                             .Dim = c(4L, 4L),
-                             .Dimnames = list(c("f", "g", "m", "n"), c("f", "g", "m", "n"))))
+                             dim = c(4L, 4L),
+                             dimnames = list(c("f", "g", "m", "n"), c("f", "g", "m", "n"))))
 
 
   fix1 <- lotri({
@@ -75,8 +75,8 @@ test_that("combine fix1 and fix2", {
 
   expect_equal(lotriEst(c1, drop=TRUE),
                structure(c(1, 0.5, 0, 0, 0.5, 1, 0, 0, 0, 0, 1, 0.5, 0, 0, 0.5, 1),
-                         .Dim = c(4L, 4L),
-                         .Dimnames = list(c("f", "g", "m", "n"), c("f", "g", "m", "n"))))
+                         dim = c(4L, 4L),
+                         dimnames = list(c("f", "g", "m", "n"), c("f", "g", "m", "n"))))
 
   fix1 <- lotri({
     a <- c(0, 1); backTransform("exp"); label("a label")

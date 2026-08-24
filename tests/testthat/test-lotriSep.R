@@ -133,15 +133,15 @@ test_that("lotriSep", {
   
   ## Bad Lotri matrix
   
-  omega1 <- structure(list(id = structure(c(0.1, 0, 0, 0.1), .Dim = c(
+  omega1 <- structure(list(id = structure(c(0.1, 0, 0, 0.1), dim = c(
     2L,
     2L
-  ), .Dimnames = list(c("eta.Cl", "eta.Ka"), c("eta.Cl", "eta.Ka"))), eye = structure(c(0.05, 0, 0, 0.05), .Dim = c(2L, 2L), .Dimnames = list(
+  ), dimnames = list(c("eta.Cl", "eta.Ka"), c("eta.Cl", "eta.Ka"))), eye = structure(c(0.05, 0, 0, 0.05), dim = c(2L, 2L), dimnames = list(
     c("eye.Cl", "eye.Ka"), c("eye.Cl", "eye.Ka")
   )), occ = structure(c(
     0.01,
     0, 0, 0.01
-  ), .Dim = c(2L, 2L), .Dimnames = list(c("iov.Cl", "iov.Ka"), c("iov.Cl", "iov.Ka"))), inv = structure(c(0.02, 0, 0, 0.02), .Dim = c(2L, 2L), .Dimnames = list(
+  ), dim = c(2L, 2L), dimnames = list(c("iov.Cl", "iov.Ka"), c("iov.Cl", "iov.Ka"))), inv = structure(c(0.02, 0, 0, 0.02), dim = c(2L, 2L), dimnames = list(
     c("inv.Cl", "inv.Ka"),
     c("inv.Cl", "inv.Ka")
   ))), lotri = list(

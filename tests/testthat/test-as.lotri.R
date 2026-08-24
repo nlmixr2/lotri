@@ -32,16 +32,16 @@ test_that("as.lotri", {
 
   tmp3 <- as.lotri(tmp2)
 
-  expect_equal(tmp3, structure(list(structure(c(0.5, 0, 0, 0.6), .Dim = c(2L, 2L), .Dimnames = list(
+  expect_equal(tmp3, structure(list(structure(c(0.5, 0, 0, 0.6), dim = c(2L, 2L), dimnames = list(
     c("iov.Ka", "iov.Cl"), c("iov.Ka", "iov.Cl")
-  ))), .Names = "", class = "lotri"))
+  ))), names = "", class = "lotri"))
 
   tmp3 <- as.lotri(tmp3, default = "id")
 
-  expect_equal(tmp3, structure(list(id = structure(c(0.5, 0, 0, 0.6), .Dim = c(
+  expect_equal(tmp3, structure(list(id = structure(c(0.5, 0, 0, 0.6), dim = c(
     2L,
     2L
-  ), .Dimnames = list(c("iov.Ka", "iov.Cl"), c("iov.Ka", "iov.Cl")))), class = "lotri"))
+  ), dimnames = list(c("iov.Ka", "iov.Cl"), c("iov.Ka", "iov.Cl")))), class = "lotri"))
 
   expect_true(inherits(as.matrix(tmp3), "matrix"))
 

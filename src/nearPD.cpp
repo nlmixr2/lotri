@@ -2,6 +2,12 @@
 // Contributors Martin Maechler, Jens Oehlschlägel
 #define ARMA_WARN_LEVEL 1
 #include <armadillo4r.hpp>
+// std::fill/std::max, std::abs and std::size_t are used directly below.  They
+// happen to arrive through <armadillo4r.hpp> today, but libc++ keeps dropping
+// transitive includes (clang 23's libc++ is where that bit CRAN), so name them.
+#include <algorithm>
+#include <cmath>
+#include <cstddef>
 #include "nearPD.h"
 
 #include "cpp4r/declarations.hpp"
@@ -123,7 +129,7 @@ bool lotriNearPDarma(mat &ret, mat x
       // cat(sprintf("iter %3d : #{p}=%d, ||Y-X|| / ||Y||= %11g\n",
       // iter, sum(p), conv))
       // Rcpp::Rcout << "iter " << iter <<" : #{p}= "<< sum(p) << std::endl;
-      REprintf("iter %d: #{p}=%lld\n" , iter, sum(p));
+      REprintf("iter %d: #{p}=%llu\n" , iter, (unsigned long long) sum(p));
     }
     converged = (conv <= conv_tol);
     // force symmetry is *NEVER* needed, we have symmetric X here!

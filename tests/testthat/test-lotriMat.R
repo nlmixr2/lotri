@@ -67,17 +67,17 @@ test_that("lotriMat", {
   })
 
   expect_equal(lotriMatInv(lotriEst(lotriMat(list(fix1, fix2)), drop=TRUE)),
-               list(structure(c(1, 0.5, 0.5, 1), .Dim = c(2L, 2L),
-                              .Dimnames = list(c("f", "g"), c("f", "g")),
+               list(structure(c(1, 0.5, 0.5, 1), dim = c(2L, 2L),
+                              dimnames = list(c("f", "g"), c("f", "g")),
                               lotriFix = structure(c(TRUE, TRUE, TRUE, TRUE),
-                                                   .Dim = c(2L, 2L),
-                                                   .Dimnames = list(c("f", "g"), c("f", "g"))),
+                                                   dim = c(2L, 2L),
+                                                   dimnames = list(c("f", "g"), c("f", "g"))),
                               class = .cls),
-                    structure(c(1, 0.5, 0.5, 1), .Dim = c(2L, 2L),
-                              .Dimnames = list(c("m", "n"), c("m", "n")),
+                    structure(c(1, 0.5, 0.5, 1), dim = c(2L, 2L),
+                              dimnames = list(c("m", "n"), c("m", "n")),
                               lotriFix = structure(c(FALSE, FALSE, FALSE, FALSE),
-                                                   .Dim = c(2L, 2L),
-                                                   .Dimnames = list(c("m", "n"), c("m", "n"))),
+                                                   dim = c(2L, 2L),
+                                                   dimnames = list(c("m", "n"), c("m", "n"))),
                               class = .cls)))
 
   expect_equal(vapply(seq_along(tmp2), function(i) {
@@ -92,11 +92,11 @@ test_that("lotriMat", {
   expect_error(.Call(.lotri$`_asLotriMat`, "a", list(nu = 3), "id", PACKAGE = "lotri"))
 
   expect_error(.Call(.lotri$`_asLotriMat`, matrix(1), list(nu = 3), "id", PACKAGE = "lotri"))
-  expect_error(.Call(.lotri$`_asLotriMat`, structure(1, .Dim = c(1L, 1L), dimnames = list(NULL, "a")),
+  expect_error(.Call(.lotri$`_asLotriMat`, structure(1, dim = c(1L, 1L), dimnames = list(NULL, "a")),
                      list(nu = 3), "id",
                      PACKAGE = "lotri"
   ))
-  expect_error(.Call(.lotri$`_asLotriMat`, structure(1, .Dim = c(1L, 1L), dimnames = list("a", NULL)),
+  expect_error(.Call(.lotri$`_asLotriMat`, structure(1, dim = c(1L, 1L), dimnames = list("a", NULL)),
                      list(nu = 3), "id",
                      PACKAGE = "lotri"
   ))
@@ -130,7 +130,7 @@ test_that("lotriMat", {
                  0, 0, 0, 0.1, 0.1, 30, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0,
                  0, 0, 0, 0, 0.1, 0.01, 0, 0, 0, 0, 0, 0, 0.01, 1, 0, 0, 0, 0,
                  0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1
-               ), .Dim = c(8L, 8L)))
+               ), dim = c(8L, 8L)))
 
   testList <- list(
     matrix(c(1L, 0L, 0L, 1L), 2, 2),
@@ -149,7 +149,7 @@ test_that("lotriMat", {
                structure(c(1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
                            0, 40, 0.1, 0.1, 0, 0, 0, 0, 0, 0.1, 20, 0.1, 0, 0, 0, 0, 0,
                            0.1, 0.1, 30, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0,
-                           0, 0.1, 0.01, 0, 0, 0, 0, 0, 0, 0.01, 1), .Dim = c(8L, 8L)))
+                           0, 0.1, 0.01, 0, 0, 0, 0, 0, 0, 0.01, 1), dim = c(8L, 8L)))
 
   testList <- list(
     lotri({
@@ -176,7 +176,7 @@ test_that("lotriMat", {
       0, 0, 0, 0.1, 0.1, 30, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0,
       0, 0, 0, 0, 0.1, 0.01, 0, 0, 0, 0, 0, 0, 0.01, 1, 0, 0, 0, 0,
       0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1
-    ), .Dim = c(8L, 8L), .Dimnames = list(
+    ), dim = c(8L, 8L), dimnames = list(
       c("et2", "et3", "et4", "et5", "et1", "et6", "et7", "et8"),
       c("et2", "et3", "et4", "et5", "et1", "et6", "et7", "et8")
     ))
