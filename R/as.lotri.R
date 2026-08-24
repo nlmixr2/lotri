@@ -65,6 +65,15 @@ as.lotri.matrix <- function(x, ..., default = "") {
       attr(.mat, "lotriPriors") <- .priors
       .hasLab <- TRUE
     }
+    ## an off-diagonal (covariance) row's own `name` is already the
+    ## "(name_i,name_j)" key `.as.data.frame.lotriFix.mat()` builds, so it
+    ## can be used verbatim as the `lotriOffDiagPriors` key
+    .wOff <- which(x$neta1 != x$neta2 & !is.na(x$prior))
+    if (length(.wOff) > 0L) {
+      .priorsOffDiag <- setNames(x$prior[.wOff], x$name[.wOff])
+      attr(.mat, "lotriOffDiagPriors") <- .priorsOffDiag
+      .hasLab <- TRUE
+    }
   }
   if (any(.matF) || .hasLab) {
     attr(.mat, "lotriFix") <- .matF

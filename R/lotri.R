@@ -1372,6 +1372,43 @@ NULL
   identical(as.integer(.lotriBlockIndexes(mat, .i[1])), as.integer(.i))
 }
 
+#' Do these two names name ONE covariance (off-diagonal) element -- ie are
+#' they two DIFFERENT members of the SAME connected block, not necessarily
+#' the whole block?
+#'
+#' The relaxed sibling of `.lotriNamesAreBlock()`: a marginal prior on one
+#' covariance cell only needs its two names to covary with each other, not
+#' to exhaust the whole block the way a joint (`invWishart()`/
+#' `multiNormal()`) block prior does.
+#'
+#' @param mat matrix to check
+#' @param nms character vector of exactly two names
+#' @return boolean
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriNamesAreCovPair <- function(mat, nms) {
+  if (length(nms) != 2L) return(FALSE)
+  .dn <- dimnames(mat)[[1]]
+  .i <- match(nms, .dn)
+  if (anyNA(.i) || .i[1] == .i[2]) return(FALSE)
+  .i[2] %in% .lotriBlockIndexes(mat, .i[1])
+}
+
+#' Split a `"lotriOffDiagPriors"` key back into its two names
+#'
+#' The key is `"(name_i,name_j)"` -- the exact string
+#' `.as.data.frame.lotriFix.mat()` builds for a covariance element's `name`
+#' column. A bare R symbol can never contain `,`/`(`/`)`, so this split is
+#' unambiguous.
+#'
+#' @param key a single `"(name_i,name_j)"` string
+#' @return character(2): `c(name_i, name_j)`
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriCovPriorKeyNames <- function(key) {
+  strsplit(substring(key, 2L, nchar(key) - 1L), ",", fixed=TRUE)[[1]]
+}
+
 #' Indexes of the covariance block containing element `i`
 #'
 #' @param mat matrix to examine
@@ -1578,6 +1615,13 @@ NULL
     if (!is.matrix(m)) return(character(0))
     rep(NA_character_, dim(m)[1])
   })
+  ## off-diagonal (covariance) priors have no diagonal position to key on,
+  ## so they get their own per-matrix named vector, keyed by the SAME
+  ## "(name_i,name_j)" string (smaller-matrix-position name first) that
+  ## `.as.data.frame.lotriFix.mat()` independently builds for that cell --
+  ## reusing that string, rather than inventing a new key format, is what
+  ## lets the two sides find each other with no extra bookkeeping.
+  .priOff <- vector("list", length(.mats))
   .seen <- character(0)
   .jointOnOmega <- FALSE
   for (.p in priors) {
@@ -1628,20 +1672,38 @@ NULL
         .nm <- .om
       }
       .isBlock <- length(.nm) > 1L
-      if (.isBlock && !.lotriNamesAreBlock(.m, .nm)) {
+      .isCovPair <- .isBlock && length(.nm) == 2L && .info$kind == "univariate" &&
+        .lotriNamesAreCovPair(.m, .nm)
+      if (.isBlock && !.isCovPair && !.lotriNamesAreBlock(.m, .nm)) {
         stop("'", paste(.nm, collapse=", "),
              "' is not a single covariance block, so it cannot share a prior",
              call.=FALSE)
       }
-      .lotriPriorCheckTarget(.info, .nm, isBlock=.isBlock, inMatrix=TRUE)
-      .lotriPriorCheckNotFixed(.nm, .lotriMatFixedDiag(.m, .nm))
-      .lotriPriorCheckNotFixedCov(.nm, .lotriMatFixedCov(.m, .nm))
-      .at <- min(match(.nm, .dn))
-      if (!is.na(.pri[[.k]][.at])) {
-        stop("more than one prior given for '", paste(.nm, collapse=", "), "'",
-             call.=FALSE)
+      .lotriPriorCheckTarget(.info, .nm, isBlock=.isBlock, inMatrix=TRUE,
+                             isCovPair=.isCovPair)
+      if (.isCovPair) {
+        ## a covariance-pair prior targets ONLY the one off-diagonal cell,
+        ## not either name's own variance, so only the covariance-fixed
+        ## check applies here -- a fixed variance on eta.cl/eta.v does not
+        ## block a prior on the covariance between them
+        .lotriPriorCheckNotFixedCov(.nm, .lotriMatFixedCov(.m, .nm))
+        .i <- sort(match(.nm, .dn))
+        .key <- paste0("(", .dn[.i[1]], ",", .dn[.i[2]], ")")
+        if (.key %in% names(.priOff[[.k]])) {
+          stop("more than one prior given for '", paste(.nm, collapse=", "), "'",
+               call.=FALSE)
+        }
+        .priOff[[.k]][.key] <- .info$text
+      } else {
+        .lotriPriorCheckNotFixed(.nm, .lotriMatFixedDiag(.m, .nm))
+        .lotriPriorCheckNotFixedCov(.nm, .lotriMatFixedCov(.m, .nm))
+        .at <- min(match(.nm, .dn))
+        if (!is.na(.pri[[.k]][.at])) {
+          stop("more than one prior given for '", paste(.nm, collapse=", "), "'",
+               call.=FALSE)
+        }
+        .pri[[.k]][.at] <- .info$text
       }
-      .pri[[.k]][.at] <- .info$text
       .found <- TRUE
       break
     }
@@ -1653,7 +1715,9 @@ NULL
   ## degrees of freedom on an omega (a NONMEM NWPRI) and a normal prior
   ## on the omega values (a NONMEM TNPRI) are alternative ways of saying
   ## the same thing, so a model cannot carry both
-  .fam <- unlist(lapply(.pri, .lotriPriorFamily))
+  .fam <- unlist(lapply(seq_along(.pri), function(.k) {
+    c(.lotriPriorFamily(.pri[[.k]]), .lotriPriorFamily(.priOff[[.k]]))
+  }))
   if (any(.fam == "wishart", na.rm=TRUE) &&
         (any(.fam == "normal", na.rm=TRUE) || .jointOnOmega)) {
     stop("a model cannot have both degrees of freedom (ie 'invWishart()') ",
@@ -1661,9 +1725,10 @@ NULL
          "alternatives, not additions", call.=FALSE)
   }
   for (.k in seq_along(.mats)) {
-    if (all(is.na(.pri[[.k]]))) next
+    if (all(is.na(.pri[[.k]])) && length(.priOff[[.k]]) == 0L) next
     .m <- .mats[[.k]]
-    attr(.m, "lotriPriors") <- .pri[[.k]]
+    if (!all(is.na(.pri[[.k]]))) attr(.m, "lotriPriors") <- .pri[[.k]]
+    if (length(.priOff[[.k]]) > 0L) attr(.m, "lotriOffDiagPriors") <- .priOff[[.k]]
     if (!inherits(.m, "lotriFix")) {
       class(.m) <- c("lotriFix", class(.m))
     }
@@ -1676,7 +1741,8 @@ NULL
     ## the list itself has to be a `lotriFix` as well, or `as.expression()`
     ## and `print()` dispatch to the default methods and the priors are
     ## never shown
-    if (any(vapply(.pri, function(p) any(!is.na(p)), logical(1))) &&
+    if ((any(vapply(.pri, function(p) any(!is.na(p)), logical(1))) ||
+           any(vapply(.priOff, length, integer(1)) > 0L)) &&
           !inherits(ret, "lotriFix")) {
       class(ret) <- c("lotriFix", class(ret))
     }

@@ -142,6 +142,27 @@ lotri({
   A namespaced distribution such as `stats::dnorm(0, 1)` is now an
   error rather than being evaluated as a variance.
 
+* A univariate prior (`dnorm()`, `dcauchy()`, ...) can now be put on a
+  single omega COVARIANCE (off-diagonal) element, not just a diagonal one --
+  a marginal, independent prior on that one cell, distinct from a whole-block
+  distribution like `invWishart()`/`multiNormal()`:
+
+```r
+lotri({
+  eta.cl + eta.v ~ c(0.1,
+                     0.01, 0.2)
+  prior(eta.cl, eta.v) ~ dnorm(0, 0.1)
+})
+```
+
+  The two names must covary with each other but need not be the model's
+  *entire* connected block -- `prior(eta.cl, eta.v)` works even when a third,
+  correlated eta is also in the block, unlike a whole-block prior which
+  still requires naming every member. `prior(om.eta.cl, om.eta.v) ~ ...`
+  is accepted identically. A block cannot carry both a whole-block
+  `invWishart()`/`multiNormal()` prior and a marginal prior on one of its
+  own cells -- these remain alternatives, not additions.
+
 ## Bug fixes
 
 * `lotri` now requires 'armadillo4r' 15.4.2 or newer.  The 'Armadillo'
