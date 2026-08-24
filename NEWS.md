@@ -155,6 +155,14 @@ lotri({
   variance in it is free.  The implicit `~invWishart(4)` shorthand,
   which applies to every omega block in the model, quietly skips a
   block that is entirely fixed instead (#52).
+* `lotri()` can now re-parse the named `c()` form that
+  `lotriAsExpression()`/`as.expression()` writes for a matrix above
+  `nameEst`'s size threshold when a later row's names reach back into an
+  earlier, already-closed block -- as happens for a combined theta+omega
+  covariance matrix, where every omega row names all the preceding theta
+  rows too. Previously an `om.`-prefixed row in that position was always
+  misread as the `om.` normal prior shorthand instead of the next row of
+  the matrix itself (#53).
 
 * Labels now follow the matrix when `rcm=TRUE` re-orders it.
   Previously the labels stayed in the order they were parsed in while
