@@ -152,6 +152,12 @@ lotri({
   `WARNING` -- on CRAN's clang-trunk flavour, even though none of
   `lotri`'s own sources were involved (#57).
 
+* The test suite no longer calls `structure()` with the deprecated
+  special names `.Dim`, `.Dimnames` and `.Names`; it uses `dim`,
+  `dimnames` and `names` instead.  This clears the "Found calls to
+  structure() using deprecated special names" `NOTE` on the r-devel
+  check flavours (#57).
+
 * A `prior()` given for a fixed (`fix()`ed) parameter is now an error
   at resolution time, naming the parameter, instead of parsing and
   building cleanly and only surfacing as a problem in whatever

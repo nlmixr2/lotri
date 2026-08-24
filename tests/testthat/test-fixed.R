@@ -6,7 +6,7 @@ test_that("fixed tests", {
                                0.001, 0.1)))
 
   expect_equal(attr(tmp, "lotriFix"),
-               structure(c(TRUE, TRUE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE), .Dim = c(4L, 4L), .Dimnames = list(c("a", "b", "c", "d"), c("a", "b", "c", "d"))))
+               structure(c(TRUE, TRUE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE), dim = c(4L, 4L), dimnames = list(c("a", "b", "c", "d"), c("a", "b", "c", "d"))))
 
   tmp <- lotri(a + b + c ~ c(
     fix(40),
@@ -15,7 +15,7 @@ test_that("fixed tests", {
   ))
 
   expect_equal(attr(tmp, "lotriFix"),
-               structure(c(TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE), .Dim = c(3L, 3L), .Dimnames = list(c("a", "b", "c"),     c("a", "b", "c"))))
+               structure(c(TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE), dim = c(3L, 3L), dimnames = list(c("a", "b", "c"),     c("a", "b", "c"))))
 
   tmp <- lotri(a + b + c ~ c(
     40,
@@ -24,7 +24,7 @@ test_that("fixed tests", {
   ))
 
   expect_equal(attr(tmp, "lotriFix"),
-               structure(c(FALSE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE), .Dim = c(3L, 3L), .Dimnames = list(c("a", "b", "c"),     c("a", "b", "c"))) )
+               structure(c(FALSE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE), dim = c(3L, 3L), dimnames = list(c("a", "b", "c"),     c("a", "b", "c"))) )
 
   tmp <- lotri(a + b + c ~ c(
     40,
@@ -33,7 +33,7 @@ test_that("fixed tests", {
   ))
 
   expect_equal(attr(tmp, "lotriFix"),
-               structure(c(FALSE, FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, FALSE, FALSE), .Dim = c(3L, 3L), .Dimnames = list(c("a", "b", "c"),     c("a", "b", "c"))))
+               structure(c(FALSE, FALSE, TRUE, FALSE, FALSE, FALSE, TRUE, FALSE, FALSE), dim = c(3L, 3L), dimnames = list(c("a", "b", "c"),     c("a", "b", "c"))))
 
   expect_snapshot_output(print(tmp))
 
