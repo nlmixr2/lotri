@@ -94,3 +94,54 @@ test_that("print() shows a covariance prior distribution", {
   })
   expect_output(print(m), "covariance prior distributions")
 })
+
+test_that("a whole-block prior and a marginal prior on one of its cells cannot coexist", {
+  ## the family-based mutual-exclusivity check (wishart vs normal) cannot
+  ## catch this: multiNormal() is itself family "normal" (same as a bare
+  ## dnorm()), and dcauchy() is family "other" -- overlap has to be
+  ## detected by direct block membership
+  expect_error(
+    lotri({
+      eta.ka + eta.cl + eta.v ~ c(0.6, 0.01, 0.3, 0.02, 0.03, 0.2)
+      prior(eta.ka, eta.cl, eta.v) ~ multiNormal(c(0, 0, 0), diag(3))
+      prior(eta.cl, eta.v) ~ dnorm(0, 0.1)
+    }),
+    "already has a whole-block prior")
+
+  expect_error(
+    lotri({
+      eta.ka + eta.cl + eta.v ~ c(0.6, 0.01, 0.3, 0.02, 0.03, 0.2)
+      prior(eta.ka, eta.cl, eta.v) ~ invWishart(4)
+      prior(eta.cl, eta.v) ~ dcauchy(0, 0.1)
+    }),
+    "already has a whole-block prior")
+})
+
+test_that("a covariance-pair prior on one of two independent blocks survives lotriMatInv()'s block splitting", {
+  ## exercises the sub-block extraction path in lotriMatInv() (only reached
+  ## when a matrix actually contains more than one independent block) --
+  ## the other tests above use a single connected block, so as.data.frame()
+  ## never touches this code path for them
+  m <- lotri({
+    eta.a + eta.b ~ c(1, 0.5, 1)
+    eta.c + eta.d ~ c(1, 0.5, 1)
+    prior(eta.a, eta.b) ~ dnorm(0, 0.1)
+  })
+  df <- as.data.frame(m)
+  .wAB <- which(df$name == "(eta.a,eta.b)")
+  expect_length(.wAB, 1L)
+  expect_equal(df$prior[.wAB], "dnorm(0, 0.1)")
+  ## the unrelated second block's own covariance row carries no prior
+  .wCD <- which(df$name == "(eta.c,eta.d)")
+  expect_length(.wCD, 1L)
+  expect_true(is.na(df$prior[.wCD]))
+
+  ## round trip back through lotriMatInv() directly
+  .lst <- lotriMatInv(m)
+  expect_equal(length(.lst), 2L)
+  .offDiags <- lapply(.lst, function(x) attr(x, "lotriOffDiagPriors"))
+  .hasOffDiag <- vapply(.offDiags, function(x) !is.null(x) && length(x) > 0L, logical(1))
+  expect_equal(sum(.hasOffDiag), 1L)
+  expect_equal(.offDiags[[which(.hasOffDiag)]],
+               c("(eta.a,eta.b)" = "dnorm(0, 0.1)"))
+})

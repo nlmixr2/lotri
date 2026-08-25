@@ -1724,6 +1724,30 @@ NULL
          "and a normal prior (ie 'om.eta ~ 0.1') on its omegas; these are ",
          "alternatives, not additions", call.=FALSE)
   }
+  ## a marginal prior on one covariance cell and a whole-block prior
+  ## (`invWishart()`/`multiNormal()`) both constrain that same cell, so a
+  ## block cannot carry both.  This is NOT caught by the family check above:
+  ## `multiNormal()` is itself family "normal" (indistinguishable by family
+  ## alone from a marginal `dnorm()`), and a marginal `dcauchy()` is family
+  ## "other" (neither "wishart" nor "normal") -- so overlap has to be
+  ## detected by direct block membership instead.
+  for (.k in seq_along(.mats)) {
+    if (length(.priOff[[.k]]) == 0L || all(is.na(.pri[[.k]]))) next
+    .m <- .mats[[.k]]
+    if (!is.matrix(.m)) next
+    .dn <- dimnames(.m)[[1]]
+    for (.key in names(.priOff[[.k]])) {
+      .nm2 <- .lotriCovPriorKeyNames(.key)
+      .i <- match(.nm2[1], .dn)
+      if (is.na(.i)) next
+      .blk <- .lotriBlockIndexes(.m, .i)
+      if (any(!is.na(.pri[[.k]][.blk]))) {
+        stop("'", paste(.nm2, collapse=", "), "' already has a whole-block ",
+             "prior on its covariance block, so it cannot also carry a ",
+             "marginal prior on one of its cells", call.=FALSE)
+      }
+    }
+  }
   for (.k in seq_along(.mats)) {
     if (all(is.na(.pri[[.k]])) && length(.priOff[[.k]]) == 0L) next
     .m <- .mats[[.k]]
