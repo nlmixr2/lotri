@@ -423,10 +423,19 @@ test_that("bad priors are errors", {
   ## a matrix prior needs a block
   expect_error(lotri({ a <- 1; prior(a) ~ lkj_corr(2) }))
 
-  ## a univariate prior cannot cover a block
+  ## a univariate prior CAN name exactly two covarying elements -- a
+  ## marginal prior on that one off-diagonal (covariance) cell, not a joint
+  ## prior over the whole block; see test-priors-offdiag.R for the positive
+  ## coverage of this case
   expect_error(lotri({
     e1 + e2 ~ c(1, 0.5, 1)
     prior(e1, e2) ~ dnorm(0, 1)
+  }), NA)
+
+  ## ...but still cannot cover three or more names at once
+  expect_error(lotri({
+    e1 + e2 + e3 ~ c(1, 0.5, 1, 0.5, 0.5, 1)
+    prior(e1, e2, e3) ~ dnorm(0, 1)
   }))
 
   ## the names have to be a single block

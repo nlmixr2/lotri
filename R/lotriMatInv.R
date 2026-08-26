@@ -70,6 +70,7 @@ lotriMatInv <- function(mat) {
   .matU <- attr(mat, "lotriUnfix")
   .matLabels <- attr(mat, "lotriLabels")
   .matPriors <- attr(mat, "lotriPriors")
+  .matPriorsOffDiag <- attr(mat, "lotriOffDiagPriors")
   .ret <- list()
   .mat <- mat
   .i <- 1
@@ -105,6 +106,24 @@ lotriMatInv <- function(mat) {
           class(.mat1) <- c("lotriFix", class(.mat1))
         }
       }
+      if (!is.null(.matPriorsOffDiag) && length(.matPriorsOffDiag) > 0L) {
+        .mat1Dn <- dimnames(.mat1)[[1]]
+        ## both names of a covariance-pair key are always in the SAME
+        ## extracted block by construction (they covary, so the block
+        ## extraction can never separate them) -- filter by membership
+        ## rather than an index slice, since this is a named (not
+        ## positional) vector
+        .inBlock <- vapply(names(.matPriorsOffDiag), function(.key) {
+          all(.lotriCovPriorKeyNames(.key) %in% .mat1Dn)
+        }, logical(1), USE.NAMES=FALSE)
+        if (any(.inBlock)) {
+          attr(.mat1, "lotriOffDiagPriors") <- .matPriorsOffDiag[.inBlock]
+          .matPriorsOffDiag <- .matPriorsOffDiag[!.inBlock]
+          if (!inherits(.mat1, "lotriFix")) {
+            class(.mat1) <- c("lotriFix", class(.mat1))
+          }
+        }
+      }
       .ret <- c(.ret, list(.mat1))
       .mat <- .mat[-.s, -.s, drop = FALSE]
       .d <- dim(.mat)[1]
@@ -129,6 +148,12 @@ lotriMatInv <- function(mat) {
     }
     if (!is.null(.matPriors)) {
       attr(.mat, "lotriPriors") <- .matPriors
+      if (!inherits(.mat, "lotriFix")) {
+        class(.mat) <- c("lotriFix", class(.mat))
+      }
+    }
+    if (!is.null(.matPriorsOffDiag) && length(.matPriorsOffDiag) > 0L) {
+      attr(.mat, "lotriOffDiagPriors") <- .matPriorsOffDiag
       if (!inherits(.mat, "lotriFix")) {
         class(.mat) <- c("lotriFix", class(.mat))
       }

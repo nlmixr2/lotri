@@ -366,11 +366,16 @@ lotriPriorDists <- function() {
 #' @param lower numeric lower bound(s); may be NA when unknown
 #' @param upper numeric upper bound(s); may be NA when unknown
 #' @param isBlock is the target a covariance block (length > 1)
+#' @param isCovPair is the target exactly two names naming ONE off-diagonal
+#'   covariance element of a (possibly larger) block -- a univariate prior
+#'   is allowed here even though `.n == 2`, unlike an ordinary block, since
+#'   it is a marginal prior on that single covariance cell, not a joint
+#'   prior over multiple parameters
 #' @return nothing, called for the error checking side effect
 #' @noRd
 #' @author Matthew L. Fidler
 .lotriPriorCheckTarget <- function(info, names, lower=NA_real_, upper=NA_real_,
-                                   isBlock=FALSE, inMatrix=FALSE) {
+                                   isBlock=FALSE, inMatrix=FALSE, isCovPair=FALSE) {
   .n <- length(names)
   .what <- paste0("'", paste(names, collapse=", "), "'")
   if (info$kind == "matrix") {
@@ -404,11 +409,11 @@ lotriPriorDists <- function() {
       stop("prior '", info$name, "' applies to more than one parameter, but ",
            .what, " is a single parameter", call.=FALSE)
     }
-  } else if (.n > 1L) {
+  } else if (.n > 1L && !isCovPair) {
     stop("prior '", info$name, "' is univariate and cannot be applied to the block ",
          .what, call.=FALSE)
   }
-  if (info$kind == "univariate") {
+  if (info$kind == "univariate" && !isCovPair) {
     .lower <- suppressWarnings(min(lower, na.rm=TRUE))
     .upper <- suppressWarnings(max(upper, na.rm=TRUE))
     if (is.finite(.lower) || is.finite(.upper)) {

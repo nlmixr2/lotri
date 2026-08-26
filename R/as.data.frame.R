@@ -5,6 +5,7 @@
   .env$eta1 <- eta1
   if (inherits(mat, "matrix")) {
     .priors <- attr(mat, "lotriPriors")
+    .priorsOffDiag <- attr(mat, "lotriOffDiagPriors")
     .matNames <- dimnames(mat)[[1]]
     .lst2 <- lotriMatInv(mat) # nolint
     for (.i in seq_along(.lst2)) {
@@ -27,10 +28,18 @@
             .fix <- FALSE
           }
           .curPrior <- NA_character_
-          if (.j == .k && !is.null(.priors)) {
-            ## priors are matched by name so they survive `rcm`
-            .wp <- match(.n[.j], .matNames)
-            if (!is.na(.wp)) .curPrior <- .priors[.wp]
+          if (.j == .k) {
+            if (!is.null(.priors)) {
+              ## priors are matched by name so they survive `rcm`
+              .wp <- match(.n[.j], .matNames)
+              if (!is.na(.wp)) .curPrior <- .priors[.wp]
+            }
+          } else if (!is.null(.priorsOffDiag)) {
+            ## `.curName` (built above) is the SAME "(name_k,name_j)" key a
+            ## covariance-pair prior is stored under (.lotriResolvePriors());
+            ## matched by name, like the diagonal case, so it survives `rcm`
+            .wp <- match(.curName, names(.priorsOffDiag))
+            if (!is.na(.wp)) .curPrior <- .priorsOffDiag[[.wp]]
           }
           .df3 <- rbind(.df3,
                         data.frame(ntheta=NA_integer_,

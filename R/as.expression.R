@@ -381,26 +381,33 @@ lotriDataFrameToLotriExpression <- function(data, useIni=FALSE) { # nolint
   for (.m in .mats) {
     if (!is.matrix(.m)) next
     .p <- attr(.m, "lotriPriors")
-    if (is.null(.p)) next
     .dn <- dimnames(.m)[[1]]
-    for (.i in seq_along(.p)) {
-      if (is.na(.p[.i])) next
-      .nms <- .dn[.i]
-      .jnt <- .jointNames(.p[.i])
-      if (!is.null(.jnt)) {
-        .add(.jnt, .p[.i])
-        next
-      }
-      .fn <- try(str2lang(.p[.i])[[1]], silent=TRUE)
-      if (!inherits(.fn, "try-error")) {
-        .dist <- .lotriPriorLookup(as.character(.fn))
-        if (!is.null(.dist) && .dist$kind %in% c("matrix", "multivariate")) {
-          ## a block prior is stored on the first diagonal of the block,
-          ## so recover the rest of the block for the round trip
-          .nms <- .dn[.lotriBlockIndexes(.m, .i)]
+    if (!is.null(.p)) {
+      for (.i in seq_along(.p)) {
+        if (is.na(.p[.i])) next
+        .nms <- .dn[.i]
+        .jnt <- .jointNames(.p[.i])
+        if (!is.null(.jnt)) {
+          .add(.jnt, .p[.i])
+          next
         }
+        .fn <- try(str2lang(.p[.i])[[1]], silent=TRUE)
+        if (!inherits(.fn, "try-error")) {
+          .dist <- .lotriPriorLookup(as.character(.fn))
+          if (!is.null(.dist) && .dist$kind %in% c("matrix", "multivariate")) {
+            ## a block prior is stored on the first diagonal of the block,
+            ## so recover the rest of the block for the round trip
+            .nms <- .dn[.lotriBlockIndexes(.m, .i)]
+          }
+        }
+        .add(.nms, .p[.i])
       }
-      .add(.nms, .p[.i])
+    }
+    .pOff <- attr(.m, "lotriOffDiagPriors")
+    if (!is.null(.pOff)) {
+      for (.key in names(.pOff)) {
+        .add(.lotriCovPriorKeyNames(.key), .pOff[[.key]])
+      }
     }
   }
   .ret
