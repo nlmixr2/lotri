@@ -103,6 +103,14 @@
 <span><span class="op">}</span><span class="op">)</span></span></code></pre></div>
 <p>An uncorrelated group becomes independent normal priors, and the mean is what the model already says. Note the line form is the one place a prior line is <em>not</em> order independent, since a row leans on the line before it. The point is that a bare <code>~</code> cannot be used everywhere – piping onto a model reads <code>tka ~ 0.1</code> as changing the estimate – so the <code>prior()</code> flag gives the shorthand a spelling that works when piping too.</p>
 <p>A namespaced distribution such as <code>stats::dnorm(0, 1)</code> is now an error rather than being evaluated as a variance.</p>
+<ul><li>A univariate prior (<code><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">dnorm()</a></code>, <code><a href="https://rdrr.io/r/stats/Cauchy.html" class="external-link">dcauchy()</a></code>, …) can now be put on a single omega COVARIANCE (off-diagonal) element, not just a diagonal one – a marginal, independent prior on that one cell, distinct from a whole-block distribution like <code>invWishart()</code>/<code>multiNormal()</code>:</li>
+</ul><div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span></span>
+<span>  <span class="va">eta.cl</span> <span class="op">+</span> <span class="va">eta.v</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.1</span>,</span>
+<span>                     <span class="fl">0.01</span>, <span class="fl">0.2</span><span class="op">)</span></span>
+<span>  <span class="fu">prior</span><span class="op">(</span><span class="va">eta.cl</span>, <span class="va">eta.v</span><span class="op">)</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">dnorm</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0.1</span><span class="op">)</span></span>
+<span><span class="op">}</span><span class="op">)</span></span></code></pre></div>
+<p>The two names must covary with each other but need not be the model’s <em>entire</em> connected block – <code>prior(eta.cl, eta.v)</code> works even when a third, correlated eta is also in the block, unlike a whole-block prior which still requires naming every member. <code>prior(om.eta.cl, om.eta.v) ~ ...</code> is accepted identically. A block cannot carry both a whole-block <code>invWishart()</code>/<code>multiNormal()</code> prior and a marginal prior on one of its own cells – these remain alternatives, not additions.</p>
 </div>
 <div class="section level3">
 <h3 id="bug-fixes-1-0-5">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-0-5"></a></h3>
@@ -142,19 +150,19 @@
 <h2 class="pkg-version" data-toc-text="1.0.0" id="lotri-100">lotri 1.0.0<a class="anchor" aria-label="anchor" href="#lotri-100"></a></h2><p class="text-muted">CRAN release: 2024-09-18</p>
 <ul><li>Added a new way of specifying lotri matrices:</li>
 </ul><p>Before you could specify matrices as:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="va">a</span> <span class="op">+</span> <span class="va">b</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,</span>
 <span>            <span class="fl">0.5</span>, <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span></span></code></pre></div>
 <p>Now you can specify per row as:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="va">a</span> <span class="op">~</span> <span class="fl">1</span></span>
 <span>  <span class="va">b</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>, <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span></span></code></pre></div>
 <p>This form is now the default when converting from a matrix to a lotri expression. In addition if the matrix is large enough (by default a 5x5 matrix), these would be named when changing them to an expression:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="va">a</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>a<span class="op">=</span><span class="fl">1</span><span class="op">)</span></span>
 <span>  <span class="va">b</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>a<span class="op">=</span><span class="fl">0.5</span>, b<span class="op">=</span><span class="fl">1</span><span class="op">)</span></span>
