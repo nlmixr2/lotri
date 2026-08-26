@@ -1733,13 +1733,16 @@ NULL
   ## detected by direct block membership instead.
   for (.k in seq_along(.mats)) {
     if (length(.priOff[[.k]]) == 0L || all(is.na(.pri[[.k]]))) next
+    ## `.priOff[[.k]]` is only ever populated inside the per-prior loop
+    ## above, which itself only reaches that assignment after confirming
+    ## `.mats[[.k]]` is a matrix and its key's names resolve against that
+    ## SAME matrix's dimnames -- so both are guaranteed here, not merely
+    ## likely, and re-checking would be untestable dead code
     .m <- .mats[[.k]]
-    if (!is.matrix(.m)) next
     .dn <- dimnames(.m)[[1]]
     for (.key in names(.priOff[[.k]])) {
       .nm2 <- .lotriCovPriorKeyNames(.key)
       .i <- match(.nm2[1], .dn)
-      if (is.na(.i)) next
       .blk <- .lotriBlockIndexes(.m, .i)
       if (any(!is.na(.pri[[.k]][.blk]))) {
         stop("'", paste(.nm2, collapse=", "), "' already has a whole-block ",
