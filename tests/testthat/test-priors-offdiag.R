@@ -16,7 +16,7 @@ test_that(".lotriNamesAreCovPair() validates its own inputs directly", {
   ## itself -- exercised directly here, the way a general-purpose helper
   ## (matching its sibling .lotriNamesAreBlock()'s own style) should be
   m <- lotri({ eta.cl + eta.v ~ c(0.3, 0.05, 0.2) })
-  expect_false(.lotriNamesAreCovPair(m, c("eta.cl")))
+  expect_false(.lotriNamesAreCovPair(m, "eta.cl"))
   expect_false(.lotriNamesAreCovPair(m, c("eta.cl", "eta.cl")))
   expect_false(.lotriNamesAreCovPair(m, c("eta.cl", "nope")))
   expect_true(.lotriNamesAreCovPair(m, c("eta.cl", "eta.v")))
