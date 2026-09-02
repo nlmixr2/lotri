@@ -1169,3 +1169,37 @@ test_that("as.expression() never sees an offset the family view rejected", {
   ## base `as.data.frame()` method)
   expect_equal(unclass(.rt), unclass(.b), ignore_attr = TRUE)
 })
+
+test_that("the data frame cannot encode a linkage same() cannot write", {
+
+  ## `same()` repeats the IMMEDIATELY PRECEDING block, so a pointer that
+  ## skips over an unrelated block is not expressible.  Encoding it
+  ## anyway made the two round trips report different numbers of
+  ## estimated parameters: the data frame kept the linkage, the
+  ## expression could not write it.
+  .m <- lotri::lotri({
+    p1 ~ 1
+    p2 ~ 2
+    p3 ~ 1
+    label("L")
+  })
+  .df <- as.data.frame(.m)
+  .df$condition[.df$name == "p3"] <- "id:same:p1"   # skips p2
+  .l <- lotri::lotriEst(lotri::as.lotri(.df), drop = TRUE)
+
+  expect_false(any(lotri::lotriIsSame(as.data.frame(.l)$condition)))
+  expect_null(attr(eval(as.expression(.l)), "lotriSame"))
+  expect_equal(unclass(eval(as.expression(.l))), unclass(.l),
+               ignore_attr = TRUE)
+
+  ## a chain, where the block in between repeats the SAME master, is
+  ## still expressible and must survive
+  .chain <- lotri::lotri({
+    a ~ 1
+    b ~ same()
+    d ~ same()
+  })
+  expect_equal(attr(.chain, "lotriSame"), c(0L, 1L, 2L))
+  expect_equal(as.data.frame(eval(as.expression(.chain))),
+               as.data.frame(.chain))
+})

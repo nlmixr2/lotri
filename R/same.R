@@ -65,6 +65,30 @@
     }
     .i <- .j + 1L
   }
+  ## `same()` repeats the IMMEDIATELY PRECEDING block, so a family is
+  ## only expressible when its master sits directly before it, or when
+  ## every block in between repeats that same master -- which is what a
+  ## `same()` chain is.  Without this the data frame could encode a
+  ## linkage the DSL cannot write, and the two round trips would report
+  ## different numbers of estimated parameters.  Dropping one family can
+  ## break a chain that leant on it, so this settles.
+  repeat {
+    .drop <- integer(0)
+    for (.fi in seq_along(.fam)) {
+      .f <- .fam[[.fi]]
+      if (min(.f$copy) <= max(.f$master) + 1L) next
+      .gap <- seq(max(.f$master) + 1L, min(.f$copy) - 1L)
+      .ok <- all(vapply(.gap, function(.r) {
+        any(vapply(.fam, function(.g) {
+          any(.g$copy == .r) && identical(.g$master, .f$master)
+        }, logical(1), USE.NAMES=FALSE))
+      }, logical(1), USE.NAMES=FALSE))
+      if (!.ok) .drop <- c(.drop, .fi)
+    }
+    if (length(.drop) == 0L) break
+    for (.fi in .drop) .out[.fam[[.fi]]$copy] <- 0L
+    .fam <- .fam[-.drop]
+  }
   if (length(.fam) == 0L) return(NULL)
   list(same=.out, families=.fam)
 }
