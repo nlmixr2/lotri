@@ -70,6 +70,33 @@ This can take an R matrix, a list including matrices or
  \code{\link[Matrix]{bdiag}}, but allows expressions to specify
  matrices easier.
 
+ A block can be repeated, sharing one set of estimates, with
+
+ name3 + name4 ~ same()
+
+ This is NONMEM's \code{$OMEGA BLOCK(n) SAME}, and it is how an
+ inter-occasion variability block is written when every occasion
+ draws its own random effects from one shared covariance.
+ \code{same()} repeats the immediately preceding *block* under new
+ names; a further \code{same()} repeats that same original block
+ rather than the copy, the way NONMEM chains \code{SAME}.  It takes
+ no arguments, may be used with a condition
+ (\code{name3 + name4 ~ same() | occ}), and inherits the fixed flags
+ of the block it repeats.
+
+ In the data frame from \code{as.data.frame()} the repetition is
+ recorded in the existing \code{condition} column rather than in a
+ new column, naming the element that is mirrored:
+ \code{"id:same:name1"} on a diagonal row and
+ \code{"id:same:name1:name2"} on a covariance row.  Use
+ \code{\link{lotriBaseCondition}} and its companions to read that
+ column; comparing it directly (\code{condition == "id"}) will
+ misclassify a repeated block.
+
+ This is distinct from the condition property \code{cnd(same = n)},
+ which repeats a whole nesting level rather than one block, and which
+ \code{\link{lotriSep}} uses.  The two compose.
+
  Population estimates can be given with
 
  name <- estimate
@@ -138,6 +165,24 @@ lotri({et2 + et3 + et4 ~ c(40,
                            0.1, 0.1, 30)
           et5 ~ 6
           })
+
+## A block can be repeated with `same()`, which is NONMEM's
+## `$OMEGA BLOCK(n) SAME`: one estimated 2x2 shared by three blocks,
+## the usual shape for correlated inter-occasion variability
+
+iov <- lotri({
+  iov.cl1 + iov.v1 ~ c(0.1,
+                       0.01, 0.2)
+  iov.cl2 + iov.v2 ~ same()
+  iov.cl3 + iov.v3 ~ same()
+})
+
+iov
+
+## the repetition rides in the `condition` column, so no column is
+## added to the data frame
+
+as.data.frame(iov)$condition
 
 ## You can also add lists or actual R matrices as in this example:
 lotri(list(et2 + et3 + et4 ~ c(40,

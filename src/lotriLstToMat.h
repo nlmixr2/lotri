@@ -159,6 +159,65 @@ static inline int lotriSetStrAttr(SEXP ret, const char *what, SEXP lst,
   return 1;
 }
 
+/* `lotriSame` is a per-parameter INTEGER attribute: 0 where the
+   parameter is not part of a repeated block, otherwise the distance
+   back to the parameter it mirrors.  It has to be carried across the
+   concatenation for the same reason the character attributes do, but
+   more urgently: dropping it silently turns a repeated block into
+   independently estimated parameters, changing the parameter count of
+   the model rather than merely losing an annotation.
+
+   The offsets are RELATIVE, so a block that is stamped `nsame` times
+   simply gets its own copy of the offsets for each repeat; no
+   renumbering is needed. */
+static inline int lotriLstHasIntAttr(SEXP lst, R_xlen_t len, const char *what) {
+  for (R_xlen_t i = 0; i < len; ++i) {
+    SEXP cur = VECTOR_ELT(lst, i);
+    if (TYPEOF(cur) == VECSXP) cur = VECTOR_ELT(cur, 0);
+    SEXP curAttr = Rf_getAttrib(cur, Rf_install(what));
+    if (TYPEOF(curAttr) == INTSXP && Rf_length(curAttr) == Rf_ncols(cur)) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
+static inline void lotriLstToMatFillInIntAttr(SEXP out, const char *what,
+					      SEXP lst, R_xlen_t len) {
+  int curBand = 0;
+  int *outi = INTEGER(out);
+  for (R_xlen_t i = 0; i < len; ++i) {
+    SEXP cur = VECTOR_ELT(lst, i);
+    int nsame = 1;
+    if (TYPEOF(cur) == VECSXP) {
+      nsame = isSingleInt(VECTOR_ELT(cur, 1), 1);
+      cur = VECTOR_ELT(cur, 0);
+    }
+    int totN = Rf_ncols(cur);
+    SEXP curAttr = PROTECT(Rf_getAttrib(cur, Rf_install(what)));
+    int has = (TYPEOF(curAttr) == INTSXP && Rf_length(curAttr) == totN);
+    for (int cursame = nsame; cursame--;) {
+      for (int j = 0; j < totN; ++j) {
+	outi[curBand + j] = has ? INTEGER(curAttr)[j] : 0;
+      }
+      curBand += totN;
+    }
+    UNPROTECT(1);
+  }
+}
+
+/* Attach one concatenated integer attribute to the assembled matrix,
+   when any of the blocks carried it.  Returns 1 when it was set, so the
+   caller knows the result needs the `lotriFix` class. */
+static inline int lotriSetIntAttr(SEXP ret, const char *what, SEXP lst,
+				  R_xlen_t len, int totdim, int *pro) {
+  if (!lotriLstHasIntAttr(lst, len, what)) return 0;
+  SEXP out = PROTECT(Rf_allocVector(INTSXP, totdim)); (*pro)++;
+  lotriLstToMatFillInIntAttr(out, what, lst, len);
+  Rf_setAttrib(ret, Rf_install(what), out);
+  return 1;
+}
+
 static inline void lotriLstToMatFillInFullMatrix(double *retd, int *retf, int *totdim, SEXP retN,
 						 int *curBand, R_xlen_t *len, lotriInfo *li, int *named) {
   SEXP sameS, dimnames, colnames, curFixed = R_NilValue;

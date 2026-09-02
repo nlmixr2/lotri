@@ -1,18 +1,65 @@
-# lotri 1.0.6 (development)
-
-## Bug fixes
-
-* `lotri()` read its own condition-property list with a partially-matching
-  `attr()`.  Because `"lotri"` is a prefix of `"lotriLabels"`,
-  `"lotriFix"` and friends, combining a conditioned matrix with a labelled
-  one (as in `lotri(lotri(b ~ 2) | occ, lotri({c ~ 1; label("z")}))`)
-  picked up the neighbouring attribute, attached it as the property list,
-  and gave the result a spurious `lotri` class and a bogus `Properties:`
-  line.  The internal reads are now exact.
-
 # lotri 1.0.5
 
 ## New features
+
+* A block can now be repeated with `same()`, which is NONMEM's
+  `$OMEGA BLOCK(n) SAME`:
+
+```r
+lotri({
+  iov.cl1 + iov.v1 ~ c(0.1,
+                       0.01, 0.2)
+  iov.cl2 + iov.v2 ~ same()
+  iov.cl3 + iov.v3 ~ same()
+})
+```
+
+  This is one estimated 2x2 covariance shared by three blocks, which is
+  how inter-occasion variability is parameterized when every occasion
+  draws its own random effects from one shared covariance -- and it is
+  what lets those random effects be *correlated*.
+
+  `same()` repeats the immediately preceding block under new names and
+  takes no arguments.  A further `same()` repeats that same original
+  block rather than the copy, the way NONMEM chains `SAME`.  It works
+  with a condition (`iov.cl2 + iov.v2 ~ same() | occ`), it inherits the
+  fixed flags of the block it repeats, and it composes with the
+  `cnd(same = n)` nesting property that `lotriSep()` uses.
+
+* **The `condition` column can now carry a `:same:` suffix.**  Rather
+  than adding a column to the data frame from `as.data.frame()`, a
+  repeated block records the element it mirrors in the existing
+  `condition` column, naming it:
+
+  ```
+  <baseCondition>:same:<masterEta>                 # diagonal row
+  <baseCondition>:same:<masterEta1>:<masterEta2>   # covariance row
+  ```
+
+  The master is named rather than indexed because `neta1`/`neta2` are
+  renumbered whenever parameters are added, dropped or reordered.  A
+  copy keeps its master's `est` and `fix`, so a consumer that does not
+  understand the suffix still sees a numerically correct matrix -- just
+  with more free parameters than the model really has.
+
+  Four helpers are exported for reading that column, and code that
+  compares `condition` directly (`condition == "id"`) should move to
+  them, since such a test misclassifies a repeated block:
+
+  - `lotriBaseCondition()` strips the suffix,
+  - `lotriIsSame()` says whether a row mirrors another,
+  - `lotriSameMap()` maps each eta to the eta it mirrors,
+  - `lotriSameBreak()` drops the linkage for a block that has been
+    structurally changed.
+
+  `same()` round trips through `as.data.frame()`, `as.lotri()` and
+  `as.expression()`, and the linkage is carried across `lotriMat()`.
+
+  `same()` cannot be combined with `rcm=TRUE` or with a `cov` function;
+  both would move a repeated block away from the block it repeats, and
+  are refused rather than silently producing a matrix whose repetition
+  is no longer true.
+
 
 *  Prior distributions can now be specified in a `lotri({})` (and
   therefore `ini({})`) block with `prior(name) ~ dist(...)`, ie:
@@ -176,6 +223,14 @@ lotri({
   own cells -- these remain alternatives, not additions.
 
 ## Bug fixes
+
+* `lotri()` read its own condition-property list with a partially-matching
+  `attr()`.  Because `"lotri"` is a prefix of `"lotriLabels"`,
+  `"lotriFix"` and friends, combining a conditioned matrix with a labelled
+  one (as in `lotri(lotri(b ~ 2) | occ, lotri({c ~ 1; label("z")}))`)
+  picked up the neighbouring attribute, attached it as the property list,
+  and gave the result a spurious `lotri` class and a bogus `Properties:`
+  line.  The internal reads are now exact.
 
 * `lotri` now requires 'armadillo4r' 15.4.2 or newer.  The 'Armadillo'
   headers shipped with older 'armadillo4r' releases discard the return

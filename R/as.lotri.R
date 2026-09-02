@@ -22,6 +22,24 @@ as.lotri.matrix <- function(x, ..., default = "") {
   .Call(`_asLotriMat`, x, list(...), default = default)
 }
 
+#' Split a `<base>:same:<master...>` condition string
+#'
+#' @param cnd character vector of condition strings
+#' @return list with `base` (the condition with any `:same:` suffix
+#'   removed) and `master` (a list of the master element's name(s), or
+#'   `NULL` where the row is not a repeated one)
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriSplitSameCondition <- function(cnd) {
+  .base <- sub(":same:.*$", "", cnd)
+  .master <- lapply(seq_along(cnd), function(.i) {
+    if (is.na(cnd[.i])) return(NULL)
+    if (.base[.i] == cnd[.i]) return(NULL)
+    strsplit(sub("^.*?:same:", "", cnd[.i]), ":", fixed=TRUE)[[1]]
+  })
+  list(base=.base, master=.master)
+}
+
 .as.lotri.data.frame.mat <- function(x) {
   x <- x[order(x$neta1, x$neta2), ]
   x$neta1 <- factor(paste(x$neta1), levels=paste(sort(unique(x$neta1))))
@@ -75,6 +93,50 @@ as.lotri.matrix <- function(x, ..., default = "") {
       .hasLab <- TRUE
     }
   }
+  ## rebuild the `same()` linkage from the condition column.  Offsets are
+  ## derived from the DIAGONAL rows; an off diagonal row of a repeated
+  ## block carries the same offset by construction.
+  .sp <- .lotriSplitSameCondition(as.character(x$condition))
+  .same <- rep(0L, dim(.mat)[1])
+  .wd <- which(x$neta1 == x$neta2)
+  for (.i in .wd) {
+    .m <- .sp$master[[.i]]
+    if (is.null(.m)) next
+    if (length(.m) != 1L) {
+      stop("a diagonal 'same()' condition names ", length(.m),
+           " elements: '", x$condition[.i], "'", call.=FALSE)
+    }
+    .w <- which(.names == .m)
+    if (length(.w) != 1L) {
+      stop("the 'same()' condition '", x$condition[.i], "' refers to '",
+           .m, "', which is ",
+           ifelse(length(.w) == 0L, "not in", "ambiguous in"),
+           " this block", call.=FALSE)
+    }
+    .cur <- x$neta1[.i]
+    if (.w >= .cur) {
+      stop("the 'same()' condition '", x$condition[.i],
+           "' must refer to an earlier parameter", call.=FALSE)
+    }
+    .same[.cur] <- as.integer(.cur - .w)
+  }
+  if (any(.same != 0L)) {
+    ## master wins: an estimator writes back only the block being
+    ## estimated, so a repeated block takes its values from its master
+    ## rather than from whatever the frame happened to carry
+    for (.i in seq_along(.same)) {
+      .d <- .same[.i]
+      if (.d == 0L) next
+      for (.j in seq_len(dim(.mat)[1])) {
+        .dj <- .same[.j]
+        if (.dj != .d) next
+        .mat[.i, .j] <- .mat[.i - .d, .j - .d]
+        .matF[.i, .j] <- .matF[.i - .d, .j - .d]
+      }
+    }
+    attr(.mat, "lotriSame") <- .same
+    .hasLab <- TRUE
+  }
   if (any(.matF) || .hasLab) {
     attr(.mat, "lotriFix") <- .matF
     class(.mat) <- c("lotriFix", class(.mat))
@@ -100,12 +162,16 @@ as.lotri.data.frame <- function(x, ..., default="") {
                                             "fix", "label", "backTransform",
                                             "prior")]
   .lotriMatDf <- x[which(is.na(x$ntheta)), ]
-  .cnd <- unique(.lotriMatDf$condition)
+  ## group on the BASE condition: a repeated block's rows carry a
+  ## `:same:` suffix, and splitting on the raw string would break one
+  ## block into one "condition" per mirrored element
+  .base <- .lotriSplitSameCondition(as.character(.lotriMatDf$condition))$base
+  .cnd <- unique(.base)
   if (length(.cnd) == 1) {
     .mat <- .as.lotri.data.frame.mat(.lotriMatDf)
   } else {
     .mat <- setNames(lapply(.cnd, function(.cur) {
-      .x <- .lotriMatDf[which(.lotriMatDf$condition == .cur), ]
+      .x <- .lotriMatDf[which(.base == .cur), ]
       .as.lotri.data.frame.mat(.x)
     }), .cnd)
   }

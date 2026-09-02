@@ -458,6 +458,7 @@ NULL
         )
       )
       env$lastN <- env$lastN + 1
+      .lotriSameSetBlk(env, env$eta1 - 1L, env$lastN)
       env$names <- c(env$names, deparse1(x2))
       env$labels <- c(env$labels, NA_character_)
       return(TRUE)
@@ -514,6 +515,7 @@ NULL
           break
         }
       }
+      .lotriSameSetBlk(env, env$eta1, .num)
       env$eta1 <- env$eta1 + .num
     } else if (.num - length(.n) < 0) {
       if (.handleLastExprIsCndForFrm2(x2, x3, env)) {
@@ -575,6 +577,7 @@ NULL
     if (is.numeric(.val) || is.integer(.val)) {
       env$netas <- 1
       env$eta1 <- env$eta1 + 1
+      .lotriSameSetBlk(env, env$eta1 - 1L, 1L)
       env$names <- c(env$names, as.character(x[[2]]))
       env$labels <- c(env$labels, NA_character_)
       env$df <- rbind(
@@ -622,16 +625,23 @@ NULL
             .env2$lastN <- env$lastN
             .env2$names <- env$names
             .env2$labels <- env$labels
+            .env2$sameOff <- env$sameOff
+            .env2$sameBlkN <- env$sameBlkN
+            .env2$sameMasterBase <- env$sameMasterBase
             # moved to .env2 for parsing
             env$df <- NULL
             env$lastN <- 0
             env$eta1 <- 0
             env$names <- character(0)
+            env$sameOff <- NULL
+            env$sameBlkN <- NULL
+            env$sameMasterBase <- NULL
             .lotri1(x[[2]], x[[3]][[2]], .env2)
           } else if ((length(.val) == 1) &&
                        (is.numeric(.val) || is.integer(.val))) {
             .env2$netas <- 1L
             .env2$eta1 <- .env2$eta1 + 1L
+            .lotriSameSetBlk(.env2, .env2$eta1 - 1L, 1L)
             .env2$names <- c(.env2$names, as.character(x[[2]]))
             .env2$labels <- c(.env2$labels, NA_character_)
             .env2$df <- rbind(.env2$df,
@@ -653,6 +663,180 @@ NULL
     }
   }
 }
+#' Record the block that a following `same()` should repeat
+#'
+#' `same()` repeats the immediately preceding *block*, which the parse
+#' environment does not otherwise remember.  Every site that opens or
+#' extends a block calls this with the index of the block's first eta
+#' minus one (`base`) and the block's dimension (`n`).
+#'
+#' The block is tracked explicitly rather than inferred from `env$df`
+#' connectivity because `a + b ~ c(1, 0, 1)` is a declared 2x2 with a
+#' structural zero covariance; connectivity would misread it as two 1x1
+#' blocks.  NONMEM `BLOCK SAME` repeats the *declared* block regardless
+#' of zeros.
+#'
+#' @param env parse environment to update
+#' @param base index of the first eta of the block, minus one
+#' @param n dimension of the block
+#' @return nothing, called for side effects
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriSameSetBlk <- function(env, base, n) {
+  env$sameMasterBase <- base
+  env$sameBlkN <- n
+  invisible()
+}
+
+#' Pad the `same()` offset vector out to the number of parsed names
+#'
+#' The offsets are only appended by `.fCallSame()`, so rather than
+#' touching every site that appends a name this pads lazily with `0L`
+#' (meaning "not a repeated block") right before the vector is read.
+#'
+#' @param env parse environment to update
+#' @return nothing, called for side effects
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriSamePad <- function(env) {
+  .n <- length(env$names)
+  .cur <- env$sameOff
+  if (is.null(.cur)) .cur <- integer(0)
+  if (length(.cur) < .n) {
+    .cur <- c(.cur, rep(0L, .n - length(.cur)))
+  }
+  env$sameOff <- .cur
+  invisible()
+}
+
+#' Match the right hand side of a `~ same()` line
+#'
+#' @param r right hand side language object
+#' @return `NULL` when this is not a `same()` right hand side, otherwise
+#'   a list with `cnd` (the conditioning language object, or `NULL`),
+#'   `call` (the `same(...)` call itself, so its arity can be checked
+#'   with a message that names `same()` rather than falling through to
+#'   the generic "bad matrix expression"), and `bad` (a spelling that is
+#'   clearly meant to be `same()` but cannot work, reported by
+#'   `.fCallSame()` instead of the message the generic path would give)
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriSameRhs <- function(r) {
+  if (is.call(r) && identical(r[[1]], quote(`same`))) {
+    return(list(cnd=NULL, call=r, bad=NULL))
+  }
+  if (is.call(r) && length(r) == 3L && identical(r[[1]], quote(`|`)) &&
+        is.call(r[[2]]) && identical(r[[2]][[1]], quote(`same`))) {
+    return(list(cnd=r[[3]], call=r[[2]], bad=NULL))
+  }
+  ## `fix(same())` would otherwise be evaluated by `.fCallTilde()` OUTSIDE
+  ## a `try()` and die with `could not find function "same"`
+  if (is.call(r) && length(r) == 2L &&
+        (.isFixedElt(r[[1]]) || .isUnfixedElt(r[[1]])) &&
+        is.call(r[[2]]) && identical(r[[2]][[1]], quote(`same`))) {
+    return(list(cnd=NULL, call=r[[2]], bad="fix"))
+  }
+  ## a bare `same` is a missing pair of parentheses -- unless the user
+  ## really does have a variable of that name, in which case the old
+  ## behaviour (resolve it from the calling frame) is kept
+  if (is.name(r) && identical(r, quote(`same`)) &&
+        !exists("same", envir=.lotriParentEnv)) {
+    return(list(cnd=NULL, call=NULL, bad="bare"))
+  }
+  NULL
+}
+
+#' Is this expression a `name(s) ~ same()` line?
+#'
+#' @param x language object to test
+#' @return TRUE when this repeats the preceding block
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriIsSameLine <- function(x) {
+  is.call(x) && length(x) == 3L && identical(x[[1]], quote(`~`)) &&
+    !is.null(.lotriSameRhs(x[[3]]))
+}
+
+#' Handle a `name(s) ~ same()` line
+#'
+#' This is NONMEM's `$OMEGA BLOCK(n) SAME`: the block declared just
+#' before is stamped again under new names, and the copy shares the
+#' master's estimates rather than getting its own.
+#'
+#' @param x the `~` language object
+#' @param env parse environment
+#' @return nothing, called for side effects
+#' @noRd
+#' @author Matthew L. Fidler
+.fCallSame <- function(x, env) {
+  .same <- .lotriSameRhs(x[[3]])
+  if (identical(.same$bad, "bare")) {
+    stop("did you mean 'same()'?", call.=FALSE)
+  }
+  if (identical(.same$bad, "fix")) {
+    stop("'same()' cannot be combined with 'fix()'; a repeated block ",
+         "inherits the fixed flags of the block it repeats", call.=FALSE)
+  }
+  if (length(.same$call) != 1L) {
+    stop("'same()' takes no arguments", call.=FALSE)
+  }
+  .n <- .lotriTildeLhsNames(x[[2]])
+  if (is.null(.n)) {
+    stop("the left hand side of 'same()' must be parameter name(s)",
+         call.=FALSE)
+  }
+  .tgt <- env
+  .at <- ""
+  if (!is.null(.same$cnd)) {
+    .cnd <- .parseCondition(.same$cnd, envir=env)[[1]]
+    .at <- paste0(" at level '", .cnd, "'")
+    if (exists("lastCnd", env) && env$lastCnd == .cnd && exists(.cnd, env)) {
+      .tgt <- env[[.cnd]]
+    } else {
+      stop("'same()' has no block to repeat", .at, call.=FALSE)
+    }
+  }
+  if (is.null(.tgt$sameBlkN) || is.null(.tgt$sameMasterBase)) {
+    stop("'same()' has no block to repeat", .at,
+         "; it must follow a matrix block", call.=FALSE)
+  }
+  .blkN <- .tgt$sameBlkN
+  if (length(.n) != .blkN) {
+    stop("'same()' repeats the previous ", .blkN, "x", .blkN,
+         " block, so it needs ", .blkN, " name",
+         ifelse(.blkN == 1L, "", "s"), " on the left, not ", length(.n),
+         call.=FALSE)
+  }
+  ## a line-form master leaves `eta1` lagging behind the block it wrote
+  .resetLastN(.tgt)
+  .base <- .tgt$eta1
+  .m <- .tgt$sameMasterBase
+  .off <- .base - .m
+  .w <- which(.tgt$df$i > .m & .tgt$df$i <= .m + .blkN &
+                .tgt$df$j > .m & .tgt$df$j <= .m + .blkN)
+  .cp <- .tgt$df[.w, , drop=FALSE]
+  .cp$i <- .cp$i + .off
+  .cp$j <- .cp$j + .off
+  ## `env$df` already carries both symmetric entries for an off diagonal,
+  ## so a verbatim copy stays symmetric with no special casing
+  .tgt$df <- rbind(.tgt$df, .cp)
+  ## pad BEFORE the new names are appended, so the padding covers only
+  ## the names parsed so far
+  .lotriSamePad(.tgt)
+  .tgt$names <- c(.tgt$names, .n)
+  .tgt$labels <- c(.tgt$labels, rep(NA_character_, length(.n)))
+  .tgt$sameOff <- c(.tgt$sameOff, rep(as.integer(.off), length(.n)))
+  .tgt$netas <- .blkN
+  .tgt$eta1 <- .base + .blkN
+  ## NOT 1L: with 1L a following `x ~ c(0.1, 1)` is taken by
+  ## `.handleSingleLineEstInLineForm()` as covarying with the last row of
+  ## the copy, which silently corrupts the repeated block
+  .tgt$lastN <- 0L
+  ## `sameMasterBase`/`sameBlkN` are deliberately left alone so a further
+  ## `same()` repeats the ORIGINAL block, the way NONMEM chains `SAME`
+  invisible()
+}
+
 #' Is this a known call for the fixed/unfixed elements and other functions
 #'
 #'
@@ -752,6 +936,7 @@ NULL
       env$lastN <- 1
       env$netas <- 1
       env$eta1 <- env$eta1 + 1
+      .lotriSameSetBlk(env, env$eta1 - 1L, 1L)
       env$names <- c(env$names, as.character(x[[2]]))
       env$labels <- c(env$labels, NA_character_)
       env$df <- rbind(env$df,
@@ -1788,7 +1973,14 @@ NULL
 #' @noRd
 #' @author Matthew L. Fidler
 .fCall <- function(x, env) {
-  if (.lotriIsPriorLine(x)) {
+  if (.lotriIsSameLine(x)) {
+    ## Checked before every prior branch: `.lotriIsThetaPriorLine()` would
+    ## otherwise claim `tka ~ same()` whenever `tka` is a population
+    ## estimate and route it into `.fCallTilde()` with a useless message.
+    ## `lastTilde` is set so a following `label()` attaches to this line.
+    .lotriEnv$lastTilde <- TRUE
+    .fCallSame(x, env)
+  } else if (.lotriIsPriorLine(x)) {
     ## Note this is checked *before* the `~` branch below so that
     ## `.lotriEnv$lastTilde` is not changed; otherwise a `label()`
     ## following a prior would be applied to the last matrix row.
@@ -2184,6 +2376,13 @@ NULL
   dimnames(.ret) <- list(env$names, env$names)
   dimnames(.retF) <- list(env$names, env$names)
   dimnames(.retU) <- list(env$names, env$names)
+  .lotriSamePad(env)
+  .hasSame <- any(env$sameOff != 0L)
+  if (.hasSame && is.logical(env$rcm) && env$rcm) {
+    ## the permutation would separate a block from the block it repeats,
+    ## and `as.expression()` could then no longer re-emit `same()`
+    stop("'rcm' cannot be used with 'same()'", call.=FALSE)
+  }
   if (is.logical(env$rcm) && env$rcm && .n >= 1 &&
         !lotriIsBlockMat(.ret)) { # nolint
     .old <- env$names
@@ -2199,6 +2398,11 @@ NULL
   }
   if (env$isCov) {
     .assertErrZeroDiag(.ret, cnd)
+    if (.hasSame && is.function(fun)) {
+      ## the correction is applied to the whole matrix and would move the
+      ## copies away from the block they repeat, making `lotriSame` a lie
+      stop("a 'cov' function cannot be used with 'same()'", call.=FALSE)
+    }
     if (is.function(fun)) {
       .ret2 <- fun(.ret)
       if (!is.matrix(.ret2)) {
@@ -2225,6 +2429,12 @@ NULL
   }
   if (any(!is.na(env$labels))) {
     attr(.ret, "lotriLabels") <- env$labels
+    if (!inherits(.ret, "lotriFix")) {
+      class(.ret) <- c("lotriFix", class(.ret))
+    }
+  }
+  if (.hasSame) {
+    attr(.ret, "lotriSame") <- env$sameOff
     if (!inherits(.ret, "lotriFix")) {
       class(.ret) <- c("lotriFix", class(.ret))
     }
@@ -2690,6 +2900,33 @@ NULL
 #'  \code{\link[Matrix]{bdiag}}, but allows expressions to specify
 #'  matrices easier.
 #'
+#'  A block can be repeated, sharing one set of estimates, with
+#'
+#'  name3 + name4 ~ same()
+#'
+#'  This is NONMEM's \code{$OMEGA BLOCK(n) SAME}, and it is how an
+#'  inter-occasion variability block is written when every occasion
+#'  draws its own random effects from one shared covariance.
+#'  \code{same()} repeats the immediately preceding *block* under new
+#'  names; a further \code{same()} repeats that same original block
+#'  rather than the copy, the way NONMEM chains \code{SAME}.  It takes
+#'  no arguments, may be used with a condition
+#'  (\code{name3 + name4 ~ same() | occ}), and inherits the fixed flags
+#'  of the block it repeats.
+#'
+#'  In the data frame from \code{as.data.frame()} the repetition is
+#'  recorded in the existing \code{condition} column rather than in a
+#'  new column, naming the element that is mirrored:
+#'  \code{"id:same:name1"} on a diagonal row and
+#'  \code{"id:same:name1:name2"} on a covariance row.  Use
+#'  \code{\link{lotriBaseCondition}} and its companions to read that
+#'  column; comparing it directly (\code{condition == "id"}) will
+#'  misclassify a repeated block.
+#'
+#'  This is distinct from the condition property \code{cnd(same = n)},
+#'  which repeats a whole nesting level rather than one block, and which
+#'  \code{\link{lotriSep}} uses.  The two compose.
+#'
 #'  Population estimates can be given with
 #'
 #'  name <- estimate
@@ -2759,6 +2996,24 @@ NULL
 #'                            0.1, 0.1, 30)
 #'           et5 ~ 6
 #'           })
+#'
+#' ## A block can be repeated with `same()`, which is NONMEM's
+#' ## `$OMEGA BLOCK(n) SAME`: one estimated 2x2 shared by three blocks,
+#' ## the usual shape for correlated inter-occasion variability
+#'
+#' iov <- lotri({
+#'   iov.cl1 + iov.v1 ~ c(0.1,
+#'                        0.01, 0.2)
+#'   iov.cl2 + iov.v2 ~ same()
+#'   iov.cl3 + iov.v3 ~ same()
+#' })
+#'
+#' iov
+#'
+#' ## the repetition rides in the `condition` column, so no column is
+#' ## added to the data frame
+#'
+#' as.data.frame(iov)$condition
 #'
 #' ## You can also add lists or actual R matrices as in this example:
 #' lotri(list(et2 + et3 + et4 ~ c(40,

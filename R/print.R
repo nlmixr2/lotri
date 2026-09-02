@@ -23,6 +23,7 @@ print.lotriFix <- function(x, ...) {
     .lotriLabels <- attr(.tmp, "lotriLabels")
     .lotriPriors <- attr(.tmp, "lotriPriors")
     .lotriOffDiagPriors <- attr(.tmp, "lotriOffDiagPriors")
+    .lotriSame <- attr(.tmp, "lotriSame")
     if (all(.dim == 0L) && !is.null(.lotriEst)) {
       cat("Lotri Estimates (get with `lotriEst()`):\n")
       print(.lotriEst)
@@ -34,6 +35,7 @@ print.lotriFix <- function(x, ...) {
     attr(.tmp, "lotriLabels") <- NULL
     attr(.tmp, "lotriPriors") <- NULL
     attr(.tmp, "lotriOffDiagPriors") <- NULL
+    attr(.tmp, "lotriSame") <- NULL
     .w <- which(.cls == "lotriFix")
     .cls <- .cls[-.w]
     class(.tmp) <- NULL # Note that a matrix doesn't actually have a class
@@ -63,6 +65,20 @@ print.lotriFix <- function(x, ...) {
       print(.lotriOffDiagPriors)
       cat("\n")
     }
+    if (!is.null(.lotriSame)) {
+      .dn <- dimnames(.tmp)[[1]]
+      cat("\nThis matrix repeats blocks with `same()`:\n")
+      .done <- integer(0)
+      for (.i in seq_along(.lotriSame)) {
+        .d <- .lotriSame[.i]
+        if (.d == 0L || any(.done == .d)) next
+        .done <- c(.done, .d)
+        .w <- which(.lotriSame == .d)
+        cat("  ", paste(.dn[.w], collapse=", "), " repeat ",
+            paste(.dn[.w - .d], collapse=", "), "\n", sep="")
+      }
+      cat("\n")
+    }
   } else {
     ## lotri or list
     .lotriEst <- attr(x, "lotriEst")
@@ -76,6 +92,7 @@ print.lotriFix <- function(x, ...) {
     attr(y, "lotriLabels") <- NULL
     attr(y, "lotriPriors") <- NULL
     attr(y, "lotriOffDiagPriors") <- NULL
+    attr(y, "lotriSame") <- NULL
     .cls <- class(y)
     .cls <- .cls[.cls != "lotriFix"]
     class(y) <- .cls

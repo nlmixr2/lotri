@@ -12,6 +12,7 @@
       .curMat <- .lst2[[.i]]
       .curMatF <- attr(.curMat, "lotriFix")
       .curMatU <- attr(.curMat, "lotriUnfix")
+      .curSame <- attr(.curMat, "lotriSame")
       .n <- dimnames(.curMat)[[1]]
       for (.j in seq_along(.n)) {
         for (.k in seq_len(.j)) {
@@ -41,6 +42,22 @@
             .wp <- match(.curName, names(.priorsOffDiag))
             if (!is.na(.wp)) .curPrior <- .priorsOffDiag[[.wp]]
           }
+          ## a repeated (`same()`) block records, in the condition, the
+          ## element of the block it mirrors -- by NAME, since the eta
+          ## numbers are renumbered by consumers of this data frame.  The
+          ## offsets are relative and point outside this block, so the
+          ## master is resolved against the whole matrix's dimnames.
+          .cnd <- default
+          if (!is.null(.curSame) && .curSame[.j] > 0L) {
+            .mj <- .env$eta1 + .j - 1 - .curSame[.j]
+            .mk <- .env$eta1 + .k - 1 - .curSame[.k]
+            ## smaller index first, matching the "(name_k,name_j)" order
+            ## the `name` column uses for an off diagonal
+            .cnd <- paste0(default, ":same:", .matNames[.mk])
+            if (.j != .k) {
+              .cnd <- paste0(.cnd, ":", .matNames[.mj])
+            }
+          }
           .df3 <- rbind(.df3,
                         data.frame(ntheta=NA_integer_,
                                    neta1=.env$eta1 + .j - 1,
@@ -53,7 +70,7 @@
                                    label=NA_integer_,
                                    backTransform=NA_character_,
                                    prior=.curPrior,
-                                   condition=default))
+                                   condition=.cnd))
         }
       }
       .env$eta1 <- max(.df3$neta1) + 1
