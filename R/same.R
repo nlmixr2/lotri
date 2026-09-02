@@ -129,6 +129,21 @@
       return(FALSE)
     }
   }
+  ## the fixed flags must match: a `same()` line inherits the master's,
+  ## it cannot state its own
+  .fx <- attr(mat, "lotriFix")
+  if (!is.null(.fx) &&
+        !identical(unname(.fx[.w, .w, drop=FALSE]),
+                   unname(.fx[.mw, .mw, drop=FALSE]))) {
+    return(FALSE)
+  }
+  ## a `same()` line can carry only ONE trailing `label()`, which
+  ## attaches to the last name; a label anywhere else would be lost
+  .lb <- attr(mat, "lotriLabels")
+  if (!is.null(.lb) && wid > 1L &&
+        any(!is.na(.lb[.w[-wid]]))) {
+    return(FALSE)
+  }
   ## and every cell must really equal the cell it claims to repeat
   all(vapply(.w, function(.a) {
     all(vapply(.w, function(.b) {

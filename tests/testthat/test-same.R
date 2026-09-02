@@ -895,6 +895,44 @@ test_that("same() is not emitted past a block that is itself written out", {
   .rt <- eval(as.expression(.l))
   expect_equal(unclass(.rt), unclass(.l), ignore_attr = TRUE)
   expect_equal(attr(.rt, "lotriLabels")[3], "mid label")
+  ## and the two routes agree that the linkage is gone, rather than the
+  ## data frame keeping one the expression cannot write
+  expect_false(any(lotri::lotriIsSame(as.data.frame(.l)$condition)))
+  expect_equal(as.data.frame(.rt), as.data.frame(.l))
+})
+
+test_that("labels and fixed flags are judged by the shared view", {
+
+  ## these used to be checked only by the emitter, so a copy carrying a
+  ## label it could not express kept its `:same:` in the data frame
+  ## while the expression wrote explicit values -- two parameter counts
+  ## for one matrix
+  .m <- lotri::lotri({
+    a + b ~ c(1,
+              0.1, 2)
+    c1 + d1 ~ same()
+  })
+
+  .lab <- unclass(.m)
+  attr(.lab, "lotriSame") <- c(0L, 0L, 2L, 2L)
+  attr(.lab, "lotriLabels") <- c(NA, NA, "first", NA)
+  class(.lab) <- c("lotriFix", "matrix", "array")
+  expect_false(any(lotri::lotriIsSame(as.data.frame(.lab)$condition)))
+  expect_null(attr(eval(as.expression(.lab)), "lotriSame"))
+
+  .fx <- unclass(.m)
+  .f <- matrix(FALSE, 4, 4, dimnames = dimnames(.fx))
+  .f[3, 3] <- TRUE
+  attr(.fx, "lotriSame") <- c(0L, 0L, 2L, 2L)
+  attr(.fx, "lotriFix") <- .f
+  class(.fx) <- c("lotriFix", "matrix", "array")
+  expect_false(any(lotri::lotriIsSame(as.data.frame(.fx)$condition)))
+  expect_null(attr(eval(as.expression(.fx)), "lotriSame"))
+
+  ## print reads the same view, so it cannot claim a repetition the
+  ## other two dropped
+  expect_false(any(grepl(" repeat ", capture.output(print(.lab)),
+                         fixed = TRUE)))
 })
 
 test_that("an offset that no longer describes a mirror is dropped", {

@@ -68,7 +68,9 @@ print.lotriFix <- function(x, ...) {
     if (!is.null(.lotriSame)) {
       ## the same validated view `as.data.frame()` and `as.expression()`
       ## use, so the three cannot disagree about what repeats what
-      .fam <- .lotriSameFamilies(.tmp, .lotriSame)
+      ## `x`, not the scrubbed `.tmp`: the family view reads the fixed
+      ## flags and labels, which `.tmp` has already had removed
+      .fam <- .lotriSameFamilies(x, .lotriSame)
       if (!is.null(.fam)) {
         .dn <- dimnames(.tmp)[[1]]
         cat("\nThis matrix repeats blocks with `same()`:\n")
