@@ -48,6 +48,17 @@
       .mw <- .w - .d
       ## the master must be a real master, not itself a copy
       .keep <- all(.out[.mw] == 0L)
+      ## and both ranges must be separated from the rest of the matrix.
+      ## A range that covaries with anything outside it is not a block
+      ## `same()` could ever have declared, and forcing a block boundary
+      ## through it in `.lotriSameSplit()` would drop that covariance
+      ## from the emitted expression.
+      if (.keep) {
+        .keep <- all(vapply(list(.w, .mw), function(.r) {
+          .o <- setdiff(seq_len(.n), .r)
+          length(.o) == 0L || all(mat[.r, .o] == 0)
+        }, logical(1), USE.NAMES=FALSE))
+      }
       if (.keep) {
         .keep <- all(vapply(.w, function(.a) {
           all(vapply(.w, function(.b) {

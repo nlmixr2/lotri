@@ -1063,3 +1063,33 @@ test_that("print() agrees with the values it printed", {
   expect_true(any(grepl("c1, d1 repeat a, b", .out, fixed = TRUE)))
   expect_false(any(grepl("g1", .out[grepl("repeat", .out)], fixed = TRUE)))
 })
+
+test_that("a repeated block must be separated from the rest of the matrix", {
+
+  ## the declared boundaries are recovered from the offsets, so a
+  ## hand written frame can claim a master range that cuts through a
+  ## larger dense block.  Forcing a block boundary there dropped the
+  ## covariance that crossed it from the emitted expression.
+  .m <- lotri::lotri({
+    a + b + cc ~ c(1,
+                   0.1, 2,
+                   0.2, 0.3, 3)
+    d1 + e1 ~ c(1,
+                0.1, 2)
+    label("L")
+  })
+  .df <- as.data.frame(.m)
+  .df$condition[.df$name == "d1"] <- "id:same:a"
+  .df$condition[.df$name == "(d1,e1)"] <- "id:same:a:b"
+  .df$condition[.df$name == "e1"] <- "id:same:b"
+  .l <- lotri::lotriEst(lotri::as.lotri(.df), drop = TRUE)
+
+  ## the 3x3 stays whole ...
+  expect_equal(vapply(lotri:::.lotriSameSplit(.l),
+                      function(x) dim(x)[1], integer(1)),
+               c(3L, 2L))
+  ## ... so the covariance that crosses the claimed boundary survives
+  .rt <- eval(as.expression(.l))
+  expect_equal(unname(unclass(.rt)[1, 3]), 0.2)
+  expect_equal(unclass(.rt), unclass(.l), ignore_attr = TRUE)
+})
