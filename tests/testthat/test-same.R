@@ -330,10 +330,21 @@ test_that("same() error paths", {
 
   ## these are raised while the matrix is assembled, outside the per line
   ## collection, so they propagate with their own message
+  ## refused only when the permutation would actually run: `rcm` is a
+  ## no-op on an already block diagonal matrix, and `rxode2`'s `ini({})`
+  ## passes `rcm=TRUE` unconditionally, so an eager guard would make
+  ## `same()` unusable in a model
+  expect_error(lotri::lotri({
+    a + b + cc ~ c(1,
+                   0, 2,
+                   0.5, 0, 3)
+    d1 + e1 + f1 ~ same()
+  }, rcm = TRUE), "'rcm' cannot be used with 'same()'", fixed = TRUE)
+
   expect_error(lotri::lotri({
     a + b ~ c(1, 0.1, 1)
     c1 + d1 ~ same()
-  }, rcm = TRUE), "'rcm' cannot be used with 'same()'", fixed = TRUE)
+  }, rcm = TRUE), NA)
 
   expect_error(lotri::lotri({
     a + b ~ c(1, 0.1, 1)
@@ -647,9 +658,13 @@ test_that("a repeated block at the default level survives a condition", {
   }
 
   ## the guards read the same attribute, so they were bypassed too
+  ## (`rcm` needs a shape it would actually permute to have anything to
+  ## refuse -- see the `rcm` test below)
   expect_error(lotri::lotri({
-    a + b ~ c(1, 0.1, 2)
-    c1 + d1 ~ same()
+    a + b + cc ~ c(1,
+                   0, 2,
+                   0.5, 0, 3)
+    d1 + e1 + f1 ~ same()
     z ~ 3 | occ
   }, rcm = TRUE), "'rcm' cannot be used with 'same()'", fixed = TRUE)
 

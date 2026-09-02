@@ -2531,13 +2531,17 @@ NULL
   dimnames(.retU) <- list(env$names, env$names)
   .lotriSamePad(env)
   .hasSame <- any(env$sameOff != 0L)
-  if (.hasSame && is.logical(env$rcm) && env$rcm) {
-    ## the permutation would separate a block from the block it repeats,
-    ## and `as.expression()` could then no longer re-emit `same()`
-    stop("'rcm' cannot be used with 'same()'", call.=FALSE)
-  }
   if (is.logical(env$rcm) && env$rcm && .n >= 1 &&
         !lotriIsBlockMat(.ret)) { # nolint
+    ## Only refuse when the permutation would actually run.  `rcm` is a
+    ## no-op on a matrix that is already block diagonal -- which a
+    ## `same()` matrix always is -- and `rxode2`'s `ini({})` passes
+    ## `rcm=TRUE` unconditionally, so an eager guard here would make
+    ## `same()` unusable in a model.
+    if (.hasSame) {
+      stop("'rcm' cannot be used with 'same()'; the permutation would ",
+           "separate a block from the block it repeats", call.=FALSE)
+    }
     .old <- env$names
     .ret <- rcm(.ret) # nolint
     env$names <- dimnames(.ret)[[1]]
