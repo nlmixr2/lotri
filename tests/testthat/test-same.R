@@ -824,3 +824,41 @@ test_that("no prior form can target a repeated block", {
     om.a ~ 0.01
   }), NA)
 })
+
+test_that("same() repeats the master after any transformation", {
+
+  ## the block is copied AFTER `sd()`/`var()`/`cor()`/`chol()` have been
+  ## turned into a covariance, so the copy carries the same covariance
+  for (.e in list(quote(lotri::lotri({
+                    a + b ~ sd(1, 0.1, 2)
+                    c1 + d1 ~ same()
+                  })),
+                  quote(lotri::lotri({
+                    a + b ~ var(1, 0.1, 2)
+                    c1 + d1 ~ same()
+                  })),
+                  quote(lotri::lotri({
+                    a + b ~ cor(1, 0.1, 2)
+                    c1 + d1 ~ same()
+                  })),
+                  quote(lotri::lotri({
+                    a + b ~ chol(1, 0.1, 2)
+                    c1 + d1 ~ same()
+                  })))) {
+    .m <- eval(.e)
+    expect_equal(attr(.m, "lotriSame"), c(0L, 0L, 2L, 2L))
+    expect_equal(unclass(.m)[3:4, 3:4], unclass(.m)[1:2, 1:2],
+                 ignore_attr = TRUE)
+  }
+})
+
+test_that("same() cannot repeat a matrix() literal", {
+
+  ## a `matrix()` literal is held aside and merged after the block is
+  ## parsed, so it is not a block `same()` can look back at
+  .expectLotriErr(lotri::lotri({
+    matrix(c(1, 0.1, 0.1, 2), 2, 2,
+           dimnames = list(c("a", "b"), c("a", "b")))
+    c1 + d1 ~ same()
+  }), "'same()' has no block to repeat")
+})
