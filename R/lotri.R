@@ -610,6 +610,7 @@ NULL
           .cnd <- .cndFull[[1]]
           if (exists("lastCnd", env)) {
             if (env$lastCnd == .cnd) {
+              env$lastTildeInCnd <- TRUE
               if (exists(.cnd, env)) {
                 .lotri1(x[[2]], x[[3]][[2]], env[[.cnd]], env)
               } else {
@@ -628,6 +629,7 @@ NULL
           .env2$lastN <- 0L
           env$cnd <- unique(c(env$cnd, .cnd))
           env$lastCnd <- .cnd
+          env$lastTildeInCnd <- TRUE
           env[[.cnd]] <- .env2
           env[[paste0(.cnd, ".extra")]] <- .cndFull[[2]]
           .val <- .lotriParseMat(x[[3]][[2]], env=env, noMat=TRUE)
@@ -807,11 +809,13 @@ NULL
   }
   .tgt <- env
   .at <- ""
+  env$lastTildeInCnd <- FALSE
   if (!is.null(.same$cnd)) {
     .cnd <- .parseCondition(.same$cnd, envir=env)[[1]]
     .at <- paste0(" at level '", .cnd, "'")
     if (exists("lastCnd", env) && env$lastCnd == .cnd && exists(.cnd, env)) {
       .tgt <- env[[.cnd]]
+      env$lastTildeInCnd <- TRUE
     } else {
       stop("'same()' has no block to repeat", .at, call.=FALSE)
     }
@@ -901,6 +905,10 @@ NULL
 #'
 #' @noRd
 .fCallTilde <- function(x, env) {
+  ## which environment a following `label()` belongs to depends on
+  ## whether THIS line was conditioned; cleared here and set by the `|`
+  ## branch of `.fcallTildeLhsSum()` below
+  env$lastTildeInCnd <- FALSE
   if (length(x) != 3) {
     .possible <- paste("quote(variableName",
                        .deparse1(x), # nolint
@@ -2101,13 +2109,15 @@ NULL
   } else if (.lotriEnv$lastTilde &&
                identical(x[[1]], quote(`label`))) {
     # only the last tilde is labeled
-    if (is.null(env$labels)) {
-      if (exists("lastCnd", env) &&
-            exists(env$lastCnd,env)) {
-        .lab <- env[[env$lastCnd]]$labels
-        env[[env$lastCnd]]$labels[length(.lab)] <- x[[2]]
-      }
-    } else {
+    if (isTRUE(env$lastTildeInCnd) && exists("lastCnd", env) &&
+          exists(env$lastCnd, env)) {
+      ## the last `~` was conditioned, so the label belongs to that
+      ## level.  This used to be decided by whether the DEFAULT level had
+      ## any labels yet, so once it did, a conditioned line's label
+      ## landed on the default level and overwrote one already there.
+      .lab <- env[[env$lastCnd]]$labels
+      env[[env$lastCnd]]$labels[length(.lab)] <- x[[2]]
+    } else if (!is.null(env$labels)) {
       env$labels[length(env$labels)] <- x[[2]]
     }
   } else if (identical(x[[1]], quote(`label`)) ||

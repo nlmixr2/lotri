@@ -234,6 +234,19 @@ lotri({
 
 ## Bug fixes
 
+* Labels are no longer lost, or attached to the wrong parameter, when a
+  block has more than one level of variability.  Which level a trailing
+  `label()` belonged to was decided by whether the DEFAULT level had any
+  labels yet, so once it did, a conditioned line's label landed on the
+  default level and overwrote the one already there; and
+  `as.data.frame()` only ever read the labels of a single matrix, so a
+  conditioned object lost them entirely.
+
+* `as.lotri()` on a data frame whose only level of variability is not
+  `id` now keeps that level's name.  It previously returned a bare
+  matrix, so an occasion-only model came back looking like an id level
+  one.
+
 * `lotriEst(x, drop=TRUE)` kept the `lotriFix` class only when there
   were fixed elements, so a matrix carrying labels, priors or a
   `same()` repetition came back unclassed with the attribute orphaned

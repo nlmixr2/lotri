@@ -16,6 +16,10 @@
       .curMat <- .lst2[[.i]]
       .curMatF <- attr(.curMat, "lotriFix")
       .curMatU <- attr(.curMat, "lotriUnfix")
+      ## read per block: the top level pass this replaces could only see
+      ## the labels of a single matrix, so a multi-condition object lost
+      ## every label it had
+      .curLab <- attr(.curMat, "lotriLabels")
       .n <- dimnames(.curMat)[[1]]
       for (.j in seq_along(.n)) {
         for (.k in seq_len(.j)) {
@@ -77,7 +81,11 @@
                                    est=.curMat[.j, .k],
                                    upper=Inf,
                                    fix=.fix,
-                                   label=NA_integer_,
+                                   label=if (.j == .k && !is.null(.curLab)) {
+                                     as.character(.curLab[.j])
+                                   } else {
+                                     NA_character_
+                                   },
                                    backTransform=NA_character_,
                                    prior=.curPrior,
                                    condition=.cnd))
@@ -144,12 +152,6 @@ as.data.frame.lotriFix <- function(x, row.names = NULL, optional = FALSE, ...,
                       backTransform=character(0),
                       condition=character(0),
                       prior=character(0)))
-  }
-  if (!is.null(attr(x, "lotriLabels"))) {
-    .lab <- attr(x, "lotriLabels")
-    for (i in seq_along(.lab)) {
-      .df$label[which(.df$neta1 == i & .df$neta2 == i)] <- .lab[i]
-    }
   }
   .df[, .ord]
 

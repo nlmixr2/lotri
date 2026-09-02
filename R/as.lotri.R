@@ -190,8 +190,13 @@ as.lotri.data.frame <- function(x, ..., default="") {
   ## block into one "condition" per mirrored element
   .base <- .lotriSplitSameCondition(as.character(.lotriMatDf$condition))$base
   .cnd <- unique(.base)
-  if (length(.cnd) == 1) {
+  if (length(.cnd) == 1 && (is.na(.cnd) || .cnd == "id")) {
+    ## the default level is returned bare, the way it always has been
     .mat <- .as.lotri.data.frame.mat(.lotriMatDf)
+  } else if (length(.cnd) == 1) {
+    ## but a single NON default level has to keep its name, or an
+    ## occasion-only model comes back looking like an id level one
+    .mat <- setNames(list(.as.lotri.data.frame.mat(.lotriMatDf)), .cnd)
   } else {
     .mat <- setNames(lapply(.cnd, function(.cur) {
       .x <- .lotriMatDf[which(.base == .cur), ]
