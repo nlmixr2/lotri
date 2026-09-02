@@ -1790,8 +1790,13 @@ NULL
           ## a block that is entirely fixed is already a constant; the
           ## implicit shorthand applies to every free block, so it
           ## quietly skips one instead of erroring the way an explicit
-          ## `prior(om.eta) ~ ...` on a fixed element does below
-          if (!.lotriMatEntirelyFixed(.m, .dn[.idx])) {
+          ## `prior(om.eta) ~ ...` on a fixed element does below.  A
+          ## `same()` copy is skipped for the same reason: it is not a
+          ## free block, it IS the block it repeats, which the shorthand
+          ## has already reached.
+          .mSame <- attr(.m, "lotriSame")
+          .isCopy <- !is.null(.mSame) && all(.mSame[.idx] != 0L)
+          if (!.isCopy && !.lotriMatEntirelyFixed(.m, .dn[.idx])) {
             .expand[[length(.expand) + 1L]] <- list(names=.dn[.idx], info=.wp)
           }
           .i <- max(.idx) + 1L

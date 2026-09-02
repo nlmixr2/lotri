@@ -736,3 +736,41 @@ test_that("blocks that merely agree to a tolerance are not collapsed", {
                          fixed = TRUE)))
   expect_equal(unname(eval(as.expression(.near))[3, 3]), 1 + 1e-10)
 })
+
+test_that("the whole-omega prior shorthand skips repeated blocks", {
+
+  ## `~ invWishart(4)` applies to every FREE block.  A copy is not a
+  ## free block -- it is the block it repeats, which the shorthand has
+  ## already reached -- so without skipping it the shorthand tripped the
+  ## prior-on-a-copy rejection and became unusable with `same()`.
+  .m <- lotri::lotri({
+    a + b ~ c(1,
+              0.1, 2)
+    c1 + d1 ~ same()
+    ~ invWishart(4)
+  })
+
+  expect_equal(attr(.m, "lotriPriors"),
+               c("invWishart(4)", NA, NA, NA))
+  expect_equal(as.data.frame(lotri::as.lotri(as.data.frame(.m))),
+               as.data.frame(.m))
+  expect_equal(as.data.frame(eval(as.expression(.m))), as.data.frame(.m))
+
+  ## a chain gets exactly one prior, on the block that is estimated
+  .chain <- lotri::lotri({
+    a + b ~ c(1,
+              0.1, 2)
+    c1 + d1 ~ same()
+    e1 + f1 ~ same()
+    ~ invWishart(4)
+  })
+  expect_equal(sum(!is.na(attr(.chain, "lotriPriors"))), 1L)
+
+  ## a fixed master leaves the shorthand with nothing to apply to, which
+  ## is the pre-existing error rather than a `same()` specific one
+  expect_error(lotri::lotri({
+    a + b ~ fix(1, 0.1, 2)
+    c1 + d1 ~ same()
+    ~ invWishart(4)
+  }), "no omega to apply it to")
+})
