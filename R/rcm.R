@@ -30,6 +30,16 @@ rcm <- function(x) {
   if (!identical(.d[[1]], .d[[2]])) {
     stop("The matrix must be square, symmetric with matching row and column names")
   }
+  ## `lotriSame` offsets are relative, so a permutation invalidates them;
+  ## like the other `lotri*` attributes they are dropped.  That one is
+  ## worth saying out loud, because losing it changes how many
+  ## parameters the matrix is understood to estimate -- `lotri()` itself
+  ## refuses `rcm=TRUE` on such a matrix for the same reason.
+  if (!is.null(attr(x, "lotriSame"))) {
+    warning("'rcm' drops the 'same()' repetition: the permutation would ",
+            "separate a block from the block it repeats",
+            call.=FALSE)
+  }
   .Call(`_lotri_rcm_`, # nolint
         x)
 }

@@ -1342,3 +1342,37 @@ test_that("every consumer agrees on the linkage, over random matrices", {
                  info = .info)
   }
 })
+
+test_that("rcm() says so when it drops a repetition", {
+
+  ## `lotri(..., rcm=TRUE)` refuses a repeated block outright; the
+  ## exported `rcm()` still permutes, but losing the linkage changes how
+  ## many parameters the matrix is understood to estimate, so it is not
+  ## dropped quietly the way `lotriFix`/`lotriLabels` are
+  .m <- lotri::lotri({
+    a + b ~ c(1,
+              0.1, 2)
+    c1 + d1 ~ same()
+  })
+  expect_warning(lotri::rcm(unclass(.m)), "drops the 'same()' repetition",
+                 fixed = TRUE)
+  expect_silent(lotri::rcm(unclass(lotri::lotri({
+    a + b ~ c(1,
+              0.1, 2)
+  }))))
+})
+
+test_that("a hand set double offset vector is carried by lotriMat()", {
+
+  ## the R side coerces with `as.integer()`, so the C concatenation
+  ## accepts a double rather than silently dropping the repetition
+  .m <- lotri::lotri({
+    a + b ~ c(1,
+              0.1, 2)
+    c1 + d1 ~ same()
+  })
+  .d <- unclass(.m)
+  attr(.d, "lotriSame") <- c(0, 0, 2, 2)
+  expect_equal(attr(lotri::lotriMat(list(.d)), "lotriSame"),
+               c(0L, 0L, 2L, 2L))
+})

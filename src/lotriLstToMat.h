@@ -175,7 +175,11 @@ static inline int lotriLstHasIntAttr(SEXP lst, R_xlen_t len, const char *what) {
     SEXP cur = VECTOR_ELT(lst, i);
     if (TYPEOF(cur) == VECSXP) cur = VECTOR_ELT(cur, 0);
     SEXP curAttr = Rf_getAttrib(cur, Rf_install(what));
-    if (TYPEOF(curAttr) == INTSXP && Rf_length(curAttr) == Rf_ncols(cur)) {
+    /* a hand set attribute can be a double; the R side coerces, so
+       accept it here too rather than silently dropping the block's
+       repetition on the way through the concatenation */
+    if ((TYPEOF(curAttr) == INTSXP || TYPEOF(curAttr) == REALSXP) &&
+	Rf_length(curAttr) == Rf_ncols(cur)) {
       return 1;
     }
   }
@@ -195,10 +199,19 @@ static inline void lotriLstToMatFillInIntAttr(SEXP out, const char *what,
     }
     int totN = Rf_ncols(cur);
     SEXP curAttr = PROTECT(Rf_getAttrib(cur, Rf_install(what)));
-    int has = (TYPEOF(curAttr) == INTSXP && Rf_length(curAttr) == totN);
+    int isInt = (TYPEOF(curAttr) == INTSXP);
+    int isReal = (TYPEOF(curAttr) == REALSXP);
+    int has = ((isInt || isReal) && Rf_length(curAttr) == totN);
     for (int cursame = nsame; cursame--;) {
       for (int j = 0; j < totN; ++j) {
-	outi[curBand + j] = has ? INTEGER(curAttr)[j] : 0;
+	if (!has) {
+	  outi[curBand + j] = 0;
+	} else if (isInt) {
+	  outi[curBand + j] = INTEGER(curAttr)[j];
+	} else {
+	  double v = REAL(curAttr)[j];
+	  outi[curBand + j] = (ISNA(v) || ISNAN(v)) ? 0 : (int)v;
+	}
       }
       curBand += totN;
     }
