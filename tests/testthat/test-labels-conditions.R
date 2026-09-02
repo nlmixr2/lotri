@@ -88,3 +88,74 @@ test_that("a single non-default level keeps its name", {
     b ~ 0.6 | occ
   })))), c("id", "occ"))
 })
+
+test_that("only the open block follows a condition to its level", {
+
+  ## The rows of one block share a level because they covary, so a
+  ## condition written on a continuation carries THAT block over.  It
+  ## used to carry the whole default level with it, relocating
+  ## parameters declared long before and unrelated to the block.
+  .m <- lotri::lotri({
+    z1a + z1b + z1c ~ c(1,
+                        0.1, 2,
+                        0.1, 0.1, 3)
+    z2a + z2b ~ c(1.2,
+                  0.1, 2.2)
+    z3 ~ 1.3 * 1
+    z4 ~ c(0.1, 2.4) | occ
+  })
+
+  expect_equal(dimnames(unclass(.m$id))[[1]],
+               c("z1a", "z1b", "z1c", "z2a", "z2b"))
+  expect_equal(dimnames(unclass(.m$occ))[[1]], c("z3", "z4"))
+
+  ## the two-statement shape too
+  .s <- lotri::lotri({
+    z1 ~ 1.1
+    z2 ~ 1.2
+    z3 ~ c(0.1, 2.3) | occ
+  })
+  expect_equal(dimnames(unclass(.s$id))[[1]], "z1")
+  expect_equal(dimnames(unclass(.s$occ))[[1]], c("z2", "z3"))
+
+  ## a block opened in the line form and conditioned on its LAST row
+  ## still moves whole
+  .l <- lotri::lotri({
+    f ~ 1
+    g ~ c(0.5, 1)
+    h ~ c(0.1, 0.2, 2) | occ
+    m ~ 2
+  })
+  expect_equal(dimnames(unclass(.l$occ))[[1]], c("f", "g", "h"))
+  expect_equal(dimnames(unclass(.l$id))[[1]], "m")
+})
+
+test_that("an unconditioned line is not folded into a stale level", {
+
+  ## a line that cannot be parsed at the default level fell back to the
+  ## most recently SEEN condition, even when the block right before it
+  ## was at the default level -- so a parameter with no condition landed
+  ## at a level of variability it was never given
+  expect_error(lotri::lotri({
+    z1 ~ 1.1 | occ
+    z2 ~ 1.2
+    z3a + z3b ~ c(1.3,
+                  0.1, 2.3)
+    z4 ~ c(0.1, 2.4)
+  }), "lotri syntax errors above")
+
+  ## the fold itself is still there when the block before it really is
+  ## at that level: an unconditioned continuation joins it
+  .m <- lotri::lotri({
+    a ~ 1 | occ
+    b ~ c(0.1, 2)
+  })
+  expect_equal(dimnames(unclass(.m$occ))[[1]], c("a", "b"))
+
+  .m2 <- lotri::lotri({
+    a ~ 1 | occ
+    b ~ c(0.1, 2)
+    d ~ c(0.1, 0.2, 3)
+  })
+  expect_equal(dimnames(unclass(.m2$occ))[[1]], c("a", "b", "d"))
+})

@@ -234,6 +234,19 @@ lotri({
 
 ## Bug fixes
 
+* A condition written on a continuation no longer relocates unrelated
+  parameters.  The rows of one block share a level of variability
+  because they covary, so a condition on a later row carries that block
+  over -- but it used to carry the whole default level with it, so
+  parameters declared long before, and unrelated to the block, silently
+  changed level.
+
+* A line that cannot be parsed at the default level is no longer folded
+  into the most recently *seen* condition.  It is folded only when the
+  block immediately before it is at that level, which is what the
+  fallback was for; otherwise a parameter with no condition could land
+  at a level of variability it was never given.
+
 * Labels are no longer lost, or attached to the wrong parameter, when a
   block has more than one level of variability.  Which level a trailing
   `label()` belonged to was decided by whether the DEFAULT level had any

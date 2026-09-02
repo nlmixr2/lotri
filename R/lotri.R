@@ -372,14 +372,20 @@ NULL
 #' @noRd
 #' @author Matthew L. Fidler
 .handleLastExprIsCndForFrm2 <- function(x2, x3, env) {
-  if (exists("lastCnd", env)) {
+  ## Only fall back into a level when the LAST `~` actually went there.
+  ## Merely having seen that level earlier is not enough: an
+  ## unconditioned line whose preceding block is at the default level
+  ## would otherwise be pulled into a condition it was never given.
+  if (isTRUE(env$lastTildeInCnd) && exists("lastCnd", env)) {
     .cnd <- env$lastCnd
     if (exists(.cnd, env)) {
       .env2 <- env[[.cnd]]
       .env2$lastN <- max(.env2$df$i)
       .len <- length(.env2$df$i)
+      env$lastFoldedIntoCnd <- FALSE
       .lotri1(x2, x3, .env2)
       if (.len < length(.env2$df$i)) {
+        env$lastFoldedIntoCnd <- TRUE
         return(TRUE)
       }
     }
@@ -613,7 +619,6 @@ NULL
           .cnd <- .cndFull[[1]]
           if (exists("lastCnd", env)) {
             if (env$lastCnd == .cnd) {
-              env$lastTildeInCnd <- TRUE
               if (exists(.cnd, env)) {
                 .lotri1(x[[2]], x[[3]][[2]], env[[.cnd]], env)
               } else {
@@ -632,7 +637,6 @@ NULL
           .env2$lastN <- 0L
           env$cnd <- unique(c(env$cnd, .cnd))
           env$lastCnd <- .cnd
-          env$lastTildeInCnd <- TRUE
           env[[.cnd]] <- .env2
           env[[paste0(.cnd, ".extra")]] <- .cndFull[[2]]
           .val <- .lotriParseMat(x[[3]][[2]], env=env, noMat=TRUE)
@@ -650,20 +654,42 @@ NULL
           if (is.name(x[[2]]) &&
                 length(.val) >= 2L &&
                 length(.val) == env$lastN+1) {
-            .env2$df <- env$df
-            .env2$eta1 <- env$eta1
+            ## Only the OPEN block moves.  The rows of one block share a
+            ## level because they covary, so a condition on a
+            ## continuation carries that block over -- but everything
+            ## declared before it stays where it was declared.  Moving
+            ## the whole environment relocated unrelated parameters to
+            ## this level.
+            .lotriSamePad(env)
+            ## in the line form `eta1` stays at the block's FIRST row
+            ## while `lastN` counts how many rows it has, so everything
+            ## before the open block is rows 1..eta1-1
+            .cut <- max(env$eta1 - 1L, 0L)
+            .mv <- which(env$df$i > .cut & env$df$j > .cut)
+            .keep <- setdiff(seq_along(env$df$i), .mv)
+            .env2$df <- env$df[.mv, , drop=FALSE]
+            .env2$df$i <- .env2$df$i - .cut
+            .env2$df$j <- .env2$df$j - .cut
+            .env2$eta1 <- env$eta1 - .cut
             .env2$lastN <- env$lastN
-            .env2$names <- env$names
-            .env2$labels <- env$labels
-            .env2$sameOff <- env$sameOff
+            ## `x[-seq_len(0)]` is EMPTY, not everything, so the tail
+            ## is taken by a positive test rather than a negative index
+            .tailOf <- function(v) {
+              if (is.null(v)) return(NULL)
+              v[seq_along(v) > .cut]
+            }
+            .env2$names <- .tailOf(env$names)
+            .env2$labels <- .tailOf(env$labels)
+            .env2$sameOff <- .tailOf(env$sameOff)
             .env2$sameBlkN <- env$sameBlkN
             .env2$sameMasterBase <- env$sameMasterBase
-            # moved to .env2 for parsing
-            env$df <- NULL
+            # what stays behind keeps its own rows
+            env$df <- if (length(.keep) == 0L) NULL else env$df[.keep, , drop=FALSE]
             env$lastN <- 0
-            env$eta1 <- 0
-            env$names <- character(0)
-            env$sameOff <- NULL
+            env$eta1 <- .cut
+            env$names <- env$names[seq_len(.cut)]
+            env$labels <- env$labels[seq_len(.cut)]
+            env$sameOff <- env$sameOff[seq_len(.cut)]
             env$sameBlkN <- NULL
             env$sameMasterBase <- NULL
             .lotri1(x[[2]], x[[3]][[2]], .env2)
@@ -780,6 +806,28 @@ NULL
   NULL
 }
 
+#' Did this `~` line name a level of variability?
+#'
+#' Read from the syntax rather than tracked while parsing, so it always
+#' describes the line that has just been handled -- which is what the
+#' next line, and any trailing `label()`, need to know.
+#'
+#' @param x the `~` language object
+#' @param env parse environment
+#' @return TRUE when the right hand side carries a `| cnd`, or when an
+#'   unconditioned line was folded into a level anyway
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriTildeInCnd <- function(x, env) {
+  if (length(x) == 3L && is.call(x[[3]]) &&
+        identical(x[[3]][[1]], quote(`|`))) {
+    return(TRUE)
+  }
+  ## an unconditioned continuation that `.handleLastExprIsCndForFrm2()`
+  ## folded into the previous line's level stays at that level
+  isTRUE(env$lastFoldedIntoCnd)
+}
+
 #' Is this expression a `name(s) ~ same()` line?
 #'
 #' @param x language object to test
@@ -821,7 +869,6 @@ NULL
   }
   .tgt <- env
   .at <- ""
-  env$lastTildeInCnd <- FALSE
   if (!is.null(.same$cnd)) {
     .cnd <- .parseCondition(.same$cnd, envir=env)[[1]]
     .at <- paste0(" at level '", .cnd, "'")
@@ -833,7 +880,6 @@ NULL
     ##   c1 + d1 ~ same() | occ      <- used to say "nothing to repeat"
     if (exists(.cnd, env)) {
       .tgt <- env[[.cnd]]
-      env$lastTildeInCnd <- TRUE
       env$lastCnd <- .cnd
     } else {
       stop("'same()' has no block to repeat", .at, call.=FALSE)
@@ -924,10 +970,6 @@ NULL
 #'
 #' @noRd
 .fCallTilde <- function(x, env) {
-  ## which environment a following `label()` belongs to depends on
-  ## whether THIS line was conditioned; cleared here and set by the `|`
-  ## branch of `.fcallTildeLhsSum()` below
-  env$lastTildeInCnd <- FALSE
   if (length(x) != 3) {
     .possible <- paste("quote(variableName",
                        .deparse1(x), # nolint
@@ -2072,6 +2114,7 @@ NULL
 #' @author Matthew L. Fidler
 .fCall <- function(x, env) {
   if (.lotriIsSameLine(x)) {
+    on.exit(env$lastTildeInCnd <- .lotriTildeInCnd(x, env), add=TRUE)
     ## Checked before every prior branch: `.lotriIsThetaPriorLine()` would
     ## otherwise claim `tka ~ same()` whenever `tka` is a population
     ## estimate and route it into `.fCallTilde()` with a useless message.
@@ -2103,7 +2146,12 @@ NULL
     .fCallThetaPrior(x, env)
   } else if (identical(x[[1]], quote(`~`))) {
     .lotriEnv$lastTilde <- TRUE
+    env$lastFoldedIntoCnd <- FALSE
     .fCallTilde(x, env)
+    ## record, for the NEXT line, whether this one named a level: an
+    ## unconditioned continuation joins the block before it, and a
+    ## trailing `label()` belongs wherever that block went
+    env$lastTildeInCnd <- .lotriTildeInCnd(x, env)
   } else if (identical(x[[1]], quote(`{`))) {
     .x <- x[-1]
     for (.i in seq_along(.x)) {
