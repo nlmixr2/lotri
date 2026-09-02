@@ -359,3 +359,63 @@ test_that("a data frame with a broken same pointer is rejected", {
   .fwd$condition[.fwd$name == "a"] <- "id:same:d1"
   expect_error(lotri::as.lotri(.fwd), "must refer to an earlier parameter")
 })
+
+test_that("as.expression() only writes same() when it really re-parses", {
+
+  ## `same()` carries no values of its own, so emitting it for a block
+  ## that does not actually equal its claimed master would silently
+  ## re-parse to a DIFFERENT matrix.  Such a matrix falls back to being
+  ## written out with its explicit values.
+  .m <- lotri::lotri({
+    a + b ~ c(1,
+              0.1, 2)
+    c1 + d1 ~ same()
+  })
+
+  .bad <- unclass(.m)
+  .bad[3, 3] <- 99
+  attr(.bad, "lotriSame") <- c(0L, 0L, 2L, 2L)
+  class(.bad) <- c("lotriFix", "matrix", "array")
+
+  expect_false(any(grepl("same()", as.character(as.expression(.bad)),
+                         fixed = TRUE)))
+  expect_equal(unclass(eval(as.expression(.bad))), unclass(.bad),
+               ignore_attr = TRUE)
+
+  ## a block that mirrors a mirror is likewise not re-emitted as
+  ## `same()`, because a re-parsed `same()` always repeats the ORIGINAL
+  ## block and would come back with different offsets
+  .chain <- unclass(lotri::lotri({
+    a + b ~ c(1,
+              0.1, 2)
+    c1 + d1 ~ same()
+    e1 + f1 ~ same()
+  }))
+  attr(.chain, "lotriSame") <- c(0L, 0L, 2L, 2L, 2L, 2L)
+  class(.chain) <- c("lotriFix", "matrix", "array")
+  expect_equal(unclass(eval(as.expression(.chain))), unclass(.chain),
+               ignore_attr = TRUE)
+
+  ## the ordinary case is unaffected
+  expect_true(any(grepl("c1 + d1 ~ same()",
+                        as.character(as.expression(.m)), fixed = TRUE)))
+})
+
+test_that("a repeat whose fixed flags differ is not re-emitted as same()", {
+
+  .m <- lotri::lotri({
+    a + b ~ fix(1,
+                0.1, 2)
+    c1 + d1 ~ same()
+  })
+
+  .bad <- unclass(.m)
+  .f <- attr(.m, "lotriFix")
+  .f[3:4, 3:4] <- FALSE
+  attr(.bad, "lotriSame") <- c(0L, 0L, 2L, 2L)
+  attr(.bad, "lotriFix") <- .f
+  class(.bad) <- c("lotriFix", "matrix", "array")
+
+  expect_false(any(grepl("same()", as.character(as.expression(.bad)),
+                         fixed = TRUE)))
+})

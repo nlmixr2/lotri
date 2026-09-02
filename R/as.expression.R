@@ -263,7 +263,23 @@
     if (length(unique(.s)) != 1L) return(FALSE)
     .w <- which(.starts == .starts[.i] - .s[1])
     if (length(.w) != 1L) return(FALSE)
-    isTRUE(dim(x[[.w]])[1] == dim(x[[.i]])[1])
+    if (!isTRUE(dim(x[[.w]])[1] == dim(x[[.i]])[1])) return(FALSE)
+    ## the master must not itself be a copy: re-parsing `same()` always
+    ## repeats the ORIGINAL block, so emitting it for a block that
+    ## mirrors a mirror would come back with different offsets
+    .ms <- attr(x[[.w]], "lotriSame")
+    if (!is.null(.ms) && any(.ms != 0L)) return(FALSE)
+    ## and the values must really match, or `same()` re-parses to a
+    ## DIFFERENT matrix -- silently, since it carries no values of its own
+    if (!isTRUE(all.equal(unclass(x[[.i]]), unclass(x[[.w]]),
+                          check.attributes=FALSE))) {
+      return(FALSE)
+    }
+    .fi <- attr(x[[.i]], "lotriFix")
+    .fw <- attr(x[[.w]], "lotriFix")
+    if (is.null(.fi) != is.null(.fw)) return(FALSE)
+    if (!is.null(.fi) && !identical(unname(.fi), unname(.fw))) return(FALSE)
+    TRUE
   }, logical(1), USE.NAMES=FALSE)
 }
 
