@@ -39,45 +39,78 @@
     ## the run of rows carrying this offset ...
     .j <- .i
     while (.j < .n && .out[.j + 1L] == .d) .j <- .j + 1L
-    ## ... taken `.d` rows at a time, so that repeated blocks which have
-    ## become adjacent are separated rather than fused into one family
+    ## ... taken a block at a time.  The width is not simply `.d`: a run
+    ## of one offset can be one wide block, or several narrow ones whose
+    ## masters happen to sit that far back.  The widest valid reading is
+    ## taken, which keeps a genuine family from being thrown away
+    ## because a bogus one landed next to it in the run.
     .k <- .i
     while (.k <= .j) {
-      .e <- min(.k + .d - 1L, .j)
-      .w <- .k:.e
-      .mw <- .w - .d
-      ## the master must be a real master, not itself a copy
-      .keep <- all(.out[.mw] == 0L)
-      ## and both ranges must be separated from the rest of the matrix.
-      ## A range that covaries with anything outside it is not a block
-      ## `same()` could ever have declared, and forcing a block boundary
-      ## through it in `.lotriSameSplit()` would drop that covariance
-      ## from the emitted expression.
-      if (.keep) {
-        .keep <- all(vapply(list(.w, .mw), function(.r) {
-          .o <- setdiff(seq_len(.n), .r)
-          length(.o) == 0L || all(mat[.r, .o] == 0)
-        }, logical(1), USE.NAMES=FALSE))
+      .wid <- 0L
+      .max <- min(.d, .j - .k + 1L)
+      for (.try in seq(.max, 1L)) {
+        if (.lotriSameOkFamily(mat, .out, .k, .try, .d, .n)) {
+          .wid <- .try
+          break
+        }
       }
-      if (.keep) {
-        .keep <- all(vapply(.w, function(.a) {
-          all(vapply(.w, function(.b) {
-            isTRUE(all.equal(mat[.a, .b], mat[.a - .d, .b - .d],
-                             tolerance=0))
-          }, logical(1), USE.NAMES=FALSE))
-        }, logical(1), USE.NAMES=FALSE))
+      if (.wid == 0L) {
+        .out[.k] <- 0L
+        .k <- .k + 1L
+        next
       }
-      if (.keep) {
-        .fam[[length(.fam) + 1L]] <- list(master=.mw, copy=.w, d=.d)
-      } else {
-        .out[.w] <- 0L
-      }
-      .k <- .e + 1L
+      .w <- .k:(.k + .wid - 1L)
+      .fam[[length(.fam) + 1L]] <- list(master=.w - .d, copy=.w, d=.d)
+      .k <- .k + .wid
     }
     .i <- .j + 1L
   }
   if (length(.fam) == 0L) return(NULL)
   list(same=.out, families=.fam)
+}
+
+#' Is one candidate repeated block valid?
+#'
+#' @param mat the whole matrix
+#' @param out the offsets decided so far -- earlier rows are already
+#'   settled, which is what makes "the master is a real master"
+#'   answerable
+#' @param k first row of the candidate copy
+#' @param wid candidate width
+#' @param d the offset
+#' @param n `dim(mat)[1]`
+#' @return TRUE when this really describes a repetition that can be
+#'   written back out
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriSameOkFamily <- function(mat, out, k, wid, d, n) {
+  .w <- k:(k + wid - 1L)
+  .mw <- .w - d
+  if (.mw[1] < 1L) return(FALSE)
+  if (!all(out[.w] == d)) return(FALSE)
+  ## the master must be a real master, not itself a copy
+  if (!all(out[.mw] == 0L)) return(FALSE)
+  for (.r in list(.w, .mw)) {
+    ## the range must be separated from the rest of the matrix: one that
+    ## covaries outside itself is not a block `same()` could have
+    ## declared
+    .o <- setdiff(seq_len(n), .r)
+    if (length(.o) > 0L && !all(mat[.r, .o] == 0)) return(FALSE)
+    ## and the boundary this range forces must not cut a covariance that
+    ## spans it, or `.lotriSameSplit()` would drop that value entirely
+    .before <- seq_len(min(.r) - 1L)
+    .after <- if (max(.r) < n) seq(max(.r) + 1L, n) else integer(0)
+    if (length(.before) > 0L && length(.after) > 0L &&
+          !all(mat[.before, .after] == 0)) {
+      return(FALSE)
+    }
+  }
+  ## and every cell must really equal the cell it claims to repeat
+  all(vapply(.w, function(.a) {
+    all(vapply(.w, function(.b) {
+      isTRUE(all.equal(mat[.a, .b], mat[.a - d, .b - d], tolerance=0))
+    }, logical(1), USE.NAMES=FALSE))
+  }, logical(1), USE.NAMES=FALSE))
 }
 
 #' Cleaned `lotriSame` offsets for a matrix
@@ -159,7 +192,16 @@
 #' @author Matthew L. Fidler
 .lotriSameSplit <- function(mat) {
   .f <- .lotriSameFamilies(mat, attr(mat, "lotriSame"))
-  if (is.null(.f)) return(lotriMatInv(mat)) # nolint
+  if (is.null(.f)) {
+    ## nothing survived, so the emitters must not see the raw offsets
+    ## either -- they would otherwise re-invent a linkage this view has
+    ## just rejected
+    attr(mat, "lotriSame") <- NULL
+    return(lotriMatInv(mat)) # nolint
+  }
+  ## the blocks carry the VALIDATED offsets, so `.lotriSameEmit()`,
+  ## `as.data.frame()` and `print()` cannot disagree
+  attr(mat, "lotriSame") <- .f$same
   .n <- dim(mat)[1]
   .end <- logical(.n)
   .p <- 0L

@@ -1093,3 +1093,79 @@ test_that("a repeated block must be separated from the rest of the matrix", {
   expect_equal(unname(unclass(.rt)[1, 3]), 0.2)
   expect_equal(unclass(.rt), unclass(.l), ignore_attr = TRUE)
 })
+
+test_that("a forced block boundary may not cut a covariance that spans it", {
+
+  ## the family's own rows can be decoupled while the boundary it forces
+  ## still separates two rows that DO covary.  `x1` and `x3` are each
+  ## separated, but cutting after `x3` splits `x2` from `x4`.
+  .m <- lotri::lotri({
+    x1 ~ 2
+    x2 + x3 + x4 ~ c(1.6,
+                     0, 2,
+                     0.25, 0, 1.9)
+    label("L")
+  })
+  .df <- as.data.frame(.m)
+  .df$condition[.df$name == "x3"] <- "id:same:x1"
+  .l <- lotri::lotriEst(lotri::as.lotri(.df), drop = TRUE)
+
+  ## the 3x3 must stay whole ...
+  expect_equal(vapply(lotri:::.lotriSameSplit(.l),
+                      function(x) dim(x)[1], integer(1)),
+               c(1L, 3L))
+  ## ... so the covariance that spans the cut survives
+  expect_equal(unname(unclass(.l)["x2", "x4"]), 0.25)
+  expect_equal(unname(unclass(eval(as.expression(.l)))["x2", "x4"]), 0.25)
+})
+
+test_that("a valid family survives a bogus one in the same run", {
+
+  ## `x3` mirrors `x1` legitimately; `x4` is hand pointed at `x2`, a
+  ## copy, so it is bogus.  Both carry offset 2, and reading the run as
+  ## one 2 wide family threw the valid one away with the bogus one.
+  .m <- lotri::lotri({
+    x1 ~ 2.3
+    x2 ~ same()
+    x3 ~ same()
+    x4 ~ 2.3
+    label("L")
+  })
+  .df <- as.data.frame(.m)
+  .df$condition[.df$name == "x4"] <- "id:same:x2"
+  .l <- lotri::lotriEst(lotri::as.lotri(.df), drop = TRUE)
+
+  expect_equal(attr(.l, "lotriSame"), c(0L, 1L, 2L, 2L))
+  expect_equal(lotri:::.lotriSameClean(.l, attr(.l, "lotriSame")),
+               c(0L, 1L, 2L, 0L))
+
+  ## and all three consumers must agree about it
+  .df2 <- as.data.frame(.l)
+  expect_equal(.df2$condition, c("id", "id:same:x1", "id:same:x1", "id"))
+  expect_equal(attr(eval(as.expression(.l)), "lotriSame"),
+               c(0L, 1L, 2L, 0L))
+  expect_equal(as.data.frame(eval(as.expression(.l))), .df2)
+  expect_true(any(grepl("x3 repeat x1", capture.output(print(.l)),
+                        fixed = TRUE)))
+})
+
+test_that("as.expression() never sees an offset the family view rejected", {
+
+  ## `.lotriSameSplit()` stamps the validated offsets onto the blocks it
+  ## returns, so the emitter cannot re-invent a linkage that
+  ## `as.data.frame()` dropped
+  .m <- lotri::lotri({
+    a + b ~ c(1,
+              0.1, 2)
+    c1 + d1 ~ same()
+  })
+  .b <- lotri::lotriMatInv(.m)[[2]]        # offsets point before row 1
+  expect_equal(attr(.b, "lotriSame"), c(2L, 2L))
+  expect_false(any(lotri::lotriIsSame(as.data.frame(.b)$condition)))
+  .rt <- eval(as.expression(.b))
+  expect_null(attr(.rt, "lotriSame"))
+  ## with the linkage gone the result is a plain matrix, so compare the
+  ## numbers rather than the data frame (which would dispatch to the
+  ## base `as.data.frame()` method)
+  expect_equal(unclass(.rt), unclass(.b), ignore_attr = TRUE)
+})
