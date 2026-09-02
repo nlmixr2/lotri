@@ -584,3 +584,37 @@ test_that("a prior cannot be put on a repeated block", {
     prior(a, b) ~ lkjCorr(2)
   }), NA)
 })
+
+test_that("a repeated block survives lotriSep() nesting", {
+
+  ## the end-to-end IOV shape: a correlated 2x2 repeated with `same()`,
+  ## then that whole level stamped once per occasion by `lotriSep()`
+  .n <- lotri::lotri({
+    eta.ka ~ 0.6
+    a + b ~ c(1,
+              0.1, 2) | occ
+    c1 + d1 ~ same() | occ
+  })
+
+  .s <- lotri::lotriSep(.n, above = c(id = 1L), below = c(occ = 2L))
+  expect_equal(attr(.s$below$occ, "lotriSame"), c(0L, 0L, 2L, 2L))
+
+  .mm <- lotri::lotriMat(.s$below, format = "ETA[%d]", start = 1L)
+  ## 1 id eta + 2 occasions x 4 etas
+  expect_equal(dim(.mm), c(9L, 9L))
+  expect_equal(attr(.mm, "lotriSame"),
+               c(0L, rep(c(0L, 0L, 2L, 2L), 2)))
+})
+
+test_that("the condition base follows the `default` argument", {
+
+  .m <- lotri::lotri({
+    a + b ~ c(1,
+              0.1, 2)
+    c1 + d1 ~ same()
+  })
+
+  expect_equal(as.data.frame(.m, default = "occ")$condition,
+               c("occ", "occ", "occ",
+                 "occ:same:a", "occ:same:a:b", "occ:same:b"))
+})
