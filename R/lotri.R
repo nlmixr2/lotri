@@ -508,10 +508,13 @@ NULL
       ## lengths line up again and it becomes a silently wrong matrix.
       ## This has to run BEFORE `lastN` is set for a 1x1 block, or that
       ## assignment defeats it and the reset never moves `eta1`.
-      .resetLastN(env)
-      if (.num == 1) {
-        env$lastN <- 1
-      }
+      ## `lastN` is how many rows of an OPEN line-form block are still
+      ## accumulating.  A finished plus-form block of 2 or more rows is
+      ## not open -- leaving it at 1 made a following line-form row look
+      ## like a continuation of it, which is how an unconditioned block
+      ## could be dragged into a later `| cnd` level.  A 1x1 is genuinely
+      ## continuable (`a ~ 1; b ~ c(0.1, 2)`).
+      .resetLastN(env, if (.num == 1) 1L else 0L)
       env$names <- c(env$names, .n)
       env$labels <- c(env$labels, rep(NA_character_, length(.n)))
       .j <- 1
@@ -636,7 +639,16 @@ NULL
           .fix <- .val[[2]]
           .unfix <- .val[[3]]
           .val <- .val[[1]]
-          if (length(.val) >= 2L &&
+          ## A conditioned line only CONTINUES the open block when it is
+          ## the line form, i.e. one name on the left.  A plus-form LHS
+          ## always opens a fresh block, and matching on the value count
+          ## alone let one hijack the default level's rows -- moving
+          ## parameters that were never conditioned into this level.
+          ## That used to blow up loudly in the `.lotri1()` parse below;
+          ## settling the row counter made the lengths line up and it
+          ## became a silently different model.
+          if (is.name(x[[2]]) &&
+                length(.val) >= 2L &&
                 length(.val) == env$lastN+1) {
             .env2$df <- env$df
             .env2$eta1 <- env$eta1

@@ -1584,7 +1584,10 @@ test_that("random programs parse to the matrix a reference model predicts", {
 
   for (.it in seq_len(300)) {
     .lines <- character(0)
+    .blockOf <- integer(0)
     .blocks <- list()
+    .nmOf <- list()
+    .sameOf <- integer(0)
     .nms <- character(0)
     .prev <- NULL
     .prevK <- 0L
@@ -1595,6 +1598,7 @@ test_that("random programs parse to the matrix a reference model predicts", {
       .k <- if (.useSame) .prevK else sample(1:3, 1)
       .nm <- paste0("v", .ctr + seq_len(.k))
       .ctr <- .ctr + .k
+      .nLinesBefore <- length(.lines)
       if (.useSame) {
         .m <- .prev
         .lines <- c(.lines, paste0(paste(.nm, collapse = " + "), " ~ same()"))
@@ -1620,30 +1624,107 @@ test_that("random programs parse to the matrix a reference model predicts", {
         .prevK <- .k
       }
       .blocks[[length(.blocks) + 1L]] <- .m
+      .sameOf <- c(.sameOf,
+                   if (.useSame) length(.blocks) - 1L else 0L)
+      .nmOf[[length(.blocks)]] <- .nm
+      .blockOf <- c(.blockOf,
+                    rep(length(.blocks), length(.lines) - .nLinesBefore))
       .nms <- c(.nms, .nm)
     }
 
-    .cnd <- runif(1) < 0.4
-    if (.cnd) {
-      .lines <- vapply(.lines, function(.l) paste0(.l, " | occ"),
-                       character(1), USE.NAMES = FALSE)
+    ## the condition is chosen per BLOCK, not per program: a bug that
+    ## drags an unconditioned block into a later level can only show up
+    ## when the two are mixed
+    .lvl <- vapply(seq_along(.blocks), function(.i) {
+      if (runif(1) < 0.35) "occ" else "id"
+    }, character(1), USE.NAMES = FALSE)
+    ## a `same()` copy repeats the block before it, so it has to sit at
+    ## that block's level -- `same()` only ever looks within one level
+    for (.i in seq_along(.sameOf)) {
+      if (.sameOf[.i] > 0L) .lvl[.i] <- .lvl[.sameOf[.i]]
     }
+    .lines <- unlist(lapply(seq_along(.lines), function(.i) {
+      if (.lvl[.blockOf[.i]] == "occ") paste0(.lines[.i], " | occ") else .lines[.i]
+    }), use.names = FALSE)
     .txt <- paste0("lotri::lotri({", paste(.lines, collapse = "; "), "})")
 
     .got <- eval(parse(text = .txt))
-    if (.cnd) .got <- .got$occ
 
-    .n <- length(.nms)
-    .exp <- matrix(0, .n, .n, dimnames = list(.nms, .nms))
-    .p <- 0L
-    for (.m in .blocks) {
-      .k <- nrow(.m)
-      .exp[.p + seq_len(.k), .p + seq_len(.k)] <- .m
-      .p <- .p + .k
+    ## every level must contain exactly the parameters declared at it
+    for (.l in unique(.lvl)) {
+      .want <- unlist(.nmOf[.lvl == .l], use.names = FALSE)
+      .have <- if (is.list(.got)) {
+        dimnames(unclass(.got[[.l]]))[[1]]
+      } else {
+        dimnames(unclass(.got))[[1]]
+      }
+      expect_equal(.have, .want, info = .txt)
+
+      ## and hold the values the reference model predicts
+      .n <- length(.want)
+      .exp <- matrix(0, .n, .n, dimnames = list(.want, .want))
+      .p <- 0L
+      for (.bi in which(.lvl == .l)) {
+        .m <- .blocks[[.bi]]
+        .k <- nrow(.m)
+        .exp[.p + seq_len(.k), .p + seq_len(.k)] <- .m
+        .p <- .p + .k
+      }
+      .gm <- if (is.list(.got)) unclass(.got[[.l]]) else unclass(.got)
+      expect_equal(.gm[seq_len(.n), seq_len(.n), drop = FALSE], .exp,
+                   ignore_attr = TRUE, info = .txt)
     }
-
-    expect_equal(dimnames(unclass(.got))[[1]], .nms, info = .txt)
-    expect_equal(unclass(.got)[seq_len(.n), seq_len(.n), drop = FALSE],
-                 .exp, ignore_attr = TRUE, info = .txt)
   }
+})
+
+test_that("a block declared without a condition stays at the default level", {
+
+  ## A conditioned line was taken to CONTINUE the default level's open
+  ## block on a value-count test alone, with no check that the left hand
+  ## side is a single name.  A plus-form block whose value count matched
+  ## hijacked the default level: its rows were moved into the condition,
+  ## so parameters declared with no `| cnd` silently ended up at that
+  ## level of variability.  Before the row-counter fixes this blew up
+  ## loudly; afterwards the lengths lined up and it went quiet.
+  .m <- lotri::lotri({
+    z11 ~ 1.1
+    z12 ~ c(0.11, 2.2)
+    z21 + z22 ~ c(1.1,
+                  0.11, 2.2) | occ
+    z31 ~ 1.1
+  })
+
+  expect_equal(dimnames(unclass(.m$id))[[1]], c("z11", "z12", "z31"))
+  expect_equal(dimnames(unclass(.m$occ))[[1]], c("z21", "z22"))
+
+  ## with a repeated block on top
+  .s <- lotri::lotri({
+    a ~ 1
+    b ~ c(0.1, 2)
+    c1 + d1 ~ c(3,
+                0.2, 4) | occ
+    e1 + f1 ~ same() | occ
+  })
+  expect_equal(dimnames(unclass(.s$id))[[1]], c("a", "b"))
+  expect_equal(dimnames(unclass(.s$occ))[[1]],
+               c("c1", "d1", "e1", "f1"))
+  expect_equal(attr(.s$occ, "lotriSame"), c(0L, 0L, 2L, 2L))
+
+  ## the genuine line-form continuation under a condition is unaffected
+  .c <- lotri::lotri({
+    a ~ 1 | occ
+    b ~ c(0.1, 2) | occ
+  })
+  expect_equal(dim(unclass(.c$occ)), c(2L, 2L))
+  expect_equal(unname(unclass(.c$occ)[1, 2]), 0.1)
+
+  ## and so is a scalar opened at a level, then continued there
+  .k <- lotri::lotri({
+    a + b ~ c(1,
+              0.1, 2)
+    c1 ~ 3 | occ
+    d1 ~ c(0.2, 4) | occ
+  })
+  expect_equal(dimnames(unclass(.k$id))[[1]], c("a", "b"))
+  expect_equal(dimnames(unclass(.k$occ))[[1]], c("c1", "d1"))
 })
