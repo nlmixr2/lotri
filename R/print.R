@@ -67,17 +67,25 @@ print.lotriFix <- function(x, ...) {
     }
     if (!is.null(.lotriSame)) {
       .dn <- dimnames(.tmp)[[1]]
-      cat("\nThis matrix repeats blocks with `same()`:\n")
       .done <- integer(0)
+      .lines <- character(0)
       for (.i in seq_along(.lotriSame)) {
         .d <- .lotriSame[.i]
         if (.d == 0L || any(.done == .d)) next
         .done <- c(.done, .d)
         .w <- which(.lotriSame == .d)
-        cat("  ", paste(.dn[.w], collapse=", "), " repeat ",
-            paste(.dn[.w - .d], collapse=", "), "\n", sep="")
+        ## a block sliced away from its master points before row 1, so
+        ## there is no name to report it against
+        if (min(.w) - .d < 1L) next
+        .lines <- c(.lines,
+                    paste0("  ", paste(.dn[.w], collapse=", "), " repeat ",
+                           paste(.dn[.w - .d], collapse=", ")))
       }
-      cat("\n")
+      if (length(.lines) > 0L) {
+        cat("\nThis matrix repeats blocks with `same()`:\n")
+        cat(paste(.lines, collapse="\n"), "\n", sep="")
+        cat("\n")
+      }
     }
   } else {
     ## lotri or list

@@ -2594,6 +2594,14 @@ NULL
     .env2$fun <- env$fun
     .env2$df <- rbind(.env2$df, env$df)
     .env2$lastN <- 0
+    ## carry the `same()` offsets across with the rows they describe.
+    ## Padding has to happen BEFORE `names` is extended, since the
+    ## offsets are padded lazily up to the current name count.  They are
+    ## relative, so appending one env's block after another's leaves
+    ## every offset still pointing at its own master.
+    .lotriSamePad(.env2)
+    .lotriSamePad(env)
+    .env2$sameOff <- c(.env2$sameOff, env$sameOff)
     .env2$names <- c(.env2$names, env$names)
     .env2$labels <- c(.env2$labels, env$labels)
     .env2$eta1 <- env$eta1 + .env2$eta1
@@ -2606,6 +2614,10 @@ NULL
     .env2$rcm <- env$rcm
     .env2$fun <- env$fun
     .env2$eta1 <- env$eta1
+    .lotriSamePad(env)
+    .env2$sameOff <- env$sameOff
+    .env2$sameBlkN <- env$sameBlkN
+    .env2$sameMasterBase <- env$sameMasterBase
     .env2$names <- env$names
     .env2$labels <- env$labels
     env$cnd <- c(default, env$cnd)

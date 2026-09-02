@@ -48,7 +48,13 @@
           ## offsets are relative and point outside this block, so the
           ## master is resolved against the whole matrix's dimnames.
           .cnd <- default
-          if (!is.null(.curSame) && .curSame[.j] > 0L) {
+          ## A block sliced away from its master (`lotriMatInv(m)[[2]]`)
+          ## keeps an offset that now points before the first row.  The
+          ## linkage is not representable standalone, so the row is
+          ## written as an ordinary one rather than indexed out of range
+          ## into a plausible looking wrong name.
+          if (!is.null(.curSame) && .curSame[.j] > 0L &&
+                .env$eta1 + .k - 1 - .curSame[.k] - eta1 + 1L >= 1L) {
             ## `.env$eta1` counts GLOBALLY across conditions, but
             ## `.matNames` is this condition's own dimnames, so the
             ## master has to be shifted back by where this condition

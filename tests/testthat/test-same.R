@@ -618,3 +618,121 @@ test_that("the condition base follows the `default` argument", {
                c("occ", "occ", "occ",
                  "occ:same:a", "occ:same:a:b", "occ:same:b"))
 })
+
+test_that("a repeated block at the default level survives a condition", {
+
+  ## `.lotriExprCnd()` moves the default level's parse state into its own
+  ## environment; it carried the rows but not the offsets, so ANY
+  ## conditioned line in the same block silently dropped the linkage.
+  ## The values stayed right, so the only visible effect was a model
+  ## with twice as many free omega parameters as it should have.
+  for (.f in list(
+    function() lotri::lotri({
+      z ~ 3 | occ
+      a + b ~ c(1, 0.1, 2)
+      c1 + d1 ~ same()
+    }),
+    function() lotri::lotri({
+      a + b ~ c(1, 0.1, 2)
+      c1 + d1 ~ same()
+      z ~ 3 | occ
+    }),
+    function() lotri::lotri({
+      a + b ~ c(1, 0.1, 2)
+      c1 + d1 ~ same()
+      y + z ~ c(3, 0.2, 4) | occ
+    }))) {
+    .m <- .f()
+    expect_equal(attr(.m$id, "lotriSame"), c(0L, 0L, 2L, 2L))
+  }
+
+  ## the guards read the same attribute, so they were bypassed too
+  expect_error(lotri::lotri({
+    a + b ~ c(1, 0.1, 2)
+    c1 + d1 ~ same()
+    z ~ 3 | occ
+  }, rcm = TRUE), "'rcm' cannot be used with 'same()'", fixed = TRUE)
+
+  expect_error(lotri::lotri({
+    a + b ~ c(1, 0.1, 2)
+    c1 + d1 ~ same()
+    z ~ 3 | occ
+  }, cov = function(x) x * 2),
+  "a 'cov' function cannot be used with 'same()'", fixed = TRUE)
+})
+
+test_that("same() is not emitted across an intervening independent block", {
+
+  ## a re-parsed `same()` repeats the IMMEDIATELY PRECEDING block, so a
+  ## copy separated from its master by an unrelated block must be
+  ## written out with its values.  Reachable through the documented data
+  ## frame contract, since `as.lotri()` accepts any earlier parameter as
+  ## the master.
+  .m <- lotri::lotri({
+    a + b ~ c(1, 0.1, 2)
+    p1 + q1 ~ c(3, 0.2, 4)
+    c1 + d1 ~ c(1, 0.1, 2)
+    label("x")
+  })
+  .df <- as.data.frame(.m)
+  .df$condition[.df$name == "c1"] <- "id:same:a"
+  .df$condition[.df$name == "(c1,d1)"] <- "id:same:a:b"
+  .df$condition[.df$name == "d1"] <- "id:same:b"
+  .l <- lotri::as.lotri(.df)
+  expect_equal(attr(.l, "lotriSame"), c(0L, 0L, 0L, 0L, 4L, 4L))
+
+  expect_false(any(grepl("same()", as.character(as.expression(.l)),
+                         fixed = TRUE)))
+  .rt <- eval(as.expression(.l))
+  expect_equal(unclass(.rt), unclass(.l), ignore_attr = TRUE)
+  ## the copy keeps ITS values, not the intervening block's
+  expect_equal(unname(.rt["c1", "c1"]), 1)
+  expect_equal(unname(.rt["d1", "d1"]), 2)
+
+  ## a genuine chain, where every block in between repeats the same
+  ## master, is still emitted
+  .chain <- lotri::lotri({
+    a + b ~ c(1, 0.1, 2)
+    c1 + d1 ~ same()
+    e1 + f1 ~ same()
+  })
+  expect_true(any(grepl("e1 + f1 ~ same()",
+                        as.character(as.expression(.chain)), fixed = TRUE)))
+})
+
+test_that("a block sliced away from its master degrades gracefully", {
+
+  ## the offsets are relative, so an extracted copy points before row 1;
+  ## the linkage is not representable standalone and must not be
+  ## indexed out of range into a plausible looking wrong name
+  .m <- lotri::lotri({
+    a + b ~ c(1, 0.1, 2)
+    c1 + d1 ~ same()
+  })
+  .b <- lotri::lotriMatInv(.m)[[2]]
+  expect_equal(attr(.b, "lotriSame"), c(2L, 2L))
+
+  expect_equal(as.data.frame(.b)$condition, rep("id", 3))
+  expect_error(lotri::as.lotri(as.data.frame(.b)), NA)
+  expect_output(print(.b), "c1", fixed = TRUE)
+  expect_false(any(grepl("repeat",
+                         capture.output(print(.b)), fixed = TRUE)))
+})
+
+test_that("blocks that merely agree to a tolerance are not collapsed", {
+
+  .m <- lotri::lotri({
+    a + b ~ c(1, 0.1, 2)
+    c1 + d1 ~ same()
+  })
+  .near <- unclass(.m)
+  .near[3, 3] <- 1 + 1e-10
+  attr(.near, "lotriSame") <- c(0L, 0L, 2L, 2L)
+  class(.near) <- c("lotriFix", "matrix", "array")
+
+  ## `all.equal()`'s default tolerance would have called these equal and
+  ## written `same()`, changing the value on the round trip
+  expect_false(any(grepl("same()", as.character(as.expression(.near)),
+                         fixed = TRUE)))
+  expect_equal(unname(eval(as.expression(.near))[3, 3]), 1 + 1e-10)
+})

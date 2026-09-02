@@ -276,10 +276,26 @@
     ## mirrors a mirror would come back with different offsets
     .ms <- attr(x[[.w]], "lotriSame")
     if (!is.null(.ms) && any(.ms != 0L)) return(FALSE)
+    ## a re-parsed `same()` repeats the IMMEDIATELY PRECEDING block, so
+    ## every block between the master and this one must itself repeat
+    ## that same master -- which is exactly what a `same()` chain is.
+    ## An independent block in between would make the emitted expression
+    ## re-parse against the wrong master.
+    if (.i > .w + 1L) {
+      for (.b in seq(.w + 1L, .i - 1L)) {
+        .bs <- attr(x[[.b]], "lotriSame")
+        if (is.null(.bs) || any(.bs == 0L)) return(FALSE)
+        if (length(unique(.bs)) != 1L) return(FALSE)
+        if (.starts[.b] - .bs[1] != .starts[.w]) return(FALSE)
+      }
+    }
     ## and the values must really match, or `same()` re-parses to a
     ## DIFFERENT matrix -- silently, since it carries no values of its own
+    ## exact, not `all.equal()`'s default tolerance: a genuine copy is
+    ## bit identical to its master, and collapsing blocks that merely
+    ## agree to ~1e-8 would change the values on the round trip
     if (!isTRUE(all.equal(unclass(x[[.i]]), unclass(x[[.w]]),
-                          check.attributes=FALSE))) {
+                          check.attributes=FALSE, tolerance=0))) {
       return(FALSE)
     }
     .fi <- attr(x[[.i]], "lotriFix")
