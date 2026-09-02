@@ -84,6 +84,9 @@ This can take an R matrix, a list including matrices or
  (\code{name3 + name4 ~ same() | occ}), and inherits the fixed flags
  of the block it repeats.
 
+ A prior cannot be put on a repeated block: it is not a parameter of
+ its own, it is the block it mirrors, so the prior goes on that block.
+
  \code{same()} looks back only within one \code{{}} block, and only
  at its own level of variability.  Each extra argument to
  \code{lotri()} is parsed by its own call, so

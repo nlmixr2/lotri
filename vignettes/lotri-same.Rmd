@@ -84,6 +84,21 @@ lotri({
 })
 ```
 
+A prior cannot be put on a repeated block.  A copy is not a parameter of
+its own -- it *is* the block it mirrors -- so a prior on it would either
+duplicate the master's prior or silently contradict it:
+
+```{r, error = TRUE}
+lotri({
+  a + b ~ c(1,
+            0.1, 2)
+  c1 + d1 ~ same()
+  prior(c1) ~ dnorm(0, 1)
+})
+```
+
+Put it on the block that is actually estimated (`prior(a) ~ dnorm(0, 1)`).
+
 `same()` looks back only within one `{}` block, and only at its own
 level of variability.  Each extra argument to `lotri()` is parsed by its
 own call, so this has nothing to repeat:

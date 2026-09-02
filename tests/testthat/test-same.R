@@ -542,3 +542,45 @@ test_that("a label same() cannot carry blocks the same() shorthand", {
   expect_equal(attr(eval(as.expression(.bad)), "lotriLabels"),
                c(NA, NA, "first", NA))
 })
+
+test_that("a prior cannot be put on a repeated block", {
+
+  ## a copy is not a parameter of its own -- it IS the block it mirrors,
+  ## so a prior on it would duplicate or silently contradict the
+  ## master's prior
+  expect_error(lotri::lotri({
+    a + b ~ c(1, 0.1, 2)
+    c1 + d1 ~ same()
+    prior(c1) ~ dnorm(0, 1)
+  }), "put the prior on 'a'", fixed = TRUE)
+
+  expect_error(lotri::lotri({
+    a + b ~ c(1, 0.1, 2)
+    c1 + d1 ~ same()
+    prior(c1, d1) ~ lkjCorr(2)
+  }), "same()", fixed = TRUE)
+
+  ## the case that was silently accepted: two DIFFERENT priors on what
+  ## is one estimated parameter
+  expect_error(lotri::lotri({
+    a + b ~ c(1, 0.1, 2)
+    c1 + d1 ~ same()
+    prior(a) ~ dnorm(0, 1)
+    prior(c1) ~ dnorm(5, 9)
+  }), "same()", fixed = TRUE)
+
+  ## on the master it is fine, and still round trips
+  .m <- lotri::lotri({
+    a + b ~ c(1, 0.1, 2)
+    c1 + d1 ~ same()
+    prior(a) ~ dnorm(0, 1)
+  })
+  expect_equal(attr(.m, "lotriPriors"), c("dnorm(0, 1)", NA, NA, NA))
+  expect_equal(as.data.frame(eval(as.expression(.m))), as.data.frame(.m))
+
+  expect_error(lotri::lotri({
+    a + b ~ c(1, 0.1, 2)
+    c1 + d1 ~ same()
+    prior(a, b) ~ lkjCorr(2)
+  }), NA)
+})

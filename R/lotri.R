@@ -1947,6 +1947,30 @@ NULL
   }
   for (.k in seq_along(.mats)) {
     if (all(is.na(.pri[[.k]])) && length(.priOff[[.k]]) == 0L) next
+    ## A repeated block is not a parameter of its own -- it IS the block
+    ## it mirrors.  A prior written on a copy would either duplicate the
+    ## master's prior or, worse, silently contradict it, so it has to go
+    ## on the block that is actually estimated.
+    .same <- attr(.mats[[.k]], "lotriSame")
+    if (!is.null(.same) && any(.same != 0L)) {
+      .dn <- dimnames(.mats[[.k]])[[1]]
+      .w <- which(!is.na(.pri[[.k]]) & .same != 0L)
+      if (length(.w) > 0L) {
+        stop("'", .dn[.w[1]], "' repeats '", .dn[.w[1] - .same[.w[1]]],
+             "' with 'same()', so it cannot carry its own prior; ",
+             "put the prior on '", .dn[.w[1] - .same[.w[1]]], "'",
+             call.=FALSE)
+      }
+      for (.key in names(.priOff[[.k]])) {
+        .nm2 <- .lotriCovPriorKeyNames(.key)
+        .i <- match(.nm2[1], .dn)
+        if (!is.na(.i) && .same[.i] != 0L) {
+          stop("'", paste(.nm2, collapse=", "), "' repeats an earlier ",
+               "block with 'same()', so it cannot carry its own prior; ",
+               "put the prior on the block it repeats", call.=FALSE)
+        }
+      }
+    }
     .m <- .mats[[.k]]
     if (!all(is.na(.pri[[.k]]))) attr(.m, "lotriPriors") <- .pri[[.k]]
     if (length(.priOff[[.k]]) > 0L) attr(.m, "lotriOffDiagPriors") <- .priOff[[.k]]
@@ -2922,6 +2946,9 @@ NULL
 #'  no arguments, may be used with a condition
 #'  (\code{name3 + name4 ~ same() | occ}), and inherits the fixed flags
 #'  of the block it repeats.
+#'
+#'  A prior cannot be put on a repeated block: it is not a parameter of
+#'  its own, it is the block it mirrors, so the prior goes on that block.
 #'
 #'  \code{same()} looks back only within one \code{{}} block, and only
 #'  at its own level of variability.  Each extra argument to

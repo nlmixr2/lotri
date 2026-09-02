@@ -55,6 +55,11 @@ lotri({
   `same()` round trips through `as.data.frame()`, `as.lotri()` and
   `as.expression()`, and the linkage is carried across `lotriMat()`.
 
+  A prior cannot be put on a repeated block -- it is not a parameter of
+  its own, so the prior belongs on the block it mirrors.  Without this
+  a model could carry two different priors on what is one estimated
+  parameter.
+
   `same()` cannot be combined with `rcm=TRUE` or with a `cov` function;
   both would move a repeated block away from the block it repeats, and
   are refused rather than silently producing a matrix whose repetition
