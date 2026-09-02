@@ -1281,10 +1281,12 @@ test_that("every consumer agrees on the linkage, over random matrices", {
   ## round trip through the expression -- otherwise one object has two
   ## parameter counts depending on the route taken.  This is the check
   ## that catches the whole class of defects the reviews kept finding.
-  skip_on_cran()
+  ## scaled rather than skipped: a small run still guards the property
+  ## on CRAN, and a long one runs everywhere else
+  .iter <- if (identical(Sys.getenv("NOT_CRAN"), "true")) 400L else 40L
   set.seed(20260902)
 
-  for (.it in seq_len(400)) {
+  for (.it in seq_len(.iter)) {
     .n <- sample(2:6, 1)
     .m <- diag(round(runif(.n, 0.5, 3), 2))
     for (.k in seq_len(sample(0:3, 1))) {
@@ -1558,7 +1560,7 @@ test_that("random programs parse to the matrix a reference model predicts", {
   ## differential test (`same()` spelling vs the explicit one) cannot
   ## see them either, because both spellings corrupt identically.  Only
   ## an independent reference model catches them.
-  skip_on_cran()
+  .iter <- if (identical(Sys.getenv("NOT_CRAN"), "true")) 300L else 30L
   set.seed(20260902)
 
   .mkblk <- function(k) {
@@ -1582,7 +1584,7 @@ test_that("random programs parse to the matrix a reference model predicts", {
     .out
   }
 
-  for (.it in seq_len(300)) {
+  for (.it in seq_len(.iter)) {
     .lines <- character(0)
     .blockOf <- integer(0)
     .blocks <- list()
