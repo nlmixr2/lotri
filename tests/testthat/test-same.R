@@ -679,7 +679,10 @@ test_that("same() is not emitted across an intervening independent block", {
   .df$condition[.df$name == "(c1,d1)"] <- "id:same:a:b"
   .df$condition[.df$name == "d1"] <- "id:same:b"
   .l <- lotri::as.lotri(.df)
-  expect_equal(attr(.l, "lotriSame"), c(0L, 0L, 0L, 0L, 4L, 4L))
+  ## `same()` repeats the immediately preceding block, so a pointer that
+  ## skips `p1`/`q1` is not expressible and the linkage is dropped when
+  ## the frame is read -- the values are untouched
+  expect_null(attr(.l, "lotriSame"))
 
   expect_false(any(grepl("same()", as.character(as.expression(.l)),
                          fixed = TRUE)))
@@ -1032,8 +1035,8 @@ test_that("a valid repetition survives an invalid one next to it", {
                                                       c("g1", "h1")])))
   expect_equal(as.data.frame(lotri::as.lotri(.df)), .df)
 
-  ## and with coincident values it must not INVENT a copy of a copy,
-  ## which `same()` cannot re-parse
+  ## when the values DO coincide the offsets are read at face value: the
+  ## chain resolves and all three blocks are one estimated 2x2
   .m2 <- lotri::lotri({
     a + b ~ c(1,
               0.1, 2)
@@ -1044,8 +1047,7 @@ test_that("a valid repetition survives an invalid one next to it", {
   })
   .d2 <- lotri::lotriMat(lotri::lotriMatInv(.m2)[c(1, 2, 4)])
   .df2 <- as.data.frame(.d2)
-  expect_false(any(lotri::lotriIsSame(.df2$condition[.df2$name %in%
-                                                       c("g1", "h1")])))
+  expect_equal(.df2$condition[.df2$name == "g1"], "id:same:a")
   expect_equal(as.data.frame(lotri::as.lotri(.df2)), .df2)
   expect_equal(as.data.frame(eval(as.expression(lotri::as.lotri(.df2)))),
                .df2)
@@ -1173,15 +1175,17 @@ test_that("a valid family survives a bogus one in the same run", {
   .df$condition[.df$name == "x4"] <- "id:same:x2"
   .l <- lotri::lotriEst(lotri::as.lotri(.df), drop = TRUE)
 
-  expect_equal(attr(.l, "lotriSame"), c(0L, 1L, 2L, 2L))
-  expect_equal(lotri:::.lotriSameClean(.l, attr(.l, "lotriSame")),
-               c(0L, 1L, 2L, 0L))
+  ## `x4 -> x2 -> x1` resolves to `x4 -> x1`, and every value is 2.3, so
+  ## all three are one estimated parameter.  What matters is that the
+  ## legitimate `x3 -> x1` is NOT collateral damage, and that the three
+  ## consumers agree.
+  expect_equal(attr(.l, "lotriSame"), c(0L, 1L, 2L, 3L))
 
-  ## and all three consumers must agree about it
   .df2 <- as.data.frame(.l)
-  expect_equal(.df2$condition, c("id", "id:same:x1", "id:same:x1", "id"))
+  expect_equal(.df2$condition,
+               c("id", "id:same:x1", "id:same:x1", "id:same:x1"))
   expect_equal(attr(eval(as.expression(.l)), "lotriSame"),
-               c(0L, 1L, 2L, 0L))
+               c(0L, 1L, 2L, 3L))
   expect_equal(as.data.frame(eval(as.expression(.l))), .df2)
   expect_true(any(grepl("x3 repeat x1", capture.output(print(.l)),
                         fixed = TRUE)))
@@ -1240,4 +1244,101 @@ test_that("the data frame cannot encode a linkage same() cannot write", {
   expect_equal(attr(.chain, "lotriSame"), c(0L, 1L, 2L))
   expect_equal(as.data.frame(eval(as.expression(.chain))),
                as.data.frame(.chain))
+})
+
+test_that("a NONMEM style chain naming the preceding copy is normalised", {
+
+  ## NONMEM chains `SAME`, so a consumer writing this encoding naturally
+  ## names the block just before -- which is itself a copy.  `same()`
+  ## re-parses as repeating the ORIGINAL, so the two spellings mean the
+  ## same thing and the chain resolves rather than being dropped.
+  .df <- as.data.frame(lotri::lotri({
+    a + b ~ c(1,
+              0.1, 2)
+    c1 + d1 ~ same()
+    e1 + f1 ~ same()
+  }))
+  .df$condition[.df$name == "e1"] <- "id:same:c1"
+  .df$condition[.df$name == "(e1,f1)"] <- "id:same:c1:d1"
+  .df$condition[.df$name == "f1"] <- "id:same:d1"
+
+  .l <- lotri::as.lotri(.df)
+  expect_equal(attr(.l, "lotriSame"), c(0L, 0L, 2L, 2L, 4L, 4L))
+  ## all three blocks are one estimated 2x2, not two or three
+  expect_equal(as.data.frame(.l)$condition,
+               c("id", "id", "id",
+                 "id:same:a", "id:same:a:b", "id:same:b",
+                 "id:same:a", "id:same:a:b", "id:same:b"))
+  expect_equal(as.data.frame(lotri::as.lotri(as.data.frame(.l))),
+               as.data.frame(.l))
+  expect_equal(as.data.frame(eval(as.expression(.l))), as.data.frame(.l))
+})
+
+test_that("every consumer agrees on the linkage, over random matrices", {
+
+  ## the property that ties the three consumers together: whatever
+  ## `lotriSameMap()` says about a matrix, it must still say after a
+  ## round trip through the expression -- otherwise one object has two
+  ## parameter counts depending on the route taken.  This is the check
+  ## that catches the whole class of defects the reviews kept finding.
+  skip_on_cran()
+  set.seed(20260902)
+
+  for (.it in seq_len(400)) {
+    .n <- sample(2:6, 1)
+    .m <- diag(round(runif(.n, 0.5, 3), 2))
+    for (.k in seq_len(sample(0:3, 1))) {
+      .i <- sample(.n, 1)
+      .j <- sample(.n, 1)
+      if (.i != .j) {
+        .v <- round(runif(1, -0.3, 0.3), 2)
+        .m[.i, .j] <- .v
+        .m[.j, .i] <- .v
+      }
+    }
+    ## make genuine repetitions likely, not just random noise
+    if (runif(1) < 0.5 && .n >= 4) {
+      .k <- sample(seq_len(floor(.n / 2)), 1)
+      .m[(.k + 1):(2 * .k), (.k + 1):(2 * .k)] <- .m[1:.k, 1:.k]
+    }
+    dimnames(.m) <- list(paste0("p", seq_len(.n)), paste0("p", seq_len(.n)))
+
+    .same <- integer(.n)
+    for (.k in seq_len(sample(1:2, 1))) {
+      .i <- sample(seq_len(.n), 1)
+      .d <- sample(seq_len(.n - 1), 1)
+      if (.i - .d >= 1) .same[.i] <- .d
+    }
+    if (all(.same == 0L)) next
+
+    .x <- .m
+    attr(.x, "lotriSame") <- .same
+    if (runif(1) < 0.4) {
+      .lb <- rep(NA_character_, .n)
+      .lb[sample(seq_len(.n), 1)] <- "L"
+      attr(.x, "lotriLabels") <- .lb
+    }
+    class(.x) <- c("lotriFix", "matrix", "array")
+
+    .info <- paste("lotriSame =", paste(.same, collapse = ","))
+    .df <- as.data.frame(.x)
+    expect_equal(anyDuplicated(.df$name), 0L, info = .info)
+
+    ## values survive both routes, exactly
+    .viaDf <- lotri::as.lotri(.df)
+    .viaEx <- eval(as.expression(.x))
+    expect_equal(unclass(.viaEx), unclass(.x), ignore_attr = TRUE,
+                 info = .info)
+    expect_equal(unclass(.viaDf)[seq_len(.n), seq_len(.n)], unclass(.x),
+                 ignore_attr = TRUE, info = .info)
+
+    ## and the two routes agree on which parameters are free.  A matrix
+    ## whose linkage was dropped comes back unclassed, so the offsets
+    ## are compared directly rather than through `as.data.frame()`.
+    .oDf <- attr(.viaDf, "lotriSame")
+    .oEx <- attr(.viaEx, "lotriSame")
+    expect_equal(if (is.null(.oEx)) integer(.n) else as.integer(.oEx),
+                 if (is.null(.oDf)) integer(.n) else as.integer(.oDf),
+                 info = .info)
+  }
 })

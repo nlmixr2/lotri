@@ -134,8 +134,17 @@ as.lotri.matrix <- function(x, ..., default = "") {
         .matF[.i, .j] <- .matF[.i - .d, .j - .d]
       }
     }
-    attr(.mat, "lotriSame") <- .same
-    .hasLab <- TRUE
+    ## store the NORMALISED offsets, so the attribute matches the view
+    ## every consumer reads: a chain naming the preceding copy (the way
+    ## NONMEM's chained SAME reads) resolves to the original master
+    .fmAttr <- attr(.mat, "lotriFix")
+    attr(.mat, "lotriFix") <- .matF
+    .fm <- .lotriSameFamilies(.mat, .same)
+    attr(.mat, "lotriFix") <- .fmAttr
+    if (!is.null(.fm)) {
+      attr(.mat, "lotriSame") <- .fm$same
+      .hasLab <- TRUE
+    }
   }
   if (any(.matF) || .hasLab) {
     attr(.mat, "lotriFix") <- .matF

@@ -28,6 +28,19 @@
   .out[is.na(.out)] <- 0L
   ## an offset pointing before the first row cannot describe anything
   .out[seq_len(.n) - .out < 1L] <- 0L
+  ## Resolve chains to the ORIGINAL master.  A consumer writing NONMEM's
+  ## chained `SAME` naturally names the block just before -- which is a
+  ## copy -- and `same()` re-parses as repeating the original, so the two
+  ## spellings mean the same thing.  Walking ascending means the row a
+  ## chain points at is already resolved.
+  for (.r in seq_len(.n)) {
+    .dd <- .out[.r]
+    if (.dd == 0L) next
+    while (.r - .dd >= 1L && .out[.r - .dd] > 0L) {
+      .dd <- .dd + .out[.r - .dd]
+    }
+    .out[.r] <- if (.r - .dd < 1L) 0L else .dd
+  }
   .fam <- list()
   .i <- 1L
   while (.i <= .n) {
