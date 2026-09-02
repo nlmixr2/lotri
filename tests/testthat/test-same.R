@@ -1549,3 +1549,101 @@ test_that("a frame pairing a prior with a repeated block is refused", {
   expect_error(lotri::as.lotri(.ok), NA)
   expect_equal(as.data.frame(lotri::as.lotri(.ok)), .ok)
 })
+
+test_that("random programs parse to the matrix a reference model predicts", {
+
+  ## The attribute-level property test above cannot reach the parser: it
+  ## builds matrices by setting attributes.  Two reviews found parse
+  ## time offset bugs that it structurally could not see, and a
+  ## differential test (`same()` spelling vs the explicit one) cannot
+  ## see them either, because both spellings corrupt identically.  Only
+  ## an independent reference model catches them.
+  skip_on_cran()
+  set.seed(20260902)
+
+  .mkblk <- function(k) {
+    .m <- diag(round(runif(k, 0.5, 3), 2), nrow = k)
+    if (k > 1) {
+      for (.i in 2:k) {
+        for (.j in 1:(.i - 1)) {
+          .v <- round(runif(1, -0.3, 0.3), 2)
+          .m[.i, .j] <- .v
+          .m[.j, .i] <- .v
+        }
+      }
+    }
+    .m
+  }
+  .lower <- function(m) {
+    .out <- numeric(0)
+    for (.i in seq_len(nrow(m))) {
+      for (.j in seq_len(.i)) .out <- c(.out, m[.i, .j])
+    }
+    .out
+  }
+
+  for (.it in seq_len(300)) {
+    .lines <- character(0)
+    .blocks <- list()
+    .nms <- character(0)
+    .prev <- NULL
+    .prevK <- 0L
+    .ctr <- 0L
+
+    for (.b in seq_len(sample(1:3, 1))) {
+      .useSame <- !is.null(.prev) && runif(1) < 0.35
+      .k <- if (.useSame) .prevK else sample(1:3, 1)
+      .nm <- paste0("v", .ctr + seq_len(.k))
+      .ctr <- .ctr + .k
+      if (.useSame) {
+        .m <- .prev
+        .lines <- c(.lines, paste0(paste(.nm, collapse = " + "), " ~ same()"))
+      } else {
+        .m <- .mkblk(.k)
+        .style <- sample(if (.k == 1) {
+          c("scalar", "arith", "cvec")
+        } else {
+          c("plus", "line")
+        }, 1)
+        .lines <- c(.lines, switch(
+          .style,
+          scalar = paste0(.nm, " ~ ", .m[1, 1]),
+          arith = paste0(.nm, " ~ ", .m[1, 1], "*1"),
+          cvec = paste0(.nm, " ~ c(", .m[1, 1], ")"),
+          plus = paste0(paste(.nm, collapse = " + "), " ~ c(",
+                        paste(.lower(.m), collapse = ", "), ")"),
+          line = vapply(seq_len(.k), function(.i) {
+            paste0(.nm[.i], " ~ c(",
+                   paste(.m[.i, seq_len(.i)], collapse = ", "), ")")
+          }, character(1), USE.NAMES = FALSE)))
+        .prev <- .m
+        .prevK <- .k
+      }
+      .blocks[[length(.blocks) + 1L]] <- .m
+      .nms <- c(.nms, .nm)
+    }
+
+    .cnd <- runif(1) < 0.4
+    if (.cnd) {
+      .lines <- vapply(.lines, function(.l) paste0(.l, " | occ"),
+                       character(1), USE.NAMES = FALSE)
+    }
+    .txt <- paste0("lotri::lotri({", paste(.lines, collapse = "; "), "})")
+
+    .got <- eval(parse(text = .txt))
+    if (.cnd) .got <- .got$occ
+
+    .n <- length(.nms)
+    .exp <- matrix(0, .n, .n, dimnames = list(.nms, .nms))
+    .p <- 0L
+    for (.m in .blocks) {
+      .k <- nrow(.m)
+      .exp[.p + seq_len(.k), .p + seq_len(.k)] <- .m
+      .p <- .p + .k
+    }
+
+    expect_equal(dimnames(unclass(.got))[[1]], .nms, info = .txt)
+    expect_equal(unclass(.got)[seq_len(.n), seq_len(.n), drop = FALSE],
+                 .exp, ignore_attr = TRUE, info = .txt)
+  }
+})
