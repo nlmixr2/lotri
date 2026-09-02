@@ -54,6 +54,11 @@ lotri({
 
   `same()` round trips through `as.data.frame()`, `as.lotri()` and
   `as.expression()`, and the linkage is carried across `lotriMat()`.
+  A repetition that no longer describes a real mirror -- because the
+  blocks it was built from were reordered or dropped, or because it
+  carries something `same()` cannot express -- is written out with its
+  explicit values instead.  That loses the annotation, never the
+  numbers.
 
   A prior cannot be put on a repeated block -- it is not a parameter of
   its own, so the prior belongs on the block it mirrors.  Without this
