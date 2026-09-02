@@ -1,3 +1,15 @@
+# lotri 1.0.6 (development)
+
+## Bug fixes
+
+* `lotri()` read its own condition-property list with a partially-matching
+  `attr()`.  Because `"lotri"` is a prefix of `"lotriLabels"`,
+  `"lotriFix"` and friends, combining a conditioned matrix with a labelled
+  one (as in `lotri(lotri(b ~ 2) | occ, lotri({c ~ 1; label("z")}))`)
+  picked up the neighbouring attribute, attached it as the property list,
+  and gave the result a spurious `lotri` class and a bogus `Properties:`
+  line.  The internal reads are now exact.
+
 # lotri 1.0.5
 
 ## New features

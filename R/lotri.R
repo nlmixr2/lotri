@@ -2340,7 +2340,7 @@ NULL
                                         default=default, envir=envir),
                       envir=envir)
     if (inherits(.other, "lotri")) {
-      .prop <- attr(.other, "lotri")
+      .prop <- attr(.other, "lotri", exact=TRUE)
       class(.other) <- NULL
     }
   }
@@ -2552,7 +2552,7 @@ NULL
     .tmp <- do.call("lotri", .fullCall, envir=envir)
     if (any(names(.tmp) == fullCnd)) {
       if (!is.null(.prop)) {
-        .tmpL <- attr(.tmp, "lotri")
+        .tmpL <- attr(.tmp, "lotri", exact=TRUE)
         .tmp0 <- .tmpL[[fullCnd]]
         .tmp1 <- .tmpL[names(.tmpL) != fullCnd]
         .prop <- .mergeProp(
@@ -2585,7 +2585,7 @@ NULL
     } else {
       .lst <- list()
       .lst[[fullCnd]] <- ret
-      .tmpCnd <- c(.prop, attr(.tmp, "lotri"))
+      .tmpCnd <- c(.prop, attr(.tmp, "lotri", exact=TRUE))
       ret <- c(.lst, .tmp)
       if (!is.null(.tmpCnd)) {
         attr(ret, "lotri") <- .amplifyFinal(ret, .tmpCnd)
@@ -2625,7 +2625,7 @@ NULL
                  cov=cov, rcm=rcm, default=default,
                  envir = envir)
     if (inherits(.tmp, "lotri")) {
-      attr(ret, "lotri") <- .amplifyFinal(ret, attr(.tmp, "lotri"))
+      attr(ret, "lotri") <- .amplifyFinal(ret, attr(.tmp, "lotri", exact=TRUE))
       class(ret) <- "lotri"
     }
     .amplifyRetWithDfEst(ret, est)
@@ -2874,7 +2874,7 @@ lotri <- function(x, ..., cov=FALSE, rcm=FALSE,
 
 #' @export
 `$.lotri` <- function(obj, arg, exact = FALSE) {
-  .lotri <- attr(obj, "lotri")
+  .lotri <- attr(obj, "lotri", exact=TRUE)
   if (arg == ".maxNu") {
     return(.Call(`_lotriMaxNu`, # nolint
                  obj, PACKAGE = "lotri"))
