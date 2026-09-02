@@ -968,3 +968,98 @@ test_that("two repeated blocks with the same offset stay separate", {
                  "id:same:p1", "id:same:p1:q1", "id:same:q1"))
   expect_equal(as.data.frame(eval(as.expression(.f))), as.data.frame(.f))
 })
+
+test_that("a valid repetition survives an invalid one next to it", {
+
+  ## dropping a master makes two families adjacent.  Grouping the
+  ## offsets by contiguous ROW RUN fused them, and the all-or-nothing
+  ## check then killed the genuine family along with the bogus one.
+  .m <- lotri::lotri({
+    a + b ~ c(1,
+              0.1, 2)
+    c1 + d1 ~ same()
+    e1 + f1 ~ c(5,
+                0.5, 6)
+    g1 + h1 ~ same()
+  })
+  .d <- lotri::lotriMat(lotri::lotriMatInv(.m)[c(1, 2, 4)])
+  expect_equal(attr(.d, "lotriSame"), c(0L, 0L, 2L, 2L, 2L, 2L))
+
+  .df <- as.data.frame(.d)
+  ## c1/d1 still mirrors a/b exactly and must keep its pointer ...
+  expect_equal(.df$condition[.df$name == "c1"], "id:same:a")
+  expect_equal(.df$condition[.df$name == "d1"], "id:same:b")
+  ## ... while g1/h1, whose master went away, must not
+  expect_false(any(lotri::lotriIsSame(.df$condition[.df$name %in%
+                                                      c("g1", "h1")])))
+  expect_equal(as.data.frame(lotri::as.lotri(.df)), .df)
+
+  ## and with coincident values it must not INVENT a copy of a copy,
+  ## which `same()` cannot re-parse
+  .m2 <- lotri::lotri({
+    a + b ~ c(1,
+              0.1, 2)
+    c1 + d1 ~ same()
+    e1 + f1 ~ c(1,
+                0.1, 2)
+    g1 + h1 ~ same()
+  })
+  .d2 <- lotri::lotriMat(lotri::lotriMatInv(.m2)[c(1, 2, 4)])
+  .df2 <- as.data.frame(.d2)
+  expect_false(any(lotri::lotriIsSame(.df2$condition[.df2$name %in%
+                                                       c("g1", "h1")])))
+  expect_equal(as.data.frame(lotri::as.lotri(.df2)), .df2)
+  expect_equal(as.data.frame(eval(as.expression(lotri::as.lotri(.df2)))),
+               .df2)
+})
+
+test_that("a repeated block with a structural zero round trips", {
+
+  ## `lotriMatInv()` splits on connectivity, so a declared block with a
+  ## covariance of exactly zero comes back as two blocks and the
+  ## `same()` line was written against the wrong master -- or, once that
+  ## was guarded, not written at all.  The declared boundaries are
+  ## recovered from the offsets instead.
+  .m <- lotri::lotri({
+    a + b ~ c(1,
+              0, 2)
+    c1 + d1 ~ same()
+  })
+  expect_equal(attr(.m, "lotriSame"), c(0L, 0L, 2L, 2L))
+
+  .e <- as.character(as.expression(.m))
+  expect_true(any(grepl("c1 + d1 ~ same()", .e, fixed = TRUE)))
+  expect_equal(attr(eval(as.expression(.m)), "lotriSame"),
+               c(0L, 0L, 2L, 2L))
+  expect_equal(as.data.frame(eval(as.expression(.m))), as.data.frame(.m))
+
+  ## a partial zero inside a 3x3 too
+  .m3 <- lotri::lotri({
+    a + b + cc ~ c(1,
+                   0.1, 2,
+                   0, 0, 3)
+    d1 + e1 + f1 ~ same()
+  })
+  expect_equal(attr(eval(as.expression(.m3)), "lotriSame"),
+               c(0L, 0L, 0L, 3L, 3L, 3L))
+  expect_equal(as.data.frame(eval(as.expression(.m3))), as.data.frame(.m3))
+})
+
+test_that("print() agrees with the values it printed", {
+
+  .m <- lotri::lotri({
+    a + b ~ c(1,
+              0.1, 2)
+    c1 + d1 ~ same()
+    e1 + f1 ~ c(5,
+                0.5, 6)
+    g1 + h1 ~ same()
+  })
+  .d <- lotri::lotriMat(lotri::lotriMatInv(.m)[c(1, 2, 4)])
+
+  .out <- capture.output(print(.d))
+  ## g1/h1 is 5, 0.5, 6 and c1/d1 is 1, 0.1, 2 -- it must not claim the
+  ## first repeats the second
+  expect_true(any(grepl("c1, d1 repeat a, b", .out, fixed = TRUE)))
+  expect_false(any(grepl("g1", .out[grepl("repeat", .out)], fixed = TRUE)))
+})

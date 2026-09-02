@@ -142,7 +142,7 @@
 #' @noRd
 .lotriGetEtaLineForm <- function(x, condition="id", nameEst=5L) {
   if (inherits(x, "matrix")) {
-    .x <- lotriMatInv(x) # nolint
+    .x <- .lotriSameSplit(x)
     .sameEmit <- .lotriSameEmit(.x)
     .l <- lapply(seq_along(.x), function(i) {
       .mat <- .x[[i]]
@@ -328,7 +328,7 @@
 #' @noRd
 .lotriGetEtaMatEltPlusForm <- function(x, condition="id") {
   if (inherits(x, "matrix")) {
-    .x <- lotriMatInv(x) # nolint
+    .x <- .lotriSameSplit(x)
     .sameEmit <- .lotriSameEmit(.x)
     .l <- lapply(seq_along(.x), function(i) {
       .mat <- .x[[i]]

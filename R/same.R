@@ -1,3 +1,178 @@
+#' Validated view of a matrix's `same()` repetitions
+#'
+#' The `lotriSame` offsets are relative, which is what makes
+#' `lotriMatInv()` slicing and `lotriMat()` concatenation free, but it
+#' means a list of blocks that has been reordered or trimmed can leave an
+#' offset pointing at something it never described.  Every consumer --
+#' `as.data.frame()`, `as.expression()` and `print()` -- has to agree on
+#' which offsets still mean something, so they all come through here
+#' rather than each grouping the vector its own way.
+#'
+#' A family is a *block*, not a row run: rows are walked in chunks of the
+#' offset, so two repeated blocks that ended up adjacent do not fuse, and
+#' a block stacked on a copy is rejected rather than being read as a copy
+#' of a copy (which `same()` cannot re-parse).
+#'
+#' @param mat the whole matrix for one condition
+#' @param same its `lotriSame` attribute
+#' @return `NULL` when nothing survives, otherwise a list with `same`
+#'   (the cleaned offset vector) and `families` (a list of
+#'   `list(master=, copy=, d=)` index ranges)
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriSameFamilies <- function(mat, same) {
+  if (is.null(same)) return(NULL)
+  .n <- dim(mat)[1]
+  if (length(same) != .n) return(NULL)
+  .out <- as.integer(same)
+  .out[is.na(.out)] <- 0L
+  ## an offset pointing before the first row cannot describe anything
+  .out[seq_len(.n) - .out < 1L] <- 0L
+  .fam <- list()
+  .i <- 1L
+  while (.i <= .n) {
+    .d <- .out[.i]
+    if (.d == 0L) {
+      .i <- .i + 1L
+      next
+    }
+    ## the run of rows carrying this offset ...
+    .j <- .i
+    while (.j < .n && .out[.j + 1L] == .d) .j <- .j + 1L
+    ## ... taken `.d` rows at a time, so that repeated blocks which have
+    ## become adjacent are separated rather than fused into one family
+    .k <- .i
+    while (.k <= .j) {
+      .e <- min(.k + .d - 1L, .j)
+      .w <- .k:.e
+      .mw <- .w - .d
+      ## the master must be a real master, not itself a copy
+      .keep <- all(.out[.mw] == 0L)
+      if (.keep) {
+        .keep <- all(vapply(.w, function(.a) {
+          all(vapply(.w, function(.b) {
+            isTRUE(all.equal(mat[.a, .b], mat[.a - .d, .b - .d],
+                             tolerance=0))
+          }, logical(1), USE.NAMES=FALSE))
+        }, logical(1), USE.NAMES=FALSE))
+      }
+      if (.keep) {
+        .fam[[length(.fam) + 1L]] <- list(master=.mw, copy=.w, d=.d)
+      } else {
+        .out[.w] <- 0L
+      }
+      .k <- .e + 1L
+    }
+    .i <- .j + 1L
+  }
+  if (length(.fam) == 0L) return(NULL)
+  list(same=.out, families=.fam)
+}
+
+#' Cleaned `lotriSame` offsets for a matrix
+#'
+#' @param mat the whole matrix for one condition
+#' @param same its `lotriSame` attribute
+#' @return cleaned integer vector, or `NULL`
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriSameClean <- function(mat, same) {
+  .f <- .lotriSameFamilies(mat, same)
+  if (is.null(.f)) return(NULL)
+  .f$same
+}
+
+#' Slice one index range out of a matrix, carrying its attributes
+#'
+#' The same rules `lotriMatInv()` uses, but for an arbitrary range, so
+#' that a declared block which connectivity would split (a covariance of
+#' exactly zero) can be kept whole.
+#'
+#' @param mat matrix to slice
+#' @param idx integer indexes to keep
+#' @return the sliced matrix, `lotriFix` classed when it carries anything
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriSliceBlock <- function(mat, idx) {
+  .m1 <- unclass(mat)[idx, idx, drop=FALSE]
+  .cls <- FALSE
+  for (.a in c("lotriFix", "lotriUnfix")) {
+    .v <- attr(mat, .a)
+    if (!is.null(.v)) {
+      attr(.m1, .a) <- .v[idx, idx, drop=FALSE]
+      .cls <- TRUE
+    }
+  }
+  for (.a in c("lotriLabels", "lotriPriors")) {
+    .v <- attr(mat, .a)
+    if (!is.null(.v)) {
+      attr(.m1, .a) <- .v[idx]
+      .cls <- TRUE
+    }
+  }
+  .v <- attr(mat, "lotriSame")
+  if (!is.null(.v)) {
+    .s <- .v[idx]
+    if (any(.s != 0L)) {
+      attr(.m1, "lotriSame") <- .s
+      .cls <- TRUE
+    }
+  }
+  .off <- attr(mat, "lotriOffDiagPriors")
+  if (!is.null(.off) && length(.off) > 0L) {
+    .dn <- dimnames(.m1)[[1]]
+    .in <- vapply(names(.off), function(.k) {
+      all(.lotriCovPriorKeyNames(.k) %in% .dn)
+    }, logical(1), USE.NAMES=FALSE)
+    if (any(.in)) {
+      attr(.m1, "lotriOffDiagPriors") <- .off[.in]
+      .cls <- TRUE
+    }
+  }
+  if (.cls) class(.m1) <- c("lotriFix", class(.m1))
+  .m1
+}
+
+#' Split a matrix into blocks, keeping declared `same()` blocks whole
+#'
+#' `lotriMatInv()` splits on connectivity, so a declared block with a
+#' covariance of exactly zero comes back as two blocks.  That is fine for
+#' the matrix itself, but a `same()` line has to be written against the
+#' block as it was DECLARED or it re-parses against the wrong master.
+#' The declared boundaries are recovered from the offsets: a copy run of
+#' `k` rows means both it and its master are `k` rows wide.
+#'
+#' @param mat matrix to split
+#' @return list of blocks, in order
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriSameSplit <- function(mat) {
+  .f <- .lotriSameFamilies(mat, attr(mat, "lotriSame"))
+  if (is.null(.f)) return(lotriMatInv(mat)) # nolint
+  .n <- dim(mat)[1]
+  .end <- logical(.n)
+  .p <- 0L
+  for (.b in lotriMatInv(mat)) { # nolint
+    .p <- .p + dim(.b)[1]
+    .end[.p] <- TRUE
+  }
+  for (.fm in .f$families) {
+    for (.r in list(.fm$master, .fm$copy)) {
+      .end[.r] <- FALSE
+      .end[.r[length(.r)]] <- TRUE
+    }
+  }
+  .end[.n] <- TRUE
+  .ret <- list()
+  .start <- 1L
+  for (.i in seq_len(.n)) {
+    if (!.end[.i]) next
+    .ret[[length(.ret) + 1L]] <- .lotriSliceBlock(mat, .start:.i)
+    .start <- .i + 1L
+  }
+  .ret
+}
+
 #' Work with `same()` (NONMEM `BLOCK SAME`) blocks in a lotri data frame
 #'
 #' A repeated block created with `same()` records, in the `condition`
