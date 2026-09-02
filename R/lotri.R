@@ -1736,6 +1736,23 @@ NULL
   .lotriPriorCheckNotFixed(nm[!isOm], est$fix[.w])
   .lotriPriorCheckNotFixed(nm[isOm], .lotriMatFixedDiag(mats[[.at]], .eta))
   .lotriPriorCheckNotFixedCov(nm[isOm], .lotriMatFixedCov(mats[[.at]], .eta))
+  ## a `same()` copy is not an independently estimated element, so a
+  ## joint prior naming one is as incoherent as a marginal one.  It is
+  ## checked here rather than where the marginal priors are, because a
+  ## joint prior is stored on the theta row and never reaches that code.
+  .jSame <- attr(mats[[.at]], "lotriSame")
+  if (!is.null(.jSame)) {
+    .jdn <- dimnames(mats[[.at]])[[1]]
+    .jw <- match(.eta, .jdn)
+    .jBad <- which(!is.na(.jw) & .jSame[.jw] != 0L)
+    if (length(.jBad) > 0L) {
+      .jb <- .jw[.jBad[1]]
+      stop("'", .jdn[.jb], "' repeats '", .jdn[.jb - .jSame[.jb]],
+           "' with 'same()', so it cannot carry its own prior; ",
+           "put the prior on '", .jdn[.jb - .jSame[.jb]], "'",
+           call.=FALSE)
+    }
+  }
   ## stored on the first name of the block, wherever that name lives
   if (isOm[1]) {
     .dn <- dimnames(mats[[.at]])[[1]]

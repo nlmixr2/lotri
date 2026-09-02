@@ -774,3 +774,53 @@ test_that("the whole-omega prior shorthand skips repeated blocks", {
     ~ invWishart(4)
   }), "no omega to apply it to")
 })
+
+test_that("no prior form can target a repeated block", {
+
+  ## the marginal form is caught where the priors are attached, but a
+  ## joint theta+omega prior (NONMEM TNPRI) is stored on the THETA row
+  ## and never reaches that code, so it needs its own check
+  expect_error(lotri::lotri({
+    tk <- 1
+    a + b ~ c(1, 0.1, 2)
+    c1 + d1 ~ same()
+    tk + om.c1 ~ c(1, 0.01, 0.02)
+  }), "put the prior on 'a'", fixed = TRUE)
+
+  expect_error(lotri::lotri({
+    tk <- 1
+    a + b ~ c(1, 0.1, 2)
+    c1 + d1 ~ same()
+    tk + om.c1 + om.d1 ~ c(1, 0.01, 0.02, 0.01, 0.02, 0.03)
+  }), "same()", fixed = TRUE)
+
+  ## the `om.` shorthand and the explicit `prior()` form too
+  expect_error(lotri::lotri({
+    tk <- 1
+    a + b ~ c(1, 0.1, 2)
+    c1 + d1 ~ same()
+    om.c1 ~ 0.01
+  }), "same()", fixed = TRUE)
+
+  expect_error(lotri::lotri({
+    tk <- 1
+    a + b ~ c(1, 0.1, 2)
+    c1 + d1 ~ same()
+    prior(om.c1) ~ dnorm(0, 1)
+  }), "same()", fixed = TRUE)
+
+  ## all of them are fine on the block that is actually estimated
+  expect_error(lotri::lotri({
+    tk <- 1
+    a + b ~ c(1, 0.1, 2)
+    c1 + d1 ~ same()
+    tk + om.a ~ c(1, 0.01, 0.02)
+  }), NA)
+
+  expect_error(lotri::lotri({
+    tk <- 1
+    a + b ~ c(1, 0.1, 2)
+    c1 + d1 ~ same()
+    om.a ~ 0.01
+  }), NA)
+})
