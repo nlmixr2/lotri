@@ -641,6 +641,10 @@ NULL
                        (is.numeric(.val) || is.integer(.val))) {
             .env2$netas <- 1L
             .env2$eta1 <- .env2$eta1 + 1L
+            ## the line form accumulates through `lastN`; without this a
+            ## following `b ~ c(0.1, 2) | occ` cannot see the row this
+            ## line just wrote, and the block is silently truncated
+            .env2$lastN <- 1L
             .lotriSameSetBlk(.env2, .env2$eta1 - 1L, 1L)
             .env2$names <- c(.env2$names, as.character(x[[2]]))
             .env2$labels <- c(.env2$labels, NA_character_)

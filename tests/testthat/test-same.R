@@ -447,3 +447,53 @@ test_that("same() finds its block across an intervening line at another level", 
   expect_equal(dim(.m$occ), c(4L, 4L))
   expect_equal(attr(.m$occ, "lotriSame"), c(0L, 0L, 2L, 2L))
 })
+
+test_that("a conditioned block round trips through as.expression()", {
+
+  ## the line form accumulates through `lastN`, which the conditioned
+  ## scalar branch never set: `a ~ 1 | occ` followed by
+  ## `b ~ c(0.1, 2) | occ` silently produced a 1x1 `occ` instead of a 2x2
+  .p <- lotri::lotri({
+    tk <- 1
+    eta ~ 0.6
+    a + b ~ c(1,
+              0.1, 2) | occ
+  })
+
+  .r <- eval(as.expression(.p))
+  expect_equal(dim(.r$occ), c(2L, 2L))
+  expect_equal(as.data.frame(.r), as.data.frame(.p))
+
+  ## and with a repeated block on top of it
+  .m <- lotri::lotri({
+    tk <- 1
+    eta ~ 0.6
+    a + b ~ c(1,
+              0.1, 2) | occ
+    c1 + d1 ~ same() | occ
+  })
+
+  expect_equal(as.data.frame(eval(as.expression(.m))), as.data.frame(.m))
+})
+
+test_that("a repeated block under a condition names its master correctly", {
+
+  ## `.env$eta1` counts globally across conditions while `.matNames` is
+  ## the condition's own dimnames; mixing the two named the wrong
+  ## parameter (here `occ:same:b` and even `occ:same:c1`)
+  .m <- lotri::lotri({
+    tk <- 1
+    eta ~ 0.6
+    a + b ~ c(1,
+              0.1, 2) | occ
+    c1 + d1 ~ same() | occ
+  })
+
+  .df <- as.data.frame(.m)
+  expect_equal(.df$condition,
+               c(NA, "id", "occ", "occ", "occ",
+                 "occ:same:a", "occ:same:a:b", "occ:same:b"))
+  expect_equal(as.data.frame(lotri::as.lotri(.df)), .df)
+  expect_equal(attr(lotri::as.lotri(.df)$occ, "lotriSame"),
+               c(0L, 0L, 2L, 2L))
+})

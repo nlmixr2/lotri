@@ -224,6 +224,13 @@ lotri({
 
 ## Bug fixes
 
+* A conditioned block written in the line form lost every row after the
+  first.  `a ~ 1 | occ` did not set the `lastN` counter the line form
+  accumulates through, so a following `b ~ c(0.1, 2) | occ` could not
+  see the row before it and the block was silently truncated to 1x1.
+  This showed up as `eval(as.expression(x))` returning a smaller matrix
+  than `x` for any conditioned block of more than one parameter.
+
 * `lotri()` read its own condition-property list with a partially-matching
   `attr()`.  Because `"lotri"` is a prefix of `"lotriLabels"`,
   `"lotriFix"` and friends, combining a conditioned matrix with a labelled

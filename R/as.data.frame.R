@@ -49,8 +49,12 @@
           ## master is resolved against the whole matrix's dimnames.
           .cnd <- default
           if (!is.null(.curSame) && .curSame[.j] > 0L) {
-            .mj <- .env$eta1 + .j - 1 - .curSame[.j]
-            .mk <- .env$eta1 + .k - 1 - .curSame[.k]
+            ## `.env$eta1` counts GLOBALLY across conditions, but
+            ## `.matNames` is this condition's own dimnames, so the
+            ## master has to be shifted back by where this condition
+            ## starts (`eta1`) before it is used as a name index
+            .mj <- .env$eta1 + .j - 1 - .curSame[.j] - eta1 + 1L
+            .mk <- .env$eta1 + .k - 1 - .curSame[.k] - eta1 + 1L
             ## smaller index first, matching the "(name_k,name_j)" order
             ## the `name` column uses for an off diagonal
             .cnd <- paste0(default, ":same:", .matNames[.mk])
