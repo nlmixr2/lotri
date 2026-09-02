@@ -862,3 +862,109 @@ test_that("same() cannot repeat a matrix() literal", {
     c1 + d1 ~ same()
   }), "'same()' has no block to repeat")
 })
+
+test_that("same() is not emitted past a block that is itself written out", {
+
+  ## a chain only re-parses correctly if every block in it is actually
+  ## WRITTEN as `same()`.  A block that carries the right offsets but
+  ## fails its own guard -- here a label on a name `same()` cannot carry
+  ## -- is written with explicit values, and a later `same()` would then
+  ## repeat THAT block instead of the master.
+  .m <- lotri::lotri({
+    a + b ~ c(1,
+              0.1, 2)
+    c1 + d1 ~ same()
+    e1 + f1 ~ same()
+  })
+
+  .x <- unclass(.m)
+  .x[3, 3] <- 99
+  .x[4, 4] <- 88
+  attr(.x, "lotriSame") <- c(0L, 0L, 2L, 2L, 4L, 4L)
+  class(.x) <- c("lotriFix", "matrix", "array")
+
+  ## block 2 no longer equals its master, so it is written out; block 3
+  ## must then be written out too rather than repeating block 2
+  expect_equal(diag(eval(as.expression(.x))),
+               c(a = 1, b = 2, c1 = 99, d1 = 88, e1 = 1, f1 = 2))
+
+  ## the same through the documented data frame route, via a label
+  .df <- as.data.frame(.m)
+  .df$label[.df$name == "c1"] <- "mid label"
+  .l <- lotri::as.lotri(.df)
+  .rt <- eval(as.expression(.l))
+  expect_equal(unclass(.rt), unclass(.l), ignore_attr = TRUE)
+  expect_equal(attr(.rt, "lotriLabels")[3], "mid label")
+})
+
+test_that("an offset that no longer describes a mirror is dropped", {
+
+  ## the offsets are relative, so a list of blocks that has been
+  ## reordered or had blocks dropped can leave one pointing at an
+  ## unrelated block that merely happens to be in range.  Writing that
+  ## out as a `:same:` pointer would make the bogus linkage real and let
+  ## the "master" overwrite the values on the way back in.
+  .m <- lotri::lotri({
+    z ~ 9
+    a ~ 1
+    b ~ same()
+  })
+  expect_equal(attr(.m, "lotriSame"), c(0L, 0L, 1L))
+
+  .dropped <- lotri::lotriMat(lotri::lotriMatInv(.m)[c(1, 3)])
+  expect_equal(diag(unclass(.dropped)), c(z = 9, b = 1))
+  ## `b` must stay 1, not silently become `z`
+  expect_equal(diag(unclass(lotri::as.lotri(as.data.frame(.dropped)))),
+               c(z = 9, b = 1))
+  expect_false(any(lotri::lotriIsSame(as.data.frame(.dropped)$condition)))
+})
+
+test_that("a block with mixed offsets does not index out of range", {
+
+  ## `as.lotri()` derives offsets per diagonal, so a hand written frame
+  ## can leave one row of a block mirrored and the others not.  The
+  ## unmirrored end of a covariance cell used to index at or below zero,
+  ## which silently duplicated rows through `data.frame()` recycling.
+  .m <- lotri::lotri({
+    a + b + c ~ c(1,
+                  0.1, 2,
+                  0.1, 0.1, 3)
+    d1 + e1 + f1 ~ c(4,
+                     0.2, 5,
+                     0.2, 0.2, 6)
+    label("L")
+  })
+  .df <- as.data.frame(.m)
+  .df$condition[.df$name == "f1"] <- "id:same:b"
+  .b <- lotri::lotriMatInv(lotri::lotriEst(lotri::as.lotri(.df),
+                                           drop = TRUE))[[2]]
+
+  .d <- as.data.frame(.b)
+  expect_equal(nrow(.d), 6L)
+  expect_equal(anyDuplicated(.d$name), 0L)
+  expect_false(any(lotri::lotriIsSame(.d$condition)))
+})
+
+test_that("two repeated blocks with the same offset stay separate", {
+
+  ## both copies sit two rows after their own master, so grouping the
+  ## offsets by VALUE rather than by contiguous run would fuse the two
+  ## families and drop both linkages
+  .f <- lotri::lotri({
+    a1 + b1 ~ c(1,
+                0.1, 2)
+    a2 + b2 ~ same()
+    p1 + q1 ~ c(3,
+                0.2, 4)
+    p2 + q2 ~ same()
+  })
+
+  expect_equal(attr(.f, "lotriSame"),
+               c(0L, 0L, 2L, 2L, 0L, 0L, 2L, 2L))
+  expect_equal(as.data.frame(.f)$condition,
+               c("id", "id", "id",
+                 "id:same:a1", "id:same:a1:b1", "id:same:b1",
+                 "id", "id", "id",
+                 "id:same:p1", "id:same:p1:q1", "id:same:q1"))
+  expect_equal(as.data.frame(eval(as.expression(.f))), as.data.frame(.f))
+})

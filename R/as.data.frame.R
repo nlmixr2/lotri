@@ -1,3 +1,57 @@
+#' Drop `lotriSame` offsets that no longer describe a real repetition
+#'
+#' The offsets are RELATIVE, which is what makes `lotriMatInv()` slicing
+#' and `lotriMat()` concatenation free.  The cost is that a list of
+#' blocks which has been reordered, or had blocks dropped, can leave an
+#' offset pointing at some unrelated block that merely happens to be in
+#' range -- and writing that out as a `:same:` pointer would make the
+#' bogus linkage real, silently overwriting the values on the way back
+#' in (`as.lotri()` lets the master win).
+#'
+#' So an offset is kept only when it still describes a genuine mirror:
+#' it points at existing rows, the rows sharing it are contiguous, and
+#' every cell really equals the cell it claims to repeat.
+#'
+#' @param mat the whole matrix for one condition
+#' @param same its `lotriSame` attribute
+#' @return a cleaned integer vector, or `NULL` when there is nothing to
+#'   describe
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriSameClean <- function(mat, same) {
+  if (is.null(same)) return(NULL)
+  .n <- dim(mat)[1]
+  if (length(same) != .n) return(NULL)
+  .out <- as.integer(same)
+  .out[is.na(.out)] <- 0L
+  ## an offset pointing before the first row cannot describe anything
+  .out[seq_len(.n) - .out < 1L] <- 0L
+  ## walk CONTIGUOUS runs of one offset, not every row carrying that
+  ## value: two independent repeated blocks in one matrix have the same
+  ## offset as each other, and grouping by value would fuse them
+  .i <- 1L
+  while (.i <= .n) {
+    .d <- .out[.i]
+    if (.d == 0L) {
+      .i <- .i + 1L
+      next
+    }
+    .j <- .i
+    while (.j < .n && .out[.j + 1L] == .d) .j <- .j + 1L
+    .w <- .i:.j
+    .keep <- all(vapply(.w, function(.a) {
+      all(vapply(.w, function(.b) {
+        isTRUE(all.equal(mat[.a, .b], mat[.a - .d, .b - .d],
+                         tolerance=0))
+      }, logical(1), USE.NAMES=FALSE))
+    }, logical(1), USE.NAMES=FALSE))
+    if (!.keep) .out[.w] <- 0L
+    .i <- .j + 1L
+  }
+  if (all(.out == 0L)) return(NULL)
+  .out
+}
+
 .as.data.frame.lotriFix.mat <- function(mat, default="id",
                                         eta1=1) {
   .df3 <- NULL
@@ -7,12 +61,15 @@
     .priors <- attr(mat, "lotriPriors")
     .priorsOffDiag <- attr(mat, "lotriOffDiagPriors")
     .matNames <- dimnames(mat)[[1]]
+    ## validated once against the WHOLE condition matrix, then indexed by
+    ## the row's position within it -- the per block attribute cannot be
+    ## checked on its own, since a copy's offset points outside its block
+    .cleanSame <- .lotriSameClean(mat, attr(mat, "lotriSame"))
     .lst2 <- lotriMatInv(mat) # nolint
     for (.i in seq_along(.lst2)) {
       .curMat <- .lst2[[.i]]
       .curMatF <- attr(.curMat, "lotriFix")
       .curMatU <- attr(.curMat, "lotriUnfix")
-      .curSame <- attr(.curMat, "lotriSame")
       .n <- dimnames(.curMat)[[1]]
       for (.j in seq_along(.n)) {
         for (.k in seq_len(.j)) {
@@ -48,19 +105,16 @@
           ## offsets are relative and point outside this block, so the
           ## master is resolved against the whole matrix's dimnames.
           .cnd <- default
-          ## A block sliced away from its master (`lotriMatInv(m)[[2]]`)
-          ## keeps an offset that now points before the first row.  The
-          ## linkage is not representable standalone, so the row is
-          ## written as an ordinary one rather than indexed out of range
-          ## into a plausible looking wrong name.
-          if (!is.null(.curSame) && .curSame[.j] > 0L &&
-                .env$eta1 + .k - 1 - .curSame[.k] - eta1 + 1L >= 1L) {
-            ## `.env$eta1` counts GLOBALLY across conditions, but
-            ## `.matNames` is this condition's own dimnames, so the
-            ## master has to be shifted back by where this condition
-            ## starts (`eta1`) before it is used as a name index
-            .mj <- .env$eta1 + .j - 1 - .curSame[.j] - eta1 + 1L
-            .mk <- .env$eta1 + .k - 1 - .curSame[.k] - eta1 + 1L
+          ## `.env$eta1` counts GLOBALLY across conditions, while
+          ## `.cleanSame`/`.matNames` are indexed within this condition
+          .lj <- .env$eta1 + .j - eta1
+          .lk <- .env$eta1 + .k - eta1
+          ## both ends of a cell must be mirrored by the SAME offset, or
+          ## the cell does not repeat anything as a whole
+          if (!is.null(.cleanSame) && .cleanSame[.lj] > 0L &&
+                .cleanSame[.lj] == .cleanSame[.lk]) {
+            .mj <- .lj - .cleanSame[.lj]
+            .mk <- .lk - .cleanSame[.lk]
             ## smaller index first, matching the "(name_k,name_j)" order
             ## the `name` column uses for an off diagonal
             .cnd <- paste0(default, ":same:", .matNames[.mk])

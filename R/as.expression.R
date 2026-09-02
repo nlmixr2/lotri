@@ -263,54 +263,60 @@
     .starts[.i] <- .pos
     .pos <- .pos + dim(x[[.i]])[1]
   }
-  vapply(seq_along(x), function(.i) {
+  ## filled in order: whether a block may be written as `same()` depends
+  ## on whether the blocks BEFORE it were, so this cannot be a `vapply`
+  ## over independent elements
+  .ok <- logical(length(x))
+  for (.i in seq_along(x)) {
+    .ok[.i] <- FALSE
     .s <- attr(x[[.i]], "lotriSame")
-    if (is.null(.s)) return(FALSE)
-    if (any(.s == 0L)) return(FALSE)
-    if (length(unique(.s)) != 1L) return(FALSE)
+    if (is.null(.s)) next
+    if (any(.s == 0L)) next
+    if (length(unique(.s)) != 1L) next
     .w <- which(.starts == .starts[.i] - .s[1])
-    if (length(.w) != 1L) return(FALSE)
-    if (!isTRUE(dim(x[[.w]])[1] == dim(x[[.i]])[1])) return(FALSE)
+    if (length(.w) != 1L) next
+    if (!isTRUE(dim(x[[.w]])[1] == dim(x[[.i]])[1])) next
     ## the master must not itself be a copy: re-parsing `same()` always
     ## repeats the ORIGINAL block, so emitting it for a block that
     ## mirrors a mirror would come back with different offsets
     .ms <- attr(x[[.w]], "lotriSame")
-    if (!is.null(.ms) && any(.ms != 0L)) return(FALSE)
-    ## a re-parsed `same()` repeats the IMMEDIATELY PRECEDING block, so
-    ## every block between the master and this one must itself repeat
-    ## that same master -- which is exactly what a `same()` chain is.
-    ## An independent block in between would make the emitted expression
-    ## re-parse against the wrong master.
+    if (!is.null(.ms) && any(.ms != 0L)) next
+    ## A re-parsed `same()` repeats the IMMEDIATELY PRECEDING block, so
+    ## every block between the master and this one must itself be
+    ## WRITTEN as `same()` against that master.  Checking only that they
+    ## carry the right offsets is not enough: a block that carries them
+    ## but fails its own guard (a label it cannot express, say) is
+    ## written out with explicit values, and this `same()` would then
+    ## repeat THAT block instead of the master.
     if (.i > .w + 1L) {
-      for (.b in seq(.w + 1L, .i - 1L)) {
+      .between <- seq(.w + 1L, .i - 1L)
+      if (!all(.ok[.between])) next
+      if (!all(vapply(.between, function(.b) {
         .bs <- attr(x[[.b]], "lotriSame")
-        if (is.null(.bs) || any(.bs == 0L)) return(FALSE)
-        if (length(unique(.bs)) != 1L) return(FALSE)
-        if (.starts[.b] - .bs[1] != .starts[.w]) return(FALSE)
-      }
+        !is.null(.bs) && .starts[.b] - .bs[1] == .starts[.w]
+      }, logical(1)))) next
     }
-    ## and the values must really match, or `same()` re-parses to a
-    ## DIFFERENT matrix -- silently, since it carries no values of its own
     ## exact, not `all.equal()`'s default tolerance: a genuine copy is
     ## bit identical to its master, and collapsing blocks that merely
     ## agree to ~1e-8 would change the values on the round trip
     if (!isTRUE(all.equal(unclass(x[[.i]]), unclass(x[[.w]]),
                           check.attributes=FALSE, tolerance=0))) {
-      return(FALSE)
+      next
     }
     .fi <- attr(x[[.i]], "lotriFix")
     .fw <- attr(x[[.w]], "lotriFix")
-    if (is.null(.fi) != is.null(.fw)) return(FALSE)
-    if (!is.null(.fi) && !identical(unname(.fi), unname(.fw))) return(FALSE)
+    if (is.null(.fi) != is.null(.fw)) next
+    if (!is.null(.fi) && !identical(unname(.fi), unname(.fw))) next
     ## a `same()` line can carry only ONE trailing `label()`, which
     ## attaches to the last name; a label anywhere else would be dropped
     .li <- attr(x[[.i]], "lotriLabels")
     if (!is.null(.li) && length(.li) > 1L &&
           any(!is.na(.li[-length(.li)]))) {
-      return(FALSE)
+      next
     }
-    TRUE
-  }, logical(1), USE.NAMES=FALSE)
+    .ok[.i] <- TRUE
+  }
+  .ok
 }
 
 #' Get the eta matrix elements for a lotri matrix
