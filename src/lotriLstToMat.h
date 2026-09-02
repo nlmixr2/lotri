@@ -210,7 +210,10 @@ static inline void lotriLstToMatFillInIntAttr(SEXP out, const char *what,
 	  outi[curBand + j] = INTEGER(curAttr)[j];
 	} else {
 	  double v = REAL(curAttr)[j];
-	  outi[curBand + j] = (ISNA(v) || ISNAN(v)) ? 0 : (int)v;
+	  /* only a whole number is an offset; truncating 2.7 to 2 would
+	     invent a repetition that was never described */
+	  outi[curBand + j] =
+	    (ISNA(v) || ISNAN(v) || v != (double)((int)v)) ? 0 : (int)v;
 	}
       }
       curBand += totN;

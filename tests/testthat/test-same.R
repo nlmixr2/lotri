@@ -1376,3 +1376,67 @@ test_that("a hand set double offset vector is carried by lotriMat()", {
   expect_equal(attr(lotri::lotriMat(list(.d)), "lotriSame"),
                c(0L, 0L, 2L, 2L))
 })
+
+test_that("a plus-form block after a line-form block is placed correctly", {
+
+  ## A line-form block leaves `eta1` pointing at its FIRST row, the rest
+  ## counted in `lastN`.  A plus-form block after one used to write over
+  ## those rows.  Alone that was a loud "dimnames not equal to array
+  ## extent"; with `same()` after it, `.fCallSame()`'s own `.resetLastN`
+  ## made the lengths line up again and it became a SILENTLY wrong
+  ## matrix -- a fabricated variance, an overwritten estimate, and the
+  ## copy mirroring the wrong pair.
+  .mix <- lotri::lotri({
+    a ~ 1
+    b ~ c(0.1, 2)
+    c1 + d1 ~ c(3,
+                0.2, 4)
+    e1 + f1 ~ same()
+  })
+  .plus <- lotri::lotri({
+    a + b ~ c(1,
+              0.1, 2)
+    c1 + d1 ~ c(3,
+                0.2, 4)
+    e1 + f1 ~ same()
+  })
+
+  ## the two spellings are the same model
+  expect_equal(unclass(.mix), unclass(.plus), ignore_attr = TRUE)
+  expect_equal(attr(.mix, "lotriSame"), c(0L, 0L, 0L, 0L, 2L, 2L))
+  expect_equal(unname(unclass(.mix)["b", "b"]), 2)
+  expect_equal(unname(unclass(.mix)["d1", "d1"]), 4)
+
+  ## and without `same()` it is no longer an error either
+  expect_equal(unclass(lotri::lotri({
+    a ~ 1
+    b ~ c(0.1, 2)
+    c1 + d1 ~ c(3,
+                0.2, 4)
+  })), unclass(.plus)[1:4, 1:4], ignore_attr = TRUE)
+
+  ## the same under a condition
+  .cnd <- lotri::lotri({
+    a ~ 1 | occ
+    b ~ c(0.1, 2) | occ
+    c1 + d1 ~ c(3,
+                0.2, 4) | occ
+    e1 + f1 ~ same() | occ
+  })
+  expect_equal(unclass(.cnd$occ), unclass(.plus), ignore_attr = TRUE)
+  expect_equal(attr(.cnd$occ, "lotriSame"), c(0L, 0L, 0L, 0L, 2L, 2L))
+})
+
+test_that("a non-integral offset is not truncated into a repetition", {
+
+  .m <- lotri::lotri({
+    a + b ~ c(1,
+              0.1, 2)
+    c1 + d1 ~ same()
+  })
+  .d <- unclass(.m)
+  attr(.d, "lotriSame") <- c(0, 0, 2.7, 2.7)
+  ## 2.7 is not an offset; truncating it to 2 would invent a repetition
+  expect_equal(attr(lotri::lotriMat(list(.d)), "lotriSame"),
+               c(0L, 0L, 0L, 0L))
+})

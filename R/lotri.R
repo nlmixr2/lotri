@@ -503,6 +503,13 @@ NULL
     .n <- unlist(strsplit(as.character(x2), " +[+] +"))
     .n <- .n[.n != "+"]
     if (length(.n) == .num) {
+      ## a line-form block leaves `eta1` pointing at its FIRST row, with
+      ## the rest counted in `lastN`; without settling that first, a
+      ## plus-form block after one writes over the rows the line form
+      ## just wrote.  On its own that produced a loud "dimnames not
+      ## equal to array extent"; once `.fCallSame()` advances `eta1` the
+      ## lengths line up again and it becomes a silently wrong matrix.
+      .resetLastN(env)
       env$names <- c(env$names, .n)
       env$labels <- c(env$labels, rep(NA_character_, length(.n)))
       .j <- 1
