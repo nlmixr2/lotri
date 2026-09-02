@@ -1125,7 +1125,7 @@ test_that("a repeated block must be separated from the rest of the matrix", {
   .l <- lotri::lotriEst(lotri::as.lotri(.df), drop = TRUE)
 
   ## the 3x3 stays whole ...
-  expect_equal(vapply(lotri:::.lotriSameSplit(.l),
+  expect_equal(vapply(.lotriSameSplit(.l),
                       function(x) dim(x)[1], integer(1)),
                c(3L, 2L))
   ## ... so the covariance that crosses the claimed boundary survives
@@ -1151,7 +1151,7 @@ test_that("a forced block boundary may not cut a covariance that spans it", {
   .l <- lotri::lotriEst(lotri::as.lotri(.df), drop = TRUE)
 
   ## the 3x3 must stay whole ...
-  expect_equal(vapply(lotri:::.lotriSameSplit(.l),
+  expect_equal(vapply(.lotriSameSplit(.l),
                       function(x) dim(x)[1], integer(1)),
                c(1L, 3L))
   ## ... so the covariance that spans the cut survives

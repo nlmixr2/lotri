@@ -473,7 +473,7 @@ test_that(".lotriGetMatrixFromEnv line 1097: non-NULL df with empty $i", {
     fix = logical(0), unfix = logical(0)
   )
   env$names <- character(0)
-  result <- lotri:::.lotriGetMatrixFromEnv(env)
+  result <- .lotriGetMatrixFromEnv(env)
   expect_equal(nrow(result), 0L)
   expect_equal(ncol(result), 0L)
 })
