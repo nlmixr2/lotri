@@ -1728,3 +1728,28 @@ test_that("a block declared without a condition stays at the default level", {
   expect_equal(dimnames(unclass(.k$id))[[1]], c("a", "b"))
   expect_equal(dimnames(unclass(.k$occ))[[1]], c("c1", "d1"))
 })
+
+test_that("same() finds its level across an intervening other level", {
+
+  ## the level was looked up only if it was the most recently parsed
+  ## condition, so an unrelated line at another level in between hid a
+  ## block that is plainly still there
+  .m <- lotri::lotri({
+    a + b ~ c(1,
+              0.1, 2) | occ
+    z ~ 1 | id
+    c1 + d1 ~ same() | occ
+  })
+
+  expect_equal(dimnames(unclass(.m$occ))[[1]], c("a", "b", "c1", "d1"))
+  expect_equal(dimnames(unclass(.m$id))[[1]], "z")
+  expect_equal(attr(.m$occ, "lotriSame"), c(0L, 0L, 2L, 2L))
+  expect_equal(unclass(.m$occ)[3:4, 3:4], unclass(.m$occ)[1:2, 1:2],
+               ignore_attr = TRUE)
+
+  ## a level that genuinely has no block still says so
+  .expectLotriErr(lotri::lotri({
+    a + b ~ c(1, 0.1, 2)
+    c1 + d1 ~ same() | occ
+  }), "'same()' has no block to repeat at level 'occ'")
+})

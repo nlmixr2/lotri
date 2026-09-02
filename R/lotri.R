@@ -825,9 +825,16 @@ NULL
   if (!is.null(.same$cnd)) {
     .cnd <- .parseCondition(.same$cnd, envir=env)[[1]]
     .at <- paste0(" at level '", .cnd, "'")
-    if (exists("lastCnd", env) && env$lastCnd == .cnd && exists(.cnd, env)) {
+    ## look the level up by NAME.  Requiring it to be the most recently
+    ## parsed condition meant an unrelated line at another level in
+    ## between hid a block that is plainly still there:
+    ##   a + b ~ c(1, .1, 2) | occ
+    ##   z ~ 1 | id
+    ##   c1 + d1 ~ same() | occ      <- used to say "nothing to repeat"
+    if (exists(.cnd, env)) {
       .tgt <- env[[.cnd]]
       env$lastTildeInCnd <- TRUE
+      env$lastCnd <- .cnd
     } else {
       stop("'same()' has no block to repeat", .at, call.=FALSE)
     }
@@ -3023,10 +3030,17 @@ NULL
 #'  its own, it is the block it mirrors, so the prior goes on that block.
 #'
 #'  \code{same()} looks back only within one \code{{}} block, and only
-#'  at its own level of variability.  Each extra argument to
-#'  \code{lotri()} is parsed by its own call, so
+#'  at its own level of variability -- though other levels may be
+#'  written in between.  Each extra argument to \code{lotri()} is
+#'  parsed by its own call, so
 #'  \code{lotri(a + b ~ c(1, 0.1, 2), c1 + d1 ~ same())} has nothing to
 #'  repeat; write the two lines in one \code{lotri({})} block instead.
+#'
+#'  Note that the rows of one block always share a level of variability,
+#'  because they covary.  Writing the line form with a condition on a
+#'  later row therefore places the whole block at that level:
+#'  \code{lotri({a ~ 1; b ~ c(0.1, 2) | occ})} puts both \code{a} and
+#'  \code{b} in \code{occ}.
 #'
 #'  In the data frame from \code{as.data.frame()} the repetition is
 #'  recorded in the existing \code{condition} column rather than in a
