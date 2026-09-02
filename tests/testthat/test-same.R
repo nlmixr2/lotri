@@ -1440,3 +1440,112 @@ test_that("a non-integral offset is not truncated into a repetition", {
   expect_equal(attr(lotri::lotriMat(list(.d)), "lotriSame"),
                c(0L, 0L, 0L, 0L))
 })
+
+test_that("an arithmetic right hand side after a line-form block lands right", {
+
+  ## `d ~ 0.1*2` is a call of length 3, so it falls past `.fCallTilde()`
+  ## into `.fcallTildeLhsSum()`'s numeric branch -- which, like the
+  ## plus-form branch, has to settle a preceding line-form block.  Alone
+  ## it was a loud error; with `same()` after it the lengths lined up
+  ## again and it became a silently wrong matrix.
+  .m <- lotri::lotri({
+    a ~ 1
+    b ~ c(0.1, 2)
+    d ~ 0.1 * 2
+    e ~ same()
+  })
+
+  expect_equal(diag(unclass(.m)), c(a = 1, b = 2, d = 0.2, e = 0.2))
+  expect_equal(unname(unclass(.m)["a", "b"]), 0.1)
+  ## `e` repeats `d`, not `b`
+  expect_equal(attr(.m, "lotriSame"), c(0L, 0L, 0L, 1L))
+
+  ## and the plain form is no longer an error
+  expect_equal(unclass(lotri::lotri({
+    a ~ 1
+    b ~ c(0.1, 2)
+    d ~ 0.1 * 2
+  })), unclass(.m)[1:3, 1:3], ignore_attr = TRUE)
+})
+
+test_that("a 1x1 block under a condition settles the line form too", {
+
+  ## the `.num == 1` branch of `.lotri1()` set the counter before the
+  ## reset could use it, so the fix was dead for 1x1 blocks -- reachable
+  ## only through the conditioned route, since an unconditioned scalar
+  ## goes through `.fCallTilde()`
+  .m <- lotri::lotri({
+    a ~ 1 | occ
+    b ~ c(0.1, 2) | occ
+    c1 ~ 3 | occ
+    d1 ~ same() | occ
+  })
+
+  expect_equal(diag(unclass(.m$occ)), c(a = 1, b = 2, c1 = 3, d1 = 3))
+  expect_equal(unname(unclass(.m$occ)["a", "b"]), 0.1)
+  expect_equal(attr(.m$occ, "lotriSame"), c(0L, 0L, 0L, 1L))
+})
+
+test_that("lotriEst(drop=TRUE) keeps the class the attributes need", {
+
+  ## the class was kept only for `lotriFix`, so a repeated block with no
+  ## fixed elements came back unclassed with the attribute orphaned --
+  ## every consumer then dispatched to the default method and the
+  ## repetition was gone
+  .m <- lotri::lotri({
+    tk <- 1
+    a + b ~ c(1,
+              0.1, 2)
+    c1 + d1 ~ same()
+  })
+  .d <- lotri::lotriEst(.m, drop = TRUE)
+
+  expect_s3_class(.d, "lotriFix")
+  expect_equal(attr(.d, "lotriSame"), c(0L, 0L, 2L, 2L))
+  expect_true(any(lotri::lotriIsSame(as.data.frame(.d)$condition)))
+
+  ## a labelled matrix keeps its class for the same reason
+  .l <- lotri::lotriEst(lotri::lotri({
+    tk <- 1
+    a ~ 1
+    label("LA")
+  }), drop = TRUE)
+  expect_s3_class(.l, "lotriFix")
+
+  ## and a plain one still loses it
+  expect_false(inherits(lotri::lotriEst(lotri::lotri({
+    tk <- 1
+    a ~ 1
+  }), drop = TRUE), "lotriFix"))
+})
+
+test_that("a frame pairing a prior with a repeated block is refused", {
+
+  ## `lotri()` refuses a prior on a copy at parse time; reading a frame
+  ## that pairs the two would otherwise build an object that cannot be
+  ## written back out -- `as.expression()` emitted both the `same()`
+  ## line and the `prior()` line, and re-parsing rejected it
+  .df <- as.data.frame(lotri::lotri({
+    a + b ~ c(1,
+              0.1, 2)
+    c1 + d1 ~ same()
+  }))
+
+  .diag <- .df
+  .diag$prior[.diag$name == "c1"] <- "dnorm(1, 2)"
+  expect_error(lotri::as.lotri(.diag), "cannot carry its own prior")
+
+  .off <- .df
+  .off$prior[.off$name == "(c1,d1)"] <- "dnorm(1, 2)"
+  expect_error(lotri::as.lotri(.off), "cannot carry its own prior")
+
+  ## on the master it is fine and still round trips
+  .ok <- as.data.frame(lotri::lotri({
+    a + b ~ c(1,
+              0.1, 2)
+    c1 + d1 ~ same()
+    prior(a) ~ dnorm(0, 1)
+  }))
+  expect_error(lotri::as.lotri(.ok), NA)
+  expect_equal(as.data.frame(lotri::as.lotri(.ok)), .ok)
+})

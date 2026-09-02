@@ -234,12 +234,19 @@ lotri({
 
 ## Bug fixes
 
-* A plus-form block written after a line-form block overwrote the rows
+* `lotriEst(x, drop=TRUE)` kept the `lotriFix` class only when there
+  were fixed elements, so a matrix carrying labels, priors or a
+  `same()` repetition came back unclassed with the attribute orphaned
+  and every consumer dispatching to the default method.
+
+* A plus-form block, or a block whose right hand side is arithmetic
+  (`d ~ 0.1*2`), written after a line-form block overwrote the rows
   the line form had just written.  A line-form block leaves the row
   counter pointing at its FIRST row with the rest held separately, and
-  the plus-form branch never settled that, so
+  neither branch settled that, so
   `lotri({a ~ 1; b ~ c(0.1, 2); c1 + d1 ~ c(3, 0.2, 4)})` failed with
-  "length of 'dimnames' [1] not equal to array extent".
+  "length of 'dimnames' [1] not equal to array extent".  The same
+  applied to a 1x1 block under a condition.
 
 * A conditioned block written in the line form lost every row after the
   first.  `a ~ 1 | occ` did not set the `lastN` counter the line form

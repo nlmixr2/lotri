@@ -120,6 +120,20 @@ as.lotri.matrix <- function(x, ..., default = "") {
     }
     .same[.cur] <- as.integer(.cur - .w)
   }
+  ## a repeated element is not a parameter of its own, so it cannot
+  ## carry a prior -- `lotri()` refuses one at parse time, and reading a
+  ## frame that pairs the two would otherwise build an object that
+  ## cannot be written back out
+  if (any(names(x) == "prior")) {
+    .wp <- which(!is.na(x$prior) & !is.null(.sp$master) &
+                   vapply(.sp$master, function(.m) !is.null(.m),
+                          logical(1), USE.NAMES=FALSE))
+    if (length(.wp) > 0L) {
+      stop("'", x$name[.wp[1]], "' repeats an earlier block with ",
+           "'same()', so it cannot carry its own prior; put the prior ",
+           "on the block it repeats", call.=FALSE)
+    }
+  }
   if (any(.same != 0L)) {
     ## master wins: an estimator writes back only the block being
     ## estimated, so a repeated block takes its values from its master

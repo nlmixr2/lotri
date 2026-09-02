@@ -497,9 +497,6 @@ NULL
   env$netas <- length(.r)
   .num <- sqrt(1 + env$netas * 8) / 2 - 1 / 2
   if (round(.num) == .num) {
-    if (.num == 1) {
-      env$lastN <- 1
-    }
     .n <- unlist(strsplit(as.character(x2), " +[+] +"))
     .n <- .n[.n != "+"]
     if (length(.n) == .num) {
@@ -509,7 +506,12 @@ NULL
       ## just wrote.  On its own that produced a loud "dimnames not
       ## equal to array extent"; once `.fCallSame()` advances `eta1` the
       ## lengths line up again and it becomes a silently wrong matrix.
+      ## This has to run BEFORE `lastN` is set for a 1x1 block, or that
+      ## assignment defeats it and the reset never moves `eta1`.
       .resetLastN(env)
+      if (.num == 1) {
+        env$lastN <- 1
+      }
       env$names <- c(env$names, .n)
       env$labels <- c(env$labels, rep(NA_character_, length(.n)))
       .j <- 1
@@ -582,8 +584,15 @@ NULL
     .val <- try(eval(x[[3]], envir=.lotriParentEnv), silent = TRUE)
     names(.val) <- NULL
     if (is.numeric(.val) || is.integer(.val)) {
+      ## an RHS like `d ~ 0.1*2` reaches here rather than
+      ## `.fCallTilde()`'s scalar branch, so it has to settle a preceding
+      ## line-form block the same way -- otherwise the row lands on top
+      ## of that block, loudly on its own and SILENTLY once a `same()`
+      ## follows and makes the lengths line up again
+      .resetLastN(env)
       env$netas <- 1
       env$eta1 <- env$eta1 + 1
+      env$lastN <- 1
       .lotriSameSetBlk(env, env$eta1 - 1L, 1L)
       env$names <- c(env$names, as.character(x[[2]]))
       env$labels <- c(env$labels, NA_character_)

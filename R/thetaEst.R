@@ -337,7 +337,15 @@ lotriEst <- function(x, drop=FALSE) {
   if (drop) {
     y <- x
     attr(y, "lotriEst") <- NULL
-    if (!is.null(attr(y, "lotriFix"))) {
+    ## the class has to stay for EVERY attribute that needs it, not just
+    ## `lotriFix`: dropping it leaves the attribute orphaned, and
+    ## `print()`/`as.data.frame()`/`as.expression()` then dispatch to the
+    ## default methods.  For `lotriSame` that means losing the
+    ## repetition, i.e. a different number of estimated parameters.
+    if (any(vapply(c("lotriFix", "lotriUnfix", "lotriSame",
+                     "lotriLabels", "lotriPriors", "lotriOffDiagPriors"),
+                   function(.a) !is.null(attr(y, .a, exact=TRUE)),
+                   logical(1), USE.NAMES=FALSE))) {
       return(y)
     }
     class(y) <- NULL
