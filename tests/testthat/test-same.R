@@ -317,6 +317,17 @@ test_that("same() error paths", {
     c1 + d1 ~ same() | occ
   }), "'same()' has no block to repeat at level 'occ'")
 
+  ## the master is at another level of variability
+  .expectLotriErr(lotri::lotri({
+    a + b ~ c(1, 0.1, 1) | occ
+    c1 + d1 ~ same()
+  }), "'same()' has no block to repeat")
+
+  ## each extra argument to `lotri()` is parsed by its own call, so
+  ## there is no shared parse state for `same()` to look back into
+  expect_error(lotri::lotri(a + b ~ c(1, 0.1, 1), c1 + d1 ~ same()),
+               "in the same '{}' block", fixed = TRUE)
+
   ## these are raised while the matrix is assembled, outside the per line
   ## collection, so they propagate with their own message
   expect_error(lotri::lotri({
@@ -418,4 +429,21 @@ test_that("a repeat whose fixed flags differ is not re-emitted as same()", {
 
   expect_false(any(grepl("same()", as.character(as.expression(.bad)),
                          fixed = TRUE)))
+})
+
+test_that("same() finds its block across an intervening line at another level", {
+
+  ## `z ~ 5` lands at the id level; the `occ` block is still what the
+  ## repeat at the occ level looks back to
+  .m <- lotri::lotri({
+    a1 + b1 ~ c(1,
+                0.1, 2) | occ
+    z ~ 5
+    a2 + b2 ~ same() | occ
+  })
+
+  expect_equal(names(.m), c("id", "occ"))
+  expect_equal(dim(.m$id), c(1L, 1L))
+  expect_equal(dim(.m$occ), c(4L, 4L))
+  expect_equal(attr(.m$occ, "lotriSame"), c(0L, 0L, 2L, 2L))
 })

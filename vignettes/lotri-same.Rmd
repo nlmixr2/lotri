@@ -84,6 +84,16 @@ lotri({
 })
 ```
 
+`same()` looks back only within one `{}` block, and only at its own
+level of variability.  Each extra argument to `lotri()` is parsed by its
+own call, so this has nothing to repeat:
+
+```{r, error = TRUE}
+lotri(a + b ~ c(1, 0.1, 2), c1 + d1 ~ same())
+```
+
+Write the two lines in one `lotri({})` block instead.
+
 `same()` is refused with `rcm=TRUE` and with a `cov` function.  Both
 reorder or adjust the whole matrix, which would move a repeated block
 away from the block it is supposed to repeat; erroring is better than

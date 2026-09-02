@@ -797,8 +797,13 @@ NULL
     }
   }
   if (is.null(.tgt$sameBlkN) || is.null(.tgt$sameMasterBase)) {
+    ## Also the message for the `lotri(a ~ 1, b ~ same())` form, where a
+    ## preceding block does exist but in a different argument: each
+    ## argument is parsed by its own `lotri()` call, so there is no
+    ## shared parse state for `same()` to look back into.
     stop("'same()' has no block to repeat", .at,
-         "; it must follow a matrix block", call.=FALSE)
+         "; it must follow a matrix block in the same '{}' block",
+         call.=FALSE)
   }
   .blkN <- .tgt$sameBlkN
   if (length(.n) != .blkN) {
@@ -2913,6 +2918,12 @@ NULL
 #'  no arguments, may be used with a condition
 #'  (\code{name3 + name4 ~ same() | occ}), and inherits the fixed flags
 #'  of the block it repeats.
+#'
+#'  \code{same()} looks back only within one \code{{}} block, and only
+#'  at its own level of variability.  Each extra argument to
+#'  \code{lotri()} is parsed by its own call, so
+#'  \code{lotri(a + b ~ c(1, 0.1, 2), c1 + d1 ~ same())} has nothing to
+#'  repeat; write the two lines in one \code{lotri({})} block instead.
 #'
 #'  In the data frame from \code{as.data.frame()} the repetition is
 #'  recorded in the existing \code{condition} column rather than in a

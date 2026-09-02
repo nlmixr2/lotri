@@ -84,6 +84,12 @@ This can take an R matrix, a list including matrices or
  (\code{name3 + name4 ~ same() | occ}), and inherits the fixed flags
  of the block it repeats.
 
+ \code{same()} looks back only within one \code{{}} block, and only
+ at its own level of variability.  Each extra argument to
+ \code{lotri()} is parsed by its own call, so
+ \code{lotri(a + b ~ c(1, 0.1, 2), c1 + d1 ~ same())} has nothing to
+ repeat; write the two lines in one \code{lotri({})} block instead.
+
  In the data frame from \code{as.data.frame()} the repetition is
  recorded in the existing \code{condition} column rather than in a
  new column, naming the element that is mirrored:
