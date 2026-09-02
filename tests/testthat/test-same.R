@@ -1753,3 +1753,36 @@ test_that("same() finds its level across an intervening other level", {
     c1 + d1 ~ same() | occ
   }), "'same()' has no block to repeat at level 'occ'")
 })
+
+test_that("an unconditioned same() does not inherit a stale level marker", {
+
+  ## `same()` is dispatched ahead of the generic `~` branch, so it has
+  ## to clear the "was folded into a level" marker itself.  Inheriting
+  ## it from an earlier folded line made the NEXT unconditioned line be
+  ## folded into a level neither of them named.
+  .m <- lotri::lotri({
+    z + w ~ c(1,
+              0.1, 2)
+    a ~ 1 | occ
+    b ~ c(0.2, 3)
+    u + v ~ same()
+    x ~ 5
+  })
+
+  expect_equal(dimnames(unclass(.m$id))[[1]],
+               c("z", "w", "u", "v", "x"))
+  expect_equal(dimnames(unclass(.m$occ))[[1]], c("a", "b"))
+  expect_equal(attr(.m$id, "lotriSame"), c(0L, 0L, 2L, 2L, 0L))
+
+  ## a conditioned `same()` still marks its own level, so a following
+  ## unconditioned line is not dragged into it
+  .c <- lotri::lotri({
+    a + b ~ c(1,
+              0.1, 2) | occ
+    c1 + d1 ~ same() | occ
+    e ~ 5
+  })
+  expect_equal(dimnames(unclass(.c$id))[[1]], "e")
+  expect_equal(dimnames(unclass(.c$occ))[[1]],
+               c("a", "b", "c1", "d1"))
+})

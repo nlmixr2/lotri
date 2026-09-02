@@ -2114,6 +2114,11 @@ NULL
 #' @author Matthew L. Fidler
 .fCall <- function(x, env) {
   if (.lotriIsSameLine(x)) {
+    ## `same()` is dispatched ahead of the generic `~` branch, so it has
+    ## to clear the fold marker itself -- otherwise an unconditioned
+    ## `same()` inherits it from an earlier folded line and the NEXT
+    ## unconditioned line is folded into a level neither of them named
+    env$lastFoldedIntoCnd <- FALSE
     on.exit(env$lastTildeInCnd <- .lotriTildeInCnd(x, env), add=TRUE)
     ## Checked before every prior branch: `.lotriIsThetaPriorLine()` would
     ## otherwise claim `tka ~ same()` whenever `tka` is a population
