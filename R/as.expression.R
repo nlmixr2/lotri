@@ -164,11 +164,18 @@
       if (.sameEmit[i]) {
         ## one line for the whole repeated block; a `+`-joined left hand
         ## side is legal in line-form output too
+        .sameLab <- NULL
+        if (!is.null(.labels)) {
+          .l <- .labels[length(.labels)]
+          if (!is.na(.l)) {
+            .sameLab <- str2lang(paste0("quote(label(", deparse1(.l), "))"))
+          }
+        }
         return(list(list(
           str2lang(paste0("quote(", paste(.nme, collapse=" + "), " ~ same()",
                           ifelse(condition == "id", "",
                                  paste0("| ", condition)), ")")),
-          NULL)))
+          .sameLab)))
       }
       lapply(seq_len(.n), function(i) {
         .c <- .fixOrC
@@ -279,6 +286,13 @@
     .fw <- attr(x[[.w]], "lotriFix")
     if (is.null(.fi) != is.null(.fw)) return(FALSE)
     if (!is.null(.fi) && !identical(unname(.fi), unname(.fw))) return(FALSE)
+    ## a `same()` line can carry only ONE trailing `label()`, which
+    ## attaches to the last name; a label anywhere else would be dropped
+    .li <- attr(x[[.i]], "lotriLabels")
+    if (!is.null(.li) && length(.li) > 1L &&
+          any(!is.na(.li[-length(.li)]))) {
+      return(FALSE)
+    }
     TRUE
   }, logical(1), USE.NAMES=FALSE)
 }

@@ -497,3 +497,48 @@ test_that("a repeated block under a condition names its master correctly", {
   expect_equal(attr(lotri::as.lotri(.df)$occ, "lotriSame"),
                c(0L, 0L, 2L, 2L))
 })
+
+test_that("a label on a repeated block survives as.expression()", {
+
+  ## `same()` carries no values, so the trailing `label()` is the only
+  ## place the copy's label can go; without it the label was silently
+  ## dropped on the round trip
+  .m <- lotri::lotri({
+    a + b ~ c(1,
+              0.1, 2)
+    label("master")
+    c1 + d1 ~ same()
+    label("copy")
+  })
+
+  expect_equal(attr(.m, "lotriLabels"), c(NA, "master", NA, "copy"))
+
+  .e <- as.character(as.expression(.m))
+  expect_true(any(grepl("c1 + d1 ~ same()", .e, fixed = TRUE)))
+  expect_true(any(grepl('label("copy")', .e, fixed = TRUE)))
+
+  .r <- eval(as.expression(.m))
+  expect_equal(attr(.r, "lotriLabels"), c(NA, "master", NA, "copy"))
+  expect_equal(as.data.frame(.r), as.data.frame(.m))
+})
+
+test_that("a label same() cannot carry blocks the same() shorthand", {
+
+  ## only ONE trailing `label()` is expressible, and it attaches to the
+  ## last name; a label on an earlier row of the copy would be lost, so
+  ## the block is written out with its explicit values instead
+  .m <- lotri::lotri({
+    a + b ~ c(1,
+              0.1, 2)
+    c1 + d1 ~ same()
+  })
+  .bad <- unclass(.m)
+  attr(.bad, "lotriSame") <- c(0L, 0L, 2L, 2L)
+  attr(.bad, "lotriLabels") <- c(NA, NA, "first", NA)
+  class(.bad) <- c("lotriFix", "matrix", "array")
+
+  expect_false(any(grepl("same()", as.character(as.expression(.bad)),
+                         fixed = TRUE)))
+  expect_equal(attr(eval(as.expression(.bad)), "lotriLabels"),
+               c(NA, NA, "first", NA))
+})
