@@ -291,10 +291,17 @@
     if (.i > .w + 1L) {
       .between <- seq(.w + 1L, .i - 1L)
       if (!all(.ok[.between])) next
+      ## nocov start
+      ## Belt and braces.  A block that is `.ok` was itself accepted
+      ## above, and 283 rejects a copy of a copy, so its master is the
+      ## same original this one points at -- there is no input reaching
+      ## here that fails this.  Kept because the reasoning is subtle and
+      ## the cost of being wrong is a matrix that re-parses differently.
       if (!all(vapply(.between, function(.b) {
         .bs <- attr(x[[.b]], "lotriSame")
         !is.null(.bs) && .starts[.b] - .bs[1] == .starts[.w]
       }, logical(1)))) next
+      ## nocov end
     }
     ## exact, not `all.equal()`'s default tolerance: a genuine copy is
     ## bit identical to its master, and collapsing blocks that merely

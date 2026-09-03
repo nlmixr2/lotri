@@ -675,7 +675,10 @@ NULL
             ## `x[-seq_len(0)]` is EMPTY, not everything, so the tail
             ## is taken by a positive test rather than a negative index
             .tailOf <- function(v) {
-              if (is.null(v)) return(NULL)
+              ## `names`, `labels` and `sameOff` are all grown together
+              ## whenever a row is declared, so none is NULL once there
+              ## is an open block to move -- the guard is defensive
+              if (is.null(v)) return(NULL) # nocov
               v[seq_along(v) > .cut]
             }
             .env2$names <- .tailOf(env$names)
