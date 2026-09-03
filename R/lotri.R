@@ -2769,6 +2769,16 @@ NULL
     .env2$isCov <- env$isCov
     .env2$rcm <- env$rcm
     .env2$fun <- env$fun
+    ## the rows written at the default level go AFTER the ones the level
+    ## was given by name, so they have to be shifted by what is already
+    ## there.  Appending them unshifted wrote them on top, which came out
+    ## as "length of 'dimnames' [1] not equal to array extent" for any
+    ## program that used both `| id` and an unconditioned line
+    .off <- length(.env2$names)
+    if (!is.null(env$df) && .off > 0L) {
+      env$df$i <- env$df$i + .off
+      env$df$j <- env$df$j + .off
+    }
     .env2$df <- rbind(.env2$df, env$df)
     .env2$lastN <- 0
     ## carry the `same()` offsets across with the rows they describe.

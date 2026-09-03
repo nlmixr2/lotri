@@ -266,6 +266,16 @@ lotri({z1 ~ 1 | occ; z2 ~ 1 | occ2; z3 ~ c(1.3); z4 ~ c(0.1, 2.4) | occ})
 # `z1` was gone
 ```
 
+* The default level can now be named as well as left implicit.  Rows
+  written at the default level are appended after the ones the level was
+  given by name, but they were not shifted to sit after them, so any
+  program that used both `| id` and an unconditioned line died with
+  "length of 'dimnames' [1] not equal to array extent":
+
+```r
+lotri({a ~ 1 | id; b ~ 2})
+```
+
 * An unconditioned line folded into the level of the line before it now
   continues the block that is open there, rather than the level's whole
   height.  The two agreed only while a level held a single block, so

@@ -293,3 +293,35 @@ test_that("an unconditioned continuation folds into the open block, not the leve
                         0, 1.2, 0.3,
                         0, 0.3, 2.3), 3, 3))
 })
+
+test_that("the default level can be named as well as left implicit", {
+
+  ## rows written at the default level go after the ones the level was
+  ## given by name.  They were appended without being shifted, so they
+  ## landed on top of those, and any program that used both `| id` and
+  ## an unconditioned line died with "length of 'dimnames' [1] not equal
+  ## to array extent"
+  .m <- lotri::lotri({
+    a ~ 1 | id
+    b ~ 2
+  })
+  expect_equal(dimnames(unclass(.m$id))[[1]], c("a", "b"))
+  expect_equal(unname(unclass(.m$id)), matrix(c(1, 0, 0, 2), 2, 2))
+
+  ## the other order, and a continuation written back at `id`
+  expect_equal(dimnames(unclass(lotri::lotri({
+    a ~ 1
+    b ~ 2 | id
+  })$id))[[1]], c("b", "a"))
+
+  .c <- lotri::lotri({
+    a ~ 1 | id
+    b ~ 2
+    c ~ c(0.3, 3) | id
+  })
+  expect_equal(dimnames(unclass(.c$id))[[1]], c("a", "c", "b"))
+  expect_equal(unname(unclass(.c$id)),
+               matrix(c(1, 0.3, 0,
+                        0.3, 3, 0,
+                        0, 0, 2), 3, 3))
+})
