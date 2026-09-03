@@ -2775,11 +2775,12 @@ NULL
     ## as "length of 'dimnames' [1] not equal to array extent" for any
     ## program that used both `| id` and an unconditioned line
     .off <- length(.env2$names)
-    if (!is.null(env$df) && .off > 0L) {
-      env$df$i <- env$df$i + .off
-      env$df$j <- env$df$j + .off
+    .dfDefault <- env$df
+    if (!is.null(.dfDefault) && .off > 0L) {
+      .dfDefault$i <- .dfDefault$i + .off
+      .dfDefault$j <- .dfDefault$j + .off
     }
-    .env2$df <- rbind(.env2$df, env$df)
+    .env2$df <- rbind(.env2$df, .dfDefault)
     .env2$lastN <- 0
     ## carry the `same()` offsets across with the rows they describe.
     ## Padding has to happen BEFORE `names` is extended, since the
