@@ -572,6 +572,37 @@ NULL
   }
 }
 
+#' Combine the property lists of two mentions of one level
+#'
+#' A level may be named more than once in a single `{}` block, and each
+#' mention may carry properties (`| occ(lower = 0)`).  They describe one
+#' level, so they are combined; a property given twice with two different
+#' values is ambiguous rather than a refinement, and is refused with the
+#' message `.mergeProp()` gives for the same clash across arguments.
+#'
+#' @param old property list already recorded for the level, or `NULL`
+#' @param new property list from this mention, or `NULL`
+#' @param cnd level name, for the error message
+#' @return the combined property list, or `NULL` when neither mention
+#'   carried one
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriMergeCndExtra <- function(old, new, cnd) {
+  if (is.null(new)) return(old)
+  if (is.null(old)) return(new)
+  for (.n in names(new)) {
+    if (any(.n == names(old))) {
+      if (!isTRUE(all.equal(old[[.n]], new[[.n]]))) {
+        stop(sprintf(gettext("conflicting '%s' properties for level '%s'"),
+                     .n, cnd), call.=FALSE)
+      }
+    } else {
+      old[[.n]] <- new[[.n]]
+    }
+  }
+  old
+}
+
 #' Move the open block of one parse environment onto the end of another
 #'
 #' A conditioned continuation (`b ~ c(0.1, 2) | occ` after an
@@ -709,10 +740,25 @@ NULL
             env[[paste0(.cnd, ".extra")]] <- .cndFull[[2]]
           } else {
             .env2 <- env[[.cnd]]
+            ## a level named again carries the properties of every
+            ## mention.  Writing only the first one's dropped `lower`
+            ## from `lotri({a ~ 1 | id; b ~ 2 | occ; c ~ 3 | id(lower=1)})`
+            env[[paste0(.cnd, ".extra")]] <-
+              .lotriMergeCndExtra(env[[paste0(.cnd, ".extra")]],
+                                  .cndFull[[2]], .cnd)
           }
           env$cnd <- unique(c(env$cnd, .cnd))
           env$lastCnd <- .cnd
-          .val <- .lotriParseMat(x[[3]][[2]], env=env, noMat=TRUE)
+          ## `.lotriParseMat()` uses its environment as scratch space --
+          ## it records `globalFix`, `sd`, `cor` and friends there -- so
+          ## it gets one of its own, the way `.lotri1()` gives it one.
+          ## Handed the parse environment it wrote `globalFix` onto the
+          ## state shared by every level, and nothing ever cleared it, so
+          ## one `b ~ fix(2) | occ` silently FIXED every later row that
+          ## opened a level: `c ~ 3 | id` came back fixed.
+          .envParse <- new.env(parent = emptyenv())
+          .envParse$lhs <- x[[2]]
+          .val <- .lotriParseMat(x[[3]][[2]], env=.envParse, noMat=TRUE)
           .fix <- .val[[2]]
           .unfix <- .val[[3]]
           .val <- .val[[1]]

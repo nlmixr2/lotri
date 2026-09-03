@@ -346,3 +346,87 @@ test_that("the default level can be named as well as left implicit", {
                         0.3, 3, 0,
                         0, 0, 2), 3, 3))
 })
+
+test_that("a conditioned line does not leak its fix flag onto later levels", {
+
+  ## `.lotriParseMat()` uses its environment as scratch space, and it was
+  ## handed the parse environment shared by every level, where it wrote
+  ## `globalFix` and nothing ever cleared it.  One `fix()` on a
+  ## conditioned line silently FIXED every later row that opened a level.
+  .m <- lotri::lotri({
+    a ~ 1 | occ
+    b ~ fix(2) | occ
+    c ~ 3 | id
+  })
+  expect_equal(unname(attr(.m$occ, "lotriFix")[2, 2]), TRUE)
+  expect_null(attr(.m$id, "lotriFix"))
+
+  ## it was sticky, so it reached every level after it
+  .n <- lotri::lotri({
+    a ~ 1 | occ
+    b ~ fix(2) | occ
+    c ~ 3 | id
+    d ~ 4 | id2
+  })
+  expect_null(attr(.n$id, "lotriFix"))
+  expect_null(attr(.n$id2, "lotriFix"))
+
+  ## the same leak on the line that OPENS a level
+  .o <- lotri::lotri({
+    a ~ fix(1) | occ
+    b ~ 2 | id
+  })
+  expect_equal(unname(attr(.o$occ, "lotriFix")[1, 1]), TRUE)
+  expect_null(attr(.o$id, "lotriFix"))
+
+  ## `unfix()` went the same way
+  .u <- lotri::lotri({
+    a ~ 1 | occ
+    b ~ unfix(2) | occ
+    c ~ 3 | id
+  })
+  expect_null(attr(.u$id, "lotriFix"))
+})
+
+test_that("a level named again keeps the properties of every mention", {
+
+  ## the property list was written only for a level's FIRST mention, so
+  ## `| cnd(...)` on any later one was silently discarded
+  .m <- lotri::lotri({
+    a ~ 1 | id
+    b ~ 2 | occ
+    c ~ 3 | id(lower = 1)
+  })
+  expect_equal(attr(.m, "lotri", exact = TRUE)$id$lower, c(a = 1, c = 1))
+
+  ## including `same`, which decides how many times the level is
+  ## replicated, so losing it built a matrix of the wrong size
+  .s <- lotri::lotri({
+    eta.cl ~ 0.1 | id
+    iov1 ~ 0.2 | occ
+    eta.v ~ 0.3 | id
+    iov2 ~ 0.4 | occ(same = 4L)
+  })
+  expect_equal(attr(.s, "lotri", exact = TRUE)$occ$same, 4L)
+
+  ## two mentions of one property is ambiguous, not a refinement.  The
+  ## `{}` parser collects the line errors and rethrows its own message,
+  ## so the text below is what reaches the caller; the conflict itself is
+  ## checked directly on the merge
+  expect_error(lotri::lotri({
+    et1 ~ 1 | id(lower = 0)
+    et2 ~ 2 | occ
+    et3 ~ 3 | id(lower = 1)
+  }), "lotri syntax errors above")
+  expect_error(.lotriMergeCndExtra(list(lower = 0), list(lower = 1), "id"),
+               "conflicting 'lower' properties for level 'id'")
+  expect_equal(.lotriMergeCndExtra(NULL, list(lower = 1), "id"), list(lower = 1))
+  expect_equal(.lotriMergeCndExtra(list(lower = 1), NULL, "id"), list(lower = 1))
+
+  ## repeating the same value is not
+  expect_equal(attr(lotri::lotri({
+    et1 ~ 1 | id(lower = 0)
+    et2 ~ 2 | occ
+    et3 ~ 3 | id(lower = 0)
+  }), "lotri", exact = TRUE)$id$lower, c(et1 = 0, et3 = 0))
+})

@@ -266,6 +266,22 @@ lotri({z1 ~ 1 | occ; z2 ~ 1 | occ2; z3 ~ c(1.3); z4 ~ c(0.1, 2.4) | occ})
 # `z1` was gone
 ```
 
+* A `fix()` or `unfix()` on a conditioned line no longer leaks onto
+  every level declared after it.  `.lotriParseMat()` uses its
+  environment as scratch space, and the `|` branch handed it the parse
+  state shared by every level, where it recorded `globalFix` and nothing
+  ever cleared it.  One `b ~ fix(2) | occ` silently FIXED every later
+  row that opened a level, so `c ~ 3 | id` came back fixed with no error
+  and no warning.
+
+* A level named more than once now keeps the properties of every
+  mention.  They were recorded only for the first, so
+  `lotri({a ~ 1 | id; b ~ 2 | occ; c ~ 3 | id(lower = 1)})` dropped the
+  bound entirely -- and losing a `same` this way built a matrix of the
+  wrong size.  One property given two different values by two mentions
+  is ambiguous rather than a refinement, and is now refused with the
+  message the comma form already gives for the same clash.
+
 * The default level can now be named as well as left implicit.  Rows
   written at the default level are appended after the ones the level was
   given by name, but they were not shifted to sit after them, so any
