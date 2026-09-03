@@ -234,6 +234,70 @@ lotri({
 
 ## Bug fixes
 
+* A conditioned continuation that does not fit the block open at its
+  level no longer falls back to the default level.  In
+
+```r
+lotri({
+  z1 ~ 1 | occ
+  z2 ~ c(0.1, 2) | occ
+  z3 ~ c(1.3)
+  z4 ~ c(0.1, 2.4) | occ
+})
+```
+
+  the block open at `occ` is `{z1, z2}`, which would need three values
+  to extend, so `z4` was parsed into the default level instead -- where
+  it happened to fit as a continuation of `z3`.  A parameter written
+  `| occ` silently became an id level (between subject) one, with no
+  error and no warning.  The line now carries `z3`'s block over to
+  `occ`, which is the rule a first mention of the level already used, so
+  the two spellings agree; a line that can be placed at neither is an
+  error.
+
+* Naming a level again now writes to that level rather than replacing
+  it.  The level was looked up by "was it the last one seen", so a line
+  at another level in between made the second mention build a fresh
+  level over the top of the first and silently drop everything already
+  declared in it:
+
+```r
+lotri({z1 ~ 1 | occ; z2 ~ 1 | occ2; z3 ~ c(1.3); z4 ~ c(0.1, 2.4) | occ})
+# `z1` was gone
+```
+
+* A `fix()` or `unfix()` on a conditioned line no longer leaks onto
+  every level declared after it.  `.lotriParseMat()` uses its
+  environment as scratch space, and the `|` branch handed it the parse
+  state shared by every level, where it recorded `globalFix` and nothing
+  ever cleared it.  One `b ~ fix(2) | occ` silently FIXED every later
+  row that opened a level, so `c ~ 3 | id` came back fixed with no error
+  and no warning.
+
+* A level named more than once now keeps the properties of every
+  mention.  They were recorded only for the first, so
+  `lotri({a ~ 1 | id; b ~ 2 | occ; c ~ 3 | id(lower = 1)})` dropped the
+  bound entirely -- and losing a `same` this way built a matrix of the
+  wrong size.  One property given two different values by two mentions
+  is ambiguous rather than a refinement, and is now refused with the
+  message the comma form already gives for the same clash.
+
+* The default level can now be named as well as left implicit.  Rows
+  written at the default level are appended after the ones the level was
+  given by name, but they were not shifted to sit after them, so any
+  program that used both `| id` and an unconditioned line died with
+  "length of 'dimnames' [1] not equal to array extent":
+
+```r
+lotri({a ~ 1 | id; b ~ 2})
+```
+
+* An unconditioned line folded into the level of the line before it now
+  continues the block that is open there, rather than the level's whole
+  height.  The two agreed only while a level held a single block, so
+  once a level can be written to more than once the fold asked for a row
+  count no line could supply.
+
 * A condition written on a continuation no longer relocates unrelated
   parameters.  The rows of one block share a level of variability
   because they covary, so a condition on a later row carries that block
