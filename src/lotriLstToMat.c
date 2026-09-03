@@ -212,6 +212,7 @@ SEXP _lotriLstToMat(SEXP lst_, SEXP format, SEXP startNum, SEXP matCls) {
   // concatenation; these used to be silently dropped here.
   doCls |= lotriSetStrAttr(ret, "lotriLabels", li.lst, len, totdim, &pro);
   doCls |= lotriSetStrAttr(ret, "lotriPriors", li.lst, len, totdim, &pro);
+  doCls |= lotriSetIntAttr(ret, "lotriSame", li.lst, len, totdim, &pro);
   if (liEst) {
     doCls = 1;
     SEXP liEstSEXP = PROTECT(_lotriEstDf(lst_, liEst)); pro++;

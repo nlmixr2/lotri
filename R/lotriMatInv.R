@@ -71,6 +71,7 @@ lotriMatInv <- function(mat) {
   .matLabels <- attr(mat, "lotriLabels")
   .matPriors <- attr(mat, "lotriPriors")
   .matPriorsOffDiag <- attr(mat, "lotriOffDiagPriors")
+  .matSame <- attr(mat, "lotriSame")
   .ret <- list()
   .mat <- mat
   .i <- 1
@@ -104,6 +105,20 @@ lotriMatInv <- function(mat) {
         .matPriors <- .matPriors[-.s]
         if (!inherits(.mat1, "lotriFix")) {
           class(.mat1) <- c("lotriFix", class(.mat1))
+        }
+      }
+      if (!is.null(.matSame)) {
+        ## the offsets are RELATIVE, so a positional slice keeps them
+        ## correct even though a repeated block points at a master that
+        ## lives in an earlier block; `lotriMat()` re-concatenation is
+        ## likewise a no-op on the values
+        .mat1Same <- .matSame[.s]
+        .matSame <- .matSame[-.s]
+        if (any(.mat1Same != 0L)) {
+          attr(.mat1, "lotriSame") <- .mat1Same
+          if (!inherits(.mat1, "lotriFix")) {
+            class(.mat1) <- c("lotriFix", class(.mat1))
+          }
         }
       }
       if (!is.null(.matPriorsOffDiag) && length(.matPriorsOffDiag) > 0L) {
@@ -148,6 +163,12 @@ lotriMatInv <- function(mat) {
     }
     if (!is.null(.matPriors)) {
       attr(.mat, "lotriPriors") <- .matPriors
+      if (!inherits(.mat, "lotriFix")) {
+        class(.mat) <- c("lotriFix", class(.mat))
+      }
+    }
+    if (!is.null(.matSame) && any(.matSame != 0L)) {
+      attr(.mat, "lotriSame") <- .matSame
       if (!inherits(.mat, "lotriFix")) {
         class(.mat) <- c("lotriFix", class(.mat))
       }

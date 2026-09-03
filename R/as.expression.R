@@ -142,7 +142,8 @@
 #' @noRd
 .lotriGetEtaLineForm <- function(x, condition="id", nameEst=5L) {
   if (inherits(x, "matrix")) {
-    .x <- lotriMatInv(x) # nolint
+    .x <- .lotriSameSplit(x)
+    .sameEmit <- .lotriSameEmit(.x)
     .l <- lapply(seq_along(.x), function(i) {
       .mat <- .x[[i]]
       .labels <- attr(.mat, "lotriLabels")
@@ -160,6 +161,22 @@
         .useNames <- nameEst <= length(.nme)
       }
       .n <- length(.nme)
+      if (.sameEmit[i]) {
+        ## one line for the whole repeated block; a `+`-joined left hand
+        ## side is legal in line-form output too
+        .sameLab <- NULL
+        if (!is.null(.labels)) {
+          .l <- .labels[length(.labels)]
+          if (!is.na(.l)) {
+            .sameLab <- str2lang(paste0("quote(label(", deparse1(.l), "))"))
+          }
+        }
+        return(list(list(
+          str2lang(paste0("quote(", paste(.nme, collapse=" + "), " ~ same()",
+                          ifelse(condition == "id", "",
+                                 paste0("| ", condition)), ")")),
+          .sameLab)))
+      }
       lapply(seq_len(.n), function(i) {
         .c <- .fixOrC
         if (!is.null(.lotriFix)) {
@@ -226,6 +243,89 @@
   }
 }
 
+#' Which blocks may be re-emitted as `~ same()`?
+#'
+#' A `lotriSame` offset is relative and is only re-parseable as `same()`
+#' when it lands exactly on the start of an earlier block of the same
+#' dimension.  A matrix rebuilt from a hand-edited data frame can carry
+#' an offset that does not, so this is checked rather than assumed; a
+#' block that fails falls back to being written out with its explicit
+#' values, which is still a valid matrix, just without the annotation.
+#'
+#' @param x list of blocks, as returned by `lotriMatInv()`
+#' @return logical vector, one per block
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriSameEmit <- function(x) {
+  .starts <- integer(length(x))
+  .pos <- 0L
+  for (.i in seq_along(x)) {
+    .starts[.i] <- .pos
+    .pos <- .pos + dim(x[[.i]])[1]
+  }
+  ## filled in order: whether a block may be written as `same()` depends
+  ## on whether the blocks BEFORE it were, so this cannot be a `vapply`
+  ## over independent elements
+  .ok <- logical(length(x))
+  for (.i in seq_along(x)) {
+    .ok[.i] <- FALSE
+    .s <- attr(x[[.i]], "lotriSame")
+    if (is.null(.s)) next
+    if (any(.s == 0L)) next
+    if (length(unique(.s)) != 1L) next
+    .w <- which(.starts == .starts[.i] - .s[1])
+    if (length(.w) != 1L) next
+    if (!isTRUE(dim(x[[.w]])[1] == dim(x[[.i]])[1])) next
+    ## the master must not itself be a copy: re-parsing `same()` always
+    ## repeats the ORIGINAL block, so emitting it for a block that
+    ## mirrors a mirror would come back with different offsets
+    .ms <- attr(x[[.w]], "lotriSame")
+    if (!is.null(.ms) && any(.ms != 0L)) next
+    ## A re-parsed `same()` repeats the IMMEDIATELY PRECEDING block, so
+    ## every block between the master and this one must itself be
+    ## WRITTEN as `same()` against that master.  Checking only that they
+    ## carry the right offsets is not enough: a block that carries them
+    ## but fails its own guard (a label it cannot express, say) is
+    ## written out with explicit values, and this `same()` would then
+    ## repeat THAT block instead of the master.
+    if (.i > .w + 1L) {
+      .between <- seq(.w + 1L, .i - 1L)
+      if (!all(.ok[.between])) next
+      ## nocov start
+      ## Belt and braces.  A block that is `.ok` was itself accepted
+      ## above, and 283 rejects a copy of a copy, so its master is the
+      ## same original this one points at -- there is no input reaching
+      ## here that fails this.  Kept because the reasoning is subtle and
+      ## the cost of being wrong is a matrix that re-parses differently.
+      if (!all(vapply(.between, function(.b) {
+        .bs <- attr(x[[.b]], "lotriSame")
+        !is.null(.bs) && .starts[.b] - .bs[1] == .starts[.w]
+      }, logical(1)))) next
+      ## nocov end
+    }
+    ## exact, not `all.equal()`'s default tolerance: a genuine copy is
+    ## bit identical to its master, and collapsing blocks that merely
+    ## agree to ~1e-8 would change the values on the round trip
+    if (!isTRUE(all.equal(unclass(x[[.i]]), unclass(x[[.w]]),
+                          check.attributes=FALSE, tolerance=0))) {
+      next
+    }
+    .fi <- attr(x[[.i]], "lotriFix")
+    .fw <- attr(x[[.w]], "lotriFix")
+    if (is.null(.fi) != is.null(.fw)) next
+    if (!is.null(.fi) && !identical(unname(.fi), unname(.fw))) next
+    ## a `same()` line can carry only ONE trailing `label()`, which
+    ## attaches to the last name; a label anywhere else would be dropped
+    .li <- attr(x[[.i]], "lotriLabels")
+    if (!is.null(.li) && length(.li) > 1L &&
+          any(!is.na(.li[-length(.li)]))) {
+      next
+    }
+    .ok[.i] <- TRUE
+  }
+  .ok
+}
+
 #' Get the eta matrix elements for a lotri matrix
 #'
 #' @param x lotri matrix
@@ -235,10 +335,16 @@
 #' @noRd
 .lotriGetEtaMatEltPlusForm <- function(x, condition="id") {
   if (inherits(x, "matrix")) {
-    .x <- lotriMatInv(x) # nolint
+    .x <- .lotriSameSplit(x)
+    .sameEmit <- .lotriSameEmit(.x)
     .l <- lapply(seq_along(.x), function(i) {
       .mat <- .x[[i]]
       .nme <- dimnames(.mat)[[1]]
+      if (.sameEmit[i]) {
+        return(eval(expr=parse(text=paste0(
+          "quote(", paste(.nme, collapse="+"), "~ same()",
+          ifelse(condition == "id", "", paste0("| ", condition)), ")"))))
+      }
       .n <- length(.nme)
       .v <- vector("numeric", .n * (.n + 1) / 2)
       .k <- 1

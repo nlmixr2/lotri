@@ -7,11 +7,19 @@
     .priors <- attr(mat, "lotriPriors")
     .priorsOffDiag <- attr(mat, "lotriOffDiagPriors")
     .matNames <- dimnames(mat)[[1]]
+    ## validated once against the WHOLE condition matrix, then indexed by
+    ## the row's position within it -- the per block attribute cannot be
+    ## checked on its own, since a copy's offset points outside its block
+    .cleanSame <- .lotriSameClean(mat, attr(mat, "lotriSame"))
     .lst2 <- lotriMatInv(mat) # nolint
     for (.i in seq_along(.lst2)) {
       .curMat <- .lst2[[.i]]
       .curMatF <- attr(.curMat, "lotriFix")
       .curMatU <- attr(.curMat, "lotriUnfix")
+      ## read per block: the top level pass this replaces could only see
+      ## the labels of a single matrix, so a multi-condition object lost
+      ## every label it had
+      .curLab <- attr(.curMat, "lotriLabels")
       .n <- dimnames(.curMat)[[1]]
       for (.j in seq_along(.n)) {
         for (.k in seq_len(.j)) {
@@ -41,6 +49,29 @@
             .wp <- match(.curName, names(.priorsOffDiag))
             if (!is.na(.wp)) .curPrior <- .priorsOffDiag[[.wp]]
           }
+          ## a repeated (`same()`) block records, in the condition, the
+          ## element of the block it mirrors -- by NAME, since the eta
+          ## numbers are renumbered by consumers of this data frame.  The
+          ## offsets are relative and point outside this block, so the
+          ## master is resolved against the whole matrix's dimnames.
+          .cnd <- default
+          ## `.env$eta1` counts GLOBALLY across conditions, while
+          ## `.cleanSame`/`.matNames` are indexed within this condition
+          .lj <- .env$eta1 + .j - eta1
+          .lk <- .env$eta1 + .k - eta1
+          ## both ends of a cell must be mirrored by the SAME offset, or
+          ## the cell does not repeat anything as a whole
+          if (!is.null(.cleanSame) && .cleanSame[.lj] > 0L &&
+                .cleanSame[.lj] == .cleanSame[.lk]) {
+            .mj <- .lj - .cleanSame[.lj]
+            .mk <- .lk - .cleanSame[.lk]
+            ## smaller index first, matching the "(name_k,name_j)" order
+            ## the `name` column uses for an off diagonal
+            .cnd <- paste0(default, ":same:", .matNames[.mk])
+            if (.j != .k) {
+              .cnd <- paste0(.cnd, ":", .matNames[.mj])
+            }
+          }
           .df3 <- rbind(.df3,
                         data.frame(ntheta=NA_integer_,
                                    neta1=.env$eta1 + .j - 1,
@@ -50,10 +81,14 @@
                                    est=.curMat[.j, .k],
                                    upper=Inf,
                                    fix=.fix,
-                                   label=NA_integer_,
+                                   label=if (.j == .k && !is.null(.curLab)) {
+                                     as.character(.curLab[.j])
+                                   } else {
+                                     NA_character_
+                                   },
                                    backTransform=NA_character_,
                                    prior=.curPrior,
-                                   condition=default))
+                                   condition=.cnd))
         }
       }
       .env$eta1 <- max(.df3$neta1) + 1
@@ -117,12 +152,6 @@ as.data.frame.lotriFix <- function(x, row.names = NULL, optional = FALSE, ...,
                       backTransform=character(0),
                       condition=character(0),
                       prior=character(0)))
-  }
-  if (!is.null(attr(x, "lotriLabels"))) {
-    .lab <- attr(x, "lotriLabels")
-    for (i in seq_along(.lab)) {
-      .df$label[which(.df$neta1 == i & .df$neta2 == i)] <- .lab[i]
-    }
   }
   .df[, .ord]
 

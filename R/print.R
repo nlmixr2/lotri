@@ -23,6 +23,7 @@ print.lotriFix <- function(x, ...) {
     .lotriLabels <- attr(.tmp, "lotriLabels")
     .lotriPriors <- attr(.tmp, "lotriPriors")
     .lotriOffDiagPriors <- attr(.tmp, "lotriOffDiagPriors")
+    .lotriSame <- attr(.tmp, "lotriSame")
     if (all(.dim == 0L) && !is.null(.lotriEst)) {
       cat("Lotri Estimates (get with `lotriEst()`):\n")
       print(.lotriEst)
@@ -34,6 +35,7 @@ print.lotriFix <- function(x, ...) {
     attr(.tmp, "lotriLabels") <- NULL
     attr(.tmp, "lotriPriors") <- NULL
     attr(.tmp, "lotriOffDiagPriors") <- NULL
+    attr(.tmp, "lotriSame") <- NULL
     .w <- which(.cls == "lotriFix")
     .cls <- .cls[-.w]
     class(.tmp) <- NULL # Note that a matrix doesn't actually have a class
@@ -63,6 +65,22 @@ print.lotriFix <- function(x, ...) {
       print(.lotriOffDiagPriors)
       cat("\n")
     }
+    if (!is.null(.lotriSame)) {
+      ## the same validated view `as.data.frame()` and `as.expression()`
+      ## use, so the three cannot disagree about what repeats what
+      ## `x`, not the scrubbed `.tmp`: the family view reads the fixed
+      ## flags and labels, which `.tmp` has already had removed
+      .fam <- .lotriSameFamilies(x, .lotriSame)
+      if (!is.null(.fam)) {
+        .dn <- dimnames(.tmp)[[1]]
+        cat("\nThis matrix repeats blocks with `same()`:\n")
+        for (.fm in .fam$families) {
+          cat("  ", paste(.dn[.fm$copy], collapse=", "), " repeat ",
+              paste(.dn[.fm$master], collapse=", "), "\n", sep="")
+        }
+        cat("\n")
+      }
+    }
   } else {
     ## lotri or list
     .lotriEst <- attr(x, "lotriEst")
@@ -76,6 +94,7 @@ print.lotriFix <- function(x, ...) {
     attr(y, "lotriLabels") <- NULL
     attr(y, "lotriPriors") <- NULL
     attr(y, "lotriOffDiagPriors") <- NULL
+    attr(y, "lotriSame") <- NULL
     .cls <- class(y)
     .cls <- .cls[.cls != "lotriFix"]
     class(y) <- .cls

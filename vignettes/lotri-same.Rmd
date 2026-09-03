@@ -1,0 +1,224 @@
+---
+title: "Repeated blocks with same() in lotri"
+author: "Matthew Fidler"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Repeated blocks with same() in lotri}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+library(lotri)
+```
+
+# What `same()` is for
+
+NONMEM can declare an omega block and then repeat it:
+
+```
+$OMEGA BLOCK(2)
+ 0.1
+ 0.01 0.2
+$OMEGA BLOCK(2) SAME
+$OMEGA BLOCK(2) SAME
+```
+
+Those three blocks are not three covariance matrices.  They are *one*
+estimated covariance stamped three times.  That is how inter-occasion
+variability is parameterized: every occasion draws its own random
+effects, but all occasions share one covariance -- and sharing one
+covariance is what lets the per-occasion random effects be
+**correlated**.
+
+`same()` is the `lotri` spelling of that:
+
+```{r}
+iov <- lotri({
+  iov.cl1 + iov.v1 ~ c(0.1,
+                       0.01, 0.2)
+  iov.cl2 + iov.v2 ~ same()
+  iov.cl3 + iov.v3 ~ same()
+})
+
+iov
+```
+
+Three 2x2 blocks, one estimated 2x2:
+
+```{r}
+dim(iov)
+```
+
+# The rules
+
+`same()` repeats the immediately preceding **block**, under new names,
+and takes no arguments.  A second `same()` repeats that same original
+block rather than the previous copy, the way NONMEM chains `SAME`.
+
+It repeats the block *as declared*.  A structural zero in the
+covariance does not split the block in two:
+
+```{r}
+lotri({
+  a + b ~ c(1,
+            0, 1)
+  c1 + d1 ~ same()
+})
+```
+
+A repeated block inherits the fixed flags of the block it repeats, works
+under a condition, and works for a single parameter:
+
+```{r}
+lotri({
+  eta.ka ~ 0.6
+  iov.cl1 + iov.v1 ~ c(0.1,
+                       0.01, 0.2) | occ
+  iov.cl2 + iov.v2 ~ same() | occ
+})
+```
+
+A prior cannot be put on a repeated block.  A copy is not a parameter of
+its own -- it *is* the block it mirrors -- so a prior on it would either
+duplicate the master's prior or silently contradict it:
+
+```{r, error = TRUE}
+lotri({
+  a + b ~ c(1,
+            0.1, 2)
+  c1 + d1 ~ same()
+  prior(c1) ~ dnorm(0, 1)
+})
+```
+
+Put it on the block that is actually estimated (`prior(a) ~ dnorm(0, 1)`).
+
+`same()` looks back only within one `{}` block, and only at its own
+level of variability.  Each extra argument to `lotri()` is parsed by its
+own call, so this has nothing to repeat:
+
+```{r, error = TRUE}
+lotri(a + b ~ c(1, 0.1, 2), c1 + d1 ~ same())
+```
+
+Write the two lines in one `lotri({})` block instead.
+
+`same()` is refused with `rcm=TRUE` and with a `cov` function.  Both
+reorder or adjust the whole matrix, which would move a repeated block
+away from the block it is supposed to repeat; erroring is better than
+returning a matrix whose claimed repetition is no longer true.
+
+# How it is stored: the `condition` column
+
+This is the part other packages need to know.
+
+`as.data.frame()` does **not** gain a column for `same()`.  The
+repetition rides in the existing `condition` column, which names the
+element that is mirrored:
+
+```{r}
+df <- as.data.frame(iov)
+df[, c("neta1", "neta2", "name", "est", "condition")]
+```
+
+The format is
+
+```
+<baseCondition>:same:<masterEta>                 # diagonal row
+<baseCondition>:same:<masterEta1>:<masterEta2>   # covariance row
+```
+
+Two things are worth spelling out.
+
+**The master is named, not indexed.**  `neta1`/`neta2` are renumbered
+whenever parameters are added, dropped or reordered, so an index would
+go stale silently.  Names are unique within one of these data frames and
+survive reordering.
+
+**Covariance rows are carried too.**  The off-diagonal row above points
+at the master's off-diagonal, so the *correlation* is shared, not just
+the variances.
+
+A repeated row keeps its master's `est` and `fix`.  A consumer that
+knows nothing about the suffix therefore still reads a numerically
+correct matrix -- it just thinks the model has more free parameters than
+it does.
+
+# Reading the column
+
+Do not compare `condition` directly.  A test like `condition == "id"`
+misses every repeated row, and `condition != "id"` wrongly treats one as
+a different level of variability.  Use these instead:
+
+```{r}
+lotriBaseCondition(df$condition)
+
+lotriIsSame(df$condition)
+```
+
+`lotriSameMap()` gives, for each eta, the index of the eta it mirrors
+(`0` when it is an ordinary or master eta).  This is the object an
+estimator wants, since it says which parameters are actually free:
+
+```{r}
+lotriSameMap(df)
+```
+
+When an edit structurally changes a block -- deleting one of its
+parameters, say -- the linkage no longer describes anything real.
+`lotriSameBreak()` drops it, turning the copies into ordinary
+independent blocks and leaving every other family alone:
+
+```{r}
+broken <- lotriSameBreak(df, "iov.v2")
+broken$condition
+```
+
+# Round trips
+
+`same()` survives every direction:
+
+```{r}
+identical(as.data.frame(as.lotri(df)), df)
+
+identical(as.data.frame(eval(as.expression(iov))), df)
+
+as.expression(iov)
+```
+
+and the linkage is carried across `lotriMat()`, so combining blocks does
+not silently turn a repeated block back into independently estimated
+parameters:
+
+```{r}
+attr(lotriMat(lotriMatInv(iov)), "lotriSame")
+```
+
+# `same()` versus `cnd(same = n)`
+
+There are two spellings of the same NONMEM idea at different
+granularities, and they compose.
+
+- `~ same()` repeats **one block** inside a matrix, under names you
+  choose.  This is `$OMEGA BLOCK(n) SAME`.
+- `cnd(same = n)` repeats a **whole nesting level** `n` times, and is
+  what `lotriSep()` sets up for `rxode2`'s nested simulation.
+
+Used together, a two-parameter correlated occasion block declared with
+`same()` can itself be stamped once per occasion:
+
+```{r}
+nested <- lotri(lotri({
+  a + b ~ c(1,
+            0.1, 2)
+  c1 + d1 ~ same()
+}) | occ(same = 3L))
+
+dim(lotriMat(nested, format = "ETA[%d]", start = 1L))
+```
