@@ -420,6 +420,15 @@ test_that("a level named again keeps the properties of every mention", {
   }), "lotri syntax errors above")
   expect_error(.lotriMergeCndExtra(list(lower = 0), list(lower = 1), "id"),
                "conflicting 'lower' properties for level 'id'")
+
+  ## a later mention may add a property the first did not give
+  .b <- lotri::lotri({
+    a ~ 1 | occ(lower = 0)
+    b ~ 2 | id
+    c ~ 3 | occ(upper = 10)
+  })
+  expect_equal(attr(.b, "lotri", exact = TRUE)$occ$lower, c(a = 0, c = 0))
+  expect_equal(attr(.b, "lotri", exact = TRUE)$occ$upper, c(a = 10, c = 10))
   expect_equal(.lotriMergeCndExtra(NULL, list(lower = 1), "id"), list(lower = 1))
   expect_equal(.lotriMergeCndExtra(list(lower = 1), NULL, "id"), list(lower = 1))
 
