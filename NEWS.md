@@ -234,6 +234,38 @@ lotri({
 
 ## Bug fixes
 
+* A conditioned continuation that does not fit the block open at its
+  level no longer falls back to the default level.  In
+
+```r
+lotri({
+  z1 ~ 1 | occ
+  z2 ~ c(0.1, 2) | occ
+  z3 ~ c(1.3)
+  z4 ~ c(0.1, 2.4) | occ
+})
+```
+
+  the block open at `occ` is `{z1, z2}`, which would need three values
+  to extend, so `z4` was parsed into the default level instead -- where
+  it happened to fit as a continuation of `z3`.  A parameter written
+  `| occ` silently became an id level (between subject) one, with no
+  error and no warning.  The line now carries `z3`'s block over to
+  `occ`, which is the rule a first mention of the level already used, so
+  the two spellings agree; a line that can be placed at neither is an
+  error.
+
+* Naming a level again now writes to that level rather than replacing
+  it.  The level was looked up by "was it the last one seen", so a line
+  at another level in between made the second mention build a fresh
+  level over the top of the first and silently drop everything already
+  declared in it:
+
+```r
+lotri({z1 ~ 1 | occ; z2 ~ 1 | occ2; z3 ~ c(1.3); z4 ~ c(0.1, 2.4) | occ})
+# `z1` was gone
+```
+
 * A condition written on a continuation no longer relocates unrelated
   parameters.  The rows of one block share a level of variability
   because they covary, so a condition on a later row carries that block

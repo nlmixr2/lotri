@@ -159,3 +159,103 @@ test_that("an unconditioned line is not folded into a stale level", {
   })
   expect_equal(dimnames(unclass(.m2$occ))[[1]], c("a", "b", "d"))
 })
+
+test_that("a conditioned continuation stays at the level it names", {
+
+  ## `z4` is written `| occ`, but the block open at `occ` is `{z1, z2}`,
+  ## which would need three values to extend.  The line used to be parsed
+  ## into the DEFAULT level instead, where it happened to fit as a
+  ## continuation of `z3` -- so `| occ` silently produced an id level
+  ## (between subject) parameter.  It now carries `z3`'s block over, the
+  ## same rule a first mention of the level already used.
+  .m <- lotri::lotri({
+    z1 ~ 1 | occ
+    z2 ~ c(0.1, 2) | occ
+    z3 ~ c(1.3)
+    z4 ~ c(0.1, 2.4) | occ
+  })
+
+  expect_equal(names(.m), "occ")
+  expect_equal(dimnames(unclass(.m$occ))[[1]], c("z1", "z2", "z3", "z4"))
+  ## the carried block keeps its own values, and does not covary with the
+  ## block that was already at the level
+  expect_equal(unname(unclass(.m$occ)),
+               matrix(c(1, 0.1, 0, 0,
+                        0.1, 2, 0, 0,
+                        0, 0, 1.3, 0.1,
+                        0, 0, 0.1, 2.4), 4, 4))
+
+  ## which is the same matrix the level's first mention gives
+  expect_equal(dimnames(unclass(lotri::lotri({
+    z3 ~ c(1.3)
+    z4 ~ c(0.1, 2.4) | occ
+  })$occ))[[1]], c("z3", "z4"))
+
+  ## a trailing label follows it to that level
+  .l <- lotri::lotri({
+    tp <- 1
+    z1 ~ 1 | occ
+    z2 ~ c(0.1, 2) | occ
+    z3 ~ c(1.3)
+    z4 ~ c(0.1, 2.4) | occ
+    label("L4")
+  })
+  expect_equal(attr(.l$occ, "lotriLabels"), c(NA, NA, NA, "L4"))
+
+  ## `same()` repeats the carried block, not the one that was there first
+  .s <- lotri::lotri({
+    z1 ~ 1 | occ
+    z2 ~ c(0.1, 2) | occ
+    z3 ~ c(1.3)
+    z4 ~ c(0.1, 2.4) | occ
+    z5 + z6 ~ same() | occ
+  })
+  expect_equal(dimnames(unclass(.s$occ))[[1]],
+               c("z1", "z2", "z3", "z4", "z5", "z6"))
+  expect_equal(unname(unclass(.s$occ))[5:6, 5:6],
+               matrix(c(1.3, 0.1, 0.1, 2.4), 2, 2))
+
+  ## the level's OWN open block still wins when it can take the line
+  .o <- lotri::lotri({
+    z1 ~ 1 | occ
+    z3 ~ c(1.3)
+    z4 ~ c(0.1, 2.4) | occ
+  })
+  expect_equal(dimnames(unclass(.o$id))[[1]], "z3")
+  expect_equal(dimnames(unclass(.o$occ))[[1]], c("z1", "z4"))
+
+  ## and a line that can be placed at neither is an error rather than a
+  ## quiet default level row
+  expect_error(lotri::lotri({
+    z1 ~ 1 | occ
+    z2 ~ c(0.1, 2) | occ
+    z3 ~ c(1.3)
+    z4 ~ c(0.1, 2.4, 0.5, 0.6, 1) | occ
+  }))
+})
+
+test_that("naming a level again writes to it rather than replacing it", {
+
+  ## the level was found by "was it the last one seen", so a line at
+  ## another level in between made the second mention build a FRESH
+  ## environment over the top of it -- silently dropping `z1`
+  .m <- lotri::lotri({
+    z1 ~ 1 | occ
+    z2 ~ 1 | occ2
+    z3 ~ c(1.3)
+    z4 ~ c(0.1, 2.4) | occ
+  })
+
+  expect_equal(dimnames(unclass(.m$occ))[[1]], c("z1", "z4"))
+  expect_equal(dimnames(unclass(.m$occ2))[[1]], "z2")
+  expect_equal(dimnames(unclass(.m$id))[[1]], "z3")
+
+  ## the properties of the first mention survive the second too
+  .p <- lotri::lotri({
+    z1 ~ 1 | occ(lower = 0.01)
+    z2 ~ 1 | occ2
+    z3 ~ 2 | occ
+  })
+  expect_equal(dimnames(unclass(.p$occ))[[1]], c("z1", "z3"))
+  expect_equal(attr(.p, "lotri")$occ$lower, c(z1 = 0.01, z3 = 0.01))
+})
