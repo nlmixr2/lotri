@@ -1,0 +1,89 @@
+# Work with \`same()\` (NONMEM \`BLOCK SAME\`) blocks in a lotri data frame
+
+A repeated block created with \`same()\` records, in the \`condition\`
+column of \`as.data.frame(\<lotri\>)\`, which element of the block it
+mirrors:
+
+## Usage
+
+``` r
+lotriBaseCondition(condition)
+
+lotriIsSame(condition)
+
+lotriSameMap(iniDf)
+
+lotriSameBreak(iniDf, etas)
+```
+
+## Arguments
+
+- condition:
+
+  character vector of \`condition\` values, as found in the data frame
+  produced by \`as.data.frame()\` on a \`lotri\` object.
+
+- iniDf:
+
+  a lotri/rxode2 style data frame, with at least the \`name\`,
+  \`neta1\`, \`neta2\` and \`condition\` columns.
+
+- etas:
+
+  character vector of parameter names whose block has been structurally
+  changed.
+
+## Value
+
+\- \`lotriBaseCondition()\`: the condition with any \`:same:\` suffix
+removed, the same length as \`condition\`.
+
+\- \`lotriIsSame()\`: logical, \`TRUE\` where the row mirrors another.
+
+\- \`lotriSameMap()\`: an integer vector over the eta indices of
+\`iniDf\`, \`0\` for an ordinary or master eta and otherwise the eta
+index of the master it mirrors.
+
+\- \`lotriSameBreak()\`: \`iniDf\` with the \`:same:\` markers removed
+from every block that contains any of \`etas\`, so the copies become
+ordinary independent blocks.
+
+## Details
+
+
+    <baseCondition>:same:<masterEta>                 # diagonal row
+    <baseCondition>:same:<masterEta1>:<masterEta2>   # covariance row
+
+The master is named rather than indexed because \`neta1\`/\`neta2\` are
+renumbered whenever parameters are added, dropped or reordered.
+
+These helpers are the supported way to consume that column. Code that
+compares \`condition\` directly (\`condition == "id"\`) will misclassify
+a repeated block, so use \`lotriBaseCondition()\` for those tests.
+
+## Author
+
+Matthew L. Fidler
+
+## Examples
+
+``` r
+
+mat <- lotri({
+  iov.cl1 + iov.v1 ~ c(0.1,
+                       0.01, 0.2)
+  iov.cl2 + iov.v2 ~ same()
+})
+
+df <- as.data.frame(mat)
+df$condition
+#> [1] "id"                     "id"                     "id"                    
+#> [4] "id:same:iov.cl1"        "id:same:iov.cl1:iov.v1" "id:same:iov.v1"        
+
+lotriBaseCondition(df$condition)
+#> [1] "id" "id" "id" "id" "id" "id"
+lotriIsSame(df$condition)
+#> [1] FALSE FALSE FALSE  TRUE  TRUE  TRUE
+lotriSameMap(df)
+#> [1] 0 0 1 2
+```

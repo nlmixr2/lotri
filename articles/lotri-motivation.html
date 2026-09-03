@@ -40,6 +40,7 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/lotri-motivation.html">Lotri Motivation</a></li>
     <li><a class="dropdown-item" href="../articles/lotri-priors.html">Prior distributions in lotri</a></li>
+    <li><a class="dropdown-item" href="../articles/lotri-same.html">Repeated blocks with same() in lotri</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -65,7 +66,7 @@
                         <h4 data-toc-skip class="author">Matthew
 Fidler</h4>
             
-            <h4 data-toc-skip class="date">2026-08-26</h4>
+            <h4 data-toc-skip class="date">2026-09-03</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/nlmixr2/lotri/blob/main/vignettes/lotri-motivation.Rmd" class="external-link"><code>vignettes/lotri-motivation.Rmd</code></a></small>
       <div class="d-none name"><code>lotri-motivation.Rmd</code></div>
@@ -228,9 +229,9 @@ concatenation with <code>lotriMat</code></p>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">mb</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Unit: microseconds</span></span>
-<span><span class="co">#&gt;                expr      min        lq       mean    median       uq      max</span></span>
-<span><span class="co">#&gt;      matf(testList) 1168.031 1223.8045 1449.73016 1284.8950 1747.470 7056.079</span></span>
-<span><span class="co">#&gt;  lotriMat(testList)    3.405    3.9105    6.70702    6.7955    8.297   20.140</span></span>
+<span><span class="co">#&gt;                expr      min       lq     mean    median       uq      max</span></span>
+<span><span class="co">#&gt;      matf(testList) 1401.367 1461.925 1669.791 1511.1265 1935.894 7368.466</span></span>
+<span><span class="co">#&gt;  lotriMat(testList)    3.556    4.178    7.053    7.4735    9.042   18.615</span></span>
 <span><span class="co">#&gt;  neval</span></span>
 <span><span class="co">#&gt;    100</span></span>
 <span><span class="co">#&gt;    100</span></span>

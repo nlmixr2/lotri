@@ -20,6 +20,7 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/lotri-motivation.html">Lotri Motivation</a></li>
     <li><a class="dropdown-item" href="../articles/lotri-priors.html">Prior distributions in lotri</a></li>
+    <li><a class="dropdown-item" href="../articles/lotri-same.html">Repeated blocks with same() in lotri</a></li>
   </ul></li>
 <li class="active nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -40,8 +41,36 @@
 <h2 class="pkg-version" data-toc-text="1.0.5" id="lotri-105">lotri 1.0.5<a class="anchor" aria-label="anchor" href="#lotri-105"></a></h2>
 <div class="section level3">
 <h3 id="new-features-1-0-5">New features<a class="anchor" aria-label="anchor" href="#new-features-1-0-5"></a></h3>
-<ul><li>Prior distributions can now be specified in a <code>lotri({})</code> (and therefore <code>ini({})</code>) block with <code>prior(name) ~ dist(...)</code>, ie:</li>
+<ul><li>A block can now be repeated with <code>same()</code>, which is NONMEM’s <code>$OMEGA BLOCK(n) SAME</code>:</li>
 </ul><div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span></span>
+<span>  <span class="va">iov.cl1</span> <span class="op">+</span> <span class="va">iov.v1</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.1</span>,</span>
+<span>                       <span class="fl">0.01</span>, <span class="fl">0.2</span><span class="op">)</span></span>
+<span>  <span class="va">iov.cl2</span> <span class="op">+</span> <span class="va">iov.v2</span> <span class="op">~</span> <span class="fu">same</span><span class="op">(</span><span class="op">)</span></span>
+<span>  <span class="va">iov.cl3</span> <span class="op">+</span> <span class="va">iov.v3</span> <span class="op">~</span> <span class="fu">same</span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="op">}</span><span class="op">)</span></span></code></pre></div>
+<p>This is one estimated 2x2 covariance shared by three blocks, which is how inter-occasion variability is parameterized when every occasion draws its own random effects from one shared covariance – and it is what lets those random effects be <em>correlated</em>.</p>
+<p><code>same()</code> repeats the immediately preceding block under new names and takes no arguments. A further <code>same()</code> repeats that same original block rather than the copy, the way NONMEM chains <code>SAME</code>. It works with a condition (<code>iov.cl2 + iov.v2 ~ same() | occ</code>), it inherits the fixed flags of the block it repeats, and it composes with the <code>cnd(same = n)</code> nesting property that <code><a href="../reference/lotriSep.html">lotriSep()</a></code> uses.</p>
+<ul><li>
+<p><strong>The <code>condition</code> column can now carry a <code>:same:</code> suffix.</strong> Rather than adding a column to the data frame from <code><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame()</a></code>, a repeated block records the element it mirrors in the existing <code>condition</code> column, naming it:</p>
+<pre><code>&lt;baseCondition&gt;:same:&lt;masterEta&gt;                 # diagonal row
+&lt;baseCondition&gt;:same:&lt;masterEta1&gt;:&lt;masterEta2&gt;   # covariance row</code></pre>
+<p>The master is named rather than indexed because <code>neta1</code>/<code>neta2</code> are renumbered whenever parameters are added, dropped or reordered. A copy keeps its master’s <code>est</code> and <code>fix</code>, so a consumer that does not understand the suffix still sees a numerically correct matrix – just with more free parameters than the model really has.</p>
+<p>Four helpers are exported for reading that column, and code that compares <code>condition</code> directly (<code>condition == "id"</code>) should move to them, since such a test misclassifies a repeated block:</p>
+<ul><li>
+<code><a href="../reference/lotriBaseCondition.html">lotriBaseCondition()</a></code> strips the suffix,</li>
+<li>
+<code><a href="../reference/lotriBaseCondition.html">lotriIsSame()</a></code> says whether a row mirrors another,</li>
+<li>
+<code><a href="../reference/lotriBaseCondition.html">lotriSameMap()</a></code> maps each eta to the eta it mirrors,</li>
+<li>
+<code><a href="../reference/lotriBaseCondition.html">lotriSameBreak()</a></code> drops the linkage for a block that has been structurally changed.</li>
+</ul><p><code>same()</code> round trips through <code><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame()</a></code>, <code><a href="../reference/as.lotri.html">as.lotri()</a></code> and <code><a href="https://rdrr.io/r/base/expression.html" class="external-link">as.expression()</a></code>, and the linkage is carried across <code><a href="../reference/lotriMat.html">lotriMat()</a></code>. A repetition that no longer describes a real mirror – because the blocks it was built from were reordered or dropped, or because it carries something <code>same()</code> cannot express – is written out with its explicit values instead. That loses the annotation, never the numbers.</p>
+<p>A prior cannot be put on a repeated block – it is not a parameter of its own, so the prior belongs on the block it mirrors. Without this a model could carry two different priors on what is one estimated parameter.</p>
+<p><code>same()</code> cannot be combined with <code>rcm=TRUE</code> or with a <code>cov</code> function; both would move a repeated block away from the block it repeats, and are refused rather than silently producing a matrix whose repetition is no longer true.</p>
+</li>
+<li><p>Prior distributions can now be specified in a <code>lotri({})</code> (and therefore <code>ini({})</code>) block with <code>prior(name) ~ dist(...)</code>, ie:</p></li>
+</ul><div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="va">tka</span> <span class="op">&lt;-</span> <span class="fl">0.45</span></span>
 <span>  <span class="va">tcl</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">10</span><span class="op">)</span></span>
@@ -54,7 +83,7 @@
 <p>Because the statement names its target, prior lines may be given anywhere in the block. Priors may be put on population estimates, on individual etas, and on whole covariance blocks (with the matrix-valued distributions like <code>lkjCorr()</code> and <code>invWishart()</code>).</p>
 <p>Every distribution has three accepted spellings: the R name where R parameterizes it the same way ‘Stan’ does (<code><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">dnorm()</a></code>, <code><a href="https://rdrr.io/r/stats/Lognormal.html" class="external-link">dlnorm()</a></code>, <code><a href="https://rdrr.io/r/stats/GammaDist.html" class="external-link">dgamma()</a></code>), the camelCase name (<code>invWishart()</code>, <code>lkjCorr()</code>, <code>studentT()</code>), and the ‘Stan’ name itself (<code>inv_wishart()</code>, <code>lkj_corr()</code>, <code>student_t()</code>). The canonical spelling, which is what is stored and printed back, is the R one where there is a faithful one and the camelCase one otherwise. Both positional and named arguments work. <code>lotri</code> validates the distribution name, its arity, and its support against the parameter’s bounds; it does not generate any ‘Stan’ code.</p>
 <ul><li>An inverse Wishart prior on an omega block can be given by its degrees of freedom alone, since the block it is put on already is the scale matrix. This is the <code>$OMEGAP</code>/<code>$OMEGAPD</code> pair of a NONMEM <code>NWPRI</code> model:</li>
-</ul><div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+</ul><div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="va">eta.cl</span> <span class="op">+</span> <span class="va">eta.v</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.1</span>,</span>
 <span>                     <span class="fl">0.01</span>, <span class="fl">0.2</span><span class="op">)</span></span>
@@ -62,7 +91,7 @@
 <span><span class="op">}</span><span class="op">)</span></span></code></pre></div>
 <p>It works on a 1x1 block too (an inverse Wishart of dimension one is an inverse gamma), and an improper <code>nu &lt;= p - 1</code> is an error.</p>
 <ul><li>A normal prior can be put on the omega values themselves, which is what a NONMEM <code>TNPRI</code> model needs. <code>om.</code> prepended to a between subject variability names its omega element, so the normal prior shorthand can be used on it:</li>
-</ul><div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+</ul><div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="va">eta.cl</span> <span class="op">~</span> <span class="fl">0.3</span></span>
 <span>  <span class="va">eta.v</span> <span class="op">~</span> <span class="fl">0.1</span></span>
@@ -72,7 +101,7 @@
 <p>The omega itself is untouched; only the prior is added. Correlated omega priors work the same way, including the per row line form. An <code>om.</code> name has to match a real between subject variability and never creates one. <code>prior(om.eta.cl)</code> and <code>prior(eta.cl)</code> mean the same thing; the <code>om.</code> spelling exists so the shorthand has a name to put on the left of a <code>~</code>, since <code>eta.cl ~ ...</code> already means the omega value.</p>
 <p>Degrees of freedom and a normal prior are alternative ways of putting a prior on an omega, so a model that gives both is an error.</p>
 <ul><li>Because normal priors are so common they also have a shorthand that reuses the matrix syntax: putting a <em>population estimate</em> on the left of a <code>~</code> gives it a normal prior with a zero mean and the given variance.</li>
-</ul><div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+</ul><div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="va">tka</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
 <span>  <span class="va">tcl</span> <span class="op">&lt;-</span> <span class="fl">3</span></span>
@@ -86,7 +115,7 @@
 <ul><li><p>Added <code><a href="../reference/lotriPriorDists.html">lotriPriorDists()</a></code> which returns the table of supported distributions (including the ‘Stan’ name for each), so that downstream packages can generate the corresponding ‘Stan’ code.</p></li>
 <li><p>The <code>lotriEst</code> data frame and <code><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame()</a></code> output gained a <code>prior</code> column.</p></li>
 <li><p><code>prior()</code> also takes the normal prior shorthand, so <code>prior(tka) ~ 0.1</code> means what <code>tka ~ 0.1</code> means:</p></li>
-</ul><div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+</ul><div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="va">tka</span> <span class="op">&lt;-</span> <span class="fl">0.45</span></span>
 <span>  <span class="fu">prior</span><span class="op">(</span><span class="va">tka</span><span class="op">)</span> <span class="op">~</span> <span class="fl">0.1</span>          <span class="co"># dnorm(0.45, sqrt(0.1))</span></span>
@@ -94,7 +123,7 @@
 <span>                     <span class="fl">0.01</span>, <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span></span></code></pre></div>
 <p>Every matrix spelling works here as it does bare, including the per row line form, so a covariance can be built up a line at a time:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="va">tcl</span> <span class="op">&lt;-</span> <span class="fl">3</span></span>
 <span>  <span class="va">tv</span> <span class="op">&lt;-</span> <span class="fl">4</span></span>
@@ -104,7 +133,7 @@
 <p>An uncorrelated group becomes independent normal priors, and the mean is what the model already says. Note the line form is the one place a prior line is <em>not</em> order independent, since a row leans on the line before it. The point is that a bare <code>~</code> cannot be used everywhere – piping onto a model reads <code>tka ~ 0.1</code> as changing the estimate – so the <code>prior()</code> flag gives the shorthand a spelling that works when piping too.</p>
 <p>A namespaced distribution such as <code>stats::dnorm(0, 1)</code> is now an error rather than being evaluated as a variance.</p>
 <ul><li>A univariate prior (<code><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">dnorm()</a></code>, <code><a href="https://rdrr.io/r/stats/Cauchy.html" class="external-link">dcauchy()</a></code>, …) can now be put on a single omega COVARIANCE (off-diagonal) element, not just a diagonal one – a marginal, independent prior on that one cell, distinct from a whole-block distribution like <code>invWishart()</code>/<code>multiNormal()</code>:</li>
-</ul><div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+</ul><div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="va">eta.cl</span> <span class="op">+</span> <span class="va">eta.v</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.1</span>,</span>
 <span>                     <span class="fl">0.01</span>, <span class="fl">0.2</span><span class="op">)</span></span>
@@ -114,7 +143,15 @@
 </div>
 <div class="section level3">
 <h3 id="bug-fixes-1-0-5">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-0-5"></a></h3>
-<ul><li><p><code>lotri</code> now requires ‘armadillo4r’ 15.4.2 or newer. The ‘Armadillo’ headers shipped with older ‘armadillo4r’ releases discard the return value of a <code>std::uniform_int_distribution</code> draw, which the ‘libc++’ shipped with ‘clang’ 23 now marks <code>[[nodiscard]]</code>. That made <code>R CMD check</code> report a significant compilation warning – and so a check <code>WARNING</code> – on CRAN’s clang-trunk flavour, even though none of <code>lotri</code>’s own sources were involved (<a href="https://github.com/nlmixr2/lotri/issues/57" class="external-link">#57</a>).</p></li>
+<ul><li><p>A condition written on a continuation no longer relocates unrelated parameters. The rows of one block share a level of variability because they covary, so a condition on a later row carries that block over – but it used to carry the whole default level with it, so parameters declared long before, and unrelated to the block, silently changed level.</p></li>
+<li><p>A line that cannot be parsed at the default level is no longer folded into the most recently <em>seen</em> condition. It is folded only when the block immediately before it is at that level, which is what the fallback was for; otherwise a parameter with no condition could land at a level of variability it was never given.</p></li>
+<li><p>Labels are no longer lost, or attached to the wrong parameter, when a block has more than one level of variability. Which level a trailing <code>label()</code> belonged to was decided by whether the DEFAULT level had any labels yet, so once it did, a conditioned line’s label landed on the default level and overwrote the one already there; and <code><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame()</a></code> only ever read the labels of a single matrix, so a conditioned object lost them entirely.</p></li>
+<li><p><code><a href="../reference/as.lotri.html">as.lotri()</a></code> on a data frame whose only level of variability is not <code>id</code> now keeps that level’s name. It previously returned a bare matrix, so an occasion-only model came back looking like an id level one.</p></li>
+<li><p><code>lotriEst(x, drop=TRUE)</code> kept the <code>lotriFix</code> class only when there were fixed elements, so a matrix carrying labels, priors or a <code>same()</code> repetition came back unclassed with the attribute orphaned and every consumer dispatching to the default method.</p></li>
+<li><p>A plus-form block, or a block whose right hand side is arithmetic (<code>d ~ 0.1*2</code>), written after a line-form block overwrote the rows the line form had just written. A line-form block leaves the row counter pointing at its FIRST row with the rest held separately, and neither branch settled that, so <code>lotri({a ~ 1; b ~ c(0.1, 2); c1 + d1 ~ c(3, 0.2, 4)})</code> failed with “length of ‘dimnames’ [1] not equal to array extent”. The same applied to a 1x1 block under a condition.</p></li>
+<li><p>A conditioned block written in the line form lost every row after the first. <code>a ~ 1 | occ</code> did not set the <code>lastN</code> counter the line form accumulates through, so a following <code>b ~ c(0.1, 2) | occ</code> could not see the row before it and the block was silently truncated to 1x1. This showed up as <code>eval(as.expression(x))</code> returning a smaller matrix than <code>x</code> for any conditioned block of more than one parameter.</p></li>
+<li><p><code><a href="../reference/lotri.html">lotri()</a></code> read its own condition-property list with a partially-matching <code><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr()</a></code>. Because <code>"lotri"</code> is a prefix of <code>"lotriLabels"</code>, <code>"lotriFix"</code> and friends, combining a conditioned matrix with a labelled one (as in <code>lotri(lotri(b ~ 2) | occ, lotri({c ~ 1; label("z")}))</code>) picked up the neighbouring attribute, attached it as the property list, and gave the result a spurious <code>lotri</code> class and a bogus <code>Properties:</code> line. The internal reads are now exact.</p></li>
+<li><p><code>lotri</code> now requires ‘armadillo4r’ 15.4.2 or newer. The ‘Armadillo’ headers shipped with older ‘armadillo4r’ releases discard the return value of a <code>std::uniform_int_distribution</code> draw, which the ‘libc++’ shipped with ‘clang’ 23 now marks <code>[[nodiscard]]</code>. That made <code>R CMD check</code> report a significant compilation warning – and so a check <code>WARNING</code> – on CRAN’s clang-trunk flavour, even though none of <code>lotri</code>’s own sources were involved (<a href="https://github.com/nlmixr2/lotri/issues/57" class="external-link">#57</a>).</p></li>
 <li><p><code>src/nearPD.cpp</code> and <code>src/rcm.cpp</code> now include <code>&lt;algorithm&gt;</code>, <code>&lt;cmath&gt;</code> and <code>&lt;cstddef&gt;</code> for the <code>std::fill</code>/<code>std::fill_n</code>, <code>std::max</code>, <code>std::abs</code> and <code>std::size_t</code> they use directly, instead of relying on the ‘Armadillo’ headers to drag them in. ‘libc++’ has been steadily dropping transitive includes, and clang 23’s is where that started breaking packages (<a href="https://github.com/nlmixr2/lotri/issues/57" class="external-link">#57</a>).</p></li>
 <li><p>The <code>trace=TRUE</code> iteration message in <code><a href="../reference/lotriNearPD.html">lotriNearPD()</a></code> printed an <code>arma::uword</code> with <code>%lld</code>; it now uses <code>%llu</code> with an explicit cast, so the format matches the argument on every ‘Armadillo’ word-size configuration (<a href="https://github.com/nlmixr2/lotri/issues/57" class="external-link">#57</a>).</p></li>
 <li><p>The test suite no longer calls <code><a href="https://rdrr.io/r/base/structure.html" class="external-link">structure()</a></code> with the deprecated special names <code>.Dim</code>, <code>.Dimnames</code> and <code>.Names</code>; it uses <code>dim</code>, <code>dimnames</code> and <code>names</code> instead. This clears the “Found calls to structure() using deprecated special names” <code>NOTE</code> on the r-devel check flavours (<a href="https://github.com/nlmixr2/lotri/issues/57" class="external-link">#57</a>).</p></li>
@@ -150,19 +187,19 @@
 <h2 class="pkg-version" data-toc-text="1.0.0" id="lotri-100">lotri 1.0.0<a class="anchor" aria-label="anchor" href="#lotri-100"></a></h2><p class="text-muted">CRAN release: 2024-09-18</p>
 <ul><li>Added a new way of specifying lotri matrices:</li>
 </ul><p>Before you could specify matrices as:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="va">a</span> <span class="op">+</span> <span class="va">b</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,</span>
 <span>            <span class="fl">0.5</span>, <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span></span></code></pre></div>
 <p>Now you can specify per row as:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="va">a</span> <span class="op">~</span> <span class="fl">1</span></span>
 <span>  <span class="va">b</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>, <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span></span></code></pre></div>
 <p>This form is now the default when converting from a matrix to a lotri expression. In addition if the matrix is large enough (by default a 5x5 matrix), these would be named when changing them to an expression:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/lotri.html">lotri</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>  <span class="va">a</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>a<span class="op">=</span><span class="fl">1</span><span class="op">)</span></span>
 <span>  <span class="va">b</span> <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>a<span class="op">=</span><span class="fl">0.5</span>, b<span class="op">=</span><span class="fl">1</span><span class="op">)</span></span>

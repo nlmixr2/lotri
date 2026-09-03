@@ -325,6 +325,12 @@ be useful when simulating nested random effects using the upcoming
   Easily Specify block-diagonal matrices with lower triangular info
 - [`lotriAsExpression()`](https://nlmixr2.github.io/lotri/reference/lotriAsExpression.md)
   : Change a matrix or lotri matrix to a lotri expression
+- [`lotriBaseCondition()`](https://nlmixr2.github.io/lotri/reference/lotriBaseCondition.md)
+  [`lotriIsSame()`](https://nlmixr2.github.io/lotri/reference/lotriBaseCondition.md)
+  [`lotriSameMap()`](https://nlmixr2.github.io/lotri/reference/lotriBaseCondition.md)
+  [`lotriSameBreak()`](https://nlmixr2.github.io/lotri/reference/lotriBaseCondition.md)
+  : Work with \`same()\` (NONMEM \`BLOCK SAME\`) blocks in a lotri data
+  frame
 - [`lotriDataFrameToLotriExpression()`](https://nlmixr2.github.io/lotri/reference/lotriDataFrameToLotriExpression.md)
   : Convert a lotri data frame to a lotri expression
 - [`lotriEst()`](https://nlmixr2.github.io/lotri/reference/lotriEst.md)
@@ -352,3 +358,5 @@ be useful when simulating nested random effects using the upcoming
   Motivation](https://nlmixr2.github.io/lotri/articles/lotri-motivation.md):
 - [Prior distributions in
   lotri](https://nlmixr2.github.io/lotri/articles/lotri-priors.md):
+- [Repeated blocks with same() in
+  lotri](https://nlmixr2.github.io/lotri/articles/lotri-same.md):

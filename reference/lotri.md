@@ -82,6 +82,48 @@ The matrices are concatenated into a block diagonal matrix, like
 [`bdiag`](https://rdrr.io/pkg/Matrix/man/bdiag.html), but allows
 expressions to specify matrices easier.
 
+A block can be repeated, sharing one set of estimates, with
+
+name3 + name4 ~ same()
+
+This is NONMEM's `$OMEGA BLOCK(n) SAME`, and it is how an inter-occasion
+variability block is written when every occasion draws its own random
+effects from one shared covariance. `same()` repeats the immediately
+preceding \*block\* under new names; a further `same()` repeats that
+same original block rather than the copy, the way NONMEM chains `SAME`.
+It takes no arguments, may be used with a condition
+(`name3 + name4 ~ same() | occ`), and inherits the fixed flags of the
+block it repeats.
+
+A prior cannot be put on a repeated block: it is not a parameter of its
+own, it is the block it mirrors, so the prior goes on that block.
+
+`same()` looks back only within one
+[`{}`](https://rdrr.io/r/base/Paren.html) block, and only at its own
+level of variability – though other levels may be written in between.
+Each extra argument to `lotri()` is parsed by its own call, so
+`lotri(a + b ~ c(1, 0.1, 2), c1 + d1 ~ same())` has nothing to repeat;
+write the two lines in one `lotri({})` block instead.
+
+Note that the rows of one block always share a level of variability,
+because they covary. Writing the line form with a condition on a later
+row therefore places the whole block at that level:
+`lotri({a ~ 1; b ~ c(0.1, 2) | occ})` puts both `a` and `b` in `occ`.
+
+In the data frame from
+[`as.data.frame()`](https://rdrr.io/r/base/as.data.frame.html) the
+repetition is recorded in the existing `condition` column rather than in
+a new column, naming the element that is mirrored: `"id:same:name1"` on
+a diagonal row and `"id:same:name1:name2"` on a covariance row. Use
+[`lotriBaseCondition`](https://nlmixr2.github.io/lotri/reference/lotriBaseCondition.md)
+and its companions to read that column; comparing it directly
+(`condition == "id"`) will misclassify a repeated block.
+
+This is distinct from the condition property `cnd(same = n)`, which
+repeats a whole nesting level rather than one block, and which
+[`lotriSep`](https://nlmixr2.github.io/lotri/reference/lotriSep.md)
+uses. The two compose.
+
 Population estimates can be given with
 
 name \<- estimate
@@ -171,6 +213,39 @@ lotri({et2 + et3 + et4 ~ c(40,
 #> et3  0.1 20.0  0.1   0
 #> et4  0.1  0.1 30.0   0
 #> et5  0.0  0.0  0.0   6
+
+## A block can be repeated with `same()`, which is NONMEM's
+## `$OMEGA BLOCK(n) SAME`: one estimated 2x2 shared by three blocks,
+## the usual shape for correlated inter-occasion variability
+
+iov <- lotri({
+  iov.cl1 + iov.v1 ~ c(0.1,
+                       0.01, 0.2)
+  iov.cl2 + iov.v2 ~ same()
+  iov.cl3 + iov.v3 ~ same()
+})
+
+iov
+#>         iov.cl1 iov.v1 iov.cl2 iov.v2 iov.cl3 iov.v3
+#> iov.cl1    0.10   0.01    0.00   0.00    0.00   0.00
+#> iov.v1     0.01   0.20    0.00   0.00    0.00   0.00
+#> iov.cl2    0.00   0.00    0.10   0.01    0.00   0.00
+#> iov.v2     0.00   0.00    0.01   0.20    0.00   0.00
+#> iov.cl3    0.00   0.00    0.00   0.00    0.10   0.01
+#> iov.v3     0.00   0.00    0.00   0.00    0.01   0.20
+#> 
+#> This matrix repeats blocks with `same()`:
+#>   iov.cl2, iov.v2 repeat iov.cl1, iov.v1
+#>   iov.cl3, iov.v3 repeat iov.cl1, iov.v1
+#> 
+
+## the repetition rides in the `condition` column, so no column is
+## added to the data frame
+
+as.data.frame(iov)$condition
+#> [1] "id"                     "id"                     "id"                    
+#> [4] "id:same:iov.cl1"        "id:same:iov.cl1:iov.v1" "id:same:iov.v1"        
+#> [7] "id:same:iov.cl1"        "id:same:iov.cl1:iov.v1" "id:same:iov.v1"        
 
 ## You can also add lists or actual R matrices as in this example:
 lotri(list(et2 + et3 + et4 ~ c(40,

@@ -4,6 +4,82 @@
 
 ### New features
 
+- A block can now be repeated with `same()`, which is NONMEM’s
+  `$OMEGA BLOCK(n) SAME`:
+
+``` r
+
+lotri({
+  iov.cl1 + iov.v1 ~ c(0.1,
+                       0.01, 0.2)
+  iov.cl2 + iov.v2 ~ same()
+  iov.cl3 + iov.v3 ~ same()
+})
+```
+
+This is one estimated 2x2 covariance shared by three blocks, which is
+how inter-occasion variability is parameterized when every occasion
+draws its own random effects from one shared covariance – and it is what
+lets those random effects be *correlated*.
+
+`same()` repeats the immediately preceding block under new names and
+takes no arguments. A further `same()` repeats that same original block
+rather than the copy, the way NONMEM chains `SAME`. It works with a
+condition (`iov.cl2 + iov.v2 ~ same() | occ`), it inherits the fixed
+flags of the block it repeats, and it composes with the `cnd(same = n)`
+nesting property that
+[`lotriSep()`](https://nlmixr2.github.io/lotri/reference/lotriSep.md)
+uses.
+
+- **The `condition` column can now carry a `:same:` suffix.** Rather
+  than adding a column to the data frame from
+  [`as.data.frame()`](https://rdrr.io/r/base/as.data.frame.html), a
+  repeated block records the element it mirrors in the existing
+  `condition` column, naming it:
+
+      <baseCondition>:same:<masterEta>                 # diagonal row
+      <baseCondition>:same:<masterEta1>:<masterEta2>   # covariance row
+
+  The master is named rather than indexed because `neta1`/`neta2` are
+  renumbered whenever parameters are added, dropped or reordered. A copy
+  keeps its master’s `est` and `fix`, so a consumer that does not
+  understand the suffix still sees a numerically correct matrix – just
+  with more free parameters than the model really has.
+
+  Four helpers are exported for reading that column, and code that
+  compares `condition` directly (`condition == "id"`) should move to
+  them, since such a test misclassifies a repeated block:
+
+  - [`lotriBaseCondition()`](https://nlmixr2.github.io/lotri/reference/lotriBaseCondition.md)
+    strips the suffix,
+  - [`lotriIsSame()`](https://nlmixr2.github.io/lotri/reference/lotriBaseCondition.md)
+    says whether a row mirrors another,
+  - [`lotriSameMap()`](https://nlmixr2.github.io/lotri/reference/lotriBaseCondition.md)
+    maps each eta to the eta it mirrors,
+  - [`lotriSameBreak()`](https://nlmixr2.github.io/lotri/reference/lotriBaseCondition.md)
+    drops the linkage for a block that has been structurally changed.
+
+  `same()` round trips through
+  [`as.data.frame()`](https://rdrr.io/r/base/as.data.frame.html),
+  [`as.lotri()`](https://nlmixr2.github.io/lotri/reference/as.lotri.md)
+  and [`as.expression()`](https://rdrr.io/r/base/expression.html), and
+  the linkage is carried across
+  [`lotriMat()`](https://nlmixr2.github.io/lotri/reference/lotriMat.md).
+  A repetition that no longer describes a real mirror – because the
+  blocks it was built from were reordered or dropped, or because it
+  carries something `same()` cannot express – is written out with its
+  explicit values instead. That loses the annotation, never the numbers.
+
+  A prior cannot be put on a repeated block – it is not a parameter of
+  its own, so the prior belongs on the block it mirrors. Without this a
+  model could carry two different priors on what is one estimated
+  parameter.
+
+  `same()` cannot be combined with `rcm=TRUE` or with a `cov` function;
+  both would move a repeated block away from the block it repeats, and
+  are refused rather than silently producing a matrix whose repetition
+  is no longer true.
+
 - Prior distributions can now be specified in a `lotri({})` (and
   therefore `ini({})`) block with `prior(name) ~ dist(...)`, ie:
 
@@ -184,6 +260,64 @@ a marginal prior on one of its own cells – these remain alternatives,
 not additions.
 
 ### Bug fixes
+
+- A condition written on a continuation no longer relocates unrelated
+  parameters. The rows of one block share a level of variability because
+  they covary, so a condition on a later row carries that block over –
+  but it used to carry the whole default level with it, so parameters
+  declared long before, and unrelated to the block, silently changed
+  level.
+
+- A line that cannot be parsed at the default level is no longer folded
+  into the most recently *seen* condition. It is folded only when the
+  block immediately before it is at that level, which is what the
+  fallback was for; otherwise a parameter with no condition could land
+  at a level of variability it was never given.
+
+- Labels are no longer lost, or attached to the wrong parameter, when a
+  block has more than one level of variability. Which level a trailing
+  `label()` belonged to was decided by whether the DEFAULT level had any
+  labels yet, so once it did, a conditioned line’s label landed on the
+  default level and overwrote the one already there; and
+  [`as.data.frame()`](https://rdrr.io/r/base/as.data.frame.html) only
+  ever read the labels of a single matrix, so a conditioned object lost
+  them entirely.
+
+- [`as.lotri()`](https://nlmixr2.github.io/lotri/reference/as.lotri.md)
+  on a data frame whose only level of variability is not `id` now keeps
+  that level’s name. It previously returned a bare matrix, so an
+  occasion-only model came back looking like an id level one.
+
+- `lotriEst(x, drop=TRUE)` kept the `lotriFix` class only when there
+  were fixed elements, so a matrix carrying labels, priors or a `same()`
+  repetition came back unclassed with the attribute orphaned and every
+  consumer dispatching to the default method.
+
+- A plus-form block, or a block whose right hand side is arithmetic
+  (`d ~ 0.1*2`), written after a line-form block overwrote the rows the
+  line form had just written. A line-form block leaves the row counter
+  pointing at its FIRST row with the rest held separately, and neither
+  branch settled that, so
+  `lotri({a ~ 1; b ~ c(0.1, 2); c1 + d1 ~ c(3, 0.2, 4)})` failed with
+  “length of ‘dimnames’ \[1\] not equal to array extent”. The same
+  applied to a 1x1 block under a condition.
+
+- A conditioned block written in the line form lost every row after the
+  first. `a ~ 1 | occ` did not set the `lastN` counter the line form
+  accumulates through, so a following `b ~ c(0.1, 2) | occ` could not
+  see the row before it and the block was silently truncated to 1x1.
+  This showed up as `eval(as.expression(x))` returning a smaller matrix
+  than `x` for any conditioned block of more than one parameter.
+
+- [`lotri()`](https://nlmixr2.github.io/lotri/reference/lotri.md) read
+  its own condition-property list with a partially-matching
+  [`attr()`](https://rdrr.io/r/base/attr.html). Because `"lotri"` is a
+  prefix of `"lotriLabels"`, `"lotriFix"` and friends, combining a
+  conditioned matrix with a labelled one (as in
+  `lotri(lotri(b ~ 2) | occ, lotri({c ~ 1; label("z")}))`) picked up the
+  neighbouring attribute, attached it as the property list, and gave the
+  result a spurious `lotri` class and a bogus `Properties:` line. The
+  internal reads are now exact.
 
 - `lotri` now requires ‘armadillo4r’ 15.4.2 or newer. The ‘Armadillo’
   headers shipped with older ‘armadillo4r’ releases discard the return

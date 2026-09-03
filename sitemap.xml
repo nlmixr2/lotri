@@ -1,8 +1,10 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://nlmixr2.github.io/lotri/404.html</loc></url>
+<url><loc>https://nlmixr2.github.io/lotri/CLAUDE.html</loc></url>
 <url><loc>https://nlmixr2.github.io/lotri/articles/index.html</loc></url>
 <url><loc>https://nlmixr2.github.io/lotri/articles/lotri-motivation.html</loc></url>
 <url><loc>https://nlmixr2.github.io/lotri/articles/lotri-priors.html</loc></url>
+<url><loc>https://nlmixr2.github.io/lotri/articles/lotri-same.html</loc></url>
 <url><loc>https://nlmixr2.github.io/lotri/authors.html</loc></url>
 <url><loc>https://nlmixr2.github.io/lotri/index.html</loc></url>
 <url><loc>https://nlmixr2.github.io/lotri/news/index.html</loc></url>
@@ -11,6 +13,7 @@
 <url><loc>https://nlmixr2.github.io/lotri/reference/index.html</loc></url>
 <url><loc>https://nlmixr2.github.io/lotri/reference/lotri.html</loc></url>
 <url><loc>https://nlmixr2.github.io/lotri/reference/lotriAsExpression.html</loc></url>
+<url><loc>https://nlmixr2.github.io/lotri/reference/lotriBaseCondition.html</loc></url>
 <url><loc>https://nlmixr2.github.io/lotri/reference/lotriDataFrameToLotriExpression.html</loc></url>
 <url><loc>https://nlmixr2.github.io/lotri/reference/lotriEst.html</loc></url>
 <url><loc>https://nlmixr2.github.io/lotri/reference/lotriIsBlockMat.html</loc></url>
