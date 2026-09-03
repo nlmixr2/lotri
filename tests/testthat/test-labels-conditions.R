@@ -171,7 +171,7 @@ test_that("a conditioned continuation stays at the level it names", {
   .m <- lotri::lotri({
     z1 ~ 1 | occ
     z2 ~ c(0.1, 2) | occ
-    z3 ~ c(1.3)
+    z3 ~ 1.3
     z4 ~ c(0.1, 2.4) | occ
   })
 
@@ -187,7 +187,7 @@ test_that("a conditioned continuation stays at the level it names", {
 
   ## which is the same matrix the level's first mention gives
   expect_equal(dimnames(unclass(lotri::lotri({
-    z3 ~ c(1.3)
+    z3 ~ 1.3
     z4 ~ c(0.1, 2.4) | occ
   })$occ))[[1]], c("z3", "z4"))
 
@@ -206,7 +206,7 @@ test_that("a conditioned continuation stays at the level it names", {
   .s <- lotri::lotri({
     z1 ~ 1 | occ
     z2 ~ c(0.1, 2) | occ
-    z3 ~ c(1.3)
+    z3 ~ 1.3
     z4 ~ c(0.1, 2.4) | occ
     z5 + z6 ~ same() | occ
   })
@@ -218,7 +218,7 @@ test_that("a conditioned continuation stays at the level it names", {
   ## the level's OWN open block still wins when it can take the line
   .o <- lotri::lotri({
     z1 ~ 1 | occ
-    z3 ~ c(1.3)
+    z3 ~ 1.3
     z4 ~ c(0.1, 2.4) | occ
   })
   expect_equal(dimnames(unclass(.o$id))[[1]], "z3")
@@ -229,7 +229,7 @@ test_that("a conditioned continuation stays at the level it names", {
   expect_error(lotri::lotri({
     z1 ~ 1 | occ
     z2 ~ c(0.1, 2) | occ
-    z3 ~ c(1.3)
+    z3 ~ 1.3
     z4 ~ c(0.1, 2.4, 0.5, 0.6, 1) | occ
   }))
 })
@@ -242,7 +242,7 @@ test_that("naming a level again writes to it rather than replacing it", {
   .m <- lotri::lotri({
     z1 ~ 1 | occ
     z2 ~ 1 | occ2
-    z3 ~ c(1.3)
+    z3 ~ 1.3
     z4 ~ c(0.1, 2.4) | occ
   })
 
