@@ -380,7 +380,17 @@ NULL
     .cnd <- env$lastCnd
     if (exists(.cnd, env)) {
       .env2 <- env[[.cnd]]
-      .env2$lastN <- max(.env2$df$i)
+      ## The fold continues the block OPEN at that level, so it goes by
+      ## that level's own row counter.  Reading the level's whole height
+      ## instead agreed with that only while a level held a single block
+      ## starting at its first row; once a level can be written to again
+      ## the height spans blocks, and the fold asked for a row count no
+      ## line could supply.  The height is still the fallback for a
+      ## level whose last block was the plus form, which leaves no open
+      ## row behind it.
+      if (.env2$lastN == 0L) {
+        .env2$lastN <- max(.env2$df$i)
+      }
       .len <- length(.env2$df$i)
       env$lastFoldedIntoCnd <- FALSE
       .lotri1(x2, x3, .env2)

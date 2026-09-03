@@ -266,6 +266,12 @@ lotri({z1 ~ 1 | occ; z2 ~ 1 | occ2; z3 ~ c(1.3); z4 ~ c(0.1, 2.4) | occ})
 # `z1` was gone
 ```
 
+* An unconditioned line folded into the level of the line before it now
+  continues the block that is open there, rather than the level's whole
+  height.  The two agreed only while a level held a single block, so
+  once a level can be written to more than once the fold asked for a row
+  count no line could supply.
+
 * A condition written on a continuation no longer relocates unrelated
   parameters.  The rows of one block share a level of variability
   because they covary, so a condition on a later row carries that block

@@ -259,3 +259,37 @@ test_that("naming a level again writes to it rather than replacing it", {
   expect_equal(dimnames(unclass(.p$occ))[[1]], c("z1", "z3"))
   expect_equal(attr(.p, "lotri")$occ$lower, c(z1 = 0.01, z3 = 0.01))
 })
+
+test_that("an unconditioned continuation folds into the open block, not the level", {
+
+  ## Folding a line into the level of the line before it went by the
+  ## level's whole height, which agreed with the open block only while a
+  ## level held one block.  Once `z1` stays at `occ`, that height spans
+  ## two blocks and asked for a row count no line could supply.
+  .m <- lotri::lotri({
+    z1 ~ 1.1 | occ
+    z2 ~ 1.2 | occ2
+    z3 ~ 1.3 | occ
+    z4 ~ c(0.4, 2.4)
+  })
+
+  expect_equal(dimnames(unclass(.m$occ))[[1]], c("z1", "z3", "z4"))
+  expect_equal(dimnames(unclass(.m$occ2))[[1]], "z2")
+  ## `z4` covaries with `z3`, the block it continues -- not with `z1`
+  expect_equal(unname(unclass(.m$occ)),
+               matrix(c(1.1, 0, 0,
+                        0, 1.3, 0.4,
+                        0, 0.4, 2.4), 3, 3))
+
+  ## the same shape without the level in between
+  .s <- lotri::lotri({
+    z1 ~ 1.1 | occ
+    z2 ~ 1.2 | occ
+    z3 ~ c(0.3, 2.3)
+  })
+  expect_equal(dimnames(unclass(.s$occ))[[1]], c("z1", "z2", "z3"))
+  expect_equal(unname(unclass(.s$occ)),
+               matrix(c(1.1, 0, 0,
+                        0, 1.2, 0.3,
+                        0, 0.3, 2.3), 3, 3))
+})
