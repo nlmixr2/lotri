@@ -314,6 +314,27 @@ test_that("the default level can be named as well as left implicit", {
     b ~ 2 | id
   })$id))[[1]], c("b", "a"))
 
+  ## the `same()` offsets are relative, so they still point at their own
+  ## master after the rows they describe are shifted -- on both sides of
+  ## the merge
+  .s <- lotri::lotri({
+    a + b ~ c(1, 0.1, 2) | id
+    c + d ~ same() | id
+    e ~ 3
+  })
+  expect_equal(dimnames(unclass(.s$id))[[1]], c("a", "b", "c", "d", "e"))
+  expect_equal(unname(unclass(.s$id))[3:4, 3:4],
+               matrix(c(1, 0.1, 0.1, 2), 2, 2))
+
+  .t <- lotri::lotri({
+    a ~ 1 | id
+    b + c ~ c(1, 0.1, 2)
+    d + e ~ same()
+  })
+  expect_equal(dimnames(unclass(.t$id))[[1]], c("a", "b", "c", "d", "e"))
+  expect_equal(unname(unclass(.t$id))[4:5, 4:5],
+               matrix(c(1, 0.1, 0.1, 2), 2, 2))
+
   .c <- lotri::lotri({
     a ~ 1 | id
     b ~ 2
