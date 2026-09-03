@@ -378,19 +378,18 @@ NULL
   ## would otherwise be pulled into a condition it was never given.
   if (isTRUE(env$lastTildeInCnd) && exists("lastCnd", env)) {
     .cnd <- env$lastCnd
-    if (exists(.cnd, env)) {
+    ## The fold continues the block OPEN at that level, so it goes by
+    ## that level's own row counter, and there has to be one: a finished
+    ## plus-form block has no open row to continue.  This used to read
+    ## the level's whole HEIGHT instead, which agreed with the open
+    ## block only while a level held a single block starting at its
+    ## first row.  Re-opening a plus-form block by height wrote rows past
+    ## the end of the level ("length of 'dimnames' [1] not equal to
+    ## array extent"), and once a level can be written to more than once
+    ## the height spans blocks and asked for a row count no line could
+    ## supply.
+    if (exists(.cnd, env) && env[[.cnd]]$lastN > 0L) {
       .env2 <- env[[.cnd]]
-      ## The fold continues the block OPEN at that level, so it goes by
-      ## that level's own row counter.  Reading the level's whole height
-      ## instead agreed with that only while a level held a single block
-      ## starting at its first row; once a level can be written to again
-      ## the height spans blocks, and the fold asked for a row count no
-      ## line could supply.  The height is still the fallback for a
-      ## level whose last block was the plus form, which leaves no open
-      ## row behind it.
-      if (.env2$lastN == 0L) {
-        .env2$lastN <- max(.env2$df$i)
-      }
       .len <- length(.env2$df$i)
       env$lastFoldedIntoCnd <- FALSE
       .lotri1(x2, x3, .env2)
@@ -493,14 +492,11 @@ NULL
 #'
 #' @param env  environment to update
 #'
-#' @param env2 environment to try if the last expression could be a
-#'   multi-line expression
-#'
 #' @return Nothing; updates environment
 #'
 #' @author Matthew Fidler
 #' @noRd
-.lotri1 <- function(x2, x3, env, env2=NULL) {
+.lotri1 <- function(x2, x3, env) {
   .envParse <- new.env(parent = emptyenv())
   .envParse$lhs <- x2
   .rl <- .lotriParseMat(x3, env=.envParse)
@@ -571,9 +567,6 @@ NULL
   } else {
     if (.handleLastExprIsCndForFrm2(x2, x3, env)) {
       return(invisible())
-    }
-    if (!is.null(env2)) {
-      return(.lotri1(x2, x3, env2))
     }
     stop("matrix expression should be 'name ~ c(lower-tri)'", call. = FALSE)
   }
