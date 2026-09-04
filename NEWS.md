@@ -2,6 +2,35 @@
 
 ## New features
 
+* Random effects can now declare a non-Gaussian distribution with a
+  `dist()` line, which reads like the existing `prior()` line:
+
+```r
+lotri({
+  eta.cl + eta.v1 ~ c(1,
+                      0.5, 1)
+  dist(eta.cl) ~ dgamma(shape=aCl, rate=bCl)
+  dist(eta.v1) ~ studentT(nu, 0, 1)
+})
+```
+
+  The declaration says the random effect is *not* normal.  Downstream
+  packages implement it by keeping the latent random effect standard
+  normal and changing the CDF (Bauer, NONMEM 7.5.1): `z ~ N(0, 1)`,
+  `u = Phi(z)`, `eta = Q(u)`.  Because the latent scale is standard
+  normal, the block a declared random effect lives in carries the
+  Gaussian copula's *correlation*, so its diagonal has to be estimated
+  at one; `lotri()` says so if it is not.
+
+  `lotriEtaDists()` lists the families that can be declared this way,
+  which are the `lotriPriorDists()` families whose inverse CDF is
+  available, together with the quantile expression template for each.
+
+  The declaration is stored as the `lotriEtaDists` attribute of the
+  matrix and surfaces as the `etaDist` column of `as.data.frame()`.  The
+  column only appears when something declares a distribution, so a model
+  without one is unchanged.
+
 * A block can now be repeated with `same()`, which is NONMEM's
   `$OMEGA BLOCK(n) SAME`:
 

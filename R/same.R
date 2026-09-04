@@ -199,7 +199,7 @@
       .cls <- TRUE
     }
   }
-  for (.a in c("lotriLabels", "lotriPriors")) {
+  for (.a in c("lotriLabels", "lotriPriors", "lotriEtaDists")) {
     .v <- attr(mat, .a)
     if (!is.null(.v)) {
       attr(.m1, .a) <- .v[idx]

@@ -71,6 +71,7 @@ lotriMatInv <- function(mat) {
   .matLabels <- attr(mat, "lotriLabels")
   .matPriors <- attr(mat, "lotriPriors")
   .matPriorsOffDiag <- attr(mat, "lotriOffDiagPriors")
+  .matEtaDists <- attr(mat, "lotriEtaDists")
   .matSame <- attr(mat, "lotriSame")
   .ret <- list()
   .mat <- mat
@@ -103,6 +104,13 @@ lotriMatInv <- function(mat) {
         .mat1Priors <- .matPriors[.s]
         attr(.mat1, "lotriPriors") <- .mat1Priors
         .matPriors <- .matPriors[-.s]
+        if (!inherits(.mat1, "lotriFix")) {
+          class(.mat1) <- c("lotriFix", class(.mat1))
+        }
+      }
+      if (!is.null(.matEtaDists)) {
+        attr(.mat1, "lotriEtaDists") <- .matEtaDists[.s]
+        .matEtaDists <- .matEtaDists[-.s]
         if (!inherits(.mat1, "lotriFix")) {
           class(.mat1) <- c("lotriFix", class(.mat1))
         }
@@ -163,6 +171,12 @@ lotriMatInv <- function(mat) {
     }
     if (!is.null(.matPriors)) {
       attr(.mat, "lotriPriors") <- .matPriors
+      if (!inherits(.mat, "lotriFix")) {
+        class(.mat) <- c("lotriFix", class(.mat))
+      }
+    }
+    if (!is.null(.matEtaDists)) {
+      attr(.mat, "lotriEtaDists") <- .matEtaDists
       if (!inherits(.mat, "lotriFix")) {
         class(.mat) <- c("lotriFix", class(.mat))
       }

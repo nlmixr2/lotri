@@ -2129,6 +2129,12 @@ NULL
     ## `lastTilde` is set so a following `label()` attaches to this line.
     .lotriEnv$lastTilde <- TRUE
     .fCallSame(x, env)
+  } else if (.lotriIsEtaDistLine(x)) {
+    ## `dist(eta.cl) ~ dgamma(...)` declares the random effect's own
+    ## distribution.  Checked before the `~` branch below for the same
+    ## reason as the `prior()` branch: `.lotriEnv$lastTilde` must not
+    ## move, or a following `label()` lands on the last matrix row.
+    .fCallEtaDist(x, env)
   } else if (.lotriIsPriorLine(x)) {
     ## Note this is checked *before* the `~` branch below so that
     ## `.lotriEnv$lastTilde` is not changed; otherwise a `label()`
@@ -2860,7 +2866,8 @@ NULL
                            means=.lotriPriorMeanAlias(c(.thetaMeans, .omegaMeans)))
   if (!is.null(.env$matrix)) {
     .res <- .lotriResolvePriors(.env$matrix, .est, .env$priors, .env$wholeOmegaPrior)
-    return(list(ret=.res$ret, est=.res$est, done=TRUE))
+    return(list(ret=.lotriResolveEtaDists(.res$ret, .env$etaDists),
+                est=.res$est, done=TRUE))
   }
   if (length(.env$cnd) == 0L) {
     .ret <- .lotriGetMatrixFromEnv(.env, fun=.env$fun)
@@ -2872,7 +2879,8 @@ NULL
   ## resolved last so that priors are matched by name against the
   ## final (possibly `rcm` re-ordered) matrix
   .res <- .lotriResolvePriors(.ret, .est, .env$priors, .env$wholeOmegaPrior)
-  list(ret=.res$ret, est=.res$est, done=.done)
+  list(ret=.lotriResolveEtaDists(.res$ret, .env$etaDists),
+       est=.res$est, done=.done)
 }
 #' Finalize the lotri expression result
 #'
