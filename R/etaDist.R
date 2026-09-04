@@ -37,11 +37,11 @@
 #' @author Matthew L. Fidler
 .lotriEtaDistDefs <- c(
   ## unbounded continuous
-  "dnorm|qnorm({u}, {mean}, {sd})",
+  "dnorm|({mean}) + ({sd})*qnorm({u})",
   "stdNormal|qnorm({u})",
-  "studentT|({mu}) + ({sigma})*qt({u}, {nu})",
+  "studentT|({mu}) + ({sigma})*studentTInv({u}, {nu})",
   "dcauchy|({location}) + ({scale})*tan(pi*(({u}) - 0.5))",
-  "doubleExponential|({mu}) - ({sigma})*sign(({u}) - 0.5)*log1p(-2*fabs(({u}) - 0.5))",
+  "doubleExponential|({mu}) - ({sigma})*sign(({u}) - 0.5)*log1p(-2*sign(({u}) - 0.5)*(({u}) - 0.5))",
   "dlogis|({location}) + ({scale})*log(({u})/(1 - ({u})))",
   "gumbel|({mu}) - ({beta})*log(-log({u}))",
   ## positive continuous
