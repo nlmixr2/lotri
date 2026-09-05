@@ -337,7 +337,11 @@ lotriEtaDists <- function() {
              "the diagonals estimated at one; '", .dn[.bad[1]], "' is ",
              format(mat[.bad[1], .bad[1]]),
              ifelse(length(.idx) == 1L,
-                    paste0(" -- write '", .dn[.idx[1]], " ~ 1'"),
+                    ## a lone declared random effect implies `~ 1`, so the
+                    ## shortest fix is to drop the line entirely
+                    paste0(" -- drop the '", .dn[.idx[1]],
+                           " ~ ...' line (a declared distribution implies '",
+                           .dn[.idx[1]], " ~ 1')"),
                     paste0(" -- write '", paste(.dn[.idx], collapse=" + "),
                            " ~ c(", .lotriEtaDistCorEx(length(.idx)), ")'")),
              call.=FALSE)
@@ -375,4 +379,58 @@ lotriEtaDists <- function() {
     .v <- c(.v, rep("0.1", .i - 1L), "1")
   }
   paste(.v, collapse=", ")
+}
+
+#' The unit variance a declared random effect implies
+#'
+#' A declared distribution says everything about the random effect's
+#' marginal, so its "variance" carries no information: the latent scale is
+#' standard normal by construction, which is why the block a declared
+#' random effect lives in has to have a unit diagonal in the first place.
+#' Making the user write `eta.cl ~ 1` alongside `dist(eta.cl) ~ ...` is
+#' therefore asking them to repeat something the declaration already
+#' fixed.
+#'
+#' So a `dist()` on a random effect that is not otherwise declared
+#' implies `~ 1`, inserted just before the declaration so it lands at
+#' whatever level that line is at.  A random effect that IS declared --
+#' which is how a correlated block is written, since the correlation has
+#' nowhere else to go -- is left exactly as written, and the unit
+#' diagonal is then checked rather than assumed.
+#'
+#' @param x the `lotri({})` block expression
+#' @return `x`, with an implied `name ~ 1` before each `dist()` line whose
+#'   random effect is not declared anywhere in the block
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriEtaDistImplyVariance <- function(x) {
+  if (!is.call(x)) return(x)
+  .declared <- .lotriAllEtaLhsNames(x)
+  .add <- function(y) {
+    ## the name a `dist()`/`etaDist()` line names, or NULL
+    if (!.lotriIsEtaDistLine(y)) return(NULL)
+    .lhs <- as.list(y[[2]])[-1]
+    if (length(.lhs) != 1L) return(NULL)
+    .nm <- .lhs[[1]]
+    if (is.name(.nm)) .nm <- as.character(.nm)
+    if (!(is.character(.nm) && length(.nm) == 1L)) return(NULL)
+    if (.nm %in% .declared) return(NULL)
+    ## only the first `dist()` on a name implies it; a second is the
+    ## "more than one distribution" error, not a second random effect
+    .declared <<- c(.declared, .nm)
+    str2lang(paste0(.nm, " ~ 1"))
+  }
+  if (identical(x[[1]], quote(`{`))) {
+    .out <- list(quote(`{`))
+    for (.i in seq_along(x)[-1]) {
+      .imp <- .add(x[[.i]])
+      if (!is.null(.imp)) .out[[length(.out) + 1L]] <- .imp
+      .out[[length(.out) + 1L]] <- x[[.i]]
+    }
+    return(as.call(.out))
+  }
+  ## a single unbraced line, ie `lotri(dist(eta.cl) ~ dgamma(a, b))`
+  .imp <- .add(x)
+  if (is.null(.imp)) return(x)
+  as.call(list(quote(`{`), .imp, x))
 }

@@ -7,6 +7,18 @@
 
 ```r
 lotri({
+  dist(eta.cl) ~ dgamma(shape=aCl, rate=bCl)
+})
+```
+
+  A declared random effect needs no variance: the declaration already
+  fixes its marginal, the latent scale is standard normal by
+  construction, and so `dist()` on its own implies `~ 1`.  A block is
+  written out only when there IS a correlation, since that has nowhere
+  else to go:
+
+```r
+lotri({
   eta.cl + eta.v1 ~ c(1,
                       0.5, 1)
   dist(eta.cl) ~ dgamma(shape=aCl, rate=bCl)

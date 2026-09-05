@@ -2827,6 +2827,10 @@ NULL
 #' @noRd
 #' @author Matthew L. Fidler
 .lotriExprResult <- function(sX, cov, rcm, fun, default, call, envir) {
+  ## `dist(eta.cl) ~ dgamma(...)` on its own implies `eta.cl ~ 1`; the
+  ## declaration already fixes the latent scale, so the variance carries
+  ## no information and asking for it is asking for a repetition
+  sX <- .lotriEtaDistImplyVariance(sX)
   .env <- new.env(parent = emptyenv())
   .env$isCov <- cov
   .env$fun <- fun

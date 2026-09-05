@@ -65,11 +65,73 @@ test_that("a declared eta lives in a correlation block", {
   }), "between -1 and 1")
 })
 
-test_that("bad declarations are refused", {
+test_that("a declared distribution implies a unit variance", {
+  ## the declaration already fixes the marginal, and the latent scale is
+  ## standard normal by construction, so `eta.cl ~ 1` alongside it is a
+  ## repetition of something that could not be anything else
+  .x <- lotri({
+    dist(eta.cl) ~ dgamma(shape=aCl, rate=bCl)
+  })
+  expect_equal(dimnames(.x)[[1]], "eta.cl")
+  expect_equal(unname(as.matrix(.x)[1, 1]), 1)
+  expect_equal(attr(.x, "lotriEtaDists"), "dgamma(aCl, bCl)")
+  ## an unbraced single line too
+  .y <- lotri(dist(eta.cl) ~ dgamma(shape=aCl, rate=bCl))
+  expect_equal(as.matrix(.y), as.matrix(.x))
+  ## it mixes with ordinary random effects, in either order
+  for (.m in list(lotri({
+                    eta.ka ~ 0.6
+                    dist(eta.cl) ~ dgamma(a, b)
+                  }),
+                  lotri({
+                    dist(eta.cl) ~ dgamma(a, b)
+                    eta.ka ~ 0.6
+                  }))) {
+    expect_setequal(dimnames(.m)[[1]], c("eta.ka", "eta.cl"))
+    expect_equal(unname(as.matrix(.m)["eta.cl", "eta.cl"]), 1)
+    expect_equal(unname(as.matrix(.m)["eta.ka", "eta.ka"]), 0.6)
+    ## implied and declared stay uncorrelated
+    expect_equal(unname(as.matrix(.m)["eta.ka", "eta.cl"]), 0)
+  }
+  ## two of them are two separate 1x1 blocks, not one 2x2
+  .z <- lotri({
+    dist(eta.cl) ~ dgamma(a, b)
+    dist(eta.v) ~ dexp(r)
+  })
+  expect_equal(unname(as.matrix(.z)["eta.cl", "eta.v"]), 0)
+  ## and it round trips
+  expect_equal(attr(eval(as.expression(.x)), "lotriEtaDists"),
+               attr(.x, "lotriEtaDists"))
+})
+
+test_that("a correlated block still has to be written out", {
+  ## the correlation has nowhere else to go, so that block IS written --
+  ## and then its unit diagonal is checked rather than assumed
+  .x <- lotri({
+    eta.cl + eta.v1 ~ c(1,
+                        0.5, 1)
+    dist(eta.cl) ~ dgamma(aCl, bCl)
+    dist(eta.v1) ~ dgamma(aV1, bV1)
+  })
+  expect_equal(unname(as.matrix(.x)["eta.cl", "eta.v1"]), 0.5)
+  ## an explicit non-unit variance is still refused, and for a lone
+  ## declared random effect the message says to drop the line
   expect_error(lotri({
+    eta.cl ~ 0.09
+    dist(eta.cl) ~ dgamma(a, b)
+  }), "drop the 'eta.cl ~ ...' line", fixed=TRUE)
+})
+
+test_that("bad declarations are refused", {
+  ## a `dist()` on a name that is not otherwise declared no longer errors
+  ## -- it declares that random effect, with the unit variance the
+  ## distribution implies
+  .x <- lotri({
     eta.cl ~ 1
     dist(eta.v) ~ dgamma(a, b)
-  }), "unknown random effect")
+  })
+  expect_setequal(dimnames(.x)[[1]], c("eta.cl", "eta.v"))
+  expect_equal(unname(as.matrix(.x)["eta.v", "eta.v"]), 1)
   expect_error(lotri({
     eta.cl ~ 1
     dist(eta.cl) ~ dfoo(a, b)
