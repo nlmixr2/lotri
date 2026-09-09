@@ -194,6 +194,37 @@ lotriEtaDists <- function() {
        quantile=.dist$quantile, args=.args, text=.txt)
 }
 
+#' Normalize a declared random-effect distribution call
+#'
+#' Resolves the family, matches its arguments by NAME to the family's canonical
+#' parameter order, and returns the canonical positional text.  This is the same
+#' normalization `lotri()`'s own `dist()` lines get; it is exported so that other
+#' packages parsing a declaration outside a `lotri({})` block reach the identical
+#' answer instead of re-implementing the match.
+#'
+#' Without it, a consumer that substitutes arguments POSITIONALLY silently fits a
+#' different distribution when the user names them out of order --
+#' `dgamma(rate = r, shape = s)` becoming `dgamma(shape = r, rate = s)` -- with no
+#' error anywhere.
+#'
+#' @param x language object, e.g. `quote(dgamma(rate = b, shape = a))`, or a
+#'   character string of one
+#' @return list with `name`, `stanName`, `support`, `quantile`, `args` (canonical
+#'   order) and `text` (canonical positional text)
+#' @examples
+#' lotriEtaDistNormalize(quote(dgamma(rate = b, shape = a)))$text
+#' @export
+#' @author Matthew L. Fidler
+lotriEtaDistNormalize <- function(x) {
+  if (is.character(x)) {
+    if (length(x) != 1L) {
+      stop("'x' must be a single distribution call", call.=FALSE)
+    }
+    x <- str2lang(x)
+  }
+  .lotriEtaDistNormalize(x)
+}
+
 #' Collect a `dist(eta) ~ family(...)` line
 #'
 #' Validated here so a syntax error is reported on the line it is on;
