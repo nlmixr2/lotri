@@ -37,30 +37,30 @@
 #' @author Matthew L. Fidler
 .lotriEtaDistDefs <- c(
   ## unbounded continuous
-  "dnorm|({mean}) + ({sd})*qnorm({u})",
-  "stdNormal|qnorm({u})",
-  "studentT|({mu}) + ({sigma})*studentTInv({u}, {nu})",
-  "dcauchy|({location}) + ({scale})*tan(pi*(({u}) - 0.5))",
-  "doubleExponential|({mu}) - ({sigma})*sign(({u}) - 0.5)*log1p(-2*sign(({u}) - 0.5)*(({u}) - 0.5))",
-  "dlogis|({location}) + ({scale})*log(({u})/(1 - ({u})))",
-  "gumbel|({mu}) - ({beta})*log(-log({u}))",
+  "dnorm|({mean}) + ({sd})*qnorm({u})|location,scale",
+  "stdNormal|qnorm({u})|",
+  "studentT|({mu}) + ({sigma})*studentTInv({u}, {nu})|df,location,scale",
+  "dcauchy|({location}) + ({scale})*tan(pi*(({u}) - 0.5))|location,scale",
+  "doubleExponential|({mu}) - ({sigma})*sign(({u}) - 0.5)*log1p(-2*sign(({u}) - 0.5)*(({u}) - 0.5))|location,scale",
+  "dlogis|({location}) + ({scale})*log(({u})/(1 - ({u})))|location,scale",
+  "gumbel|({mu}) - ({beta})*log(-log({u}))|location,scale",
   ## positive continuous
-  "dlnorm|exp(({meanlog}) + ({sdlog})*qnorm({u}))",
-  "dchisq|2*gammapInv(({df})/2, {u})",
-  "invChiSquare|1/(2*gammapInv(({nu})/2, 1 - ({u})))",
-  "scaledInvChiSquare|({nu})*({sigma})*({sigma})/(2*gammapInv(({nu})/2, 1 - ({u})))",
-  "dexp|-log1p(-({u}))/({rate})",
-  "dgamma|gammapInv({shape}, {u})/({rate})",
-  "invGamma|({beta})/gammapInv({alpha}, 1 - ({u}))",
-  "dweibull|({scale})*(-log1p(-({u})))^(1/({shape}))",
-  "frechet|({sigma})*(-log({u}))^(-1/({alpha}))",
-  "rayleigh|({sigma})*sqrt(-2*log1p(-({u})))",
-  "pareto|({y_min})*(1 - ({u}))^(-1/({alpha}))",
-  "paretoType2|({mu}) + ({lambda})*((1 - ({u}))^(-1/({alpha})) - 1)",
+  "dlnorm|exp(({meanlog}) + ({sdlog})*qnorm({u}))|location,scale",
+  "dchisq|2*gammapInv(({df})/2, {u})|df",
+  "invChiSquare|1/(2*gammapInv(({nu})/2, 1 - ({u})))|df",
+  "scaledInvChiSquare|({nu})*({sigma})*({sigma})/(2*gammapInv(({nu})/2, 1 - ({u})))|df,scale",
+  "dexp|-log1p(-({u}))/({rate})|rate",
+  "dgamma|gammapInv({shape}, {u})/({rate})|shape,rate",
+  "invGamma|({beta})/gammapInv({alpha}, 1 - ({u}))|shape,scale",
+  "dweibull|({scale})*(-log1p(-({u})))^(1/({shape}))|shape,scale",
+  "frechet|({sigma})*(-log({u}))^(-1/({alpha}))|shape,scale",
+  "rayleigh|({sigma})*sqrt(-2*log1p(-({u})))|scale",
+  "pareto|({y_min})*(1 - ({u}))^(-1/({alpha}))|lower,shape",
+  "paretoType2|({mu}) + ({lambda})*((1 - ({u}))^(-1/({alpha})) - 1)|location,scale,shape",
   ## bounded continuous
-  "dbeta|ibetaInv({shape1}, {shape2}, {u})",
-  "betaProportion|ibetaInv(({mu})*({kappa}), (1 - ({mu}))*({kappa}), {u})",
-  "dunif|({min}) + (({max}) - ({min}))*({u})")
+  "dbeta|ibetaInv({shape1}, {shape2}, {u})|shape1,shape2",
+  "betaProportion|ibetaInv(({mu})*({kappa}), (1 - ({mu}))*({kappa}), {u})|mean,concentration",
+  "dunif|({min}) + (({max}) - ({min}))*({u})|lower,upper")
 
 ## built on first use rather than at load time: `.lotriDistTable` lives in
 ## `R/priors.R`, which the alphabetical collation loads after this file
@@ -73,9 +73,13 @@
 #' @author Matthew L. Fidler
 .lotriEtaDistTable <- function() {
   if (!is.null(.lotriEtaDistCache$tab)) return(.lotriEtaDistCache$tab)
-  .l <- strsplit(.lotriEtaDistDefs, "|", fixed=TRUE)
+  ## keep the trailing empty field (stdNormal takes no arguments, so its roles
+  ## field is ""), which strsplit() would otherwise drop and shift the parse
+  .l <- strsplit(paste0(.lotriEtaDistDefs, "|"), "|", fixed=TRUE)
   .nm <- vapply(.l, `[[`, character(1), 1L, USE.NAMES=FALSE)
   .q <- vapply(.l, `[[`, character(1), 2L, USE.NAMES=FALSE)
+  .r <- vapply(.l, function(.x) if (length(.x) >= 3L) .x[[3L]] else "",
+               character(1), USE.NAMES=FALSE)
   .w <- match(.nm, .lotriDistTable$name)
   if (anyNA(.w)) {
     stop("eta distribution(s) not in the prior catalog: '", # nocov
@@ -83,7 +87,26 @@
   }
   .tab <- .lotriDistTable[.w, ]
   .tab$quantile <- .q
+  .tab$roles <- .r
   rownames(.tab) <- NULL
+  ## one role per argument, in `parNames` order, and unique within a family --
+  ## the role IS the group key a covariate is attached to, so two arguments
+  ## sharing one would silently merge into a single group
+  .np <- vapply(strsplit(.tab$parNames, ",", fixed=TRUE), function(.x)
+    length(.x[nzchar(.x)]), integer(1), USE.NAMES=FALSE)
+  .nr <- vapply(strsplit(.tab$roles, ",", fixed=TRUE), function(.x)
+    length(.x[nzchar(.x)]), integer(1), USE.NAMES=FALSE)
+  if (any(.np != .nr)) {
+    stop("eta distribution role/argument count mismatch: '", # nocov
+         paste(.tab$name[.np != .nr], collapse="', '"), "'", call.=FALSE) # nocov
+  }
+  .dup <- vapply(strsplit(.tab$roles, ",", fixed=TRUE),
+                 function(.x) anyDuplicated(.x[nzchar(.x)]) > 0L,
+                 logical(1), USE.NAMES=FALSE)
+  if (any(.dup)) {
+    stop("eta distribution has a repeated role: '", # nocov
+         paste(.tab$name[.dup], collapse="', '"), "'", call.=FALSE) # nocov
+  }
   .lotriEtaDistCache$tab <- .tab
   .tab
 }
@@ -100,8 +123,36 @@
 ##' `{name}` for the distribution's parameter of that name; downstream
 ##' packages substitute the model's own expressions into it.
 ##'
+##' The `roles` column names what each argument DOES, comma separated in
+##' `parNames` order.  It is what lets a covariate be attached to a
+##' declared distribution by meaning rather than by position: a covariate
+##' on the gamma `shape` and one on its `rate` are different models, and
+##' the same covariate may legitimately enter both with different shapes.
+##' Roles are unique within a family, because a role is the group key.
+##'
+##' The vocabulary:
+##'
+##' \describe{
+##'   \item{`location`}{shifts the distribution (`mean`, `mu`, `meanlog`).}
+##'   \item{`scale`}{stretches it (`sd`, `sigma`, `beta`, `sdlog`).}
+##'   \item{`rate`}{inverse scale.  Kept SEPARATE from `scale` because a
+##'     covariate coefficient has the opposite sign on the two.}
+##'   \item{`shape`}{changes the form, not just its position or spread.
+##'     `dbeta` has two, so they are `shape1`/`shape2`.}
+##'   \item{`df`}{degrees of freedom.  A discrete-flavored shape; not
+##'     searched by default.}
+##'   \item{`mean`, `concentration`}{the `betaProportion` mean/precision
+##'     parameterization, where neither argument is a plain location or
+##'     scale.}
+##'   \item{`lower`, `upper`}{a SUPPORT endpoint (`dunif`, the pareto
+##'     minimum).  A subject-varying endpoint makes the density
+##'     discontinuous in the parameter, so these refuse covariates.}
+##' }
+##'
+##' `stdNormal` takes no arguments, so its `roles` is `""`.
+##'
 ##' @return data frame with the columns of [lotriPriorDists()] plus
-##'   `quantile`
+##'   `quantile` and `roles`
 ##'
 ##' @examples
 ##'

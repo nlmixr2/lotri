@@ -244,3 +244,60 @@ test_that("declarations work with conditions", {
   ## and back again
   expect_equal(attr(as.lotri(.d)$id, "lotriEtaDists"), "dgamma(aCl, bCl)")
 })
+
+## ---------------------------------------------------------------------------
+## Argument ROLES.
+##
+## A covariate on a declared distribution has to be attached to an argument by
+## what that argument DOES, not by where it sits: a covariate on the gamma
+## `shape` and one on its `rate` are different models, and the coefficient
+## changes SIGN between a `scale` and a `rate` parameterization of the same
+## family.  The `roles` column is that vocabulary, and it is consumed by name
+## downstream, so it is pinned here rather than left to drift.
+
+test_that("every eta distribution names one role per argument", {
+  .t <- lotriEtaDists()
+  expect_true("roles" %in% names(.t))
+  .np <- vapply(strsplit(.t$parNames, ",", fixed = TRUE),
+                function(x) length(x[nzchar(x)]), integer(1))
+  .nr <- vapply(strsplit(.t$roles, ",", fixed = TRUE),
+                function(x) length(x[nzchar(x)]), integer(1))
+  expect_equal(.nr, .np)
+  ## roles are the GROUP KEY, so a repeat inside one family would silently
+  ## merge two distinct arguments into a single covariate group
+  expect_false(any(vapply(strsplit(.t$roles, ",", fixed = TRUE),
+                          function(x) anyDuplicated(x[nzchar(x)]) > 0L, logical(1))))
+  ## and the vocabulary is closed -- a typo would otherwise become a new group
+  expect_true(all(unlist(strsplit(.t$roles, ",", fixed = TRUE)) %in%
+                    c("location", "scale", "rate", "shape", "shape1", "shape2",
+                      "df", "mean", "concentration", "lower", "upper")))
+})
+
+test_that("the roles of the families the M-steps implement are pinned", {
+  .r <- function(nm) lotriEtaDists()$roles[match(nm, lotriEtaDists()$name)]
+  ## rate is NOT scale: 1/rate is the scale, so a covariate slope flips sign
+  expect_identical(.r("dgamma"), "shape,rate")
+  expect_identical(.r("dexp"), "rate")
+  expect_identical(.r("invGamma"), "shape,scale")
+  ## parNames order is the family's, not alphabetical, and roles follow it
+  expect_identical(.r("studentT"), "df,location,scale")
+  expect_identical(.r("dweibull"), "shape,scale")
+  expect_identical(.r("frechet"), "shape,scale")
+  ## two shapes are two groups
+  expect_identical(.r("dbeta"), "shape1,shape2")
+  ## support endpoints, which refuse covariates downstream
+  expect_identical(.r("dunif"), "lower,upper")
+  expect_identical(.r("pareto"), "lower,shape")
+  ## no arguments at all
+  expect_identical(.r("stdNormal"), "")
+})
+
+test_that("adding the roles column did not move any family's row", {
+  ## Family codes are ROW INDICES: nlmixr2est's src/etaDistFam.h hardcodes this
+  ## order, so a reordering silently rebinds every family in the C++ objective.
+  ## A new COLUMN is safe; this asserts that is all that happened.
+  .t <- lotriEtaDists()
+  expect_identical(.t$name[c(1L, 12L, 13L, 20L, 22L)],
+                   c("dnorm", "dexp", "dgamma", "dbeta", "dunif"))
+  expect_equal(nrow(.t), 22L)
+})
