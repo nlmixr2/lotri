@@ -75,10 +75,13 @@ uses.
   model could carry two different priors on what is one estimated
   parameter.
 
-  `same()` cannot be combined with `rcm=TRUE` or with a `cov` function;
-  both would move a repeated block away from the block it repeats, and
-  are refused rather than silently producing a matrix whose repetition
-  is no longer true.
+  `same()` cannot be combined with a `cov` function, nor with `rcm=TRUE`
+  on a matrix the permutation would actually reorder; both would move a
+  repeated block away from the block it repeats, and are refused rather
+  than silently producing a matrix whose repetition is no longer true. A
+  `same()` matrix that is already block diagonal is left alone, since
+  there `rcm` is a no-op, which keeps `rxode2`’s `ini({})` – which
+  always passes `rcm=TRUE` – working.
 
 - Prior distributions can now be specified in a `lotri({})` (and
   therefore `ini({})`) block with `prior(name) ~ dist(...)`, ie:
@@ -387,6 +390,12 @@ not additions.
 - [`as.expression()`](https://rdrr.io/r/base/expression.html) now works
   on a `lotri` object that has only population estimates and no matrix;
   it used to fail with “second argument must be a list”.
+
+- `lotriNearPD(x, only.values=TRUE)` no longer fails with “unknown c++
+  error” when `x` is already positive definite. The eigenvalues were
+  only returned from inside the branch that clamps a negative
+  eigenvalue, so an input that needed no clamping fell through and tried
+  to assign the full matrix into a length-`n` result.
 
 - Fixed rchk issues and small bugs found while linting
 
