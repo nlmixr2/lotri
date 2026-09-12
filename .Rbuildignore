@@ -23,3 +23,6 @@
 ^cran-comments\.md$
 ^CRAN-SUBMISSION$
 ^CLAUDE\.md$
+^\.habit-hooks$
+^src/compile_commands\.json$
+^\.Rhistory$
