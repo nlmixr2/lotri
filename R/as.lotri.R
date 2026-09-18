@@ -33,17 +33,22 @@ as.lotri.matrix <- function(x, ..., default = "") {
 .lotriSplitSameCondition <- function(cnd) {
   .base <- sub(":same:.*$", "", cnd)
   .master <- lapply(seq_along(cnd), function(.i) {
-    if (is.na(cnd[.i])) return(NULL)
-    if (.base[.i] == cnd[.i]) return(NULL)
-    strsplit(sub("^.*?:same:", "", cnd[.i]), ":", fixed=TRUE)[[1]]
+    if (is.na(cnd[.i])) {
+      return(NULL)
+    }
+    if (.base[.i] == cnd[.i]) {
+      return(NULL)
+    }
+    strsplit(sub("^.*?:same:", "", cnd[.i]), ":", fixed = TRUE)[[1]]
   })
-  list(base=.base, master=.master)
+  list(base = .base, master = .master)
 }
 
+# nolint next: object_name_linter.
 .as.lotri.data.frame.mat <- function(x) {
   x <- x[order(x$neta1, x$neta2), ]
-  x$neta1 <- factor(paste(x$neta1), levels=paste(sort(unique(x$neta1))))
-  x$neta2 <- factor(paste(x$neta2), levels=levels(x$neta1))
+  x$neta1 <- factor(paste(x$neta1), levels = paste(sort(unique(x$neta1))))
+  x$neta2 <- factor(paste(x$neta2), levels = levels(x$neta1))
   x$neta1 <- as.integer(x$neta1)
   x$neta2 <- as.integer(x$neta2)
   .r <- range(x$neta1)
@@ -57,15 +62,23 @@ as.lotri.matrix <- function(x, ..., default = "") {
     .matF[x$neta1[.i] - .min, x$neta2[.i] - .min] <- x$fix[.i]
     .matF[x$neta2[.i] - .min, x$neta1[.i] - .min] <- x$fix[.i]
   }
-  .names <- vapply(seq_len(dim(.mat)[1]),
-                   function(.i) {
-                     x$name[x$neta1==.i & x$neta2 == .i]
-                   }, character(1), USE.NAMES = FALSE)
+  .names <- vapply(
+    seq_len(dim(.mat)[1]),
+    function(.i) {
+      x$name[x$neta1 == .i & x$neta2 == .i]
+    },
+    character(1),
+    USE.NAMES = FALSE
+  )
   x$label <- as.character(x$label)
-  .labels <- vapply(seq_len(dim(.mat)[1]),
-                    function(.i) {
-                      x$label[x$neta1==.i & x$neta2 == .i]
-                    }, character(1), USE.NAMES = FALSE)
+  .labels <- vapply(
+    seq_len(dim(.mat)[1]),
+    function(.i) {
+      x$label[x$neta1 == .i & x$neta2 == .i]
+    },
+    character(1),
+    USE.NAMES = FALSE
+  )
   dimnames(.mat) <- list(.names, .names)
   dimnames(.matF) <- list(.names, .names)
   .hasLab <- FALSE
@@ -75,10 +88,14 @@ as.lotri.matrix <- function(x, ..., default = "") {
   }
   if (any(names(x) == "prior")) {
     x$prior <- as.character(x$prior)
-    .priors <- vapply(seq_len(dim(.mat)[1]),
-                      function(.i) {
-                        x$prior[x$neta1 == .i & x$neta2 == .i]
-                      }, character(1), USE.NAMES = FALSE)
+    .priors <- vapply(
+      seq_len(dim(.mat)[1]),
+      function(.i) {
+        x$prior[x$neta1 == .i & x$neta2 == .i]
+      },
+      character(1),
+      USE.NAMES = FALSE
+    )
     if (!all(is.na(.priors))) {
       attr(.mat, "lotriPriors") <- .priors
       .hasLab <- TRUE
@@ -101,22 +118,28 @@ as.lotri.matrix <- function(x, ..., default = "") {
   .wd <- which(x$neta1 == x$neta2)
   for (.i in .wd) {
     .m <- .sp$master[[.i]]
-    if (is.null(.m)) next
+    if (is.null(.m)) {
+      next
+    }
     if (length(.m) != 1L) {
-      stop("a diagonal 'same()' condition names ", length(.m),
-           " elements: '", x$condition[.i], "'", call.=FALSE)
+      stop("a diagonal 'same()' condition names ", length(.m), " elements: '", x$condition[.i], "'", call. = FALSE)
     }
     .w <- which(.names == .m)
     if (length(.w) != 1L) {
-      stop("the 'same()' condition '", x$condition[.i], "' refers to '",
-           .m, "', which is ",
-           ifelse(length(.w) == 0L, "not in", "ambiguous in"),
-           " this block", call.=FALSE)
+      stop(
+        "the 'same()' condition '",
+        x$condition[.i],
+        "' refers to '",
+        .m,
+        "', which is ",
+        ifelse(length(.w) == 0L, "not in", "ambiguous in"),
+        " this block",
+        call. = FALSE
+      )
     }
     .cur <- x$neta1[.i]
     if (.w >= .cur) {
-      stop("the 'same()' condition '", x$condition[.i],
-           "' must refer to an earlier parameter", call.=FALSE)
+      stop("the 'same()' condition '", x$condition[.i], "' must refer to an earlier parameter", call. = FALSE)
     }
     .same[.cur] <- as.integer(.cur - .w)
   }
@@ -125,13 +148,20 @@ as.lotri.matrix <- function(x, ..., default = "") {
   ## frame that pairs the two would otherwise build an object that
   ## cannot be written back out
   if (any(names(x) == "prior")) {
-    .wp <- which(!is.na(x$prior) & !is.null(.sp$master) &
-                   vapply(.sp$master, function(.m) !is.null(.m),
-                          logical(1), USE.NAMES=FALSE))
+    .wp <- which(
+      !is.na(x$prior) &
+        !is.null(.sp$master) &
+        vapply(.sp$master, function(.m) !is.null(.m), logical(1), USE.NAMES = FALSE)
+    )
     if (length(.wp) > 0L) {
-      stop("'", x$name[.wp[1]], "' repeats an earlier block with ",
-           "'same()', so it cannot carry its own prior; put the prior ",
-           "on the block it repeats", call.=FALSE)
+      stop(
+        "'",
+        x$name[.wp[1]],
+        "' repeats an earlier block with ",
+        "'same()', so it cannot carry its own prior; put the prior ",
+        "on the block it repeats",
+        call. = FALSE
+      )
     }
   }
   if (any(.same != 0L)) {
@@ -140,10 +170,14 @@ as.lotri.matrix <- function(x, ..., default = "") {
     ## rather than from whatever the frame happened to carry
     for (.i in seq_along(.same)) {
       .d <- .same[.i]
-      if (.d == 0L) next
+      if (.d == 0L) {
+        next
+      }
       for (.j in seq_len(dim(.mat)[1])) {
         .dj <- .same[.j]
-        if (.dj != .d) next
+        if (.dj != .d) {
+          next
+        }
         .mat[.i, .j] <- .mat[.i - .d, .j - .d]
         .matF[.i, .j] <- .matF[.i - .d, .j - .d]
       }
@@ -169,21 +203,26 @@ as.lotri.matrix <- function(x, ..., default = "") {
 
 #' @rdname as.lotri
 #' @export
-as.lotri.data.frame <- function(x, ..., default="") {
+as.lotri.data.frame <- function(x, ..., default = "") {
   ## Get lotriEst
-  if (!all(c("name", "lower", "est", "upper", "fix", "label", "backTransform") %in%
-             names(x))) {
-    stop("the required names in the data.frame are not present; This needs:\n",
-         "  name, lower, est, upper, fix, label, backTransform\n", call.=FALSE)
+  if (
+    !all(
+      c("name", "lower", "est", "upper", "fix", "label", "backTransform") %in%
+        names(x)
+    )
+  ) {
+    stop(
+      "the required names in the data.frame are not present; This needs:\n",
+      "  name, lower, est, upper, fix, label, backTransform\n",
+      call. = FALSE
+    )
   }
   ## `prior` is optional so that data frames created before priors were
   ## supported still convert
   if (!any(names(x) == "prior")) {
     x$prior <- rep(NA_character_, nrow(x))
   }
-  .lotriEst <- x[which(!is.na(x$ntheta)), c("name", "lower", "est", "upper",
-                                            "fix", "label", "backTransform",
-                                            "prior")]
+  .lotriEst <- x[which(!is.na(x$ntheta)), c("name", "lower", "est", "upper", "fix", "label", "backTransform", "prior")]
   .lotriMatDf <- x[which(is.na(x$ntheta)), ]
   ## group on the BASE condition: a repeated block's rows carry a
   ## `:same:` suffix, and splitting on the raw string would break one
@@ -198,13 +237,18 @@ as.lotri.data.frame <- function(x, ..., default="") {
     ## occasion-only model comes back looking like an id level one
     .mat <- setNames(list(.as.lotri.data.frame.mat(.lotriMatDf)), .cnd)
   } else {
-    .mat <- setNames(lapply(.cnd, function(.cur) {
-      .x <- .lotriMatDf[which(.base == .cur), ]
-      .as.lotri.data.frame.mat(.x)
-    }), .cnd)
+    .mat <- setNames(
+      lapply(.cnd, function(.cur) {
+        .x <- .lotriMatDf[which(.base == .cur), ]
+        .as.lotri.data.frame.mat(.x)
+      }),
+      .cnd
+    )
   }
   attr(.mat, "lotriEst") <- .lotriEst
-  if (!inherits(.mat, "lotriFix")) class(.mat) <- c("lotriFix", class(.mat))
+  if (!inherits(.mat, "lotriFix")) {
+    class(.mat) <- c("lotriFix", class(.mat))
+  }
   .mat
 }
 
@@ -223,7 +267,11 @@ as.lotri.default <- function(x, ..., default = "") {
     class(.ret) <- "lotri"
     .ret
   } else {
-    stop("unsupported object of class c('", paste(class(x), collapse="', '"), "') used with `as.lotri`",
-         call.=FALSE)
+    stop(
+      "unsupported object of class c('",
+      paste(class(x), collapse = "', '"),
+      "') used with `as.lotri`",
+      call. = FALSE
+    )
   }
 }
