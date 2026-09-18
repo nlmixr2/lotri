@@ -1,24 +1,25 @@
 test_that("lotri lower triangular matrix specification 2", {
-
-  expect_equal(lotri({
+  expect_equal(
+    lotri({
     a ~ c(0.1)
     b ~ c(0.1, 1)
     c ~ c(0.1, 1, 2)
   }),
-  lotri({a+b+c ~ c(0.1,
+    lotri({a+b+c ~ c(0.1,
                    0.1, 1,
-                   0.1, 1, 2)}))
+                   0.1, 1, 2)})
+  )
 
-
-  expect_equal(lotri({
+  expect_equal(
+    lotri({
     a ~ c(a=0.1)
     b ~ c(a=0.1, b=1)
     c ~ c(a=0.1, b=1, c=2)
-  }), lotri({a+b+c ~ c(0.1,
+  }),
+    lotri({a+b+c ~ c(0.1,
                        0.1, 1,
-                       0.1, 1, 2)}))
-
-
+                       0.1, 1, 2)})
+  )
 
   fix1 <- lotri({
     f+g ~ fix(1,
@@ -247,7 +248,7 @@ test_that("lotri lower triangular matrix specification 2", {
             0.5, 1)
   })
 
-  fix1 <-  lotri({
+  fix1 <- lotri({
     h <- c(0, 1); backTransform("expit"); label("b label")
     i <- c(0, 1, 2)
     j <- fix(1)
@@ -272,59 +273,68 @@ test_that("lotri lower triangular matrix specification 2", {
   expect_equal(fix1, fix2)
 
   test_that("Issue #28", {
-
-    expect_equal(lotri({
+    expect_equal(
+      lotri({
       eta1 ~ 0.175278
       eta2 ~ c(0.115896, 0.112362)
       eta3 ~ c(0)
     }),
-    lotri(eta1+eta2 ~ c(0.175278, 0.115896, 0.112362),
-          eta3 ~  0))
+      lotri(eta1+eta2 ~ c(0.175278, 0.115896, 0.112362),
+          eta3 ~  0)
+    )
 
-    expect_equal(lotri({
+    expect_equal(
+      lotri({
       eta1 ~ 0.175278
       eta2 ~ c(0.115896, 0.112362)
       eta3 ~ c(eta3=0)
     }),
-    lotri(eta1+eta2 ~ c(0.175278, 0.115896, 0.112362),
-          eta3 ~  0))
+      lotri(eta1+eta2 ~ c(0.175278, 0.115896, 0.112362),
+          eta3 ~  0)
+    )
 
-    expect_equal(lotri({
+    expect_equal(
+      lotri({
       eta1 ~ 0.175278
       eta2 ~ c(0.115896, 0.112362)
       eta3 ~ fix(0)
     }),
-    lotri(eta1+eta2 ~ c(0.175278, 0.115896, 0.112362),
-          eta3 ~  fix(0)))
+      lotri(eta1+eta2 ~ c(0.175278, 0.115896, 0.112362),
+          eta3 ~  fix(0))
+    )
 
-    expect_equal(lotri({
+    expect_equal(
+      lotri({
       eta1 ~ 0.175278
       eta2 ~ c(0.115896, 0.112362)
       eta3 ~ fix(0)
     }),
-    lotri(eta1+eta2 ~ c(0.175278, 0.115896, 0.112362),
-          eta3 ~  fix(eta3=0)))
+      lotri(eta1+eta2 ~ c(0.175278, 0.115896, 0.112362),
+          eta3 ~  fix(eta3=0))
+    )
 
-    expect_equal(lotri({
+    expect_equal(
+      lotri({
       eta1 ~ 0.175278
       eta2 ~ c(0.115896, 0.112362)
       eta3 ~ 0
     }),
-    lotri(eta1+eta2 ~ c(0.175278, 0.115896, 0.112362),
-          eta3 ~ 0))
+      lotri(eta1+eta2 ~ c(0.175278, 0.115896, 0.112362),
+          eta3 ~ 0)
+    )
 
-    expect_error(lotri(eta.cl+eta.v~fix(cor(sd(0.3,0.02,0.1)))),
-                 NA)
+    expect_error(lotri(eta.cl+eta.v~fix(cor(sd(0.3,0.02,0.1)))), NA)
 
-    expect_equal(lotri({
+    expect_equal(
+      lotri({
       eta1 ~ 0.175278
       eta2 ~ c(0.115896, 0.112362)
       eta3 ~ sqrt(24)
-    }), lotri({
+    }),
+      lotri({
       eta1 + eta2 ~ c(0.175278, 0.115896, 0.112362)
       eta3 ~ sqrt(24)
-    }))
-
+    })
+    )
   })
-
 })

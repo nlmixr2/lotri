@@ -75,8 +75,14 @@ print.lotriFix <- function(x, ...) {
         .dn <- dimnames(.tmp)[[1]]
         cat("\nThis matrix repeats blocks with `same()`:\n")
         for (.fm in .fam$families) {
-          cat("  ", paste(.dn[.fm$copy], collapse=", "), " repeat ",
-              paste(.dn[.fm$master], collapse=", "), "\n", sep="")
+          cat(
+            "  ",
+            paste(.dn[.fm$copy], collapse = ", "),
+            " repeat ",
+            paste(.dn[.fm$master], collapse = ", "),
+            "\n",
+            sep = ""
+          )
         }
         cat("\n")
       }

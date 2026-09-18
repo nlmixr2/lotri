@@ -1,7 +1,6 @@
-.as.data.frame.lotriFix.mat <- function(mat, default="id",
-                                        eta1=1) {
+.as.data.frame.lotriFix.mat <- function(mat, default = "id", eta1 = 1) {
   .df3 <- NULL
-  .env <- new.env(parent=emptyenv())
+  .env <- new.env(parent = emptyenv())
   .env$eta1 <- eta1
   if (inherits(mat, "matrix")) {
     .priors <- attr(mat, "lotriPriors")
@@ -61,8 +60,7 @@
           .lk <- .env$eta1 + .k - eta1
           ## both ends of a cell must be mirrored by the SAME offset, or
           ## the cell does not repeat anything as a whole
-          if (!is.null(.cleanSame) && .cleanSame[.lj] > 0L &&
-                .cleanSame[.lj] == .cleanSame[.lk]) {
+          if (!is.null(.cleanSame) && .cleanSame[.lj] > 0L && .cleanSame[.lj] == .cleanSame[.lk]) {
             .mj <- .lj - .cleanSame[.lj]
             .mk <- .lk - .cleanSame[.lk]
             ## smaller index first, matching the "(name_k,name_j)" order
@@ -72,23 +70,27 @@
               .cnd <- paste0(.cnd, ":", .matNames[.mj])
             }
           }
-          .df3 <- rbind(.df3,
-                        data.frame(ntheta=NA_integer_,
-                                   neta1=.env$eta1 + .j - 1,
-                                   neta2=.env$eta1 + .k - 1,
-                                   name=.curName,
-                                   lower= -Inf,
-                                   est=.curMat[.j, .k],
-                                   upper=Inf,
-                                   fix=.fix,
-                                   label=if (.j == .k && !is.null(.curLab)) {
-                                     as.character(.curLab[.j])
-                                   } else {
-                                     NA_character_
-                                   },
-                                   backTransform=NA_character_,
-                                   prior=.curPrior,
-                                   condition=.cnd))
+          .df3 <- rbind(
+            .df3,
+            data.frame(
+              ntheta = NA_integer_,
+              neta1 = .env$eta1 + .j - 1,
+              neta2 = .env$eta1 + .k - 1,
+              name = .curName,
+              lower = -Inf,
+              est = .curMat[.j, .k],
+              upper = Inf,
+              fix = .fix,
+              label = if (.j == .k && !is.null(.curLab)) {
+                as.character(.curLab[.j])
+              } else {
+                NA_character_
+              },
+              backTransform = NA_character_,
+              prior = .curPrior,
+              condition = .cnd
+            )
+          )
         }
       }
       .env$eta1 <- max(.df3$neta1) + 1
@@ -98,17 +100,14 @@
 }
 
 ##'@export
-as.data.frame.lotriFix <- function(x, row.names = NULL, optional = FALSE, ...,
-                                   default="id") {
+as.data.frame.lotriFix <- function(x, row.names = NULL, optional = FALSE, ..., default = "id") {
   if (!missing(row.names)) {
-    stop("'row.names' should not be used when converting lotri object to data.frame",
-         call.=FALSE)
+    stop("'row.names' should not be used when converting lotri object to data.frame", call. = FALSE)
   }
   if (!missing(optional)) {
-    stop("'optional' should not be used when converting lotri object to data.frame",
-         call.=FALSE)
+    stop("'optional' should not be used when converting lotri object to data.frame", call. = FALSE)
   }
-  .df <- lotriEst(x, drop=FALSE) # nolint
+  .df <- lotriEst(x, drop = FALSE) # nolint
   if (!is.null(.df)) {
     if (length(.df$est) > 0) {
       .df$ntheta <- seq_along(.df$est)
@@ -117,41 +116,56 @@ as.data.frame.lotriFix <- function(x, row.names = NULL, optional = FALSE, ...,
       .df$condition <- NA_character_
     }
   }
-  .df2 <- lotriEst(x, drop=TRUE) # nolint
+  .df2 <- lotriEst(x, drop = TRUE) # nolint
   .df3 <- NULL
   if (inherits(.df2, "matrix")) {
-    .df3 <- .as.data.frame.lotriFix.mat(.df2, default=default)
+    .df3 <- .as.data.frame.lotriFix.mat(.df2, default = default)
   } else if (inherits(.df2, "list") || inherits(.df2, "lotri")) {
-    .env <- new.env(parent=emptyenv())
+    .env <- new.env(parent = emptyenv())
     .env$eta1 <- 1
-    .df3 <- do.call(rbind,
-                    lapply(names(.df2), function(default) {
-                      .ret <- .as.data.frame.lotriFix.mat(.df2[[default]], default=default,
-                                                          eta1=.env$eta1)
-                      assign("eta1", .env$eta1 + dim(.df2[[default]])[1],
-                             envir=.env)
-                      .ret
-                    }))
+    .df3 <- do.call(
+      rbind,
+      lapply(names(.df2), function(default) {
+        .ret <- .as.data.frame.lotriFix.mat(.df2[[default]], default = default, eta1 = .env$eta1)
+        assign("eta1", .env$eta1 + dim(.df2[[default]])[1], envir = .env)
+        .ret
+      })
+    )
   }
-  .ord <- c("ntheta", "neta1", "neta2", "name", "lower", "est", "upper", "fix", "label", "backTransform", "condition", "prior")
+  .ord <- c(
+    "ntheta",
+    "neta1",
+    "neta2",
+    "name",
+    "lower",
+    "est",
+    "upper",
+    "fix",
+    "label",
+    "backTransform",
+    "condition",
+    "prior"
+  )
   if (!is.null(.df) && !any(names(.df) == "prior")) {
     ## `rep()` so that a zero row estimate frame stays zero row
     .df$prior <- rep(NA_character_, nrow(.df))
   }
   .df <- rbind(.df, .df3)
   if (length(.df) == 0) {
-    return(data.frame(ntheta=integer(0),
-                      neta1=numeric(0),
-                      neta2=numeric(0),
-                      name=character(0),
-                      lower=numeric(0),
-                      est=numeric(0),
-                      upper=numeric(0),
-                      fix=numeric(0),
-                      label=character(0),
-                      backTransform=character(0),
-                      condition=character(0),
-                      prior=character(0)))
+    return(data.frame(
+      ntheta = integer(0),
+      neta1 = numeric(0),
+      neta2 = numeric(0),
+      name = character(0),
+      lower = numeric(0),
+      est = numeric(0),
+      upper = numeric(0),
+      fix = numeric(0),
+      label = character(0),
+      backTransform = character(0),
+      condition = character(0),
+      prior = character(0)
+    ))
   }
   .df[, .ord]
 

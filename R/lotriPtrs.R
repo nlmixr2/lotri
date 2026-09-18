@@ -9,6 +9,8 @@
 #'
 #' .lotriPointers()
 .lotriPointers <- function() {
-  .Call(`_getLotriPointers`, # nolint
-        PACKAGE = "lotri")
+  .Call(
+    `_getLotriPointers`, # nolint
+    PACKAGE = "lotri"
+  )
 }

@@ -1,5 +1,4 @@
 test_that("iov", {
-
   t <- lotri::lotri({
     tka <- 0.45; label("Ka")
     tcl <- log(2.7); label("Cl")
@@ -28,10 +27,4 @@ test_that("iov", {
       iov.v ~ 0.1
     })
   )
-
-
-
-
-
-
 })

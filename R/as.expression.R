@@ -8,7 +8,7 @@
 #'
 #' @noRd
 .enQuote <- function(chr) {
-  eval(parse(text=paste0("quote(", chr, ")")))
+  eval(parse(text = paste0("quote(", chr, ")")))
 }
 
 #' Turn a single lotri estimate data frame estimate into lhs expression
@@ -21,8 +21,7 @@
 #'
 #' @noRd
 .lotriLhsExprFromDf1 <- function(df1) {
-  .ret <- list(ifelse(df1$fix, quote(`fix`), quote(`c`)),
-               df1$lower, df1$est, df1$upper)
+  .ret <- list(ifelse(df1$fix, quote(`fix`), quote(`c`)), df1$lower, df1$est, df1$upper)
   if (.ret[[4]] == Inf) {
     .ret <- .ret[-4]
     if (.ret[[2]] == -Inf) {
@@ -30,7 +29,7 @@
       if (!df1$fix) return(.ret[[2]])
     }
   }
-  eval(parse(text=paste0("quote(", .deparse1(as.call(.ret)), ")"))) # nolint
+  eval(parse(text = paste0("quote(", .deparse1(as.call(.ret)), ")"))) # nolint
 }
 #' This returns the current initial estimate assigment based on df1
 #'
@@ -48,10 +47,16 @@
 #' @author Matthew L. Fidler
 #' @noRd
 .lotriBackTransformFromDf1 <- function(df1) {
-  if (is.na(df1$backTransform)) return(NULL)
-  list(eval(parse(text=paste0("quote(backTransform(",
-                              .deparse1(df1$backTransform), # nolint
-                              "))"))))
+  if (is.na(df1$backTransform)) {
+    return(NULL)
+  }
+  list(eval(parse(
+    text = paste0(
+      "quote(backTransform(",
+      .deparse1(df1$backTransform), # nolint
+      "))"
+    )
+  )))
 }
 
 #' Returns the quoted `label` argument
@@ -61,10 +66,16 @@
 #' @author Matthew L. Fidler
 #' @noRd
 .lotriLabelFromDf1 <- function(df1) {
-  if (is.na(df1$label)) return(NULL)
-  list(eval(parse(text=paste0("quote(label(",
-                              .deparse1(df1$label), # nolint
-                              "))"))))
+  if (is.na(df1$label)) {
+    return(NULL)
+  }
+  list(eval(parse(
+    text = paste0(
+      "quote(label(",
+      .deparse1(df1$label), # nolint
+      "))"
+    )
+  )))
 }
 #'  This produces a list of quoted lines baesd on df1
 #'
@@ -73,9 +84,7 @@
 #' @author Matthew L. Fidler
 #' @noRd
 .lotriExpressionLinesFromDf1 <- function(df1) {
-  c(list(.lotriAssignmentExprFromDf1(df1)),
-    .lotriBackTransformFromDf1(df1),
-    .lotriLabelFromDf1(df1))
+  c(list(.lotriAssignmentExprFromDf1(df1)), .lotriBackTransformFromDf1(df1), .lotriLabelFromDf1(df1))
 }
 #'  This gets the "population" type of estimates per line
 #'
@@ -85,16 +94,21 @@
 #' @author Matthew L. Fidler
 #' @noRd
 .lotriGetPopLinesFromDf <- function(df, lines) {
-  if (missing(lines)) lines <- seq_along(df$name)
-  do.call("c", lapply(lines, function(i) {
-    df1 <- df[i, ]
-    if (any(names(df1) == "ntheta")) {
-      if (is.na(df1$ntheta)) {
-        return(NULL)
+  if (missing(lines)) {
+    lines <- seq_along(df$name)
+  }
+  do.call(
+    "c",
+    lapply(lines, function(i) {
+      df1 <- df[i, ]
+      if (any(names(df1) == "ntheta")) {
+        if (is.na(df1$ntheta)) {
+          return(NULL)
+        }
       }
-    }
-    .lotriExpressionLinesFromDf1(df1)
-  }))
+      .lotriExpressionLinesFromDf1(df1)
+    })
+  )
 }
 #' Get ETA Matrix Elements in Line Form
 #'
@@ -140,7 +154,7 @@
 #' @keywords internal
 #' @author Matthew L. Fidler
 #' @noRd
-.lotriGetEtaLineForm <- function(x, condition="id", nameEst=5L) {
+.lotriGetEtaLineForm <- function(x, condition = "id", nameEst = 5L) {
   if (inherits(x, "matrix")) {
     .x <- .lotriSameSplit(x)
     .sameEmit <- .lotriSameEmit(.x)
@@ -172,10 +186,15 @@
           }
         }
         return(list(list(
-          str2lang(paste0("quote(", paste(.nme, collapse=" + "), " ~ same()",
-                          ifelse(condition == "id", "",
-                                 paste0("| ", condition)), ")")),
-          .sameLab)))
+          str2lang(paste0(
+            "quote(",
+            paste(.nme, collapse = " + "),
+            " ~ same()",
+            ifelse(condition == "id", "", paste0("| ", condition)),
+            ")"
+          )),
+          .sameLab
+        )))
       }
       lapply(seq_len(.n), function(i) {
         .c <- .fixOrC
@@ -186,25 +205,30 @@
             .c <- "c"
           }
         }
-        .vals <- vapply(seq_len(i), function(j) {
-          .fix <- FALSE
-          if (.c != "fix" && !is.null(.lotriFix)) {
-            .fix <- .lotriFix[i, j]
-          }
-          if (.fix) {
-            if (.useNames) {
-              paste0(.nme[j], "= fix(", .mat[i, j], ")")
-            }  else {
-              paste0("fix(", .mat[i, j], ")")
+        .vals <- vapply(
+          seq_len(i),
+          function(j) {
+            .fix <- FALSE
+            if (.c != "fix" && !is.null(.lotriFix)) {
+              .fix <- .lotriFix[i, j]
             }
-          } else {
-            if (.useNames) {
-              paste0(.nme[j], "=", .mat[i, j])
-            }  else {
-              paste0(.mat[i, j])
+            if (.fix) {
+              if (.useNames) {
+                paste0(.nme[j], "= fix(", .mat[i, j], ")")
+              } else {
+                paste0("fix(", .mat[i, j], ")")
+              }
+            } else {
+              if (.useNames) {
+                paste0(.nme[j], "=", .mat[i, j])
+              } else {
+                paste0(.mat[i, j])
+              }
             }
-          }
-        }, character((1)), USE.NAMES=FALSE)
+          },
+          character((1)),
+          USE.NAMES = FALSE
+        )
         if (is.null(.labels)) {
           .lab <- NULL
         } else {
@@ -216,30 +240,50 @@
           }
         }
         if (length(.vals) == 1 && .c == "c" && !.useNames) {
-          list(str2lang(paste0("quote(",
-                               .nme[i], "~ ", .vals,
-                               ifelse(condition == "id", "", paste0("| ", condition)), ")")),
-               .lab)
+          list(
+            str2lang(paste0(
+              "quote(",
+              .nme[i],
+              "~ ",
+              .vals,
+              ifelse(condition == "id", "", paste0("| ", condition)),
+              ")"
+            )),
+            .lab
+          )
         } else {
-          list(str2lang(paste0("quote(", .nme[i], "~ ", .c,
-                               "(",paste(.vals, collapse=", "), ")",
-                               ifelse(condition == "id", "", paste0("| ", condition)), ")")),
-               .lab)
+          list(
+            str2lang(paste0(
+              "quote(",
+              .nme[i],
+              "~ ",
+              .c,
+              "(",
+              paste(.vals, collapse = ", "),
+              ")",
+              ifelse(condition == "id", "", paste0("| ", condition)),
+              ")"
+            )),
+            .lab
+          )
         }
       })
     })
     ## a matrix with no etas at all (ie an estimate only lotri) gives an
     ## empty list here, and `do.call(c, NULL)` is an error
     .u <- unlist(.l)
-    if (is.null(.u)) return(NULL)
+    if (is.null(.u)) {
+      return(NULL)
+    }
     do.call(`c`, .u)
   } else if (inherits(x, "list")) {
     .n <- names(x)
-    do.call("c", lapply(.n, function(nme) {
-      .lotriGetEtaLineForm(x[[nme]],
-                           condition=nme,
-                           nameEst=nameEst)
-    }))
+    do.call(
+      "c",
+      lapply(.n, function(nme) {
+        .lotriGetEtaLineForm(x[[nme]], condition = nme, nameEst = nameEst)
+      })
+    )
   }
 }
 
@@ -270,17 +314,29 @@
   for (.i in seq_along(x)) {
     .ok[.i] <- FALSE
     .s <- attr(x[[.i]], "lotriSame")
-    if (is.null(.s)) next
-    if (any(.s == 0L)) next
-    if (length(unique(.s)) != 1L) next
+    if (is.null(.s)) {
+      next
+    }
+    if (any(.s == 0L)) {
+      next
+    }
+    if (length(unique(.s)) != 1L) {
+      next
+    }
     .w <- which(.starts == .starts[.i] - .s[1])
-    if (length(.w) != 1L) next
-    if (!isTRUE(dim(x[[.w]])[1] == dim(x[[.i]])[1])) next
+    if (length(.w) != 1L) {
+      next
+    }
+    if (!isTRUE(dim(x[[.w]])[1] == dim(x[[.i]])[1])) {
+      next
+    }
     ## the master must not itself be a copy: re-parsing `same()` always
     ## repeats the ORIGINAL block, so emitting it for a block that
     ## mirrors a mirror would come back with different offsets
     .ms <- attr(x[[.w]], "lotriSame")
-    if (!is.null(.ms) && any(.ms != 0L)) next
+    if (!is.null(.ms) && any(.ms != 0L)) {
+      next
+    }
     ## A re-parsed `same()` repeats the IMMEDIATELY PRECEDING block, so
     ## every block between the master and this one must itself be
     ## WRITTEN as `same()` against that master.  Checking only that they
@@ -290,35 +346,47 @@
     ## repeat THAT block instead of the master.
     if (.i > .w + 1L) {
       .between <- seq(.w + 1L, .i - 1L)
-      if (!all(.ok[.between])) next
+      if (!all(.ok[.between])) {
+        next
+      }
       ## nocov start
       ## Belt and braces.  A block that is `.ok` was itself accepted
       ## above, and 283 rejects a copy of a copy, so its master is the
       ## same original this one points at -- there is no input reaching
       ## here that fails this.  Kept because the reasoning is subtle and
       ## the cost of being wrong is a matrix that re-parses differently.
-      if (!all(vapply(.between, function(.b) {
-        .bs <- attr(x[[.b]], "lotriSame")
-        !is.null(.bs) && .starts[.b] - .bs[1] == .starts[.w]
-      }, logical(1)))) next
+      if (
+        !all(vapply(
+          .between,
+          function(.b) {
+            .bs <- attr(x[[.b]], "lotriSame")
+            !is.null(.bs) && .starts[.b] - .bs[1] == .starts[.w]
+          },
+          logical(1)
+        ))
+      ) {
+        next
+      }
       ## nocov end
     }
     ## exact, not `all.equal()`'s default tolerance: a genuine copy is
     ## bit identical to its master, and collapsing blocks that merely
     ## agree to ~1e-8 would change the values on the round trip
-    if (!isTRUE(all.equal(unclass(x[[.i]]), unclass(x[[.w]]),
-                          check.attributes=FALSE, tolerance=0))) {
+    if (!isTRUE(all.equal(unclass(x[[.i]]), unclass(x[[.w]]), check.attributes = FALSE, tolerance = 0))) {
       next
     }
     .fi <- attr(x[[.i]], "lotriFix")
     .fw <- attr(x[[.w]], "lotriFix")
-    if (is.null(.fi) != is.null(.fw)) next
-    if (!is.null(.fi) && !identical(unname(.fi), unname(.fw))) next
+    if (is.null(.fi) != is.null(.fw)) {
+      next
+    }
+    if (!is.null(.fi) && !identical(unname(.fi), unname(.fw))) {
+      next
+    }
     ## a `same()` line can carry only ONE trailing `label()`, which
     ## attaches to the last name; a label anywhere else would be dropped
     .li <- attr(x[[.i]], "lotriLabels")
-    if (!is.null(.li) && length(.li) > 1L &&
-          any(!is.na(.li[-length(.li)]))) {
+    if (!is.null(.li) && length(.li) > 1L && any(!is.na(.li[-length(.li)]))) {
       next
     }
     .ok[.i] <- TRUE
@@ -333,7 +401,7 @@
 #' @return list expression
 #' @author Matthew L. Fidler
 #' @noRd
-.lotriGetEtaMatEltPlusForm <- function(x, condition="id") {
+.lotriGetEtaMatEltPlusForm <- function(x, condition = "id") {
   if (inherits(x, "matrix")) {
     .x <- .lotriSameSplit(x)
     .sameEmit <- .lotriSameEmit(.x)
@@ -341,9 +409,17 @@
       .mat <- .x[[i]]
       .nme <- dimnames(.mat)[[1]]
       if (.sameEmit[i]) {
-        return(eval(expr=parse(text=paste0(
-          "quote(", paste(.nme, collapse="+"), "~ same()",
-          ifelse(condition == "id", "", paste0("| ", condition)), ")"))))
+        return(eval(
+          expr = parse(
+            text = paste0(
+              "quote(",
+              paste(.nme, collapse = "+"),
+              "~ same()",
+              ifelse(condition == "id", "", paste0("| ", condition)),
+              ")"
+            )
+          )
+        ))
       }
       .n <- length(.nme)
       .v <- vector("numeric", .n * (.n + 1) / 2)
@@ -365,15 +441,28 @@
           }
         }
       }
-      eval(expr=parse(text=paste0("quote(", paste(.nme, collapse="+"), "~", .v0,
-                                  ifelse(condition == "id", "", paste0("| ", condition)), ")")))
+      eval(
+        expr = parse(
+          text = paste0(
+            "quote(",
+            paste(.nme, collapse = "+"),
+            "~",
+            .v0,
+            ifelse(condition == "id", "", paste0("| ", condition)),
+            ")"
+          )
+        )
+      )
     })
     .l
   } else if (inherits(x, "list")) {
     .n <- names(x)
-    do.call("c", lapply(.n, function(nme) {
-      .lotriGetEtaMatEltPlusForm(x[[nme]], condition=nme)
-    }))
+    do.call(
+      "c",
+      lapply(.n, function(nme) {
+        .lotriGetEtaMatEltPlusForm(x[[nme]], condition = nme)
+      })
+    )
   }
 }
 
@@ -408,10 +497,13 @@
 #' as.expression(x)
 #'
 #' @export
-lotriDataFrameToLotriExpression <- function(data, useIni=FALSE) { # nolint
-  if (!inherits(data, "data.frame")) stop("input must be lotri data.frame", call.=FALSE)
+lotriDataFrameToLotriExpression <- function(data, useIni = FALSE) {
+  # nolint
+  if (!inherits(data, "data.frame")) {
+    stop("input must be lotri data.frame", call. = FALSE)
+  }
   .l <- as.lotri(data) # nolint
-  as.expression(.l, useIni=useIni)
+  as.expression(.l, useIni = useIni)
 }
 
 #' Build the `prior(name) ~ dist(...)` lines
@@ -427,21 +519,21 @@ lotriDataFrameToLotriExpression <- function(data, useIni=FALSE) { # nolint
 .lotriGetPriorLines <- function(est, mat) {
   .ret <- list()
   .add <- function(nms, txt) {
-    .e <- try(str2lang(paste0("prior(", paste(nms, collapse=", "), ") ~ ", txt)),
-              silent=TRUE)
+    .e <- try(str2lang(paste0("prior(", paste(nms, collapse = ", "), ") ~ ", txt)), silent = TRUE)
     if (inherits(.e, "try-error")) {
       ## a prior is validated when it is parsed, so this only happens if
       ## the column was written to by hand; say so rather than making the
       ## object impossible to print
-      warning("cannot deparse the prior on '", paste(nms, collapse=", "),
-              "': ", txt, call.=FALSE)
+      warning("cannot deparse the prior on '", paste(nms, collapse = ", "), "': ", txt, call. = FALSE)
       return(invisible())
     }
     .ret[[length(.ret) + 1L]] <<- .e
   }
   .isMultiPrior <- function(txt) {
-    .fn <- try(str2lang(txt)[[1]], silent=TRUE)
-    if (inherits(.fn, "try-error")) return(FALSE)
+    .fn <- try(str2lang(txt)[[1]], silent = TRUE)
+    if (inherits(.fn, "try-error")) {
+      return(FALSE)
+    }
     .dist <- .lotriPriorLookup(as.character(.fn))
     !is.null(.dist) && .dist$kind %in% c("matrix", "multivariate")
   }
@@ -451,13 +543,17 @@ lotriDataFrameToLotriExpression <- function(data, useIni=FALSE) { # nolint
   ## names every one of them, and an `om.` name marks it as joint.
   .jointNames <- function(txt) {
     .nms <- .lotriPriorCovNames(txt)
-    if (is.null(.nms) || !any(grepl("^om[.].", .nms))) return(NULL)
+    if (is.null(.nms) || !any(grepl("^om[.].", .nms))) {
+      return(NULL)
+    }
     .nms
   }
   if (!is.null(est) && any(names(est) == "prior")) {
     .done <- rep(FALSE, length(est$name))
     for (.i in seq_along(est$name)) {
-      if (.done[.i] || is.na(est$prior[.i])) next
+      if (.done[.i] || is.na(est$prior[.i])) {
+        next
+      }
       .txt <- est$prior[.i]
       .jnt <- .jointNames(.txt)
       if (!is.null(.jnt)) {
@@ -485,19 +581,23 @@ lotriDataFrameToLotriExpression <- function(data, useIni=FALSE) { # nolint
     .mats <- as.list(mat)
   }
   for (.m in .mats) {
-    if (!is.matrix(.m)) next
+    if (!is.matrix(.m)) {
+      next
+    }
     .p <- attr(.m, "lotriPriors")
     .dn <- dimnames(.m)[[1]]
     if (!is.null(.p)) {
       for (.i in seq_along(.p)) {
-        if (is.na(.p[.i])) next
+        if (is.na(.p[.i])) {
+          next
+        }
         .nms <- .dn[.i]
         .jnt <- .jointNames(.p[.i])
         if (!is.null(.jnt)) {
           .add(.jnt, .p[.i])
           next
         }
-        .fn <- try(str2lang(.p[.i])[[1]], silent=TRUE)
+        .fn <- try(str2lang(.p[.i])[[1]], silent = TRUE)
         if (!inherits(.fn, "try-error")) {
           .dist <- .lotriPriorLookup(as.character(.fn))
           if (!is.null(.dist) && .dist$kind %in% c("matrix", "multivariate")) {
@@ -538,15 +638,20 @@ as.expression.lotriFix <- function(x, ...) {
   class(.mat) <- NULL
   .priorLines <- .lotriGetPriorLines(.est, .mat)
   if (!.lst$plusNames) {
-    as.call(list(ifelse(.lst$useIni, quote(`ini`), quote(`lotri`)),
-                 as.call(c(list(quote(`{`)), .lotriGetPopLinesFromDf(.est),
-                           .lotriGetEtaLineForm(.mat, nameEst=.lst$nameEst),
-                           .priorLines))))
+    as.call(list(
+      ifelse(.lst$useIni, quote(`ini`), quote(`lotri`)),
+      as.call(c(
+        list(quote(`{`)),
+        .lotriGetPopLinesFromDf(.est),
+        .lotriGetEtaLineForm(.mat, nameEst = .lst$nameEst),
+        .priorLines
+      ))
+    ))
   } else {
-    as.call(list(ifelse(.lst$useIni, quote(`ini`), quote(`lotri`)),
-                 as.call(c(list(quote(`{`)), .lotriGetPopLinesFromDf(.est),
-                           .lotriGetEtaMatEltPlusForm(.mat),
-                           .priorLines))))
+    as.call(list(
+      ifelse(.lst$useIni, quote(`ini`), quote(`lotri`)),
+      as.call(c(list(quote(`{`)), .lotriGetPopLinesFromDf(.est), .lotriGetEtaMatEltPlusForm(.mat), .priorLines))
+    ))
   }
 }
 
@@ -567,15 +672,18 @@ as.expression.lotriFix <- function(x, ...) {
 #'   have a dimension above this number before names are displayed.
 #'
 #' @export
-lotriAsExpression <- function(x, useIni=FALSE,
-                              plusNames=getOption("lotri.plusNames", FALSE),
-                              nameEst=getOption("lotri.nameEst", 5L)) {
-  checkmate::assertLogical(useIni, any.missing=FALSE, len=1)
-  checkmate::assertLogical(plusNames, any.missing=FALSE, len=1)
+lotriAsExpression <- function(
+  x,
+  useIni = FALSE,
+  plusNames = getOption("lotri.plusNames", FALSE),
+  nameEst = getOption("lotri.nameEst", 5L)
+) {
+  checkmate::assertLogical(useIni, any.missing = FALSE, len = 1)
+  checkmate::assertLogical(plusNames, any.missing = FALSE, len = 1)
   if (is.logical(nameEst)) {
-    checkmate::assertLogical(nameEst, any.missing=FALSE, len=1)
-  } else  {
-    checkmate::assertIntegerish(nameEst, any.missing=FALSE, len=1, lower=1)
+    checkmate::assertLogical(nameEst, any.missing = FALSE, len = 1)
+  } else {
+    checkmate::assertIntegerish(nameEst, any.missing = FALSE, len = 1, lower = 1)
   }
-  as.expression.lotriFix(x, useIni=useIni, plusNames=plusNames, nameEst=nameEst)
+  as.expression.lotriFix(x, useIni = useIni, plusNames = plusNames, nameEst = nameEst)
 }
