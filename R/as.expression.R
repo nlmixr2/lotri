@@ -519,6 +519,42 @@ lotriDataFrameToLotriExpression <- function(data, useIni=FALSE) { # nolint
   .ret
 }
 
+#' Rebuild the `dist(eta) ~ family(...)` lines of an object
+#'
+#' Like the prior lines, these are emitted after the matrix so the
+#' random effect they name has already been declared.
+#'
+#' @param mat matrix or list of matrices (may be NULL)
+#' @return list of quoted eta distribution lines
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriGetEtaDistLines <- function(mat) {
+  .ret <- list()
+  .mats <- NULL
+  if (is.matrix(mat)) {
+    .mats <- list(mat)
+  } else if (inherits(mat, "list") || inherits(mat, "lotri")) {
+    .mats <- as.list(mat)
+  }
+  for (.m in .mats) {
+    if (!is.matrix(.m)) next
+    .d <- attr(.m, "lotriEtaDists")
+    if (is.null(.d)) next
+    .dn <- dimnames(.m)[[1]]
+    for (.i in seq_along(.d)) {
+      if (is.na(.d[.i])) next
+      .e <- try(str2lang(paste0("dist(", .dn[.i], ") ~ ", .d[.i])), silent=TRUE)
+      if (inherits(.e, "try-error")) {
+        warning("cannot deparse the distribution declared on '", .dn[.i],
+                "': ", .d[.i], call.=FALSE)
+        next
+      }
+      .ret[[length(.ret) + 1L]] <- .e
+    }
+  }
+  .ret
+}
+
 #' @export
 as.expression.lotriFix <- function(x, ...) {
   .lst <- list(...)
@@ -536,7 +572,8 @@ as.expression.lotriFix <- function(x, ...) {
   .mat <- .l
   attr(.mat, "lotriEst") <- NULL
   class(.mat) <- NULL
-  .priorLines <- .lotriGetPriorLines(.est, .mat)
+  .priorLines <- c(.lotriGetPriorLines(.est, .mat),
+                   .lotriGetEtaDistLines(.mat))
   if (!.lst$plusNames) {
     as.call(list(ifelse(.lst$useIni, quote(`ini`), quote(`lotri`)),
                  as.call(c(list(quote(`{`)), .lotriGetPopLinesFromDf(.est),
