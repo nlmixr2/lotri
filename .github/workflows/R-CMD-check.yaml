@@ -10,6 +10,11 @@ name: R-CMD-check
 
 permissions: read-all
 
+# a new commit on a pull request cancels that pull request's earlier run
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   R-CMD-check:
     runs-on: ${{ matrix.config.os }}
