@@ -45,6 +45,7 @@ test_that("test nearPD with same functions as Matrix", {
   # Testing nearPD() --- this is partly in  ../man/nearPD.Rd :
   if (requireNamespace("Matrix", quietly = TRUE)) {
 
+    # fmt: skip
     pr <- matrix(c(1,     0.477, 0.644, 0.478, 0.651, 0.826,
                    0.477, 1,     0.516, 0.233, 0.682, 0.75,
                    0.644, 0.516, 1,     0.599, 0.581, 0.742,

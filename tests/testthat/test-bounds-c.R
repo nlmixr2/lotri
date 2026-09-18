@@ -86,15 +86,9 @@ test_that("bounds C", {
   
   lst <- sepA$below$.bounds
   
-  expect_equal(c(
-    3, 3, 4, -Inf, 4, -Inf, -Inf, -Inf, -Inf, -Inf, -Inf, -Inf,
-    -Inf, -Inf
-  ), as.vector(lst$lower))
+  expect_equal(c(3, 3, 4, -Inf, 4, -Inf, -Inf, -Inf, -Inf, -Inf, -Inf, -Inf, -Inf, -Inf), as.vector(lst$lower))
   
-  expect_equal(c(
-    4, 4, Inf, Inf, Inf, Inf, Inf, Inf, Inf, Inf, Inf, Inf, Inf,
-    Inf
-  ), as.vector(lst$upper))
+  expect_equal(c(4, 4, Inf, Inf, Inf, Inf, Inf, Inf, Inf, Inf, Inf, Inf, Inf, Inf), as.vector(lst$upper))
   
   expect_equal(names(lst$upper), c("eta.Cl", "eta.Ka", sprintf("ETA[%d]", 1:12)))
   

@@ -124,6 +124,7 @@ test_that("lotriMat", {
     matrix(c(1L, 0L, 0L, 1L), 2, 2)
   )
 
+  # fmt: skip
   expect_equal(lotriMat(testList),
                structure(c(
                  40, 0.1, 0.1, 0, 0, 0, 0, 0, 0.1, 20, 0.1, 0, 0,
@@ -145,6 +146,7 @@ test_that("lotriMat", {
     lotri(et1 + et6 ~ c(0.1, 0.01, 1))
   )
 
+  # fmt: skip
   expect_equal(lotriMat(testList),
                structure(c(1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
                            0, 40, 0.1, 0.1, 0, 0, 0, 0, 0, 0.1, 20, 0.1, 0, 0, 0, 0, 0,
@@ -169,6 +171,7 @@ test_that("lotriMat", {
     )
   )
 
+  # fmt: skip
   expect_equal(
     lotriMat(testList),
     structure(c(

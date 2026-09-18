@@ -18,6 +18,7 @@ test_that("lotri matrix parsing", {
     )
   )
 
+  # fmt: skip
   expect_equal(
     lotri(list(
       et2 + et3 + et4 ~ c(
@@ -39,6 +40,7 @@ test_that("lotri matrix parsing", {
     )
   )
 
+  # fmt: skip
   expect_equal(
     lotri(list(
       et2 + et3 + et4 ~ c(
@@ -60,6 +62,7 @@ test_that("lotri matrix parsing", {
     )
   )
 
+  # fmt: skip
   expect_equal(
     lotri({
       et2 + et3 + et4 ~ c(
@@ -81,6 +84,7 @@ test_that("lotri matrix parsing", {
     )
   )
 
+  # fmt: skip
   expect_equal(
     lotri(
       et2 + et3 + et4 ~ c(
@@ -102,6 +106,7 @@ test_that("lotri matrix parsing", {
     )
   )
 
+  # fmt: skip
   expect_equal(
     lotri(
       et2 + et3 + et4 ~ c(
@@ -197,6 +202,7 @@ test_that("lotri matrix parsing", {
 
   expect_error(lotri(lotri(a ~ paste(1))))
 
+  # fmt: skip
   expect_equal(
     lotri({
       et2 + et3 + et4 ~ c(
@@ -601,6 +607,7 @@ test_that("lotri matrix parsing", {
     iov.Cl ~ 0.6 | occ(lower = 3)
   )
 
+  # fmt: skip
   expect_equal(
     tmp2,
     structure(list(structure(c(
