@@ -42,7 +42,7 @@ test_that("test labels", {
     add.err  <- 0.6  ; label("additive error (mg/L)")
     eta.ka + eta.cl ~ c(0.5,
                         0.1, 0.1)   ; label("IIV cl")
-    eta.v  ~ c(0.1)   ; label("IIV v")
+    eta.v  ~ c(0.1)   ; label("IIV v") # nolint: unnecessary_concatenation_linter.
   })
 
   expect_equal(attr(f, "lotriLabels"), c(NA_character_, "IIV cl", "IIV v"))
@@ -56,7 +56,7 @@ test_that("test labels", {
     add.err  <- 0.6  ; label("additive error (mg/L)")
     eta.ka + eta.cl ~ c(0.5,
                         0.1, 0.1)
-    eta.v  ~ c(0.1)
+    eta.v  ~ c(0.1) # nolint: unnecessary_concatenation_linter.
   })
   expect_null(attr(f, "lotriLabels"))
 })

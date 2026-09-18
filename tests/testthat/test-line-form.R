@@ -1,7 +1,7 @@
 test_that("lotri lower triangular matrix specification 2", {
   expect_equal(
     lotri({
-    a ~ c(0.1)
+    a ~ c(0.1) # nolint: unnecessary_concatenation_linter.
     b ~ c(0.1, 1)
     c ~ c(0.1, 1, 2)
   }),
@@ -266,7 +266,7 @@ test_that("lotri lower triangular matrix specification 2", {
     j <- fix(1)
     k <- fix(0, 1, 2)
     l <- c(0, 1, 2, fixed)
-    m ~ c(1)
+    m ~ c(1) # nolint: unnecessary_concatenation_linter.
     n ~ c(0.5, 1)
   })
 
@@ -277,7 +277,7 @@ test_that("lotri lower triangular matrix specification 2", {
       lotri({
       eta1 ~ 0.175278
       eta2 ~ c(0.115896, 0.112362)
-      eta3 ~ c(0)
+      eta3 ~ c(0) # nolint: unnecessary_concatenation_linter.
     }),
       lotri(eta1+eta2 ~ c(0.175278, 0.115896, 0.112362),
           eta3 ~  0)

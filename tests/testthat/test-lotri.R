@@ -447,16 +447,16 @@ test_that("lotri() .mergeProp errors on conflicting non-default property (lines 
 test_that("lotri() .lotriList lines 989-992: unnamed element inside inner list-of-lotri", {
   # lotri(list(m_a, id = m_b)) returns a lotri with names c("", "id");
   # wrapping in another list makes .lotriList encounter that unnamed element at lines 989-992
-  m_a <- matrix(c(0.1), 1, 1, dimnames = list("a", "a"))
-  m_b <- matrix(c(0.2), 1, 1, dimnames = list("b", "b"))
+  m_a <- matrix(0.1, 1, 1, dimnames = list("a", "a"))
+  m_b <- matrix(0.2, 1, 1, dimnames = list("b", "b"))
   r <- lotri(list(list(m_a, id = m_b)))
   expect_true(!is.null(r))
   expect_true("id" %in% names(r))
 })
 
 test_that("lotri() .lotriList line 1014: mix of unnamed and named matrices in list", {
-  m_unnamed <- matrix(c(0.1), 1, 1, dimnames = list("a", "a"))
-  m_named <- matrix(c(0.2), 1, 1, dimnames = list("b", "b"))
+  m_unnamed <- matrix(0.1, 1, 1, dimnames = list("a", "a"))
+  m_named <- matrix(0.2, 1, 1, dimnames = list("b", "b"))
   r <- lotri(list(m_unnamed, id = m_named))
   expect_true(!is.null(r))
 })

@@ -15,6 +15,8 @@ linters: linters_with_defaults(
     infix_spaces_linter(),
     commas_linter(),
     cyclocomp_linter(50),
+    # CodeFactor runs this too; tests keep `a ~ c(0.1)` as parser input.
+    unnecessary_concatenation_linter(),
     # Comments quote lotri syntax (`a + b ~ c(1, .1, 2) | occ`) as prose.
     commented_code_linter = NULL,
     # air owns indentation and disagrees with indentation_linter on wrapped

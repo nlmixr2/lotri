@@ -199,7 +199,7 @@
       lapply(seq_len(.n), function(i) {
         .c <- .fixOrC
         if (!is.null(.lotriFix)) {
-          if (all(.lotriFix[seq(1, i), i])) {
+          if (all(.lotriFix[seq_len(i), i])) {
             .c <- "fix"
           } else {
             .c <- "c"
@@ -424,8 +424,8 @@
       .n <- length(.nme)
       .v <- vector("numeric", .n * (.n + 1) / 2)
       .k <- 1
-      for (.i in seq(1, .n)) {
-        for (.j in seq(1, .i)) {
+      for (.i in seq_len(.n)) {
+        for (.j in seq_len(.i)) {
           .v[.k] <- .mat[.i, .j]
           .k <- .k + 1
         }

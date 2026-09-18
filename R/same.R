@@ -69,7 +69,7 @@
     while (.k <= .j) {
       .wid <- 0L
       .max <- min(.d, .j - .k + 1L)
-      for (.try in seq(.max, 1L)) {
+      for (.try in rev(seq_len(.max))) {
         if (.lotriSameOkFamily(mat, .out, .k, .try, .d, .n)) {
           .wid <- .try
           break

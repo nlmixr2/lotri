@@ -498,7 +498,7 @@ test_that("lotri matrix parsing", {
   )
 
   expect_error(
-    lotri(et1 ~ c(1) | id + matt)
+    lotri(et1 ~ c(1) | id + matt) # nolint: unnecessary_concatenation_linter.
   ) # nolint
   expect_error(lotri(et1 ~ 1 | id + matt))
 
