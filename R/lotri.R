@@ -720,8 +720,8 @@ NULL
               ## whenever a row is declared, so none is NULL once there
               ## is an open block to move -- the guard is defensive
               if (is.null(v)) {
-                return(NULL)
-              } # nocov
+                return(NULL) # nocov
+              }
               v[seq_along(v) > .cut]
             }
             .env2$names <- .tailOf(env$names)
@@ -1712,7 +1712,6 @@ NULL
   attr(.mat, "lotriLabels") <- NULL
   class(.mat) <- NULL
   for (.blk in lotriMatInv(.mat)) {
-    # nolint
     .nm <- dimnames(.blk)[[1]]
     env$priors <- c(
       env$priors,
@@ -2076,6 +2075,7 @@ NULL
 #' @return list with the amended `ret` and `est`
 #' @noRd
 #' @author Matthew L. Fidler
+# nolint next: cyclocomp_linter.
 .lotriResolvePriors <- function(ret, est, priors, wholePriors = NULL) {
   if (length(priors) == 0L && length(wholePriors) == 0L) {
     return(list(ret = ret, est = est))
@@ -2676,9 +2676,8 @@ NULL
             .curName <- names(.cur)[y]
             if (.curName == "") {
               assign(
-                "...empty",
+                "...empty", # nolint: object_name_linter.
                 c(
-                  # nolint
                   .env[["...empty"]], # nolint
                   list(.cury)
                 ),
@@ -2687,9 +2686,8 @@ NULL
             } else {
               assign(.curName, list(.cury), .env)
               assign(
-                "...cnd",
+                "...cnd", # nolint: object_name_linter.
                 unique(c(
-                  # nolint
                   .env[["...cnd"]], # nolint
                   .curName
                 )),
@@ -2824,7 +2822,6 @@ NULL
   .lotriSamePad(env)
   .hasSame <- any(env$sameOff != 0L)
   if (is.logical(env$rcm) && env$rcm && .n >= 1 && !lotriIsBlockMat(.ret)) {
-    # nolint
     ## Only refuse when the permutation would actually run.  `rcm` is a
     ## no-op on a matrix that is already block diagonal -- which a
     ## `same()` matrix always is -- and `rxode2`'s `ini({})` passes
@@ -3226,8 +3223,7 @@ NULL
         )
         .prop <- c(.prop, .tmp1)
       }
-      ret <- lotri(list(ret, .tmp[[fullCnd]]),
-                   cov=cov, rcm=rcm, default=default, envir = envir)
+      ret <- lotri(list(ret, .tmp[[fullCnd]]), cov = cov, rcm = rcm, default = default, envir = envir)
       .w <- which(names(.tmp) != fullCnd)
       if (length(.w) > 0L) {
         .tmp <- .tmp[.w]
@@ -3275,9 +3271,7 @@ NULL
       .amplifyRetWithDfEst(ret, est)
     }
   } else {
-    ret <- lotri(c(list(ret), list(.tmp)),
-                 cov=cov, rcm=rcm, default=default,
-                 envir = envir)
+    ret <- lotri(c(list(ret), list(.tmp)), cov = cov, rcm = rcm, default = default, envir = envir)
     if (inherits(.tmp, "lotri")) {
       attr(ret, "lotri") <- .amplifyFinal(ret, attr(.tmp, "lotri", exact = TRUE))
       class(ret) <- "lotri"
@@ -3533,7 +3527,7 @@ lotri <- function(x, ..., cov = FALSE, rcm = FALSE, envir = parent.frame(), defa
   cov <- .covInfo$cov
   .fun <- .covInfo$fun
   if (missing(x)) {
-    return(lotri({}, cov=cov, rcm=rcm, envir=envir, default=default))
+    return(lotri({}, cov = cov, rcm = rcm, envir = envir, default = default))
   }
   if (is.null(.lotriParentEnv)) {
     assignInMyNamespace(".lotriParentEnv", envir)
@@ -3578,7 +3572,6 @@ lotri <- function(x, ..., cov = FALSE, rcm = FALSE, envir = parent.frame(), defa
 #' @importFrom utils .DollarNames
 #' @export
 .DollarNames.lotri <- function(x, pattern) {
-  # nolint
   grep(
     pattern,
     unique(c(

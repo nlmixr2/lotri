@@ -44,6 +44,7 @@ as.lotri.matrix <- function(x, ..., default = "") {
   list(base = .base, master = .master)
 }
 
+# nolint next: object_name_linter.
 .as.lotri.data.frame.mat <- function(x) {
   x <- x[order(x$neta1, x$neta2), ]
   x$neta1 <- factor(paste(x$neta1), levels = paste(sort(unique(x$neta1))))

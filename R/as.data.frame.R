@@ -1,3 +1,4 @@
+# nolint next: object_name_linter.
 .as.data.frame.lotriFix.mat <- function(mat, default = "id", eta1 = 1) {
   .df3 <- NULL
   .env <- new.env(parent = emptyenv())

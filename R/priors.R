@@ -92,7 +92,7 @@
 #' @noRd
 #' @author Matthew L. Fidler
 .lotriDistNotAliased <- c(
-  "dt" = "student_t: R's 'dt()' is the standardized (or noncentral) t, while Stan's 'student_t(nu, mu, sigma)' is a location-scale t",
+  "dt" = "student_t: R's 'dt()' is the standardized (or noncentral) t, while Stan's 'student_t(nu, mu, sigma)' is a location-scale t", # nolint: line_length_linter.
   "dnbinom" = "neg_binomial_2: R's 'dnbinom()' uses size/prob, Stan's 'neg_binomial_2()' uses mu/phi",
   "dhyper" = "hypergeometric: R and Stan order the arguments differently",
   "dwilcox" = ""

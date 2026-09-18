@@ -6,13 +6,52 @@ linters: linters_with_defaults(
         s3 = "^[a-z][a-z0-9_]*\\.[a-zA-Z][a-zA-Z0-9]*$"
       )
     ),
-    assignment_linter(),
+    # `<<-` updates closure state (eg the collected prior lines) in a few places.
+    assignment_linter(operator = c("<-", "<<-")),
     line_length_linter(120),
     whitespace_linter(),
     pipe_continuation_linter(),
     T_and_F_symbol_linter(),
-    infix_spaces_linter = NULL, # Keep disabled for now due to high violation count (8541)
-    commas_linter = NULL, # Keep disabled for now (2242)
-    cyclocomp_linter(50)
+    infix_spaces_linter(),
+    commas_linter(),
+    cyclocomp_linter(50),
+    # Comments quote lotri syntax (`a + b ~ c(1, .1, 2) | occ`) as prose.
+    commented_code_linter = NULL,
+    # air owns indentation and disagrees with indentation_linter on wrapped
+    # `&&`/`||` operands.
+    indentation_linter = NULL
   )
-exclusions: list()
+exclusions: c(
+    list(
+      "inst",
+      "vignettes",
+      "src"
+    ),
+    # Tests write lotri syntax (`a ~ 1; b ~ 2`, `a~c(1,2)`, `{a ~ 1}`) inside
+    # lotri() blocks that air leaves as written, use Monolix/NONMEM style
+    # parameter names (`Ktr_pop`) and carry long expected-output lines.  A
+    # directory entry would drop every linter, so list the test files one by
+    # one.  list.files() is relative to the working directory: lint from the
+    # package root (lintr::lint_package()), as CI does.
+    sapply(
+      list.files("tests", pattern = "[.]R$", recursive = TRUE, full.names = TRUE),
+      function(f) {
+        list(
+          assignment_linter = Inf,
+          infix_spaces_linter = Inf,
+          spaces_left_parentheses_linter = Inf,
+          brace_linter = Inf,
+          semicolon_linter = Inf,
+          commas_linter = Inf,
+          spaces_inside_linter = Inf,
+          paren_body_linter = Inf,
+          quotes_linter = Inf,
+          T_and_F_symbol_linter = Inf,
+          object_name_linter = Inf,
+          line_length_linter = Inf
+        )
+      },
+      simplify = FALSE
+    )
+  )
+encoding: "UTF-8"

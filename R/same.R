@@ -310,7 +310,6 @@
   .end <- logical(.n)
   .p <- 0L
   for (.b in lotriMatInv(mat)) {
-    # nolint
     .p <- .p + dim(.b)[1]
     .end[.p] <- TRUE
   }

@@ -497,8 +497,8 @@
 #' as.expression(x)
 #'
 #' @export
+# nolint next: object_length_linter.
 lotriDataFrameToLotriExpression <- function(data, useIni = FALSE) {
-  # nolint
   if (!inherits(data, "data.frame")) {
     stop("input must be lotri data.frame", call. = FALSE)
   }

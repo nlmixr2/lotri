@@ -85,7 +85,6 @@ lotriNearPD <- function(
   maxit = 100L,
   trace = FALSE # nolint
 ) {
-  # nolint
   if (ensureSymmetry) {
     x <- 0.5 * (t(x) + x)
   }
