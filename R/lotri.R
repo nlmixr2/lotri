@@ -378,9 +378,18 @@ NULL
   ## would otherwise be pulled into a condition it was never given.
   if (isTRUE(env$lastTildeInCnd) && exists("lastCnd", env)) {
     .cnd <- env$lastCnd
-    if (exists(.cnd, env)) {
+    ## The fold continues the block OPEN at that level, so it goes by
+    ## that level's own row counter, and there has to be one: a finished
+    ## plus-form block has no open row to continue.  This used to read
+    ## the level's whole HEIGHT instead, which agreed with the open
+    ## block only while a level held a single block starting at its
+    ## first row.  Re-opening a plus-form block by height wrote rows past
+    ## the end of the level ("length of 'dimnames' [1] not equal to
+    ## array extent"), and once a level can be written to more than once
+    ## the height spans blocks and asked for a row count no line could
+    ## supply.
+    if (exists(.cnd, env) && env[[.cnd]]$lastN > 0L) {
       .env2 <- env[[.cnd]]
-      .env2$lastN <- max(.env2$df$i)
       .len <- length(.env2$df$i)
       env$lastFoldedIntoCnd <- FALSE
       .lotri1(x2, x3, .env2)
@@ -483,14 +492,11 @@ NULL
 #'
 #' @param env  environment to update
 #'
-#' @param env2 environment to try if the last expression could be a
-#'   multi-line expression
-#'
 #' @return Nothing; updates environment
 #'
 #' @author Matthew Fidler
 #' @noRd
-.lotri1 <- function(x2, x3, env, env2=NULL) {
+.lotri1 <- function(x2, x3, env) {
   .envParse <- new.env(parent = emptyenv())
   .envParse$lhs <- x2
   .rl <- .lotriParseMat(x3, env=.envParse)
@@ -562,11 +568,109 @@ NULL
     if (.handleLastExprIsCndForFrm2(x2, x3, env)) {
       return(invisible())
     }
-    if (!is.null(env2)) {
-      return(.lotri1(x2, x3, env2))
-    }
     stop("matrix expression should be 'name ~ c(lower-tri)'", call. = FALSE)
   }
+}
+
+#' Combine the property lists of two mentions of one level
+#'
+#' A level may be named more than once in a single `{}` block, and each
+#' mention may carry properties (`| occ(lower = 0)`).  They describe one
+#' level, so they are combined; a property given twice with two different
+#' values is ambiguous rather than a refinement, and is refused with the
+#' message `.mergeProp()` gives for the same clash across arguments.
+#'
+#' @param old property list already recorded for the level, or `NULL`
+#' @param new property list from this mention, or `NULL`
+#' @param cnd level name, for the error message
+#' @return the combined property list, or `NULL` when neither mention
+#'   carried one
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriMergeCndExtra <- function(old, new, cnd) {
+  if (is.null(new)) return(old)
+  if (is.null(old)) return(new)
+  for (.n in names(new)) {
+    if (any(.n == names(old))) {
+      if (!isTRUE(all.equal(old[[.n]], new[[.n]]))) {
+        stop(sprintf(gettext("conflicting '%s' properties for level '%s'"),
+                     .n, cnd), call.=FALSE)
+      }
+    } else {
+      old[[.n]] <- new[[.n]]
+    }
+  }
+  old
+}
+
+#' Move the open block of one parse environment onto the end of another
+#'
+#' A conditioned continuation (`b ~ c(0.1, 2) | occ` after an
+#' unconditioned `a ~ 1`) names a level for a row that covaries with the
+#' block before it.  The rows of one block share a level, so the block
+#' goes with it -- but only the OPEN block: everything declared before it
+#' was declared without that condition and stays where it is.
+#'
+#' The block is appended after whatever `env2` already holds, so this
+#' works both for a level being opened (`env2` empty) and for a level
+#' being written to again later.
+#'
+#' @param env parse environment to take the open block from
+#' @param env2 parse environment (a level) to append the block to
+#' @return nothing, called for side effects on both environments
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriMoveOpenBlk <- function(env, env2) {
+  .lotriSamePad(env)
+  ## in the line form `eta1` stays at the block's FIRST row while
+  ## `lastN` counts how many rows it has, so everything before the open
+  ## block is rows 1..eta1-1
+  .cut <- max(env$eta1 - 1L, 0L)
+  ## rows land after the ones `env2` already has, so they shift by the
+  ## destination's size as well as by what stays behind
+  .off <- length(env2$names) - .cut
+  .mv <- which(env$df$i > .cut & env$df$j > .cut)
+  .keep <- setdiff(seq_along(env$df$i), .mv)
+  .cp <- env$df[.mv, , drop=FALSE]
+  .cp$i <- .cp$i + .off
+  .cp$j <- .cp$j + .off
+  ## pad BEFORE the names are appended, so the padding covers only the
+  ## names `env2` had of its own
+  .lotriSamePad(env2)
+  env2$df <- rbind(env2$df, .cp)
+  env2$eta1 <- env$eta1 + .off
+  env2$lastN <- env$lastN
+  ## `x[-seq_len(0)]` is EMPTY, not everything, so the tail is taken by
+  ## a positive test rather than a negative index
+  .tailOf <- function(v) {
+    ## `names`, `labels` and `sameOff` are all grown together whenever a
+    ## row is declared, so none is NULL once there is an open block to
+    ## move -- the guard is defensive
+    if (is.null(v)) return(NULL) # nocov
+    v[seq_along(v) > .cut]
+  }
+  env2$names <- c(env2$names, .tailOf(env$names))
+  env2$labels <- c(env2$labels, .tailOf(env$labels))
+  env2$sameOff <- c(env2$sameOff, .tailOf(env$sameOff))
+  ## the moved block is what a following `same()` at this level repeats,
+  ## and its base moves with it.  `.lotri1()` re-records the block right
+  ## after this, so this only matters if that ever stops being true
+  env2$sameBlkN <- env$sameBlkN
+  env2$sameMasterBase <- if (is.null(env$sameMasterBase)) {
+    NULL # nocov
+  } else {
+    env$sameMasterBase + .off
+  }
+  ## what stays behind keeps its own rows
+  env$df <- if (length(.keep) == 0L) NULL else env$df[.keep, , drop=FALSE]
+  env$lastN <- 0
+  env$eta1 <- .cut
+  env$names <- env$names[seq_len(.cut)]
+  env$labels <- env$labels[seq_len(.cut)]
+  env$sameOff <- env$sameOff[seq_len(.cut)]
+  env$sameBlkN <- NULL
+  env$sameMasterBase <- NULL
+  invisible()
 }
 
 #' Handle Tilde LHS Sum for Lotri
@@ -617,33 +721,48 @@ NULL
           .cnd <- x[[3]][[3]]
           .cndFull <- .parseCondition(.cnd, envir = env)
           .cnd <- .cndFull[[1]]
-          if (exists("lastCnd", env)) {
-            if (env$lastCnd == .cnd) {
-              if (exists(.cnd, env)) {
-                .lotri1(x[[2]], x[[3]][[2]], env[[.cnd]], env)
-              } else {
-                .lotri1(x[[2]], x[[3]][[2]], env)
-              }
-              return(invisible())
-            }
+          ## A level named again is the SAME level: it is looked up by
+          ## NAME rather than by "was it the last level seen".  A line
+          ## at another level in between used to fall through to the
+          ## fresh environment below, which REPLACED the level and
+          ## silently dropped everything already declared in it.
+          .isNewCnd <- !exists(.cnd, env)
+          if (.isNewCnd) {
+            ## Each condition is parsed so this new environment
+            ## should not be elsewhere
+            .env2 <- new.env(parent = emptyenv())
+            .env2$isCov <- env$isCov
+            .env2$rcm  <- env$rcm
+            .env2$df <- NULL
+            .env2$eta1 <- 0L
+            .env2$lastN <- 0L
+            env[[.cnd]] <- .env2
+            env[[paste0(.cnd, ".extra")]] <- .cndFull[[2]]
+          } else {
+            .env2 <- env[[.cnd]]
+            ## a level named again carries the properties of every
+            ## mention.  Writing only the first one's dropped `lower`
+            ## from `lotri({a ~ 1 | id; b ~ 2 | occ; c ~ 3 | id(lower=1)})`
+            env[[paste0(.cnd, ".extra")]] <-
+              .lotriMergeCndExtra(env[[paste0(.cnd, ".extra")]],
+                                  .cndFull[[2]], .cnd)
           }
-          ## Each condition is parsed so this new environment
-          ## should not be elsewhere
-          .env2 <- new.env(parent = emptyenv())
-          .env2$isCov <- env$isCov
-          .env2$rcm  <- env$rcm
-          .env2$df <- NULL
-          .env2$eta1 <- 0L
-          .env2$lastN <- 0L
           env$cnd <- unique(c(env$cnd, .cnd))
           env$lastCnd <- .cnd
-          env[[.cnd]] <- .env2
-          env[[paste0(.cnd, ".extra")]] <- .cndFull[[2]]
-          .val <- .lotriParseMat(x[[3]][[2]], env=env, noMat=TRUE)
+          ## `.lotriParseMat()` uses its environment as scratch space --
+          ## it records `globalFix`, `sd`, `cor` and friends there -- so
+          ## it gets one of its own, the way `.lotri1()` gives it one.
+          ## Handed the parse environment it wrote `globalFix` onto the
+          ## state shared by every level, and nothing ever cleared it, so
+          ## one `b ~ fix(2) | occ` silently FIXED every later row that
+          ## opened a level: `c ~ 3 | id` came back fixed.
+          .envParse <- new.env(parent = emptyenv())
+          .envParse$lhs <- x[[2]]
+          .val <- .lotriParseMat(x[[3]][[2]], env=.envParse, noMat=TRUE)
           .fix <- .val[[2]]
           .unfix <- .val[[3]]
           .val <- .val[[1]]
-          ## A conditioned line only CONTINUES the open block when it is
+          ## A conditioned line only CONTINUES an open block when it is
           ## the line form, i.e. one name on the left.  A plus-form LHS
           ## always opens a fresh block, and matching on the value count
           ## alone let one hijack the default level's rows -- moving
@@ -651,52 +770,26 @@ NULL
           ## That used to blow up loudly in the `.lotri1()` parse below;
           ## settling the row counter made the lengths line up and it
           ## became a silently different model.
-          if (is.name(x[[2]]) &&
-                length(.val) >= 2L &&
-                length(.val) == env$lastN+1) {
-            ## Only the OPEN block moves.  The rows of one block share a
-            ## level because they covary, so a condition on a
-            ## continuation carries that block over -- but everything
-            ## declared before it stays where it was declared.  Moving
-            ## the whole environment relocated unrelated parameters to
-            ## this level.
-            .lotriSamePad(env)
-            ## in the line form `eta1` stays at the block's FIRST row
-            ## while `lastN` counts how many rows it has, so everything
-            ## before the open block is rows 1..eta1-1
-            .cut <- max(env$eta1 - 1L, 0L)
-            .mv <- which(env$df$i > .cut & env$df$j > .cut)
-            .keep <- setdiff(seq_along(env$df$i), .mv)
-            .env2$df <- env$df[.mv, , drop=FALSE]
-            .env2$df$i <- .env2$df$i - .cut
-            .env2$df$j <- .env2$df$j - .cut
-            .env2$eta1 <- env$eta1 - .cut
-            .env2$lastN <- env$lastN
-            ## `x[-seq_len(0)]` is EMPTY, not everything, so the tail
-            ## is taken by a positive test rather than a negative index
-            .tailOf <- function(v) {
-              ## `names`, `labels` and `sameOff` are all grown together
-              ## whenever a row is declared, so none is NULL once there
-              ## is an open block to move -- the guard is defensive
-              if (is.null(v)) return(NULL) # nocov
-              v[seq_along(v) > .cut]
-            }
-            .env2$names <- .tailOf(env$names)
-            .env2$labels <- .tailOf(env$labels)
-            .env2$sameOff <- .tailOf(env$sameOff)
-            .env2$sameBlkN <- env$sameBlkN
-            .env2$sameMasterBase <- env$sameMasterBase
-            # what stays behind keeps its own rows
-            env$df <- if (length(.keep) == 0L) NULL else env$df[.keep, , drop=FALSE]
-            env$lastN <- 0
-            env$eta1 <- .cut
-            env$names <- env$names[seq_len(.cut)]
-            env$labels <- env$labels[seq_len(.cut)]
-            env$sameOff <- env$sameOff[seq_len(.cut)]
-            env$sameBlkN <- NULL
-            env$sameMasterBase <- NULL
+          .isCont <- is.name(x[[2]]) && length(.val) >= 2L
+          if (.isCont && length(.val) == .env2$lastN + 1L) {
+            ## it continues the block already open AT THIS LEVEL, so it
+            ## just extends that block where it stands
             .lotri1(x[[2]], x[[3]][[2]], .env2)
-          } else if ((length(.val) == 1) &&
+          } else if (.isCont && length(.val) == env$lastN + 1L) {
+            ## it continues the block open at the DEFAULT level, so the
+            ## condition carries that block over: the rows of one block
+            ## share a level because they covary.  Only the OPEN block
+            ## moves -- everything declared before it stays where it was
+            ## declared, and moving the whole environment relocated
+            ## unrelated parameters to this level.
+            ##
+            ## This is also what a level's SECOND mention needs: when the
+            ## level's own open block could not take the line, it used to
+            ## be parsed into the default level instead, so `| occ` gave
+            ## an id level parameter with no error and no warning.
+            .lotriMoveOpenBlk(env, .env2)
+            .lotri1(x[[2]], x[[3]][[2]], .env2)
+          } else if (.isNewCnd && (length(.val) == 1) &&
                        (is.numeric(.val) || is.integer(.val))) {
             .env2$netas <- 1L
             .env2$eta1 <- .env2$eta1 + 1L
@@ -712,6 +805,9 @@ NULL
                                          x = .val,
                                          fix=.fix, unfix=.unfix))
           } else {
+            ## the level itself, with NO fallback to the default level: a
+            ## line that names a level and cannot be placed there is an
+            ## error, not a quiet default level row
             .lotri1(x[[2]], x[[3]][[2]], .env2)
           }
           .didCnd <- TRUE
@@ -2719,7 +2815,18 @@ NULL
     .env2$isCov <- env$isCov
     .env2$rcm <- env$rcm
     .env2$fun <- env$fun
-    .env2$df <- rbind(.env2$df, env$df)
+    ## the rows written at the default level go AFTER the ones the level
+    ## was given by name, so they have to be shifted by what is already
+    ## there.  Appending them unshifted wrote them on top, which came out
+    ## as "length of 'dimnames' [1] not equal to array extent" for any
+    ## program that used both `| id` and an unconditioned line
+    .off <- length(.env2$names)
+    .dfDefault <- env$df
+    if (!is.null(.dfDefault) && .off > 0L) {
+      .dfDefault$i <- .dfDefault$i + .off
+      .dfDefault$j <- .dfDefault$j + .off
+    }
+    .env2$df <- rbind(.env2$df, .dfDefault)
     .env2$lastN <- 0
     ## carry the `same()` offsets across with the rows they describe.
     ## Padding has to happen BEFORE `names` is extended, since the
