@@ -1,8 +1,7 @@
 skip_on_cran()
 
 test_that("as.lotri.matrix converts a named matrix", {
-  m <- matrix(c(0.1, 0.05, 0.05, 0.2), nrow = 2, ncol = 2,
-               dimnames = list(c("a", "b"), c("a", "b")))
+  m <- matrix(c(0.1, 0.05, 0.05, 0.2), nrow = 2, ncol = 2, dimnames = list(c("a", "b"), c("a", "b")))
   r <- as.lotri(m)
   # Result should be a lotri-style list or similar
   expect_true(length(r) > 0)
@@ -17,8 +16,7 @@ test_that("as.lotri.default converts a plain list to lotri", {
 })
 
 test_that("as.lotri.default assigns default name to empty-named element", {
-  m <- matrix(c(0.1, 0.0, 0.0, 0.2), nrow = 2, ncol = 2,
-               dimnames = list(c("a", "b"), c("a", "b")))
+  m <- matrix(c(0.1, 0.0, 0.0, 0.2), nrow = 2, ncol = 2, dimnames = list(c("a", "b"), c("a", "b")))
   lst <- setNames(list(m), "")
   r <- as.lotri(lst, default = "id")
   expect_equal(names(r), "id")
@@ -32,16 +30,40 @@ test_that("as.lotri", {
 
   tmp3 <- as.lotri(tmp2)
 
-  expect_equal(tmp3, structure(list(structure(c(0.5, 0, 0, 0.6), dim = c(2L, 2L), dimnames = list(
-    c("iov.Ka", "iov.Cl"), c("iov.Ka", "iov.Cl")
-  ))), names = "", class = "lotri"))
+  expect_equal(
+    tmp3,
+    structure(
+      list(structure(
+        c(0.5, 0, 0, 0.6),
+        dim = c(2L, 2L),
+        dimnames = list(
+          c("iov.Ka", "iov.Cl"),
+          c("iov.Ka", "iov.Cl")
+        )
+      )),
+      names = "",
+      class = "lotri"
+    )
+  )
 
   tmp3 <- as.lotri(tmp3, default = "id")
 
-  expect_equal(tmp3, structure(list(id = structure(c(0.5, 0, 0, 0.6), dim = c(
-    2L,
-    2L
-  ), dimnames = list(c("iov.Ka", "iov.Cl"), c("iov.Ka", "iov.Cl")))), class = "lotri"))
+  expect_equal(
+    tmp3,
+    structure(
+      list(
+        id = structure(
+          c(0.5, 0, 0, 0.6),
+          dim = c(
+            2L,
+            2L
+          ),
+          dimnames = list(c("iov.Ka", "iov.Cl"), c("iov.Ka", "iov.Cl"))
+        )
+      ),
+      class = "lotri"
+    )
+  )
 
   expect_true(inherits(as.matrix(tmp3), "matrix"))
 
@@ -74,7 +96,6 @@ test_that("as.lotri", {
 
   expect_equal(l1, l2)
 
-
   l1 <- as.lotri(lotri(et1 + et2 ~ c(0.1, 0.01, 1)), upper = c(et1 = 3), matt = NULL, default = "id")
   l2 <- lotri(et1 + et2 ~ c(0.1, 0.01, 1) | id(upper = c(et1 = 3)))
 
@@ -88,14 +109,29 @@ test_that("as.lotri", {
 
   expect_error(as.lotri("matt"))
 
-  df <- structure(list(ntheta = c(NA_integer_, NA_integer_, NA_integer_, NA_integer_, NA_integer_), neta1 = c(1, 2, 4, 5, 6), neta2 = c(1, 2, 4, 5, 6), name = c("eta.cl", "eta.v", "eta.ec50", "eta.kout", "eta.e0"), lower = c(-Inf, -Inf, -Inf, -Inf, -Inf), est = c(2, 1, 0.5, 0.5, 0.5), upper = c(Inf, Inf, Inf, Inf, Inf), fix = c(FALSE, FALSE, FALSE, FALSE, FALSE), label = c(NA_character_, NA_character_, NA_character_, NA_character_, NA_character_), backTransform = c(NA_character_, NA_character_, NA_character_,  NA_character_, NA_character_), condition = c("id", "id", "id", "id", "id"), err = c(NA_character_, NA_character_, NA_character_, NA_character_, NA_character_)), row.names = c(12L, 13L, 15L, 16L, 17L), class = "data.frame")
+  df <- structure(
+    list(
+      ntheta = c(NA_integer_, NA_integer_, NA_integer_, NA_integer_, NA_integer_),
+      neta1 = c(1, 2, 4, 5, 6),
+      neta2 = c(1, 2, 4, 5, 6),
+      name = c("eta.cl", "eta.v", "eta.ec50", "eta.kout", "eta.e0"),
+      lower = c(-Inf, -Inf, -Inf, -Inf, -Inf),
+      est = c(2, 1, 0.5, 0.5, 0.5),
+      upper = c(Inf, Inf, Inf, Inf, Inf),
+      fix = c(FALSE, FALSE, FALSE, FALSE, FALSE),
+      label = c(NA_character_, NA_character_, NA_character_, NA_character_, NA_character_),
+      backTransform = c(NA_character_, NA_character_, NA_character_, NA_character_, NA_character_),
+      condition = c("id", "id", "id", "id", "id"),
+      err = c(NA_character_, NA_character_, NA_character_, NA_character_, NA_character_)
+    ),
+    row.names = c(12L, 13L, 15L, 16L, 17L),
+    class = "data.frame"
+  )
 
   expect_error(as.lotri(df), NA)
-
 })
 
-test_that("no mangling of etas #",{
-  
+test_that("no mangling of etas #", {
   m <- lotri({
     Ktr_pop = 0.1
     MTT_pop = 0.2
@@ -159,5 +195,4 @@ test_that("no mangling of etas #",{
   m2 <- as.lotri(as.data.frame(m))
 
   expect_equal(m, m2)
-
 })

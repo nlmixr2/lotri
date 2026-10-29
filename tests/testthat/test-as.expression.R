@@ -65,7 +65,7 @@ test_that("lotriAsExpression with mixed fixed/non-fixed uses fix() for fixed ele
   expr1 <- lotriAsExpression(mat, nameEst = TRUE)
   txt1 <- paste(deparse(expr1), collapse = "\n")
   expect_true(grepl("fix", txt1))
-  expect_true(grepl("a\\s*=", txt1))  # named element
+  expect_true(grepl("a\\s*=", txt1)) # named element
   # nameEst=FALSE: fixed off-diagonal gets unnamed fix() form (line 174-175)
   expr2 <- lotriAsExpression(mat, nameEst = FALSE)
   txt2 <- paste(deparse(expr2), collapse = "\n")

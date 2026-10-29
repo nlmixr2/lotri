@@ -1,5 +1,4 @@
 test_that("attr(x, 'lotri') is read exactly, not by partial matching", {
-
   ## `lotri` is a prefix of `lotriLabels`/`lotriFix`/..., so an inexact
   ## `attr()` read inside `lotri()` picked up a neighbouring attribute and
   ## then attached it as the condition-property list, giving a bogus

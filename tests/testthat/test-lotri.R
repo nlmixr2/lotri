@@ -42,7 +42,6 @@ omega <- lotri(
 
 # needs .lotri, omega9
 test_that(".maxNu", {
-
   omega <- lotri(
     lotri(
       eta.Cl ~ 0.1,
@@ -65,11 +64,9 @@ test_that(".maxNu", {
   expect_equal(omega$.maxNu, 200)
 
   expect_equal(.Call(.lotri$`_lotriMaxNu`, omega9, PACKAGE = "lotri"), 0)
-
 })
 
 test_that("isLotri C", {
-
   expect_equal(.Call(.lotri$`_isLotri`, omega9, PACKAGE = "lotri"), TRUE)
   expect_equal(.Call(.lotri$`_isLotri`, omega, PACKAGE = "lotri"), TRUE)
 
@@ -80,11 +77,9 @@ test_that("isLotri C", {
   expect_equal(.Call(.lotri$`_isLotri`, omega9, PACKAGE = "lotri"), FALSE)
 
   expect_equal(.Call(.lotri$`_isLotri`, "matt", PACKAGE = "lotri"), FALSE)
-
 })
 
 test_that("default conditioning", {
-
   fix2 <- lotri({
     f+g ~ fix(1,
               0.5, 1) | occ
@@ -92,18 +87,19 @@ test_that("default conditioning", {
             0.5, 1)
   })
 
-  expect_equal(fix2,
-               list(id = structure(c(2, 0.5, 0.5, 1),
-                                   dim = c(2L, 2L),
-                                   dimnames = list(c("m", "n"), c("m", "n"))),
-                    occ = structure(c(1, 0.5, 0.5, 1),
-                                    dim = c(2L, 2L),
-                                    dimnames = list(c("f", "g"), c("f", "g")),
-                                    class = .cls,
-                                    lotriFix = structure(c(TRUE, TRUE, TRUE, TRUE),
-                                                         dim = c(2L, 2L),
-                                                         dimnames = list(c("f", "g"), c("f", "g"))))))
-
+  expect_equal(
+    fix2,
+    list(
+      id = structure(c(2, 0.5, 0.5, 1), dim = c(2L, 2L), dimnames = list(c("m", "n"), c("m", "n"))),
+      occ = structure(
+        c(1, 0.5, 0.5, 1),
+        dim = c(2L, 2L),
+        dimnames = list(c("f", "g"), c("f", "g")),
+        class = .cls,
+        lotriFix = structure(c(TRUE, TRUE, TRUE, TRUE), dim = c(2L, 2L), dimnames = list(c("f", "g"), c("f", "g")))
+      )
+    )
+  )
 })
 
 test_that("$.lotri by-name access returns the named block", {
@@ -426,8 +422,7 @@ test_that("lotri() .mergeProp char-vector path via block+nested combo (lines 919
 })
 
 test_that("lotri() .lotriList handles named matrix in list (lines 979-980)", {
-  m1 <- matrix(c(0.1, 0, 0, 0.2), 2, 2,
-               dimnames = list(c("a", "b"), c("a", "b")))
+  m1 <- matrix(c(0.1, 0, 0, 0.2), 2, 2, dimnames = list(c("a", "b"), c("a", "b")))
   r <- lotri(list(id = m1))
   expect_equal(names(r), "id")
   expect_equal(dim(r$id), c(2L, 2L))
@@ -452,16 +447,16 @@ test_that("lotri() .mergeProp errors on conflicting non-default property (lines 
 test_that("lotri() .lotriList lines 989-992: unnamed element inside inner list-of-lotri", {
   # lotri(list(m_a, id = m_b)) returns a lotri with names c("", "id");
   # wrapping in another list makes .lotriList encounter that unnamed element at lines 989-992
-  m_a <- matrix(c(0.1), 1, 1, dimnames = list("a", "a"))
-  m_b <- matrix(c(0.2), 1, 1, dimnames = list("b", "b"))
+  m_a <- matrix(0.1, 1, 1, dimnames = list("a", "a"))
+  m_b <- matrix(0.2, 1, 1, dimnames = list("b", "b"))
   r <- lotri(list(list(m_a, id = m_b)))
   expect_true(!is.null(r))
   expect_true("id" %in% names(r))
 })
 
 test_that("lotri() .lotriList line 1014: mix of unnamed and named matrices in list", {
-  m_unnamed <- matrix(c(0.1), 1, 1, dimnames = list("a", "a"))
-  m_named <- matrix(c(0.2), 1, 1, dimnames = list("b", "b"))
+  m_unnamed <- matrix(0.1, 1, 1, dimnames = list("a", "a"))
+  m_named <- matrix(0.2, 1, 1, dimnames = list("b", "b"))
   r <- lotri(list(m_unnamed, id = m_named))
   expect_true(!is.null(r))
 })
@@ -469,8 +464,11 @@ test_that("lotri() .lotriList line 1014: mix of unnamed and named matrices in li
 test_that(".lotriGetMatrixFromEnv line 1097: non-NULL df with empty $i", {
   env <- new.env(parent = emptyenv())
   env$df <- data.frame(
-    i = integer(0), j = integer(0), x = numeric(0),
-    fix = logical(0), unfix = logical(0)
+    i = integer(0),
+    j = integer(0),
+    x = numeric(0),
+    fix = logical(0),
+    unfix = logical(0)
   )
   env$names <- character(0)
   result <- .lotriGetMatrixFromEnv(env)

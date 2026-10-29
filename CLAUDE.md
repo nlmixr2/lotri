@@ -19,7 +19,19 @@ R CMD INSTALL .                       # install
 Rscript -e 'devtools::document()'     # regenerate man/ and NAMESPACE
 Rscript -e 'devtools::test()'         # run the test suite
 R CMD build . && R CMD check --as-cran lotri_*.tar.gz
+air format .                          # format R code (air 0.11.0, air.toml)
+Rscript -e 'lintr::lint_package()'    # lint, as the lint.yaml CI job does
 ```
+
+CI checks both formatting (`format-check.yaml`) and lints
+(`lint.yaml`, `LINTR_ERROR_ON_LINT`), so run `air format .` and
+`lintr::lint_package()` before pushing.  `air.toml` skips the DSL
+calls (`lotri()`, `ini()`, `model()`, `quote()`), so spacing inside a
+`lotri()` call in `R/` must be fixed by hand.  Put `# fmt: skip` above
+a statement holding a literal matrix that air would explode one value
+per line.  air moves a trailing `{ # nolint` into the function body,
+where it suppresses nothing; use `# nolint next: <linter>.` on the line
+above instead.
 
 Set `NOT_CRAN=true` when running the suite locally, or the randomized
 property tests are skipped.

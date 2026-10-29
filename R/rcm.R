@@ -24,8 +24,7 @@
 #' rcm(m)
 #'
 rcm <- function(x) {
-  checkmate::assertMatrix(x, mode="double",
-                          any.missing=FALSE, row.names="unique")
+  checkmate::assertMatrix(x, mode = "double", any.missing = FALSE, row.names = "unique")
   .d <- dimnames(x)
   if (!identical(.d[[1]], .d[[2]])) {
     stop("The matrix must be square, symmetric with matching row and column names")
@@ -36,10 +35,14 @@ rcm <- function(x) {
   ## parameters the matrix is understood to estimate -- `lotri()` itself
   ## refuses `rcm=TRUE` on such a matrix for the same reason.
   if (!is.null(attr(x, "lotriSame"))) {
-    warning("'rcm' drops the 'same()' repetition: the permutation would ",
-            "separate a block from the block it repeats",
-            call.=FALSE)
+    warning(
+      "'rcm' drops the 'same()' repetition: the permutation would ",
+      "separate a block from the block it repeats",
+      call. = FALSE
+    )
   }
-  .Call(`_lotri_rcm_`, # nolint
-        x)
+  .Call(
+    `_lotri_rcm_`, # nolint
+    x
+  )
 }

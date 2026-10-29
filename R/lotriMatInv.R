@@ -59,12 +59,15 @@
 #' print(mat3)
 #' @export
 lotriMatInv <- function(mat) {
-  if (!inherits(mat, "matrix"))
-    stop("'mat' must be a matrix", call.=FALSE)
+  if (!inherits(mat, "matrix")) {
+    stop("'mat' must be a matrix", call. = FALSE)
+  }
   if (!is.null(attr(mat, "lotriEst"))) {
-    stop("a lotri matrix with attached estimates cannot be converted to a list matrix\n",
-         "drop with `lotriEst(x,drop=TRUE)",
-         call.=FALSE)
+    stop(
+      "a lotri matrix with attached estimates cannot be converted to a list matrix\n",
+      "drop with `lotriEst(x,drop=TRUE)",
+      call. = FALSE
+    )
   }
   .matF <- attr(mat, "lotriFix")
   .matU <- attr(mat, "lotriUnfix")
@@ -128,9 +131,14 @@ lotriMatInv <- function(mat) {
         ## extraction can never separate them) -- filter by membership
         ## rather than an index slice, since this is a named (not
         ## positional) vector
-        .inBlock <- vapply(names(.matPriorsOffDiag), function(.key) {
-          all(.lotriCovPriorKeyNames(.key) %in% .mat1Dn)
-        }, logical(1), USE.NAMES=FALSE)
+        .inBlock <- vapply(
+          names(.matPriorsOffDiag),
+          function(.key) {
+            all(.lotriCovPriorKeyNames(.key) %in% .mat1Dn)
+          },
+          logical(1),
+          USE.NAMES = FALSE
+        )
         if (any(.inBlock)) {
           attr(.mat1, "lotriOffDiagPriors") <- .matPriorsOffDiag[.inBlock]
           .matPriorsOffDiag <- .matPriorsOffDiag[!.inBlock]
@@ -227,11 +235,16 @@ lotriMatInv <- function(mat) {
 #'
 lotriIsBlockMat <- function(mat) {
   .lst <- lotriMatInv(mat)
-  all(vapply(seq_along(.lst), function(i) {
-    .mat <- .lst[[i]]
-    if (dim(.mat)[1] == 1) {
-      return(TRUE)
-    }
-    !any(.mat[lower.tri(.mat, diag = FALSE)] == 0)
-  }, logical(1), USE.NAMES = FALSE))
+  all(vapply(
+    seq_along(.lst),
+    function(i) {
+      .mat <- .lst[[i]]
+      if (dim(.mat)[1] == 1) {
+        return(TRUE)
+      }
+      !any(.mat[lower.tri(.mat, diag = FALSE)] == 0)
+    },
+    logical(1),
+    USE.NAMES = FALSE
+  ))
 }

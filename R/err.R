@@ -14,7 +14,7 @@
           c(
             messageText,
             crayon::bold("lotri error:"),
-            paste(paste("  ", strsplit(.env$.err[[i]], "\n")[[1]]), collapse="\n")
+            paste(paste("  ", strsplit(.env$.err[[i]], "\n")[[1]]), collapse = "\n")
           )
       }
       messageText <- c(messageText, .env$.lines[i])
@@ -24,7 +24,7 @@
         messageText,
         "\033[1m=================================================================================\033[0m"
       )
-    message(paste(messageText, collapse="\n"))
+    message(paste(messageText, collapse = "\n"))
     stop("lotri syntax errors above", call. = FALSE)
   }
 }

@@ -3,8 +3,7 @@ test_that("a marginal normal prior on an off-diagonal omega covariance element p
     eta.cl + eta.v ~ c(0.3, 0.05, 0.2)
     prior(eta.cl, eta.v) ~ dnorm(0, 0.1)
   })
-  expect_equal(attr(m, "lotriOffDiagPriors"),
-               c("(eta.cl,eta.v)" = "dnorm(0, 0.1)"))
+  expect_equal(attr(m, "lotriOffDiagPriors"), c("(eta.cl,eta.v)" = "dnorm(0, 0.1)"))
   ## no diagonal prior was ever set
   expect_null(attr(m, "lotriPriors"))
 })
@@ -36,7 +35,8 @@ test_that("a duplicate prior on the same covariance pair is refused", {
       prior(eta.cl, eta.v) ~ dnorm(0, 0.1)
       prior(om.eta.cl, om.eta.v) ~ dnorm(0, 0.2)
     }),
-    "more than one prior given")
+    "more than one prior given"
+  )
 })
 
 test_that("the om.<eta> spelling of a covariance-pair prior is identical to the bare spelling", {
@@ -58,7 +58,8 @@ test_that("a covariance-pair prior on names that do not covary is refused", {
       eta.v ~ 0.2
       prior(eta.cl, eta.v) ~ dnorm(0, 0.1)
     }),
-    "not a single covariance block")
+    "not a single covariance block"
+  )
 })
 
 test_that("a covariance-pair prior on a SUBSET of a larger correlated block succeeds", {
@@ -69,8 +70,7 @@ test_that("a covariance-pair prior on a SUBSET of a larger correlated block succ
     eta.ka + eta.cl + eta.v ~ c(0.6, 0.01, 0.3, 0.02, 0.03, 0.2)
     prior(eta.cl, eta.v) ~ dnorm(0, 0.1)
   })
-  expect_equal(attr(m, "lotriOffDiagPriors"),
-               c("(eta.cl,eta.v)" = "dnorm(0, 0.1)"))
+  expect_equal(attr(m, "lotriOffDiagPriors"), c("(eta.cl,eta.v)" = "dnorm(0, 0.1)"))
 })
 
 test_that("a whole-block distribution still requires the ENTIRE block, unaffected by the relaxation", {
@@ -79,7 +79,8 @@ test_that("a whole-block distribution still requires the ENTIRE block, unaffecte
       eta.ka + eta.cl + eta.v ~ c(0.6, 0.01, 0.3, 0.02, 0.03, 0.2)
       prior(eta.cl, eta.v) ~ invWishart(4)
     }),
-    "not a single covariance block")
+    "not a single covariance block"
+  )
 })
 
 test_that("a block cannot carry both a whole-block invWishart() and a marginal normal on one of its cells", {
@@ -89,7 +90,8 @@ test_that("a block cannot carry both a whole-block invWishart() and a marginal n
       prior(eta.ka, eta.cl, eta.v) ~ invWishart(4)
       prior(eta.cl, eta.v) ~ dnorm(0, 0.1)
     }),
-    "cannot have both degrees of freedom")
+    "cannot have both degrees of freedom"
+  )
 })
 
 test_that("a covariance-pair prior round-trips through as.data.frame()/as.lotri()/as.expression()", {
@@ -109,12 +111,18 @@ test_that("a covariance-pair prior round-trips through as.data.frame()/as.lotri(
 
   e <- as.expression(m)
   .lines <- as.list(e[[2]])[-1]
-  expect_true(any(vapply(.lines, function(x) {
-    is.call(x) && identical(x[[1]], quote(`~`)) &&
-      is.call(x[[2]]) && identical(x[[2]][[1]], quote(`prior`)) &&
-      identical(as.character(as.list(x[[2]])[-1]), c("eta.cl", "eta.v")) &&
-      identical(x[[3]], str2lang("dnorm(0, 0.1)"))
-  }, logical(1))))
+  expect_true(any(vapply(
+    .lines,
+    function(x) {
+      is.call(x) &&
+        identical(x[[1]], quote(`~`)) &&
+        is.call(x[[2]]) &&
+        identical(x[[2]][[1]], quote(`prior`)) &&
+        identical(as.character(as.list(x[[2]])[-1]), c("eta.cl", "eta.v")) &&
+        identical(x[[3]], str2lang("dnorm(0, 0.1)"))
+    },
+    logical(1)
+  )))
 })
 
 test_that("print() shows a covariance prior distribution", {
@@ -136,7 +144,8 @@ test_that("a whole-block prior and a marginal prior on one of its cells cannot c
       prior(eta.ka, eta.cl, eta.v) ~ multiNormal(c(0, 0, 0), diag(3))
       prior(eta.cl, eta.v) ~ dnorm(0, 0.1)
     }),
-    "already has a whole-block prior")
+    "already has a whole-block prior"
+  )
 
   expect_error(
     lotri({
@@ -144,7 +153,8 @@ test_that("a whole-block prior and a marginal prior on one of its cells cannot c
       prior(eta.ka, eta.cl, eta.v) ~ invWishart(4)
       prior(eta.cl, eta.v) ~ dcauchy(0, 0.1)
     }),
-    "already has a whole-block prior")
+    "already has a whole-block prior"
+  )
 })
 
 test_that("a covariance-pair prior on one of two independent blocks survives lotriMatInv()'s block splitting", {
@@ -172,6 +182,5 @@ test_that("a covariance-pair prior on one of two independent blocks survives lot
   .offDiags <- lapply(.lst, function(x) attr(x, "lotriOffDiagPriors"))
   .hasOffDiag <- vapply(.offDiags, function(x) !is.null(x) && length(x) > 0L, logical(1))
   expect_equal(sum(.hasOffDiag), 1L)
-  expect_equal(.offDiags[[which(.hasOffDiag)]],
-               c("(eta.a,eta.b)" = "dnorm(0, 0.1)"))
+  expect_equal(.offDiags[[which(.hasOffDiag)]], c("(eta.a,eta.b)" = "dnorm(0, 0.1)"))
 })
