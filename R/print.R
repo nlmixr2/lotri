@@ -23,6 +23,7 @@ print.lotriFix <- function(x, ...) {
     .lotriLabels <- attr(.tmp, "lotriLabels")
     .lotriPriors <- attr(.tmp, "lotriPriors")
     .lotriOffDiagPriors <- attr(.tmp, "lotriOffDiagPriors")
+    .lotriEtaDists <- attr(.tmp, "lotriEtaDists")
     .lotriSame <- attr(.tmp, "lotriSame")
     if (all(.dim == 0L) && !is.null(.lotriEst)) {
       cat("Lotri Estimates (get with `lotriEst()`):\n")
@@ -35,6 +36,7 @@ print.lotriFix <- function(x, ...) {
     attr(.tmp, "lotriLabels") <- NULL
     attr(.tmp, "lotriPriors") <- NULL
     attr(.tmp, "lotriOffDiagPriors") <- NULL
+    attr(.tmp, "lotriEtaDists") <- NULL
     attr(.tmp, "lotriSame") <- NULL
     .w <- which(.cls == "lotriFix")
     .cls <- .cls[-.w]
@@ -63,6 +65,11 @@ print.lotriFix <- function(x, ...) {
     if (!is.null(.lotriOffDiagPriors)) {
       cat("\nThis matrix has covariance prior distributions:\n")
       print(.lotriOffDiagPriors)
+      cat("\n")
+    }
+    if (!is.null(.lotriEtaDists)) {
+      cat("\nThis matrix declares non-normal random effect distributions:\n")
+      print(.lotriEtaDists)
       cat("\n")
     }
     if (!is.null(.lotriSame)) {
@@ -94,6 +101,7 @@ print.lotriFix <- function(x, ...) {
     attr(y, "lotriLabels") <- NULL
     attr(y, "lotriPriors") <- NULL
     attr(y, "lotriOffDiagPriors") <- NULL
+    attr(y, "lotriEtaDists") <- NULL
     attr(y, "lotriSame") <- NULL
     .cls <- class(y)
     .cls <- .cls[.cls != "lotriFix"]

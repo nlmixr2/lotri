@@ -6,6 +6,7 @@
   if (inherits(mat, "matrix")) {
     .priors <- attr(mat, "lotriPriors")
     .priorsOffDiag <- attr(mat, "lotriOffDiagPriors")
+    .etaDists <- attr(mat, "lotriEtaDists")
     .matNames <- dimnames(mat)[[1]]
     ## validated once against the WHOLE condition matrix, then indexed by
     ## the row's position within it -- the per block attribute cannot be
@@ -36,6 +37,13 @@
             .fix <- FALSE
           }
           .curPrior <- NA_character_
+          ## a declared eta distribution only ever sits on a diagonal, so
+          ## it needs no off diagonal key the way a covariance prior does
+          .curEtaDist <- NA_character_
+          if (.j == .k && !is.null(.etaDists)) {
+            .wd <- match(.n[.j], .matNames)
+            if (!is.na(.wd)) .curEtaDist <- .etaDists[.wd]
+          }
           if (.j == .k) {
             if (!is.null(.priors)) {
               ## priors are matched by name so they survive `rcm`
@@ -88,6 +96,7 @@
                                    },
                                    backTransform=NA_character_,
                                    prior=.curPrior,
+                                   etaDist=.curEtaDist,
                                    condition=.cnd))
         }
       }
@@ -137,6 +146,16 @@ as.data.frame.lotriFix <- function(x, row.names = NULL, optional = FALSE, ...,
   if (!is.null(.df) && !any(names(.df) == "prior")) {
     ## `rep()` so that a zero row estimate frame stays zero row
     .df$prior <- rep(NA_character_, nrow(.df))
+  }
+  ## the `etaDist` column is only carried when something declares one, so
+  ## a model without a declared random effect distribution produces the
+  ## byte identical frame it always did
+  .hasEtaDist <- !is.null(.df3) && any(!is.na(.df3$etaDist))
+  if (.hasEtaDist) {
+    .ord <- c(.ord, "etaDist")
+    if (!is.null(.df)) .df$etaDist <- rep(NA_character_, nrow(.df))
+  } else if (!is.null(.df3)) {
+    .df3$etaDist <- NULL
   }
   .df <- rbind(.df, .df3)
   if (length(.df) == 0) {
