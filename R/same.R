@@ -21,9 +21,13 @@
 #' @noRd
 #' @author Matthew L. Fidler
 .lotriSameFamilies <- function(mat, same) {
-  if (is.null(same)) return(NULL)
+  if (is.null(same)) {
+    return(NULL)
+  }
   .n <- dim(mat)[1]
-  if (length(same) != .n) return(NULL)
+  if (length(same) != .n) {
+    return(NULL)
+  }
   .out <- as.integer(same)
   .out[is.na(.out)] <- 0L
   ## an offset pointing before the first row cannot describe anything
@@ -35,7 +39,9 @@
   ## chain points at is already resolved.
   for (.r in seq_len(.n)) {
     .dd <- .out[.r]
-    if (.dd == 0L) next
+    if (.dd == 0L) {
+      next
+    }
     while (.r - .dd >= 1L && .out[.r - .dd] > 0L) {
       .dd <- .dd + .out[.r - .dd]
     }
@@ -51,7 +57,9 @@
     }
     ## the run of rows carrying this offset ...
     .j <- .i
-    while (.j < .n && .out[.j + 1L] == .d) .j <- .j + 1L
+    while (.j < .n && .out[.j + 1L] == .d) {
+      .j <- .j + 1L
+    }
     ## ... taken a block at a time.  The width is not simply `.d`: a run
     ## of one offset can be one wide block, or several narrow ones whose
     ## masters happen to sit that far back.  The widest valid reading is
@@ -61,7 +69,7 @@
     while (.k <= .j) {
       .wid <- 0L
       .max <- min(.d, .j - .k + 1L)
-      for (.try in seq(.max, 1L)) {
+      for (.try in rev(seq_len(.max))) {
         if (.lotriSameOkFamily(mat, .out, .k, .try, .d, .n)) {
           .wid <- .try
           break
@@ -73,7 +81,7 @@
         next
       }
       .w <- .k:(.k + .wid - 1L)
-      .fam[[length(.fam) + 1L]] <- list(master=.w - .d, copy=.w, d=.d)
+      .fam[[length(.fam) + 1L]] <- list(master = .w - .d, copy = .w, d = .d)
       .k <- .k + .wid
     }
     .i <- .j + 1L
@@ -89,21 +97,39 @@
     .drop <- integer(0)
     for (.fi in seq_along(.fam)) {
       .f <- .fam[[.fi]]
-      if (min(.f$copy) <= max(.f$master) + 1L) next
+      if (min(.f$copy) <= max(.f$master) + 1L) {
+        next
+      }
       .gap <- seq(max(.f$master) + 1L, min(.f$copy) - 1L)
-      .ok <- all(vapply(.gap, function(.r) {
-        any(vapply(.fam, function(.g) {
-          any(.g$copy == .r) && identical(.g$master, .f$master)
-        }, logical(1), USE.NAMES=FALSE))
-      }, logical(1), USE.NAMES=FALSE))
+      .ok <- all(vapply(
+        .gap,
+        function(.r) {
+          any(vapply(
+            .fam,
+            function(.g) {
+              any(.g$copy == .r) && identical(.g$master, .f$master)
+            },
+            logical(1),
+            USE.NAMES = FALSE
+          ))
+        },
+        logical(1),
+        USE.NAMES = FALSE
+      ))
       if (!.ok) .drop <- c(.drop, .fi)
     }
-    if (length(.drop) == 0L) break
-    for (.fi in .drop) .out[.fam[[.fi]]$copy] <- 0L
+    if (length(.drop) == 0L) {
+      break
+    }
+    for (.fi in .drop) {
+      .out[.fam[[.fi]]$copy] <- 0L
+    }
     .fam <- .fam[-.drop]
   }
-  if (length(.fam) == 0L) return(NULL)
-  list(same=.out, families=.fam)
+  if (length(.fam) == 0L) {
+    return(NULL)
+  }
+  list(same = .out, families = .fam)
 }
 
 #' Is one candidate repeated block valid?
@@ -123,46 +149,63 @@
 .lotriSameOkFamily <- function(mat, out, k, wid, d, n) {
   .w <- k:(k + wid - 1L)
   .mw <- .w - d
-  if (.mw[1] < 1L) return(FALSE)
-  if (!all(out[.w] == d)) return(FALSE)
+  if (.mw[1] < 1L) {
+    return(FALSE)
+  }
+  if (!all(out[.w] == d)) {
+    return(FALSE)
+  }
   ## the master must be a real master, not itself a copy
-  if (!all(out[.mw] == 0L)) return(FALSE)
+  if (!all(out[.mw] == 0L)) {
+    return(FALSE)
+  }
   for (.r in list(.w, .mw)) {
     ## the range must be separated from the rest of the matrix: one that
     ## covaries outside itself is not a block `same()` could have
     ## declared
     .o <- setdiff(seq_len(n), .r)
-    if (length(.o) > 0L && !all(mat[.r, .o] == 0)) return(FALSE)
+    if (length(.o) > 0L && !all(mat[.r, .o] == 0)) {
+      return(FALSE)
+    }
     ## and the boundary this range forces must not cut a covariance that
     ## spans it, or `.lotriSameSplit()` would drop that value entirely
     .before <- seq_len(min(.r) - 1L)
     .after <- if (max(.r) < n) seq(max(.r) + 1L, n) else integer(0)
-    if (length(.before) > 0L && length(.after) > 0L &&
-          !all(mat[.before, .after] == 0)) {
+    if (length(.before) > 0L && length(.after) > 0L && !all(mat[.before, .after] == 0)) {
       return(FALSE)
     }
   }
   ## the fixed flags must match: a `same()` line inherits the master's,
   ## it cannot state its own
   .fx <- attr(mat, "lotriFix")
-  if (!is.null(.fx) &&
-        !identical(unname(.fx[.w, .w, drop=FALSE]),
-                   unname(.fx[.mw, .mw, drop=FALSE]))) {
+  if (
+    !is.null(.fx) &&
+      !identical(unname(.fx[.w, .w, drop = FALSE]), unname(.fx[.mw, .mw, drop = FALSE]))
+  ) {
     return(FALSE)
   }
   ## a `same()` line can carry only ONE trailing `label()`, which
   ## attaches to the last name; a label anywhere else would be lost
   .lb <- attr(mat, "lotriLabels")
-  if (!is.null(.lb) && wid > 1L &&
-        any(!is.na(.lb[.w[-wid]]))) {
+  if (!is.null(.lb) && wid > 1L && any(!is.na(.lb[.w[-wid]]))) {
     return(FALSE)
   }
   ## and every cell must really equal the cell it claims to repeat
-  all(vapply(.w, function(.a) {
-    all(vapply(.w, function(.b) {
-      isTRUE(all.equal(mat[.a, .b], mat[.a - d, .b - d], tolerance=0))
-    }, logical(1), USE.NAMES=FALSE))
-  }, logical(1), USE.NAMES=FALSE))
+  all(vapply(
+    .w,
+    function(.a) {
+      all(vapply(
+        .w,
+        function(.b) {
+          isTRUE(all.equal(mat[.a, .b], mat[.a - d, .b - d], tolerance = 0))
+        },
+        logical(1),
+        USE.NAMES = FALSE
+      ))
+    },
+    logical(1),
+    USE.NAMES = FALSE
+  ))
 }
 
 #' Cleaned `lotriSame` offsets for a matrix
@@ -174,7 +217,9 @@
 #' @author Matthew L. Fidler
 .lotriSameClean <- function(mat, same) {
   .f <- .lotriSameFamilies(mat, same)
-  if (is.null(.f)) return(NULL)
+  if (is.null(.f)) {
+    return(NULL)
+  }
   .f$same
 }
 
@@ -190,12 +235,12 @@
 #' @noRd
 #' @author Matthew L. Fidler
 .lotriSliceBlock <- function(mat, idx) {
-  .m1 <- unclass(mat)[idx, idx, drop=FALSE]
+  .m1 <- unclass(mat)[idx, idx, drop = FALSE]
   .cls <- FALSE
   for (.a in c("lotriFix", "lotriUnfix")) {
     .v <- attr(mat, .a)
     if (!is.null(.v)) {
-      attr(.m1, .a) <- .v[idx, idx, drop=FALSE]
+      attr(.m1, .a) <- .v[idx, idx, drop = FALSE]
       .cls <- TRUE
     }
   }
@@ -217,15 +262,22 @@
   .off <- attr(mat, "lotriOffDiagPriors")
   if (!is.null(.off) && length(.off) > 0L) {
     .dn <- dimnames(.m1)[[1]]
-    .in <- vapply(names(.off), function(.k) {
-      all(.lotriCovPriorKeyNames(.k) %in% .dn)
-    }, logical(1), USE.NAMES=FALSE)
+    .in <- vapply(
+      names(.off),
+      function(.k) {
+        all(.lotriCovPriorKeyNames(.k) %in% .dn)
+      },
+      logical(1),
+      USE.NAMES = FALSE
+    )
     if (any(.in)) {
       attr(.m1, "lotriOffDiagPriors") <- .off[.in]
       .cls <- TRUE
     }
   }
-  if (.cls) class(.m1) <- c("lotriFix", class(.m1))
+  if (.cls) {
+    class(.m1) <- c("lotriFix", class(.m1))
+  }
   .m1
 }
 
@@ -257,7 +309,7 @@
   .n <- dim(mat)[1]
   .end <- logical(.n)
   .p <- 0L
-  for (.b in lotriMatInv(mat)) { # nolint
+  for (.b in lotriMatInv(mat)) {
     .p <- .p + dim(.b)[1]
     .end[.p] <- TRUE
   }
@@ -271,7 +323,9 @@
   .ret <- list()
   .start <- 1L
   for (.i in seq_len(.n)) {
-    if (!.end[.i]) next
+    if (!.end[.i]) {
+      next
+    }
     .ret[[length(.ret) + 1L]] <- .lotriSliceBlock(mat, .start:.i)
     .start <- .i + 1L
   }
@@ -338,14 +392,18 @@
 #' @author Matthew L. Fidler
 #' @export
 lotriBaseCondition <- function(condition) {
-  if (length(condition) == 0L) return(character(0))
+  if (length(condition) == 0L) {
+    return(character(0))
+  }
   sub(":same:.*$", "", as.character(condition))
 }
 
 #' @rdname lotriBaseCondition
 #' @export
 lotriIsSame <- function(condition) {
-  if (length(condition) == 0L) return(logical(0))
+  if (length(condition) == 0L) {
+    return(logical(0))
+  }
   .c <- as.character(condition)
   .r <- !is.na(.c) & .c != lotriBaseCondition(.c)
   .r
@@ -355,14 +413,15 @@ lotriIsSame <- function(condition) {
 #' @export
 lotriSameMap <- function(iniDf) {
   if (!inherits(iniDf, "data.frame")) {
-    stop("'iniDf' must be a data.frame", call.=FALSE)
+    stop("'iniDf' must be a data.frame", call. = FALSE)
   }
   if (!all(c("name", "neta1", "neta2", "condition") %in% names(iniDf))) {
-    stop("'iniDf' needs the 'name', 'neta1', 'neta2' and 'condition' columns",
-         call.=FALSE)
+    stop("'iniDf' needs the 'name', 'neta1', 'neta2' and 'condition' columns", call. = FALSE)
   }
   .w <- which(!is.na(iniDf$neta1) & iniDf$neta1 == iniDf$neta2)
-  if (length(.w) == 0L) return(integer(0))
+  if (length(.w) == 0L) {
+    return(integer(0))
+  }
   .idx <- iniDf$neta1[.w]
   .nme <- as.character(iniDf$name)[.w]
   .ret <- integer(max(.idx))
@@ -373,10 +432,16 @@ lotriSameMap <- function(iniDf) {
     .m <- sub("^.*?:same:", "", .cnd[.i])
     .mw <- which(.nme == .m)
     if (length(.mw) != 1L) {
-      stop("the 'same()' condition '", .cnd[.i], "' refers to '", .m,
-           "', which is ",
-           ifelse(length(.mw) == 0L, "not a parameter", "ambiguous"),
-           " in this data frame", call.=FALSE)
+      stop(
+        "the 'same()' condition '",
+        .cnd[.i],
+        "' refers to '",
+        .m,
+        "', which is ",
+        ifelse(length(.mw) == 0L, "not a parameter", "ambiguous"),
+        " in this data frame",
+        call. = FALSE
+      )
     }
     .ret[.idx[.i]] <- as.integer(.idx[.mw])
   }
@@ -387,47 +452,56 @@ lotriSameMap <- function(iniDf) {
 #' @export
 lotriSameBreak <- function(iniDf, etas) {
   if (!inherits(iniDf, "data.frame")) {
-    stop("'iniDf' must be a data.frame", call.=FALSE)
+    stop("'iniDf' must be a data.frame", call. = FALSE)
   }
-  if (length(etas) == 0L) return(iniDf)
+  if (length(etas) == 0L) {
+    return(iniDf)
+  }
   .cnd <- as.character(iniDf$condition)
   .isSame <- lotriIsSame(.cnd)
-  if (!any(.isSame)) return(iniDf)
+  if (!any(.isSame)) {
+    return(iniDf)
+  }
   .nme <- as.character(iniDf$name)
   .base <- lotriBaseCondition(.cnd)
   .masters <- lapply(seq_along(.cnd), function(.i) {
-    if (!.isSame[.i]) return(character(0))
-    strsplit(sub("^.*?:same:", "", .cnd[.i]), ":", fixed=TRUE)[[1]]
+    if (!.isSame[.i]) {
+      return(character(0))
+    }
+    strsplit(sub("^.*?:same:", "", .cnd[.i]), ":", fixed = TRUE)[[1]]
   })
   ## A "same family" is one master block together with every block that
   ## repeats it.  Group by union-find over the (copy, master) pairs the
   ## DIAGONAL rows give, so two unrelated families under one condition
   ## stay separate and an ordinary eta sharing the condition is not
   ## dragged in.
-  .parent <- new.env(parent=emptyenv())
+  .parent <- new.env(parent = emptyenv())
   .find <- function(a) {
-    while (!is.null(.parent[[a]]) && .parent[[a]] != a) a <- .parent[[a]]
+    while (!is.null(.parent[[a]]) && .parent[[a]] != a) {
+      a <- .parent[[a]]
+    }
     a
   }
   .union <- function(a, b) {
-    if (is.null(.parent[[a]])) .parent[[a]] <- a
-    if (is.null(.parent[[b]])) .parent[[b]] <- b
+    if (is.null(.parent[[a]])) {
+      .parent[[a]] <- a
+    }
+    if (is.null(.parent[[b]])) {
+      .parent[[b]] <- b
+    }
     .ra <- .find(a)
     .rb <- .find(b)
     if (.ra != .rb) .parent[[.rb]] <- .ra
   }
-  .isDiag <- !is.na(iniDf$neta1) & !is.na(iniDf$neta2) &
-    iniDf$neta1 == iniDf$neta2
+  .isDiag <- !is.na(iniDf$neta1) & !is.na(iniDf$neta2) & iniDf$neta1 == iniDf$neta2
   for (.i in which(.isSame & .isDiag)) {
-    .union(paste0(.base[.i], "\r", .masters[[.i]][1]),
-           paste0(.base[.i], "\r", .nme[.i]))
+    .union(paste0(.base[.i], "\r", .masters[[.i]][1]), paste0(.base[.i], "\r", .nme[.i]))
   }
   ## An off diagonal row names both members of a block, which is what
   ## ties `iov.cl1` and `iov.v1` into ONE family; without it the two
   ## columns of a 2x2 repeated block look like two unrelated families
   ## and only half the block gets unlinked.
-  .isOff <- !is.na(iniDf$neta1) & !is.na(iniDf$neta2) &
-    iniDf$neta1 != iniDf$neta2
+  .isOff <- !is.na(iniDf$neta1) & !is.na(iniDf$neta2) & iniDf$neta1 != iniDf$neta2
   for (.i in which(.isOff)) {
     .p <- .lotriCovPriorKeyNames(.nme[.i])
     if (length(.p) == 2L) {
@@ -439,15 +513,26 @@ lotriSameBreak <- function(iniDf, etas) {
   for (.k in ls(.parent)) {
     if (sub("^.*?\r", "", .k) %in% etas) .hitRoot <- c(.hitRoot, .find(.k))
   }
-  if (length(.hitRoot) == 0L) return(iniDf)
+  if (length(.hitRoot) == 0L) {
+    return(iniDf)
+  }
   ## clear the marker on every repeated row whose family was touched;
   ## an off diagonal row is placed by the master names it points at
-  .hit <- vapply(seq_along(.cnd), function(.i) {
-    if (!.isSame[.i]) return(FALSE)
-    .k <- paste0(.base[.i], "\r", .masters[[.i]][1])
-    if (is.null(.parent[[.k]])) return(FALSE)
-    .find(.k) %in% .hitRoot
-  }, logical(1), USE.NAMES=FALSE)
+  .hit <- vapply(
+    seq_along(.cnd),
+    function(.i) {
+      if (!.isSame[.i]) {
+        return(FALSE)
+      }
+      .k <- paste0(.base[.i], "\r", .masters[[.i]][1])
+      if (is.null(.parent[[.k]])) {
+        return(FALSE)
+      }
+      .find(.k) %in% .hitRoot
+    },
+    logical(1),
+    USE.NAMES = FALSE
+  )
   iniDf$condition[which(.hit)] <- .base[which(.hit)]
   iniDf
 }

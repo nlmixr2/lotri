@@ -9,16 +9,21 @@
     neta1 = c(NA, 1L, 2L, 3L, 4L),
     neta2 = c(NA, 1L, 2L, 3L, 4L),
     name = c("tka", "eta.ka", "a1", "b1", "a2"),
-    lower = -Inf, est = c(0.5, 0.6, 0.1, 0.2, 0.1), upper = Inf,
-    fix = FALSE, label = NA_character_, backTransform = NA_character_,
+    lower = -Inf,
+    est = c(0.5, 0.6, 0.1, 0.2, 0.1),
+    upper = Inf,
+    fix = FALSE,
+    label = NA_character_,
+    backTransform = NA_character_,
     condition = c(NA, "id", "id", "id", "id:same:a1"),
-    prior = NA_character_, stringsAsFactors = FALSE)
+    prior = NA_character_,
+    stringsAsFactors = FALSE
+  )
 }
 
 test_that("lotriSameMap() validates its input", {
   expect_error(lotriSameMap("nope"), "must be a data.frame")
-  expect_error(lotriSameMap(data.frame(a = 1)),
-               "needs the 'name', 'neta1', 'neta2' and 'condition' columns")
+  expect_error(lotriSameMap(data.frame(a = 1)), "needs the 'name', 'neta1', 'neta2' and 'condition' columns")
   ## thetas only -- no etas to map
   .d <- .sameIni()[1, ]
   expect_equal(lotriSameMap(.d), integer(0))
@@ -78,10 +83,16 @@ test_that("lotriSameBreak() skips a marker whose master is not in a family", {
     neta1 = c(1L, 2L, 3L, 4L, 4L),
     neta2 = c(1L, 2L, 3L, 4L, 3L),
     name = c("a", "b", "c1", "d1", "(c1,d1)"),
-    lower = -Inf, est = c(1, 2, 1, 2, 0.1), upper = Inf,
-    fix = FALSE, label = NA_character_, backTransform = NA_character_,
+    lower = -Inf,
+    est = c(1, 2, 1, 2, 0.1),
+    upper = Inf,
+    fix = FALSE,
+    label = NA_character_,
+    backTransform = NA_character_,
     condition = c("id", "id", "id", "id", "id:same:a:b"),
-    prior = NA_character_, stringsAsFactors = FALSE)
+    prior = NA_character_,
+    stringsAsFactors = FALSE
+  )
   .r <- lotriSameBreak(.d, "c1")
   expect_equal(.r$condition[.r$name == "(c1,d1)"], "id:same:a:b")
 })
@@ -98,18 +109,20 @@ test_that("same() rejects a left hand side that is not parameter names", {
   ## lotri collects parse errors and re-raises them boxed, so the
   ## specific text is on stderr; check both
   expect_error(lotri({a + b ~ c(1, 0.1, 2); 1 ~ same()}), "syntax error")
-  expect_message(try(lotri({a + b ~ c(1, 0.1, 2); 1 ~ same()}), silent = TRUE),
-                 "left hand side")
+  expect_message(try(lotri({a + b ~ c(1, 0.1, 2); 1 ~ same()}), silent = TRUE), "left hand side")
   expect_error(lotri({a + b ~ c(1, 0.1, 2); f(x) ~ same()}), "syntax error")
 })
 
 test_that("a copy cannot carry an off-diagonal prior", {
   ## the diagonal case is covered elsewhere; this is the covariance one
-  expect_error(lotri({
+  expect_error(
+    lotri({
     a + b ~ c(1, 0.1, 2)
     c1 + d1 ~ same()
     prior(c1, d1) ~ dnorm(0, 0.1)
-  }), "repeats an earlier block")
+  }),
+    "repeats an earlier block"
+  )
 })
 
 test_that("an off-diagonal prior survives being sliced with its block", {
@@ -119,8 +132,7 @@ test_that("an off-diagonal prior survives being sliced with its block", {
   })
   ## keeping the pair keeps the prior ...
   .s <- .lotriSliceBlock(.m, 1:2)
-  expect_equal(attr(.s, "lotriOffDiagPriors"),
-               c("(eta.cl,eta.v)" = "dnorm(0, 0.1)"))
+  expect_equal(attr(.s, "lotriOffDiagPriors"), c("(eta.cl,eta.v)" = "dnorm(0, 0.1)"))
   expect_true(inherits(.s, "lotriFix"))
   ## ... dropping half the pair drops it, since the key no longer names
   ## two rows of this matrix
@@ -157,112 +169,103 @@ test_that(".lotriSameOkFamily() refuses the families it cannot write back", {
 ## directly -- going through `lotri()` cannot produce most of them.
 ## ---------------------------------------------------------------------
 
-.blk <- function(n, v = 1, same = NULL, fix = NULL, labels = NULL,
-                 tag = "a") {
+.blk <- function(n, v = 1, same = NULL, fix = NULL, labels = NULL, tag = "a") {
   .m <- diag(n) * v
   .d <- paste0(tag, seq_len(n))
   dimnames(.m) <- list(.d, .d)
-  if (!is.null(same)) attr(.m, "lotriSame") <- as.integer(same)
-  if (!is.null(fix)) attr(.m, "lotriFix") <- fix
-  if (!is.null(labels)) attr(.m, "lotriLabels") <- labels
+  if (!is.null(same)) {
+    attr(.m, "lotriSame") <- as.integer(same)
+  }
+  if (!is.null(fix)) {
+    attr(.m, "lotriFix") <- fix
+  }
+  if (!is.null(labels)) {
+    attr(.m, "lotriLabels") <- labels
+  }
   .m
 }
 
 test_that(".lotriSameEmit() accepts a well formed repetition", {
-  expect_equal(.lotriSameEmit(list(.blk(2, tag = "a"),
-                                   .blk(2, same = c(2, 2), tag = "b"))),
-               c(FALSE, TRUE))
+  expect_equal(.lotriSameEmit(list(.blk(2, tag = "a"), .blk(2, same = c(2, 2), tag = "b"))), c(FALSE, TRUE))
 })
 
 test_that(".lotriSameEmit() refuses an offset that is not a repetition", {
   ## no offsets at all
   expect_equal(.lotriSameEmit(list(.blk(2), .blk(2))), c(FALSE, FALSE))
   ## a zero mixed in: only part of the block claims to repeat
-  expect_equal(.lotriSameEmit(list(.blk(2, tag = "a"),
-                                   .blk(2, same = c(2, 0), tag = "b"))),
-               c(FALSE, FALSE))
+  expect_equal(.lotriSameEmit(list(.blk(2, tag = "a"), .blk(2, same = c(2, 0), tag = "b"))), c(FALSE, FALSE))
   ## rows of one block pointing different distances back
-  expect_equal(.lotriSameEmit(list(.blk(2, tag = "a"),
-                                   .blk(2, same = c(2, 3), tag = "b"))),
-               c(FALSE, FALSE))
+  expect_equal(.lotriSameEmit(list(.blk(2, tag = "a"), .blk(2, same = c(2, 3), tag = "b"))), c(FALSE, FALSE))
   ## an offset that lands in the middle of a block, not on its start
-  expect_equal(.lotriSameEmit(list(.blk(2, tag = "a"),
-                                   .blk(2, same = c(1, 1), tag = "b"))),
-               c(FALSE, FALSE))
+  expect_equal(.lotriSameEmit(list(.blk(2, tag = "a"), .blk(2, same = c(1, 1), tag = "b"))), c(FALSE, FALSE))
 })
 
 test_that(".lotriSameEmit() refuses a block of the wrong size", {
   ## lands on the start of block 1, but block 1 is 2x2 and this is 1x1
-  expect_equal(.lotriSameEmit(list(.blk(2, tag = "a"),
-                                   .blk(1, same = 2, tag = "b"))),
-               c(FALSE, FALSE))
+  expect_equal(.lotriSameEmit(list(.blk(2, tag = "a"), .blk(1, same = 2, tag = "b"))), c(FALSE, FALSE))
 })
 
 test_that(".lotriSameEmit() refuses a copy of a copy", {
   ## re-parsing `same()` always repeats the ORIGINAL block, so a block
   ## mirroring a mirror would come back with different offsets
-  expect_equal(.lotriSameEmit(list(.blk(2, tag = "a"),
-                                   .blk(2, same = c(2, 2), tag = "b"),
-                                   .blk(2, same = c(2, 2), tag = "c"))),
-               c(FALSE, TRUE, FALSE))
+  expect_equal(
+    .lotriSameEmit(list(.blk(2, tag = "a"), .blk(2, same = c(2, 2), tag = "b"), .blk(2, same = c(2, 2), tag = "c"))),
+    c(FALSE, TRUE, FALSE)
+  )
 })
 
 test_that(".lotriSameEmit() refuses a copy separated by a plain block", {
   ## `same()` repeats the IMMEDIATELY PRECEDING block, so anything
   ## between this and its master must itself be written as `same()`
-  expect_equal(.lotriSameEmit(list(.blk(2, tag = "a"),
-                                   .blk(2, v = 5, tag = "x"),
-                                   .blk(2, same = c(4, 4), tag = "c"))),
-               c(FALSE, FALSE, FALSE))
+  expect_equal(
+    .lotriSameEmit(list(.blk(2, tag = "a"), .blk(2, v = 5, tag = "x"), .blk(2, same = c(4, 4), tag = "c"))),
+    c(FALSE, FALSE, FALSE)
+  )
 })
 
 test_that(".lotriSameEmit() refuses a copy whose values drifted", {
   ## exact, not all.equal()'s default tolerance: a genuine copy is bit
   ## identical to its master
-  expect_equal(.lotriSameEmit(list(.blk(2, v = 1, tag = "a"),
-                                   .blk(2, v = 2, same = c(2, 2), tag = "b"))),
-               c(FALSE, FALSE))
-  expect_equal(.lotriSameEmit(list(.blk(2, v = 1, tag = "a"),
-                                   .blk(2, v = 1 + 1e-9, same = c(2, 2),
-                                        tag = "b"))),
-               c(FALSE, FALSE))
+  expect_equal(
+    .lotriSameEmit(list(.blk(2, v = 1, tag = "a"), .blk(2, v = 2, same = c(2, 2), tag = "b"))),
+    c(FALSE, FALSE)
+  )
+  expect_equal(
+    .lotriSameEmit(list(.blk(2, v = 1, tag = "a"), .blk(2, v = 1 + 1e-9, same = c(2, 2), tag = "b"))),
+    c(FALSE, FALSE)
+  )
 })
 
 test_that(".lotriSameEmit() refuses a copy whose fixed flags differ", {
   .f <- matrix(c(TRUE, FALSE, FALSE, TRUE), 2, 2)
   .g <- matrix(FALSE, 2, 2)
   ## one carries a fix matrix and the other does not
-  expect_equal(.lotriSameEmit(list(.blk(2, tag = "a"),
-                                   .blk(2, same = c(2, 2), fix = .f,
-                                        tag = "b"))),
-               c(FALSE, FALSE))
-  expect_equal(.lotriSameEmit(list(.blk(2, fix = .f, tag = "a"),
-                                   .blk(2, same = c(2, 2), tag = "b"))),
-               c(FALSE, FALSE))
+  expect_equal(.lotriSameEmit(list(.blk(2, tag = "a"), .blk(2, same = c(2, 2), fix = .f, tag = "b"))), c(FALSE, FALSE))
+  expect_equal(.lotriSameEmit(list(.blk(2, fix = .f, tag = "a"), .blk(2, same = c(2, 2), tag = "b"))), c(FALSE, FALSE))
   ## both carry one, but they disagree
-  expect_equal(.lotriSameEmit(list(.blk(2, fix = .f, tag = "a"),
-                                   .blk(2, same = c(2, 2), fix = .g,
-                                        tag = "b"))),
-               c(FALSE, FALSE))
+  expect_equal(
+    .lotriSameEmit(list(.blk(2, fix = .f, tag = "a"), .blk(2, same = c(2, 2), fix = .g, tag = "b"))),
+    c(FALSE, FALSE)
+  )
   ## ... and agreeing is fine
-  expect_equal(.lotriSameEmit(list(.blk(2, fix = .f, tag = "a"),
-                                   .blk(2, same = c(2, 2), fix = .f,
-                                        tag = "b"))),
-               c(FALSE, TRUE))
+  expect_equal(
+    .lotriSameEmit(list(.blk(2, fix = .f, tag = "a"), .blk(2, same = c(2, 2), fix = .f, tag = "b"))),
+    c(FALSE, TRUE)
+  )
 })
 
 test_that(".lotriSameEmit() refuses a copy labelled anywhere but the end", {
   ## a `same()` line can carry only ONE trailing `label()`, which
   ## attaches to the last name; a label anywhere else would be dropped
-  expect_equal(.lotriSameEmit(list(.blk(2, tag = "a"),
-                                   .blk(2, same = c(2, 2),
-                                        labels = c("lab", NA), tag = "b"))),
-               c(FALSE, FALSE))
+  expect_equal(
+    .lotriSameEmit(list(.blk(2, tag = "a"), .blk(2, same = c(2, 2), labels = c("lab", NA), tag = "b"))),
+    c(FALSE, FALSE)
+  )
   ## a label on the LAST name survives the round trip
-  expect_equal(.lotriSameEmit(list(.blk(2, tag = "a"),
-                                   .blk(2, same = c(2, 2),
-                                        labels = c(NA, "lab"), tag = "b"))),
-               c(FALSE, TRUE))
+  expect_equal(
+    .lotriSameEmit(list(.blk(2, tag = "a"), .blk(2, same = c(2, 2), labels = c(NA, "lab"), tag = "b"))),
+    c(FALSE, TRUE)
+  )
 })
 
 test_that("as.lotri() handles an ini frame with no condition at all", {
@@ -270,11 +273,20 @@ test_that("as.lotri() handles an ini frame with no condition at all", {
   ## splitter has to treat an NA condition as "not a repetition" rather
   ## than try to read a master out of it
   .d <- data.frame(
-    ntheta = NA_integer_, neta1 = c(1L, 2L), neta2 = c(1L, 2L),
-    name = c("a", "b"), lower = -Inf, est = c(1, 2), upper = Inf,
-    fix = FALSE, label = NA_character_, backTransform = NA_character_,
-    condition = NA_character_, prior = NA_character_,
-    stringsAsFactors = FALSE)
+    ntheta = NA_integer_,
+    neta1 = c(1L, 2L),
+    neta2 = c(1L, 2L),
+    name = c("a", "b"),
+    lower = -Inf,
+    est = c(1, 2),
+    upper = Inf,
+    fix = FALSE,
+    label = NA_character_,
+    backTransform = NA_character_,
+    condition = NA_character_,
+    prior = NA_character_,
+    stringsAsFactors = FALSE
+  )
   .m <- as.lotri(.d)
   expect_equal(as.numeric(.m), c(1, 0, 0, 2))
   expect_equal(dimnames(.m)[[1]], c("a", "b"))

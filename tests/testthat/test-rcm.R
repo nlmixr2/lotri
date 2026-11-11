@@ -1,18 +1,15 @@
 test_that("rcm() errors with mismatched row/col names", {
-  m <- matrix(c(1, 0, 0, 1), nrow = 2,
-               dimnames = list(c("a", "b"), c("x", "y")))
+  m <- matrix(c(1, 0, 0, 1), nrow = 2, dimnames = list(c("a", "b"), c("x", "y")))
   expect_error(rcm(m))
 })
 
 test_that("rcm() on a 0x0 matrix returns 0x0 matrix", {
-  m0 <- matrix(numeric(0), nrow = 0, ncol = 0,
-               dimnames = list(character(0), character(0)))
+  m0 <- matrix(numeric(0), nrow = 0, ncol = 0, dimnames = list(character(0), character(0)))
   r <- rcm(m0)
   expect_equal(dim(r), c(0L, 0L))
 })
 
 test_that("rcm", {
-
   m <- lotri({
     a + b + c + d + e + f + g + h + i + j + k + l + m + n + o +
       p ~ c(0.4, 0, 0.3, 0, 0, 0, -0.1, 0, 0, 0.2, 0, 0, 0,
@@ -25,8 +22,9 @@ test_that("rcm", {
             0.9, 0, 0, 0, 0, 0, 0, 0, 4.7, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0.5, 0, 0.2, 0, 0, 0, 1.9)})
 
-  expect_equal(rcm(m),
-               lotri({
+  expect_equal(
+    rcm(m),
+    lotri({
                  p + l + j ~ c(1.9, 0.2, 0.3, 0.5, -0.2, 0.9)
                  o + g + f ~ c(4.7, 0.9, 0.8, -1.1, -0.6, 1.3)
                  n + d + a ~ c(0.4, 0.2, 0.2, 0.2, -0.1, 0.4)
@@ -37,9 +35,10 @@ test_that("rcm", {
                  b ~ 0.3
                  h ~ 0
                  c ~ 0
-               }))
+               })
+  )
 
-    m <- lotri({
+  m <- lotri({
       a + b + c + d + e + f + g + h + i + j + k + l + m + n + o +
         p ~ c(0.4, 0, 0.3, 0, 0, 0, -0.1, 0, 0, 0.2, 0, 0, 0,
               0, 0.5, 0, 0, 0, 0, 0, 1.3, 0, 0, 0, 0, 0, -0.6, 0.8,
@@ -51,8 +50,9 @@ test_that("rcm", {
               0.9, 0, 0, 0, 0, 0, 0, 0, 4.7, 0, 0, 0, 0, 0, 0, 0, 0,
               0, 0.5, 0, 0.2, 0, 0, 0, 1.9)}, rcm=TRUE)
 
-    expect_equal(m,
-                 lotri({
+  expect_equal(
+    m,
+    lotri({
                    p + l + j ~ c(1.9, 0.2, 0.3, 0.5, -0.2, 0.9)
                    o + g + f ~ c(4.7, 0.9, 0.8, -1.1, -0.6, 1.3)
                    n + d + a ~ c(0.4, 0.2, 0.2, 0.2, -0.1, 0.4)
@@ -63,7 +63,6 @@ test_that("rcm", {
                    b ~ 0.3
                    h ~ 0
                    c ~ 0
-                 }))
-
-
+                 })
+  )
 })

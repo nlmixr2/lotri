@@ -26,3 +26,5 @@
 ^\.habit-hooks$
 ^src/compile_commands\.json$
 ^\.Rhistory$
+^air\.toml$
+^\.git-blame-ignore-revs$

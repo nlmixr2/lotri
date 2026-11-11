@@ -1,5 +1,4 @@
 test_that("as.data.frame", {
-
   fix1 <- lotri({
     a <- c(0, 1); backTransform("exp"); label("a label")
     b <- c(0, 1, 2)
@@ -36,24 +35,33 @@ test_that("as.data.frame", {
 
   c1 <- lotriMat(list(fix1, fix2))
 
-  expect_error(as.data.frame(c1, row.names=FALSE))
+  expect_error(as.data.frame(c1, row.names = FALSE))
 
-  expect_error(as.data.frame(c1, optional=FALSE))
+  expect_error(as.data.frame(c1, optional = FALSE))
 
   c1df <- as.data.frame(c1)
 
-  expect_equal(c1df,
-               structure(list(ntheta = c(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, NA, NA, NA, NA, NA, NA),
-                              neta1 = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, 1, 2, 2, 3, 4, 4),
-                              neta2 = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, 1, 1, 2, 3, 3, 4),
-                              name = c("a", "b", "c", "d", "e", "h", "i", "j", "k", "l", "f", "(f,g)", "g", "m", "(m,n)", "n"),
-                              lower = c(0, 0, -Inf, 0, 0, 0, 0, -Inf, 0, 0, -Inf, -Inf, -Inf, -Inf, -Inf, -Inf), est = c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.5, 1, 1, 0.5, 1),
-                              upper = c(Inf, 2,  Inf, 2, 2, Inf, 2, Inf, 2, 2, Inf, Inf, Inf, Inf, Inf, Inf), fix = c(FALSE, FALSE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE),
-                              label = c("a label", NA, NA, NA, NA, "b label", NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
-                              backTransform = c("exp", NA, NA, NA, NA, "expit", NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
-                              condition = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, "id", "id", "id", "id", "id", "id"),
-                              prior = rep(NA_character_, 16)),
-                         class = "data.frame", row.names = c(NA, -16L)))
+  expect_equal(
+    c1df,
+    structure(
+      list(
+        ntheta = c(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, NA, NA, NA, NA, NA, NA),
+        neta1 = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, 1, 2, 2, 3, 4, 4),
+        neta2 = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, 1, 1, 2, 3, 3, 4),
+        name = c("a", "b", "c", "d", "e", "h", "i", "j", "k", "l", "f", "(f,g)", "g", "m", "(m,n)", "n"),
+        lower = c(0, 0, -Inf, 0, 0, 0, 0, -Inf, 0, 0, -Inf, -Inf, -Inf, -Inf, -Inf, -Inf),
+        est = c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.5, 1, 1, 0.5, 1),
+        upper = c(Inf, 2, Inf, 2, 2, Inf, 2, Inf, 2, 2, Inf, Inf, Inf, Inf, Inf, Inf),
+        fix = c(FALSE, FALSE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE),
+        label = c("a label", NA, NA, NA, NA, "b label", NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
+        backTransform = c("exp", NA, NA, NA, NA, "expit", NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
+        condition = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, "id", "id", "id", "id", "id", "id"),
+        prior = rep(NA_character_, 16)
+      ),
+      class = "data.frame",
+      row.names = c(NA, -16L)
+    )
+  )
 
   expect_equal(as.lotri(c1df), c1)
 
@@ -82,22 +90,29 @@ test_that("as.data.frame", {
 
   df <- as.data.frame(fix2)
 
-  expect_equal(as.data.frame(fix2),
-               structure(list(ntheta = c(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, NA, NA, NA, NA, NA, NA),
-                              neta1 = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, 1, 2, 2, 3, 4, 4), neta2 = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, 1, 1, 2, 3, 3, 4),
-                              name = c("a", "b", "c", "d", "e", "h", "i", "j", "k", "l", "m", "(m,n)", "n", "f", "(f,g)", "g"),
-                              lower = c(0, 0, -Inf, 0, 0, 0, 0, -Inf, 0, 0, -Inf, -Inf, -Inf, -Inf, -Inf, -Inf), est = c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.5, 1, 1, 0.5, 1),
-                              upper = c(Inf, 2, Inf, 2, 2,  Inf, 2, Inf, 2, 2, Inf, Inf, Inf, Inf, Inf, Inf), fix = c(FALSE, FALSE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE),
-                              label = c("a label", NA, NA, NA, NA, "b label", NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
-                              backTransform = c("exp", NA, NA, NA, NA, "expit", NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
-                              condition = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, "id", "id", "id", "occ", "occ", "occ"),
-                              prior = rep(NA_character_, 16)),
-                         class = "data.frame",
-                         row.names = c(NA, -16L)))
+  expect_equal(
+    as.data.frame(fix2),
+    structure(
+      list(
+        ntheta = c(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, NA, NA, NA, NA, NA, NA),
+        neta1 = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, 1, 2, 2, 3, 4, 4),
+        neta2 = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, 1, 1, 2, 3, 3, 4),
+        name = c("a", "b", "c", "d", "e", "h", "i", "j", "k", "l", "m", "(m,n)", "n", "f", "(f,g)", "g"),
+        lower = c(0, 0, -Inf, 0, 0, 0, 0, -Inf, 0, 0, -Inf, -Inf, -Inf, -Inf, -Inf, -Inf),
+        est = c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.5, 1, 1, 0.5, 1),
+        upper = c(Inf, 2, Inf, 2, 2, Inf, 2, Inf, 2, 2, Inf, Inf, Inf, Inf, Inf, Inf),
+        fix = c(FALSE, FALSE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE),
+        label = c("a label", NA, NA, NA, NA, "b label", NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
+        backTransform = c("exp", NA, NA, NA, NA, "expit", NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
+        condition = c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, "id", "id", "id", "occ", "occ", "occ"),
+        prior = rep(NA_character_, 16)
+      ),
+      class = "data.frame",
+      row.names = c(NA, -16L)
+    )
+  )
 
-  expect_equal(as.lotri(df),
-               fix2)
-
+  expect_equal(as.lotri(df), fix2)
 })
 
 test_that("as.data.frame on lotri with only theta estimates returns correct data.frame", {
@@ -115,7 +130,7 @@ test_that("as.data.frame handles lotriUnfix attribute in matrix", {
   m <- lotri({ a + b ~ unfix(1, 0.5, 1) })
   df <- as.data.frame(m)
   expect_true(inherits(df, "data.frame"))
-  expect_equal(nrow(df), 3L)  # 2x2 lower triangle
+  expect_equal(nrow(df), 3L) # 2x2 lower triangle
 })
 
 test_that("as.data.frame on empty lotriFix (0x0) returns empty data.frame", {

@@ -1,7 +1,6 @@
 .lotri <- loadNamespace("lotri")
 
 test_that("priors can be given on population estimates", {
-
   m <- lotri({
     tka <- 0.45
     tcl <- c(0, 1, 10)
@@ -33,7 +32,6 @@ test_that("priors can be given on population estimates", {
 })
 
 test_that("priors can be given on etas and on covariance blocks", {
-
   m <- lotri({
     eta.cl + eta.v ~ c(0.1,
                        0.01, 0.2)
@@ -43,12 +41,10 @@ test_that("priors can be given on etas and on covariance blocks", {
   })
 
   ## the block prior is stored on the first diagonal of the block
-  expect_equal(attr(m, "lotriPriors"),
-               c("lkjCorr(2)", NA, "dgamma(2, 1)"))
+  expect_equal(attr(m, "lotriPriors"), c("lkjCorr(2)", NA, "dgamma(2, 1)"))
 })
 
 test_that("prior lines are order independent", {
-
   m1 <- lotri({
     tka <- 0.45
     prior(tka) ~ dnorm(0, 10)
@@ -63,7 +59,6 @@ test_that("prior lines are order independent", {
 })
 
 test_that("a prior line does not steal a label from the previous estimate", {
-
   m <- lotri({
     tka <- 0.45
     prior(tka) ~ dnorm(0, 10)
@@ -75,7 +70,6 @@ test_that("a prior line does not steal a label from the previous estimate", {
 })
 
 test_that("a prior does not leak an estimate from its arguments", {
-
   ## `mean <- 0` inside the distribution used to be picked up as a theta
   m <- lotri({
     tka <- 0.45
@@ -86,7 +80,6 @@ test_that("a prior does not leak an estimate from its arguments", {
 })
 
 test_that("priors round trip through as.expression() and as.data.frame()", {
-
   m <- lotri({
     tka <- 0.45
     label("Ka")
@@ -103,16 +96,13 @@ test_that("priors round trip through as.expression() and as.data.frame()", {
   expect_equal(as.data.frame(eval(as.expression(m))), as.data.frame(m))
 
   .df <- as.data.frame(m)
-  expect_equal(.df$prior,
-               c("dnorm(0, 10)", "dlnorm(1, 0.5)", "lkjCorr(2)", NA, NA,
-                 "dgamma(2, 1)"))
+  expect_equal(.df$prior, c("dnorm(0, 10)", "dlnorm(1, 0.5)", "lkjCorr(2)", NA, NA, "dgamma(2, 1)"))
 
   ## and back from the data frame
   expect_equal(as.data.frame(as.lotri(.df))$prior, .df$prior)
 })
 
 test_that("as.lotri() still works on a data.frame without a prior column", {
-
   m <- lotri({
     tka <- 0.45
     eta.ka ~ 0.3
@@ -125,7 +115,6 @@ test_that("as.lotri() still works on a data.frame without a prior column", {
 })
 
 test_that("a zero row estimate frame still converts", {
-
   ## a model with no population estimates round trips through a data
   ## frame whose theta part has no rows at all
   m <- lotri({ eta.ka ~ 0.3; label("KA") })
@@ -139,7 +128,6 @@ test_that("a zero row estimate frame still converts", {
 })
 
 test_that("priors survive combining lotri matrices", {
-
   a <- lotri({ e1 ~ 0.1 })
   b <- lotri({
     e2 ~ 0.2
@@ -153,7 +141,6 @@ test_that("priors survive combining lotri matrices", {
 })
 
 test_that("priors are matched by name so rcm re-ordering is safe", {
-
   m <- lotri({
     a ~ 1
     b ~ c(0, 1)
@@ -166,7 +153,6 @@ test_that("priors are matched by name so rcm re-ordering is safe", {
 })
 
 test_that("a theta on the left of ~ is a normal prior, not an eta", {
-
   m <- lotri({
     tka <- 1
     tka ~ 4
@@ -182,52 +168,56 @@ test_that("a theta on the left of ~ is a normal prior, not an eta", {
 })
 
 test_that("the shorthand centers on the estimate, an explicit dnorm does not", {
-
   ## `tka ~ 4` is the NWPRI pair: the estimate is the prior mean
   ## ($THETAP) and the number on the `~` is its variance ($THETAPV)
-  expect_equal(lotriEst(lotri({ tka <- 0.45; tka ~ 4 }))$prior,
-               "dnorm(0.45, 2)")
+  expect_equal(lotriEst(lotri({ tka <- 0.45; tka ~ 4 }))$prior, "dnorm(0.45, 2)")
 
   ## which is exactly what writing that prior out by hand says
-  expect_equal(lotriEst(lotri({ tka <- 0.45; prior(tka) ~ dnorm(0.45, 2) }))$prior,
-               "dnorm(0.45, 2)")
+  expect_equal(lotriEst(lotri({ tka <- 0.45; prior(tka) ~ dnorm(0.45, 2) }))$prior, "dnorm(0.45, 2)")
 
   ## an explicit prior is taken literally, so it can sit off the estimate
-  expect_equal(lotriEst(lotri({ tka <- 0.45; prior(tka) ~ dnorm(0, 2) }))$prior,
-               "dnorm(0, 2)")
+  expect_equal(lotriEst(lotri({ tka <- 0.45; prior(tka) ~ dnorm(0, 2) }))$prior, "dnorm(0, 2)")
 
   ## a zero estimate still renders as the plain zero mean it always was
   expect_equal(lotriEst(lotri({ tka <- 0; tka ~ 4 }))$prior, "dnorm(0, 2)")
 
   ## the multivariate form carries the whole estimate vector
-  expect_equal(lotriEst(lotri({
+  expect_equal(
+    lotriEst(lotri({
     tcl <- 3
     tv <- 4
     tcl + tv ~ c(1,
                  0.01, 1)
   }))$prior[1],
-  "multiNormal(c(3, 4), lotri(tcl + tv ~ c(1, 0.01, 1)))")
+    "multiNormal(c(3, 4), lotri(tcl + tv ~ c(1, 0.01, 1)))"
+  )
 
   ## and an all zero mean vector keeps the compact `0` spelling
-  expect_equal(lotriEst(lotri({
+  expect_equal(
+    lotriEst(lotri({
     tcl <- 0
     tv <- 0
     tcl + tv ~ c(1,
                  0.01, 1)
   }))$prior[1],
-  "multiNormal(0, lotri(tcl + tv ~ c(1, 0.01, 1)))")
+    "multiNormal(0, lotri(tcl + tv ~ c(1, 0.01, 1)))"
+  )
 
   ## an `om.` prior is on the omega element, so it is centered on the
   ## omega value the same way a theta one is centered on its estimate
-  expect_equal(attr(lotri({
+  expect_equal(
+    attr(
+      lotri({
     eta.cl ~ 0.3
     om.eta.cl ~ 0.01
-  }), "lotriPriors")[1],
-  paste0("dnorm(0.3, ", sqrt(0.01), ")"))
+  }),
+      "lotriPriors"
+    )[1],
+    paste0("dnorm(0.3, ", sqrt(0.01), ")")
+  )
 })
 
 test_that("an uncorrelated theta prior block is independent normals", {
-
   m <- lotri({
     tka <- 1
     tcl <- 3
@@ -236,8 +226,7 @@ test_that("an uncorrelated theta prior block is independent normals", {
                  0, 1)
   })
 
-  expect_equal(lotriEst(m)$prior,
-               c(NA_character_, "dnorm(3, 1)", "dnorm(4, 1)"))
+  expect_equal(lotriEst(m)$prior, c(NA_character_, "dnorm(3, 1)", "dnorm(4, 1)"))
 
   ## which is the same thing as saying it one row at a time
   m2 <- lotri({
@@ -252,7 +241,6 @@ test_that("an uncorrelated theta prior block is independent normals", {
 })
 
 test_that("a correlated theta prior is a multivariate normal", {
-
   ## the line (per row) form has to build up the block, exactly like it
   ## does for etas
   m <- lotri({
@@ -279,7 +267,6 @@ test_that("a correlated theta prior is a multivariate normal", {
 })
 
 test_that("theta priors accept the matrix transformations", {
-
   ## sd(2) and sd(3) are variances of 4 and 9
   m <- lotri({
     tcl <- 3
@@ -288,8 +275,7 @@ test_that("theta priors accept the matrix transformations", {
                   0.5, 3)
   })
 
-  expect_equal(lotriEst(m)$prior[1],
-               "multiNormal(c(3, 4), lotri(tcl + tv ~ c(4, 0.5, 9)))")
+  expect_equal(lotriEst(m)$prior[1], "multiNormal(c(3, 4), lotri(tcl + tv ~ c(4, 0.5, 9)))")
 
   ## var() is the default meaning
   m2 <- lotri({
@@ -307,7 +293,6 @@ test_that("theta priors accept the matrix transformations", {
 })
 
 test_that("a theta prior matrix means the same thing as an eta matrix", {
-
   ## The prior covariance has to be read exactly the way nlmixr2 reads an
   ## eta block -- as a *covariance*, not a correlation -- for every
   ## spelling.  This compares the matrix stored in the prior against the
@@ -318,8 +303,7 @@ test_that("a theta prior matrix means the same thing as an eta matrix", {
     .eta <- eval(bquote(lotri(.(str2lang(paste0("{ a + b ~ ", spec, " }"))))))
     .th <- eval(bquote(lotri(.(str2lang(
       paste0("{ a <- 1; b <- 2; a + b ~ ", spec, " }"))))))
-    expect_equal(unname(as.matrix(.sigma(.th))), unname(as.matrix(.eta)),
-                 info=spec)
+    expect_equal(unname(as.matrix(.sigma(.th))), unname(as.matrix(.eta)), info = spec)
   }
 
   .cmp("c(1, 0.5, 2)")
@@ -344,7 +328,6 @@ test_that("a theta prior matrix means the same thing as an eta matrix", {
 })
 
 test_that("theta priors round trip", {
-
   m <- lotri({
     tka <- 1
     tcl <- 3
@@ -357,9 +340,11 @@ test_that("theta priors round trip", {
   expect_equal(as.data.frame(eval(as.expression(m))), as.data.frame(m))
 
   ## the multivariate prior comes back as one line naming the group
-  expect_true(any(grepl("prior(tcl, tv)", vapply(as.list(as.expression(m)[[2]])[-1],
-                                                 deparse1, character(1)),
-                        fixed=TRUE)))
+  expect_true(any(grepl(
+    "prior(tcl, tv)",
+    vapply(as.list(as.expression(m)[[2]])[-1], deparse1, character(1)),
+    fixed = TRUE
+  )))
 })
 
 test_that("estimate only lotri objects can be deparsed", {
@@ -368,7 +353,6 @@ test_that("estimate only lotri objects can be deparsed", {
 })
 
 test_that("bad theta priors are errors", {
-
   ## zero variance is degenerate
   expect_error(lotri({ tka <- 1; tka ~ 0 }), "zero variance")
 
@@ -384,7 +368,6 @@ test_that("bad theta priors are errors", {
 })
 
 test_that("a name that is not an estimate is still an eta", {
-
   ## the shorthand must not change how ordinary matrices are parsed
   m <- lotri({
     tka <- 1
@@ -396,7 +379,6 @@ test_that("a name that is not an estimate is still an eta", {
 })
 
 test_that("bad priors are errors", {
-
   ## unknown distribution
   expect_error(lotri({ a <- 1; prior(a) ~ dnorml(0, 1) }))
 
@@ -427,10 +409,13 @@ test_that("bad priors are errors", {
   ## marginal prior on that one off-diagonal (covariance) cell, not a joint
   ## prior over the whole block; see test-priors-offdiag.R for the positive
   ## coverage of this case
-  expect_error(lotri({
+  expect_error(
+    lotri({
     e1 + e2 ~ c(1, 0.5, 1)
     prior(e1, e2) ~ dnorm(0, 1)
-  }), NA)
+  }),
+    NA
+  )
 
   ## ...but still cannot cover three or more names at once
   expect_error(lotri({
@@ -456,12 +441,12 @@ test_that("bad priors are errors", {
 })
 
 test_that("lotriPriorDists() describes the supported distributions", {
-
   .d <- lotriPriorDists()
 
   expect_true(inherits(.d, "data.frame"))
-  expect_true(all(c("rName", "stanName", "camelName", "name", "parNames",
-                    "nPar", "nReq", "support", "kind") %in% names(.d)))
+  expect_true(all(
+    c("rName", "stanName", "camelName", "name", "parNames", "nPar", "nReq", "support", "kind") %in% names(.d)
+  ))
   ## the canonical name is the R one when it is a faithful alias
   expect_equal(.d$name[.d$stanName == "normal"], "dnorm")
   ## and the camelCase one when there is no faithful R equivalent
@@ -477,7 +462,6 @@ test_that("lotriPriorDists() describes the supported distributions", {
 })
 
 test_that("camelCase and Stan spellings are the same prior", {
-
   ## camelCase is canonical, the Stan snake_case is an accepted alias
   .camel <- lotri({
     e1 + e2 ~ c(1,
@@ -500,7 +484,6 @@ test_that("camelCase and Stan spellings are the same prior", {
 })
 
 test_that("omega degrees of freedom can be given on their own", {
-
   ## the scale matrix is the block itself, so only the degrees of
   ## freedom are needed (the NWPRI $OMEGAPD)
   m <- lotri({
@@ -511,19 +494,21 @@ test_that("omega degrees of freedom can be given on their own", {
     prior(eta.ka) ~ invWishart(2)
   })
 
-  expect_equal(attr(m, "lotriPriors"),
-               c("invWishart(4)", NA, "invWishart(2)"))
+  expect_equal(attr(m, "lotriPriors"), c("invWishart(4)", NA, "invWishart(2)"))
 
   ## it round trips
   expect_equal(as.data.frame(eval(as.expression(m))), as.data.frame(m))
 
   ## an explicit scale matrix still works
-  expect_error(lotri({
+  expect_error(
+    lotri({
     e1 + e2 ~ c(1,
                 0.1, 1)
     prior(e1, e2) ~ invWishart(4, lotri(e1 + e2 ~ c(2,
                                                     0.5, 2)))
-  }), NA)
+  }),
+    NA
+  )
 
   ## the degrees of freedom are required
   expect_error(lotri({
@@ -532,10 +517,13 @@ test_that("omega degrees of freedom can be given on their own", {
   }))
 
   ## an improper prior is caught, since nu must exceed the dimension - 1
-  expect_error(lotri({
+  expect_error(
+    lotri({
     e1 + e2 ~ c(1, 0.1, 1)
     prior(e1, e2) ~ invWishart(1)
-  }), "degrees of freedom")
+  }),
+    "degrees of freedom"
+  )
 
   ## but a 1x1 block only needs nu > 0, since that is an inverse gamma
   expect_error(lotri({ e1 ~ 1; prior(e1) ~ invWishart(1) }), NA)
@@ -548,7 +536,6 @@ test_that("omega degrees of freedom can be given on their own", {
 })
 
 test_that("om. names put a prior on the omega elements", {
-
   ## a NONMEM TNPRI model puts a normal prior on the omega elements as
   ## well as the thetas, so the elements need names: `om.` prepended to
   ## the between subject variability
@@ -584,7 +571,6 @@ test_that("om. names put a prior on the omega elements", {
 })
 
 test_that("om. names support a correlated prior and round trip", {
-
   m <- lotri({
     eta.cl + eta.v ~ c(0.3,
                        0.01, 0.1)
@@ -592,16 +578,16 @@ test_that("om. names support a correlated prior and round trip", {
     om.eta.v ~ c(0.001, 0.02)
   })
 
-  expect_equal(attr(m, "lotriPriors")[1],
-               paste0("multiNormal(c(0.3, 0.1), lotri(om.eta.cl + om.eta.v ~ ",
-                      "c(0.01, 0.001, 0.02)))"))
+  expect_equal(
+    attr(m, "lotriPriors")[1],
+    paste0("multiNormal(c(0.3, 0.1), lotri(om.eta.cl + om.eta.v ~ ", "c(0.01, 0.001, 0.02)))")
+  )
   expect_true(is.na(attr(m, "lotriPriors")[2]))
 
   expect_equal(as.data.frame(eval(as.expression(m))), as.data.frame(m))
 })
 
 test_that("om. names must match a between subject variability", {
-
   expect_error(lotri({ eta.ka ~ 0.3; om.eta.nope ~ 0.1 }))
   expect_error(lotri({ tka <- 1; om.tka ~ 0.1 }))
 
@@ -610,7 +596,6 @@ test_that("om. names must match a between subject variability", {
 })
 
 test_that("a NWPRI and a TNPRI omega prior are distinguishable", {
-
   .nw <- lotri({
     eta.cl + eta.v ~ c(0.3,
                        0.01, 0.1)
@@ -628,7 +613,6 @@ test_that("a NWPRI and a TNPRI omega prior are distinguishable", {
 })
 
 test_that("~invWishart() sets the degrees of freedom for the whole omega", {
-
   m <- lotri({
     eta.cl + eta.v ~ c(0.3,
                        0.01, 0.1)
@@ -637,8 +621,7 @@ test_that("~invWishart() sets the degrees of freedom for the whole omega", {
   })
 
   ## every block gets it, stored on the first diagonal of each
-  expect_equal(attr(m, "lotriPriors"),
-               c("invWishart(4)", NA, "invWishart(4)"))
+  expect_equal(attr(m, "lotriPriors"), c("invWishart(4)", NA, "invWishart(4)"))
 
   ## and it round trips, as the equivalent per block priors
   expect_equal(as.data.frame(eval(as.expression(m))), as.data.frame(m))
@@ -655,11 +638,14 @@ test_that("~invWishart() sets the degrees of freedom for the whole omega", {
   expect_error(lotri({ tka <- 1; ~invWishart(4) }), "no omega")
 
   ## the degrees of freedom are still checked against each block
-  expect_error(lotri({
+  expect_error(
+    lotri({
     eta.cl + eta.v ~ c(0.3,
                        0.01, 0.1)
     ~invWishart(1)
-  }), "degrees of freedom")
+  }),
+    "degrees of freedom"
+  )
 
   ## a 1x1 block cannot take a correlation matrix prior, even this way
   expect_error(lotri({ eta.ka ~ 0.5; ~lkjCorr(2) }))
@@ -669,16 +655,18 @@ test_that("~invWishart() sets the degrees of freedom for the whole omega", {
 })
 
 test_that("an omega cannot have both degrees of freedom and a normal prior", {
-
   ## NWPRI and TNPRI are alternative ways of putting a prior on the
   ## omega, so a model picks one
-  expect_error(lotri({
+  expect_error(
+    lotri({
     eta.cl + eta.v ~ c(0.3,
                        0.01, 0.1)
     eta.ka ~ 0.5
     prior(eta.cl, eta.v) ~ invWishart(4)
     om.eta.ka ~ 0.01
-  }), "alternatives")
+  }),
+    "alternatives"
+  )
 
   ## the same thing said the other way round
   expect_error(lotri({
@@ -689,30 +677,38 @@ test_that("an omega cannot have both degrees of freedom and a normal prior", {
   }))
 
   ## either one on its own is fine
-  expect_error(lotri({
+  expect_error(
+    lotri({
     eta.cl + eta.v ~ c(0.3,
                        0.01, 0.1)
     prior(eta.cl, eta.v) ~ invWishart(4)
-  }), NA)
-  expect_error(lotri({
+  }),
+    NA
+  )
+  expect_error(
+    lotri({
     eta.cl ~ 0.3
     eta.v ~ 0.1
     om.eta.cl ~ 0.01
     om.eta.v ~ 0.04
-  }), NA)
+  }),
+    NA
+  )
 
   ## and a prior that is neither family does not trip the check
-  expect_error(lotri({
+  expect_error(
+    lotri({
     eta.cl + eta.v ~ c(0.3,
                        0.01, 0.1)
     eta.ka ~ 0.5
     prior(eta.cl, eta.v) ~ invWishart(4)
     prior(eta.ka) ~ dgamma(2, 1)
-  }), NA)
+  }),
+    NA
+  )
 })
 
 test_that("as.expression() renders every prior form correctly", {
-
   ## This is what `print()` shows and what an estimation method re-parses,
   ## so the exact rendering matters -- a round trip alone could agree with
   ## itself while printing something misleading.
@@ -720,29 +716,40 @@ test_that("as.expression() renders every prior form correctly", {
   ## a wide width.cutoff so a long prior line stays one string rather than
   ## a wrapped one the join would pad with extra spaces
   .lines <- function(m) {
-    vapply(as.list(as.expression(m)[[2]])[-1],
-           function(x) paste(deparse(x, width.cutoff=500L), collapse=" "),
-           character(1), USE.NAMES=FALSE)
+    vapply(
+      as.list(as.expression(m)[[2]])[-1],
+      function(x) paste(deparse(x, width.cutoff = 500L), collapse = " "),
+      character(1),
+      USE.NAMES = FALSE
+    )
   }
 
-  expect_true("prior(tka) ~ dnorm(0, 10)" %in%
-                .lines(lotri({ tka <- 0.45; prior(tka) ~ dnorm(0, 10) })))
+  expect_true(
+    "prior(tka) ~ dnorm(0, 10)" %in%
+      .lines(lotri({ tka <- 0.45; prior(tka) ~ dnorm(0, 10) }))
+  )
 
-  expect_true("prior(eta.ka) ~ dgamma(2, 1)" %in%
-                .lines(lotri({ eta.ka ~ 0.3; prior(eta.ka) ~ dgamma(2, 1) })))
+  expect_true(
+    "prior(eta.ka) ~ dgamma(2, 1)" %in%
+      .lines(lotri({ eta.ka ~ 0.3; prior(eta.ka) ~ dgamma(2, 1) }))
+  )
 
   ## a block prior names the whole block, not just where it is stored
-  expect_true("prior(eta.cl, eta.v) ~ lkjCorr(2)" %in%
-                .lines(lotri({
+  expect_true(
+    "prior(eta.cl, eta.v) ~ lkjCorr(2)" %in%
+      .lines(lotri({
                   eta.cl + eta.v ~ c(0.1, 0.01, 0.2)
                   prior(eta.cl, eta.v) ~ lkjCorr(2)
-                })))
+                }))
+  )
 
-  expect_true("prior(eta.cl, eta.v) ~ invWishart(4)" %in%
-                .lines(lotri({
+  expect_true(
+    "prior(eta.cl, eta.v) ~ invWishart(4)" %in%
+      .lines(lotri({
                   eta.cl + eta.v ~ c(0.1, 0.01, 0.2)
                   prior(eta.cl, eta.v) ~ invWishart(4)
-                })))
+                }))
+  )
 
   ## the whole omega form expands to one line per block
   .wo <- .lines(lotri({
@@ -754,54 +761,68 @@ test_that("as.expression() renders every prior form correctly", {
   expect_true("prior(eta.ka) ~ invWishart(4)" %in% .wo)
 
   ## the normal shorthand prints as the prior it means
-  expect_true("prior(tcl) ~ dnorm(3, 1)" %in%
-                .lines(lotri({ tcl <- 3; tcl ~ 1 })))
+  expect_true(
+    "prior(tcl) ~ dnorm(3, 1)" %in%
+      .lines(lotri({ tcl <- 3; tcl ~ 1 }))
+  )
 
-  expect_true("prior(tcl, tv) ~ multiNormal(c(3, 4), lotri(tcl + tv ~ c(1, 0.01, 1)))" %in%
-                .lines(lotri({
+  expect_true(
+    "prior(tcl, tv) ~ multiNormal(c(3, 4), lotri(tcl + tv ~ c(1, 0.01, 1)))" %in%
+      .lines(lotri({
                   tcl <- 3
                   tv <- 4
                   tcl + tv ~ c(1, 0.01, 1)
-                })))
+                }))
+  )
 
   ## an om. prior prints against the eta it belongs to
-  expect_true("prior(eta.cl) ~ dnorm(0.3, 0.1)" %in%
-                .lines(lotri({ eta.cl ~ 0.3; om.eta.cl ~ 0.01 })))
+  expect_true(
+    "prior(eta.cl) ~ dnorm(0.3, 0.1)" %in%
+      .lines(lotri({ eta.cl ~ 0.3; om.eta.cl ~ 0.01 }))
+  )
 
   ## whatever spelling went in, the canonical one comes out
-  expect_true("prior(eta.cl, eta.v) ~ invWishart(4)" %in%
-                .lines(lotri({
+  expect_true(
+    "prior(eta.cl, eta.v) ~ invWishart(4)" %in%
+      .lines(lotri({
                   eta.cl + eta.v ~ c(0.1, 0.01, 0.2)
                   prior(eta.cl, eta.v) ~ inv_wishart(4)
-                })))
-  expect_true("prior(tka) ~ dnorm(0, 10)" %in%
-                .lines(lotri({ tka <- 0.45; prior(tka) ~ normal(0, 10) })))
+                }))
+  )
+  expect_true(
+    "prior(tka) ~ dnorm(0, 10)" %in%
+      .lines(lotri({ tka <- 0.45; prior(tka) ~ normal(0, 10) }))
+  )
 
   ## and every rendering is valid input that gives the same thing back
-  for (.m in list(lotri({ tka <- 0.45; prior(tka) ~ dnorm(0, 10) }),
-                  lotri({ eta.ka ~ 0.3; prior(eta.ka) ~ dgamma(2, 1) }),
-                  lotri({ eta.cl + eta.v ~ c(0.1, 0.01, 0.2)
+  for (.m in list(
+    lotri({ tka <- 0.45; prior(tka) ~ dnorm(0, 10) }),
+    lotri({ eta.ka ~ 0.3; prior(eta.ka) ~ dgamma(2, 1) }),
+    lotri({ eta.cl + eta.v ~ c(0.1, 0.01, 0.2)
                           prior(eta.cl, eta.v) ~ invWishart(4) }),
-                  lotri({ eta.cl + eta.v ~ c(0.1, 0.01, 0.2)
+    lotri({ eta.cl + eta.v ~ c(0.1, 0.01, 0.2)
                           eta.ka ~ 0.5
                           ~invWishart(4) }),
-                  lotri({ tcl <- 3; tv <- 4; tcl + tv ~ c(1, 0.01, 1) }),
-                  lotri({ eta.cl ~ 0.3; om.eta.cl ~ 0.01 }))) {
+    lotri({ tcl <- 3; tv <- 4; tcl + tv ~ c(1, 0.01, 1) }),
+    lotri({ eta.cl ~ 0.3; om.eta.cl ~ 0.01 })
+  )) {
     expect_equal(as.data.frame(eval(as.expression(.m))), as.data.frame(.m))
   }
 })
 
 test_that("every supported distribution renders and round trips", {
-
   ## Data driven over the whole table so a new distribution is covered
   ## the moment it is added, and so a wrong `kind`/`nReq` is caught.
 
   ## a wide width.cutoff so a long prior line stays one string rather than
   ## a wrapped one the join would pad with extra spaces
   .lines <- function(m) {
-    vapply(as.list(as.expression(m)[[2]])[-1],
-           function(x) paste(deparse(x, width.cutoff=500L), collapse=" "),
-           character(1), USE.NAMES=FALSE)
+    vapply(
+      as.list(as.expression(m)[[2]])[-1],
+      function(x) paste(deparse(x, width.cutoff = 500L), collapse = " "),
+      character(1),
+      USE.NAMES = FALSE
+    )
   }
 
   .d <- lotriPriorDists()
@@ -810,7 +831,7 @@ test_that("every supported distribution renders and round trips", {
   for (.i in seq_len(nrow(.d))) {
     .nm <- .d$name[.i]
     ## the required arguments only; anything optional is left off
-    .args <- if (.d$nReq[.i] == 0L) "" else paste(rep("2", .d$nReq[.i]), collapse=", ")
+    .args <- if (.d$nReq[.i] == 0L) "" else paste(rep("2", .d$nReq[.i]), collapse = ", ")
     .call <- paste0(.nm, "(", .args, ")")
     ## a matrix or multivariate prior needs a block, everything else a
     ## single unbounded parameter so no support conflicts arise
@@ -825,20 +846,17 @@ test_that("every supported distribution renders and round trips", {
       paste0("{ ", .blk, "; prior(", .tgt, ") ~ ", .call, " }"))))))
 
     ## it renders as the prior that was written
-    expect_true(paste0("prior(", .tgt, ") ~ ", .call) %in% .lines(.m),
-                info=.nm)
+    expect_true(paste0("prior(", .tgt, ") ~ ", .call) %in% .lines(.m), info = .nm)
     ## and what it renders is valid input giving the same thing back
-    expect_equal(as.data.frame(eval(as.expression(.m))), as.data.frame(.m),
-                 info=.nm)
+    expect_equal(as.data.frame(eval(as.expression(.m))), as.data.frame(.m), info = .nm)
   }
 })
 
 test_that("every Stan and camelCase spelling normalizes to the canonical one", {
-
   .d <- lotriPriorDists()
 
   for (.i in seq_len(nrow(.d))) {
-    .args <- if (.d$nReq[.i] == 0L) "" else paste(rep("2", .d$nReq[.i]), collapse=", ")
+    .args <- if (.d$nReq[.i] == 0L) "" else paste(rep("2", .d$nReq[.i]), collapse = ", ")
     if (.d$kind[.i] %in% c("matrix", "multivariate")) {
       .blk <- "eta.a + eta.b ~ c(1, 0.1, 1)"
       .tgt <- "eta.a, eta.b"
@@ -852,16 +870,15 @@ test_that("every Stan and camelCase spelling normalizes to the canonical one", {
     }
     ## the canonical, camelCase and Stan spellings are the same prior
     .canon <- .mk(.d$name[.i])
-    expect_equal(.mk(.d$camelName[.i]), .canon, info=.d$name[.i])
-    expect_equal(.mk(.d$stanName[.i]), .canon, info=.d$stanName[.i])
+    expect_equal(.mk(.d$camelName[.i]), .canon, info = .d$name[.i])
+    expect_equal(.mk(.d$stanName[.i]), .canon, info = .d$stanName[.i])
     if (!is.na(.d$rName[.i])) {
-      expect_equal(.mk(.d$rName[.i]), .canon, info=.d$rName[.i])
+      expect_equal(.mk(.d$rName[.i]), .canon, info = .d$rName[.i])
     }
   }
 })
 
 test_that("the distribution name helpers behave", {
-
   .camel <- .lotri$.lotriSnakeToCamel
 
   expect_equal(.camel("inv_wishart"), "invWishart")
@@ -888,7 +905,6 @@ test_that("the distribution name helpers behave", {
 })
 
 test_that("the prior family classifier separates the omega prior forms", {
-
   .fam <- .lotri$.lotriPriorFamily
 
   expect_equal(.fam("invWishart(4)"), "wishart")
@@ -906,15 +922,12 @@ test_that("the prior family classifier separates the omega prior forms", {
 })
 
 test_that("malformed prior calls are rejected", {
-
   ## a distribution given as a bare name is called with no arguments
-  expect_equal(lotriEst(lotri({ tka <- 1; prior(tka) ~ stdNormal }))$prior,
-               "stdNormal()")
+  expect_equal(lotriEst(lotri({ tka <- 1; prior(tka) ~ stdNormal }))$prior, "stdNormal()")
 
   ## a bare number is not malformed any more -- it is the normal prior
   ## shorthand, the same as `tka ~ 1` means
-  expect_equal(lotriEst(lotri({ tka <- 1; prior(tka) ~ 1 }))$prior,
-               lotriEst(lotri({ tka <- 1; tka ~ 1 }))$prior)
+  expect_equal(lotriEst(lotri({ tka <- 1; prior(tka) ~ 1 }))$prior, lotriEst(lotri({ tka <- 1; tka ~ 1 }))$prior)
 
   ## a namespaced distribution is refused rather than evaluated as a
   ## variance, which is what the shorthand would otherwise make of it
@@ -926,16 +939,13 @@ test_that("malformed prior calls are rejected", {
   expect_error(lotri({ tka <- 1; prior(tka) ~ dnorm(mean=0, mean=1) }))
 
   ## a multivariate prior needs more than one parameter
-  expect_error(lotri({ tka <- 1; prior(tka) ~ multiNormal(0, 1) }),
-               "more than one parameter")
+  expect_error(lotri({ tka <- 1; prior(tka) ~ multiNormal(0, 1) }), "more than one parameter")
 
   ## unit support conflicts with a parameter bounded outside [0, 1]
-  expect_error(lotri({ tka <- c(0, 1, 10); prior(tka) ~ dbeta(2, 2) }),
-               "0, 1")
+  expect_error(lotri({ tka <- c(0, 1, 10); prior(tka) ~ dbeta(2, 2) }), "0, 1")
 })
 
 test_that("priors work on conditioned (IOV) models", {
-
   ## the omega is a list of matrices here rather than one matrix, which
   ## is the path a model with an occasion level takes
   m <- lotri({
@@ -950,14 +960,16 @@ test_that("priors work on conditioned (IOV) models", {
   expect_null(attr(m$occ, "lotriPriors"))
 
   ## and it renders for the list form too
-  .l <- vapply(as.list(as.expression(m)[[2]])[-1],
-               function(x) paste(deparse(x), collapse=" "), character(1),
-               USE.NAMES=FALSE)
+  .l <- vapply(
+    as.list(as.expression(m)[[2]])[-1],
+    function(x) paste(deparse(x), collapse = " "),
+    character(1),
+    USE.NAMES = FALSE
+  )
   expect_true("prior(eta.cl) ~ dgamma(2, 1)" %in% .l)
 })
 
 test_that("labels and priors survive a repeated matrix", {
-
   ## `list(mat, n)` repeats a block, and the per parameter character
   ## attributes have to be repeated with it
   .m <- lotri({ a + b ~ c(1, 0.1, 1) })
@@ -965,16 +977,14 @@ test_that("labels and priors survive a repeated matrix", {
   attr(.m, "lotriPriors") <- c("dgamma(1, 1)", NA_character_)
   class(.m) <- c("lotriFix", class(.m))
 
-  .r <- lotriMat(list(list(.m, 2)), format="ETA[%d]", start=1L)
+  .r <- lotriMat(list(list(.m, 2)), format = "ETA[%d]", start = 1L)
 
   expect_equal(dim(.r)[1], 4L)
   expect_equal(attr(.r, "lotriLabels"), c("La", "Lb", "La", "Lb"))
-  expect_equal(attr(.r, "lotriPriors"),
-               c("dgamma(1, 1)", NA, "dgamma(1, 1)", NA))
+  expect_equal(attr(.r, "lotriPriors"), c("dgamma(1, 1)", NA, "dgamma(1, 1)", NA))
 })
 
 test_that("the prior parsing helpers handle the odd shapes", {
-
   .lhs <- .lotri$.lotriTildeLhsNames
 
   expect_equal(.lhs(quote(a)), "a")
@@ -1016,10 +1026,8 @@ test_that("the prior parsing helpers handle the odd shapes", {
 })
 
 test_that("prior() argument validation", {
-
   ## a quoted name works the same as a bare one
-  expect_equal(lotriEst(lotri({ tka <- 1; prior("tka") ~ dnorm(0, 10) }))$prior,
-               "dnorm(0, 10)")
+  expect_equal(lotriEst(lotri({ tka <- 1; prior("tka") ~ dnorm(0, 10) }))$prior, "dnorm(0, 10)")
 
   ## anything that is not a parameter name is rejected.  These are
   ## reported per line and then re-thrown as the generic "lotri syntax
@@ -1039,7 +1047,6 @@ test_that("prior() argument validation", {
 })
 
 test_that("deparsing tolerates a prior it cannot parse", {
-
   ## a hand mangled prior must not stop the object printing; it is
   ## simply not treated as a multivariate one
   m <- lotri({ tka <- 1; tcl <- 2; prior(tka) ~ dnorm(0, 10) })
@@ -1050,163 +1057,204 @@ test_that("deparsing tolerates a prior it cannot parse", {
   ## it warns and leaves that prior out rather than refusing to print
   expect_warning(as.expression(m), "cannot deparse")
   .e <- suppressWarnings(as.expression(m))
-  .l <- vapply(as.list(.e[[2]])[-1],
-               function(x) paste(deparse(x), collapse=" "), character(1),
-               USE.NAMES=FALSE)
-  expect_false(any(grepl("prior(", .l, fixed=TRUE)))
+  .l <- vapply(as.list(.e[[2]])[-1], function(x) paste(deparse(x), collapse = " "), character(1), USE.NAMES = FALSE)
+  expect_false(any(grepl("prior(", .l, fixed = TRUE)))
   ## the rest of the block is still there
   expect_true("tka <- 1" %in% .l)
 })
 
 test_that("two priors reaching the same parameter is an error", {
-
   ## the same parameter named by two different prior statements, so the
   ## duplicate is only found once they are resolved
-  expect_error(lotri({
+  expect_error(
+    lotri({
     tka <- 1
     tcl <- 2
     prior(tka, tcl) ~ multiNormal(0, lotri(tka + tcl ~ c(1, 0.1, 1)))
     prior(tka) ~ dnorm(0, 10)
-  }), "more than one prior")
+  }),
+    "more than one prior"
+  )
 
-  expect_error(lotri({
+  expect_error(
+    lotri({
     eta.a + eta.b ~ c(1,
                       0.1, 1)
     prior(eta.a, eta.b) ~ lkjCorr(2)
     prior(eta.a) ~ dgamma(1, 1)
-  }), "more than one prior")
+  }),
+    "more than one prior"
+  )
 })
 
 test_that("a prior on a fixed parameter is an error", {
-
   ## a fixed parameter is a constant, so a prior on it is refused where
   ## the model is defined instead of surfacing downstream in whatever
   ## consumes the priors (nlmixr2/lotri#52)
-  expect_error(lotri({
+  expect_error(
+    lotri({
     tka <- fix(1)
     prior(tka) ~ dnorm(1, 1)
-  }), "fixed parameter.*'tka'")
+  }),
+    "fixed parameter.*'tka'"
+  )
 
   ## the multivariate case from the original report
-  expect_error(lotri({
+  expect_error(
+    lotri({
     tcl <- 1
     tv <- fix(3)
     prior(tcl, tv) ~ multiNormal(c(1, 3), lotri(tcl + tv ~ c(1, 0.01, 1)))
-  }), "fixed parameter.*'tv'")
+  }),
+    "fixed parameter.*'tv'"
+  )
 
   ## a fixed omega element
-  expect_error(lotri({
+  expect_error(
+    lotri({
     eta.cl ~ fix(0.1)
     om.eta.cl ~ 0.01
-  }), "fixed parameter.*'eta.cl'")
+  }),
+    "fixed parameter.*'eta.cl'"
+  )
 
   ## a fixed member of an omega block prior
-  expect_error(lotri({
+  expect_error(
+    lotri({
     eta.a + eta.b ~ c(1,
                       0.1, fix(1))
     prior(eta.a, eta.b) ~ lkjCorr(2)
-  }), "fixed parameter.*'eta.b'")
+  }),
+    "fixed parameter.*'eta.b'"
+  )
 
   ## a joint theta + om. block naming a fixed omega element
-  expect_error(lotri({
+  expect_error(
+    lotri({
     tcl <- 1
     eta.cl ~ fix(0.1)
     prior(tcl, om.eta.cl) ~ multiNormal(c(1, 0.1),
                                         lotri(tcl + om.eta.cl ~ c(1, 0.01, 1)))
-  }), "fixed parameter.*'om.eta.cl'")
+  }),
+    "fixed parameter.*'om.eta.cl'"
+  )
 
   ## a joint theta + om. block naming a fixed theta element
-  expect_error(lotri({
+  expect_error(
+    lotri({
     tcl <- fix(1)
     eta.cl ~ 0.1
     prior(tcl, om.eta.cl) ~ multiNormal(c(1, 0.1),
                                         lotri(tcl + om.eta.cl ~ c(1, 0.01, 1)))
-  }), "fixed parameter.*'tcl'")
+  }),
+    "fixed parameter.*'tcl'"
+  )
 
   ## a fixed covariance within a block prior, even though every
   ## variance in the block is free
-  expect_error(lotri({
+  expect_error(
+    lotri({
     eta.a + eta.b ~ c(1,
                       fix(0.1), 1)
     prior(eta.a, eta.b) ~ lkjCorr(2)
-  }), "fixed covariance")
+  }),
+    "fixed covariance"
+  )
 
   ## the same, but the block is the omega side of a joint theta + om.
   ## block prior
-  expect_error(lotri({
+  expect_error(
+    lotri({
     tcl <- 1
     eta.a + eta.b ~ c(1,
                       fix(0.1), 1)
     prior(tcl, om.eta.a, om.eta.b) ~ multiNormal(c(1, 1, 1),
       lotri(tcl + om.eta.a + om.eta.b ~ c(1, 0.01,1, 0.01,0.01,1)))
-  }), "fixed covariance")
+  }),
+    "fixed covariance"
+  )
 
   ## the implicit `~invWishart(4)` shorthand applies to every free
   ## block, so it quietly skips one that is entirely fixed instead of
   ## erroring the way an explicit `prior()` on it would
-  expect_error(lotri({
+  expect_error(
+    lotri({
     eta.a ~ 0.1
     eta.b ~ fix(0.1)
     ~invWishart(4)
-  }), NA)
+  }),
+    NA
+  )
 
   ## ... but it still refuses a block that is only partially fixed,
   ## since the joint density it implies cannot hold a constant
-  expect_error(lotri({
+  expect_error(
+    lotri({
     eta.a + eta.b ~ c(1,
                       0.1, fix(1))
     ~invWishart(4)
-  }), "fixed parameter.*'eta.b'")
+  }),
+    "fixed parameter.*'eta.b'"
+  )
 
   ## ... and a block whose variances are fixed but whose covariance is
   ## still free is partially fixed too, not "entirely fixed" -- it
   ## still has to error rather than being silently skipped
-  expect_error(lotri({
+  expect_error(
+    lotri({
     eta.a + eta.b ~ c(fix(1),
                       0.1, fix(1))
     ~invWishart(4)
-  }), "fixed parameter")
+  }),
+    "fixed parameter"
+  )
 
   ## ... and the other way around: free variances but a fixed
   ## covariance is caught by the shorthand too, not just an explicit
   ## `prior()` on the block
-  expect_error(lotri({
+  expect_error(
+    lotri({
     eta.a + eta.b ~ c(1,
                       fix(0.1), 1)
     ~invWishart(4)
-  }), "fixed covariance")
+  }),
+    "fixed covariance"
+  )
 
   ## `rcm=TRUE` reorders the matrix, but the fix lookup is by name, not
   ## position, so it still finds the right parameter after reordering
-  expect_error(lotri({
+  expect_error(
+    lotri({
     eta.a + eta.b + eta.c ~ c(1,
                               0, 1,
                               0.1, 0, fix(1))
     prior(eta.c) ~ dnorm(0, 1)
-  }, rcm=TRUE), "fixed parameter.*'eta.c'")
+  }, rcm=TRUE),
+    "fixed parameter.*'eta.c'"
+  )
 
   ## a non-fixed parameter still works
-  expect_error(lotri({
+  expect_error(
+    lotri({
     tka <- 1
     prior(tka) ~ dnorm(1, 1)
-  }), NA)
+  }),
+    NA
+  )
 })
 
 test_that("the fixed-lookup helpers ignore a name outside the matrix", {
-
   ## these are only ever called with names drawn from the matrix itself,
   ## but a name that is not among its dimnames is a "not fixed" for all
   ## three helpers rather than an indexing error
   m <- lotri({ eta.a ~ fix(0.1); eta.b ~ 0.2 })
 
-  expect_equal(.lotri$.lotriMatFixedDiag(m, c("eta.a", "nope")),
-               c(TRUE, FALSE))
+  expect_equal(.lotri$.lotriMatFixedDiag(m, c("eta.a", "nope")), c(TRUE, FALSE))
   expect_false(.lotri$.lotriMatFixedCov(m, c("eta.a", "nope")))
   expect_false(.lotri$.lotriMatEntirelyFixed(m, c("eta.a", "nope")))
 })
 
 test_that("an older seven column lotriEst still concatenates", {
-
   ## a `lotriEst` built before the prior column existed has to keep
   ## working when blocks are combined, since the C code reads it
   ## positionally
@@ -1228,18 +1276,17 @@ test_that("an older seven column lotriEst still concatenates", {
 })
 
 test_that("printing shows the priors on a matrix", {
-
   m <- lotri({
     eta.cl + eta.v ~ c(0.1,
                        0.01, 0.2)
     prior(eta.cl, eta.v) ~ invWishart(4)
   })
 
-  .out <- paste(capture.output(print(m)), collapse="\n")
-  expect_true(grepl("prior distributions", .out, fixed=TRUE))
-  expect_true(grepl("invWishart(4)", .out, fixed=TRUE))
+  .out <- paste(capture.output(print(m)), collapse = "\n")
+  expect_true(grepl("prior distributions", .out, fixed = TRUE))
+  expect_true(grepl("invWishart(4)", .out, fixed = TRUE))
   ## and the attribute is not dumped raw underneath the matrix
-  expect_false(grepl("attr(,\"lotriPriors\")", .out, fixed=TRUE))
+  expect_false(grepl("attr(,\"lotriPriors\")", .out, fixed = TRUE))
 
   ## a model with estimates as well still prints both parts
   m2 <- lotri({
@@ -1248,13 +1295,12 @@ test_that("printing shows the priors on a matrix", {
     prior(tka) ~ dnorm(0, 10)
     prior(eta.ka) ~ dgamma(2, 1)
   })
-  .out2 <- paste(capture.output(print(m2)), collapse="\n")
-  expect_true(grepl("dnorm(0, 10)", .out2, fixed=TRUE))
-  expect_true(grepl("dgamma(2, 1)", .out2, fixed=TRUE))
+  .out2 <- paste(capture.output(print(m2)), collapse = "\n")
+  expect_true(grepl("dnorm(0, 10)", .out2, fixed = TRUE))
+  expect_true(grepl("dgamma(2, 1)", .out2, fixed = TRUE))
 })
 
 test_that("labels follow the matrix when rcm re-orders it", {
-
   ## regression: the labels used to stay in parse order while the
   ## matrix was permuted, so they ended up on the wrong parameters
   m <- lotri({
@@ -1275,7 +1321,6 @@ test_that("labels follow the matrix when rcm re-orders it", {
 })
 
 test_that("labels survive combining lotri matrices", {
-
   ## regression: `lotriLabels` used to be dropped by the C concatenation
   a <- lotri({ e1 ~ 0.1; label("L1") })
   b <- lotri({ e2 ~ 0.2; label("L2") })
@@ -1286,7 +1331,6 @@ test_that("labels survive combining lotri matrices", {
 })
 
 test_that("a joint theta + om. block is one multivariate normal", {
-
   ## A NONMEM TNPRI model puts the thetas and the omega elements in one
   ## variance matrix, so a prior block may name both.
   m <- lotri({
@@ -1296,8 +1340,7 @@ test_that("a joint theta + om. block is one multivariate normal", {
                         0.002, 0.005)
   })
 
-  .expect <- paste0("multiNormal(c(1, 0.3), ",
-                    "lotri(tcl + om.eta.cl ~ c(0.01, 0.002, 0.005)))")
+  .expect <- paste0("multiNormal(c(1, 0.3), ", "lotri(tcl + om.eta.cl ~ c(0.01, 0.002, 0.005)))")
 
   ## stored once, on the first name of the block, since the block spans
   ## both the estimates and the omega
@@ -1326,37 +1369,48 @@ test_that("a joint theta + om. block is one multivariate normal", {
 })
 
 test_that("a joint prior is checked like any other", {
-
   ## an om. name still has to be a real between subject variability
-  expect_error(lotri({
+  expect_error(
+    lotri({
     tcl <- 1
     eta.cl ~ 0.3
     tcl + om.eta.nope ~ c(0.01,
                           0.002, 0.005)
-  }), "unknown omega element")
+  }),
+    "unknown omega element"
+  )
 
   ## degrees of freedom and a normal prior on the omegas stay
   ## alternatives, even when the normal one arrives in a joint block
-  expect_error(lotri({
+  expect_error(
+    lotri({
     tcl <- 1
     eta.cl ~ 0.3
     prior(eta.cl) ~ invWishart(4)
     tcl + om.eta.cl ~ c(0.01,
                         0.002, 0.005)
-  }), "alternatives, not additions")
+  }),
+    "alternatives, not additions"
+  )
 
   ## a line that is entirely one kind is not joint, and keeps its own
   ## meaning
-  expect_equal(lotriEst(lotri({ tcl <- 1; tv <- 2; tcl + tv ~ c(1, 0.1, 1) }))$prior[1],
-               "multiNormal(c(1, 2), lotri(tcl + tv ~ c(1, 0.1, 1)))")
-  expect_equal(attr(lotri({
+  expect_equal(
+    lotriEst(lotri({ tcl <- 1; tv <- 2; tcl + tv ~ c(1, 0.1, 1) }))$prior[1],
+    "multiNormal(c(1, 2), lotri(tcl + tv ~ c(1, 0.1, 1)))"
+  )
+  expect_equal(
+    attr(
+      lotri({
     eta.cl + eta.v ~ c(0.3,
                        0.01, 0.1)
     om.eta.cl + om.eta.v ~ c(0.01,
                              0.001, 0.02)
-  }), "lotriPriors")[1],
-  paste0("multiNormal(c(0.3, 0.1), lotri(om.eta.cl + om.eta.v ~ ",
-         "c(0.01, 0.001, 0.02)))"))
+  }),
+      "lotriPriors"
+    )[1],
+    paste0("multiNormal(c(0.3, 0.1), lotri(om.eta.cl + om.eta.v ~ ", "c(0.01, 0.001, 0.02)))")
+  )
 
   ## a `+` joint prior block is not mistaken for the next row of an
   ## ordinary matrix already open in the main environment, even when its
@@ -1371,13 +1425,13 @@ test_that("a joint prior is checked like any other", {
                              0.001, 0.02)
   })
   expect_equal(dim(m), c(2L, 2L))
-  expect_equal(attr(m, "lotriPriors")[1],
-               paste0("multiNormal(c(0.3, 0.1), lotri(om.eta.cl + om.eta.v ~ ",
-                      "c(0.01, 0.001, 0.02)))"))
+  expect_equal(
+    attr(m, "lotriPriors")[1],
+    paste0("multiNormal(c(0.3, 0.1), lotri(om.eta.cl + om.eta.v ~ ", "c(0.01, 0.001, 0.02)))")
+  )
 })
 
 test_that("a single completed row never counts as an open matrix block for the tie check", {
-
   ## a bare scalar row (`eta.c ~ 0.3`) always leaves `env$lastN` at 1,
   ## whether or not anything is actually still open for continuation --
   ## it is not, here, since `eta.c` is already a finished 1x1 block on
@@ -1396,7 +1450,6 @@ test_that("a single completed row never counts as an open matrix block for the t
 })
 
 test_that("a row that could continue either an omega prior chain or the open matrix errors instead of guessing", {
-
   ## `om.eta.v ~ c(...)` here is a valid next row of *both* the
   ## `om.eta.a`/`om.eta.b` prior chain (its own running count of 2) and
   ## the `tka`/`tcl` matrix that has genuinely been built up row by row
@@ -1422,7 +1475,6 @@ test_that("a row that could continue either an omega prior chain or the open mat
 })
 
 test_that("an om.-named matrix row is unaffected by an unrelated omega prior chain earlier in the block", {
-
   ## a hand written `om.` prior chain and a real matrix whose own
   ## parameter happens to be `om.`-prefixed (as `lotriAsExpression()`
   ## writes for the omega element of a combined theta+omega covariance
@@ -1447,7 +1499,6 @@ test_that("an om.-named matrix row is unaffected by an unrelated omega prior cha
 })
 
 test_that("an unevaluable omega row right hand side stays ambiguous in favor of the prior", {
-
   ## when the row length cannot even be determined (here, a `c(...)`
   ## element that references an undefined name), the row cannot be
   ## checked against either block's running count. It defaults to the
@@ -1467,7 +1518,6 @@ test_that("an unevaluable omega row right hand side stays ambiguous in favor of 
 })
 
 test_that("an omega row whose length fits neither block still defaults to the prior", {
-
   ## `om.eta.a`'s target (`eta.a`) is a real, declared eta, so the row
   ## is a plausible prior row, but its length (3) matches neither the
   ## prior chain's own running count (a fresh chain expects 1) nor the
@@ -1490,7 +1540,6 @@ test_that("an omega row whose length fits neither block still defaults to the pr
 })
 
 test_that("a joint block may name omega elements that are not one block", {
-
   ## A pure `om.` prior has to be exactly one covariance block, because
   ## it is a prior on that block.  A joint block is not -- a TNPRI
   ## variance matrix covers whichever thetas and omega elements it likes
@@ -1504,15 +1553,18 @@ test_that("a joint block may name omega elements that are not one block", {
                                    0.001, 0.0005, 0.004)
   })
 
-  expect_equal(lotriEst(m)$prior,
-               paste0("multiNormal(c(1, 0.3, 0.1), lotri(tcl + om.eta.cl + ",
-                      "om.eta.v ~ c(0.01, 0.002, 0.005, 0.001, 5e-04, 0.004)))"))
+  expect_equal(
+    lotriEst(m)$prior,
+    paste0(
+      "multiNormal(c(1, 0.3, 0.1), lotri(tcl + om.eta.cl + ",
+      "om.eta.v ~ c(0.01, 0.002, 0.005, 0.001, 5e-04, 0.004)))"
+    )
+  )
   ## the omega itself is untouched -- only a prior was added
   expect_equal(unname(diag(as.matrix(m))), c(0.3, 0.1))
 })
 
 test_that("a joint block may start at the om. name", {
-
   ## The block is stored on its *first* name, and that name can be either
   ## kind -- so which of the two places it lands in depends on the order
   ## the block was written in.
@@ -1523,8 +1575,7 @@ test_that("a joint block may start at the om. name", {
                         0.002, 0.02)
   })
 
-  .expect <- paste0("multiNormal(c(0.3, 1), ",
-                    "lotri(om.eta.cl + tcl ~ c(0.005, 0.002, 0.02)))")
+  .expect <- paste0("multiNormal(c(0.3, 1), ", "lotri(om.eta.cl + tcl ~ c(0.005, 0.002, 0.02)))")
 
   ## it went to the omega rather than to the estimate table
   expect_equal(attr(m, "lotriPriors")[1], .expect)
@@ -1535,36 +1586,48 @@ test_that("a joint block may start at the om. name", {
 })
 
 test_that("a joint block cannot double up on the name it is stored at", {
-
   ## whichever of the two places the block lands in, something already
   ## there is a duplicate rather than an overwrite
-  expect_error(lotri({
+  expect_error(
+    lotri({
     tcl <- 1
     eta.cl ~ 0.3
     tcl ~ 4
     tcl + om.eta.cl ~ c(0.02,
                         0.002, 0.005)
-  }), "more than one prior given for 'tcl'")
+  }),
+    "more than one prior given for 'tcl'"
+  )
 
-  expect_error(lotri({
+  expect_error(
+    lotri({
     tcl <- 1
     eta.cl ~ 0.3
     om.eta.cl ~ 0.01
     om.eta.cl + tcl ~ c(0.005,
                         0.002, 0.02)
-  }), "more than one prior given for 'om.eta.cl'")
+  }),
+    "more than one prior given for 'om.eta.cl'"
+  )
 })
 
 test_that("the covariance names come back out of a stored prior", {
-
   ## how the members of a block are recovered, since a block prior is
   ## stored only once
-  expect_equal(.lotri$.lotriPriorCovNames(
-    "multiNormal(0, lotri(a + b ~ c(1, 0.1, 1)))"), c("a", "b"))
+  expect_equal(
+    .lotri$.lotriPriorCovNames(
+      "multiNormal(0, lotri(a + b ~ c(1, 0.1, 1)))"
+    ),
+    c("a", "b")
+  )
 
   ## `lotri({...})` and `lotri(...)` both occur
-  expect_equal(.lotri$.lotriPriorCovNames(
-    "multiNormal(0, lotri({a + b ~ c(1, 0.1, 1)}))"), c("a", "b"))
+  expect_equal(
+    .lotri$.lotriPriorCovNames(
+      "multiNormal(0, lotri({a + b ~ c(1, 0.1, 1)}))"
+    ),
+    c("a", "b")
+  )
 
   ## anything that is not a covariance carrying prior has no names
   expect_null(.lotri$.lotriPriorCovNames(NA_character_))
@@ -1575,7 +1638,6 @@ test_that("the covariance names come back out of a stored prior", {
 })
 
 test_that("a joint block finds its omega in a later nesting level", {
-
   ## A multi level model has one matrix per level, so the `om.` name is
   ## often not in the first one -- the search has to walk past it.
   m <- lotri({
@@ -1586,57 +1648,58 @@ test_that("a joint block finds its omega in a later nesting level", {
                        0.002, 0.005)
   })
 
-  expect_equal(lotriEst(m)$prior,
-               paste0("multiNormal(c(1, 0.1), ",
-                      "lotri(tcl + om.eta.o ~ c(0.02, 0.002, 0.005)))"))
+  expect_equal(lotriEst(m)$prior, paste0("multiNormal(c(1, 0.1), ", "lotri(tcl + om.eta.o ~ c(0.02, 0.002, 0.005)))"))
 
   ## the omegas themselves are untouched
   expect_equal(as.numeric(m$id), 0.3)
   expect_equal(as.numeric(m$occ), 0.1)
 
   ## an om. name that is in no level at all is still an error
-  expect_error(lotri({
+  expect_error(
+    lotri({
     tcl <- 1
     eta.cl ~ 0.3 | id
     eta.o ~ 0.1 | occ
     tcl + om.eta.nope ~ c(0.02,
                           0.002, 0.005)
-  }), "unknown omega element")
+  }),
+    "unknown omega element"
+  )
 })
 
 test_that("prior() can take the normal prior shorthand", {
-
   ## `prior(tka) ~ 0.1` means what `tka ~ 0.1` means.  The bare form
   ## cannot be used everywhere -- piping onto a model already reads
   ## `tka ~ 0.1` as changing the estimate -- so the `prior()` flag gives
   ## the shorthand a spelling that works there too.
   .p <- function(m) {
-    .e <- lotriEst(m); .a <- attr(m, "lotriPriors")
+    .e <- lotriEst(m)
+    .a <- attr(m, "lotriPriors")
     c(if (!is.null(.e)) .e$prior, if (!is.null(.a)) .a)
   }
 
-  expect_equal(.p(lotri({ tka <- 1; prior(tka) ~ 0.1 })),
-               .p(lotri({ tka <- 1; tka ~ 0.1 })))
+  expect_equal(.p(lotri({ tka <- 1; prior(tka) ~ 0.1 })), .p(lotri({ tka <- 1; tka ~ 0.1 })))
 
   ## a correlated group is the same multivariate normal either way
-  expect_equal(.p(lotri({ tcl <- 1; tv <- 2; prior(tcl, tv) ~ c(1, 0.01, 1) })),
-               .p(lotri({ tcl <- 1; tv <- 2; tcl + tv ~ c(1, 0.01, 1) })))
+  expect_equal(
+    .p(lotri({ tcl <- 1; tv <- 2; prior(tcl, tv) ~ c(1, 0.01, 1) })),
+    .p(lotri({ tcl <- 1; tv <- 2; tcl + tv ~ c(1, 0.01, 1) }))
+  )
 
   ## and an uncorrelated one becomes independent normals, as it does bare
-  expect_equal(.p(lotri({ tcl <- 1; tv <- 2; prior(tcl, tv) ~ c(1, 0, 1) })),
-               .p(lotri({ tcl <- 1; tv <- 2; tcl + tv ~ c(1, 0, 1) })))
+  expect_equal(
+    .p(lotri({ tcl <- 1; tv <- 2; prior(tcl, tv) ~ c(1, 0, 1) })),
+    .p(lotri({ tcl <- 1; tv <- 2; tcl + tv ~ c(1, 0, 1) }))
+  )
 
   ## the transformations work here too
-  expect_equal(lotriEst(lotri({ tka <- 1; prior(tka) ~ sd(2) }))$prior,
-               "dnorm(1, 2)")
+  expect_equal(lotriEst(lotri({ tka <- 1; prior(tka) ~ sd(2) }))$prior, "dnorm(1, 2)")
 
   ## an `om.` name puts it on the omega element, as the bare form does
-  expect_equal(.p(lotri({ eta.cl ~ 0.3; prior(om.eta.cl) ~ 0.01 })),
-               .p(lotri({ eta.cl ~ 0.3; om.eta.cl ~ 0.01 })))
+  expect_equal(.p(lotri({ eta.cl ~ 0.3; prior(om.eta.cl) ~ 0.01 })), .p(lotri({ eta.cl ~ 0.3; om.eta.cl ~ 0.01 })))
 
   ## a distribution on the right is still a distribution
-  expect_equal(lotriEst(lotri({ tka <- 1; prior(tka) ~ dnorm(0, 10) }))$prior,
-               "dnorm(0, 10)")
+  expect_equal(lotriEst(lotri({ tka <- 1; prior(tka) ~ dnorm(0, 10) }))$prior, "dnorm(0, 10)")
 
   ## and the variance is still checked
   expect_error(lotri({ tka <- 1; prior(tka) ~ 0 }))
@@ -1644,7 +1707,6 @@ test_that("prior() can take the normal prior shorthand", {
 })
 
 test_that("the two omega spellings agree under the shorthand", {
-
   ## `prior(eta.cl)` and `prior(om.eta.cl)` are documented as the same
   ## thing, so the shorthand has to center both on the omega value
   .a <- lotri({ eta.cl ~ 0.3; prior(om.eta.cl) ~ 0.01 })
@@ -1654,24 +1716,29 @@ test_that("the two omega spellings agree under the shorthand", {
 })
 
 test_that("prior() shorthand builds a block line by line", {
-
   ## the per row line form works under `prior()` too, so a covariance
   ## can be built up the same way the bare form builds one
-  .p <- function(m) { .e <- lotriEst(m); c(if (!is.null(.e)) .e$prior, attr(m, "lotriPriors")) }
+  .p <- function(m) {
+    .e <- lotriEst(m)
+    c(if (!is.null(.e)) .e$prior, attr(m, "lotriPriors"))
+  }
 
   expect_equal(
     .p(lotri({ tcl <- 3; tv <- 4; prior(tcl) ~ 1; prior(tv) ~ c(0.001, 1) })),
-    .p(lotri({ tcl <- 3; tv <- 4; tcl ~ 1; tv ~ c(0.001, 1) })))
+    .p(lotri({ tcl <- 3; tv <- 4; tcl ~ 1; tv ~ c(0.001, 1) }))
+  )
 
   ## and it is the same block the plus form gives
   expect_equal(
     .p(lotri({ tcl <- 3; tv <- 4; prior(tcl) ~ 1; prior(tv) ~ c(0.001, 1) })),
-    .p(lotri({ tcl <- 3; tv <- 4; prior(tcl, tv) ~ c(1, 0.001, 1) })))
+    .p(lotri({ tcl <- 3; tv <- 4; prior(tcl, tv) ~ c(1, 0.001, 1) }))
+  )
 
   ## unrelated single parameters do not get pulled into one block
   expect_equal(
     lotriEst(lotri({ tka <- 1; tcl <- 3; prior(tka) ~ 0.1; prior(tcl) ~ 1 }))$prior,
-    c("dnorm(1, 0.316227766016838)", "dnorm(3, 1)"))
+    c("dnorm(1, 0.316227766016838)", "dnorm(3, 1)")
+  )
 
   ## a block can be built alongside a scalar prior
   .m <- lotri({
@@ -1692,5 +1759,6 @@ test_that("prior() shorthand builds a block line by line", {
                prior(om.eta.v) ~ c(0.001, 0.02) })),
     .p(lotri({ eta.cl + eta.v ~ c(0.3, 0.01, 0.1)
                om.eta.cl ~ 0.01
-               om.eta.v ~ c(0.001, 0.02) })))
+               om.eta.v ~ c(0.001, 0.02) }))
+  )
 })

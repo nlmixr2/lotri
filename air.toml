@@ -1,0 +1,9 @@
+[format]
+line-width = 120
+indent-width = 2
+# lotri modelling DSL: formatting these calls would split the
+# `eta.cl ~ 0.1; eta.v ~ 0.2` one-liners onto separate lines, rewrite
+# `eta.cl + eta.v ~ c(0.1, 0.01, 0.1)` lower-triangle layouts and the
+# `label("...")` idiom, so leave them as written.  `ini()`/`model()` hold
+# nlmixr2 model code and `quote()` holds DSL passed to the parser.
+skip = ["lotri", "ini", "model", "quote"]
