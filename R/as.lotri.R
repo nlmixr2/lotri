@@ -93,6 +93,19 @@ as.lotri.matrix <- function(x, ..., default = "") {
       .hasLab <- TRUE
     }
   }
+  ## a declared eta distribution is diagonal only, so it rebuilds exactly
+  ## like `lotriLabels` does
+  if (any(names(x) == "etaDist")) {
+    x$etaDist <- as.character(x$etaDist)
+    .etaDists <- vapply(seq_len(dim(.mat)[1]),
+                        function(.i) {
+                          x$etaDist[x$neta1 == .i & x$neta2 == .i]
+                        }, character(1), USE.NAMES = FALSE)
+    if (!all(is.na(.etaDists))) {
+      attr(.mat, "lotriEtaDists") <- .etaDists
+      .hasLab <- TRUE
+    }
+  }
   ## rebuild the `same()` linkage from the condition column.  Offsets are
   ## derived from the DIAGONAL rows; an off diagonal row of a repeated
   ## block carries the same offset by construction.

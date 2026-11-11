@@ -343,7 +343,8 @@ lotriEst <- function(x, drop=FALSE) {
     ## default methods.  For `lotriSame` that means losing the
     ## repetition, i.e. a different number of estimated parameters.
     if (any(vapply(c("lotriFix", "lotriUnfix", "lotriSame",
-                     "lotriLabels", "lotriPriors", "lotriOffDiagPriors"),
+                     "lotriLabels", "lotriPriors", "lotriOffDiagPriors",
+                     "lotriEtaDists"),
                    function(.a) !is.null(attr(y, .a, exact=TRUE)),
                    logical(1), USE.NAMES=FALSE))) {
       return(y)
