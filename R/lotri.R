@@ -2773,6 +2773,20 @@ NULL
   }
   list(call=call, x=x, fullCnd=.fullCnd, fullCndLst=.fullCndLst)
 }
+#' Shift the row/column indices of a matrix data frame by an offset
+#'
+#' @param df data frame with `i` and `j` index columns (or `NULL`)
+#' @param off offset to add to both indices
+#' @return the shifted data frame
+#' @noRd
+#' @author Matthew L. Fidler
+.lotriShiftDf <- function(df, off) {
+  if (!is.null(df) && off > 0L) {
+    df$i <- df$i + off
+    df$j <- df$j + off
+  }
+  df
+}
 #' Expand conditionals in lotri calls and combine matrices
 #'
 #' This handles the conditionals in lotri and combines the matrices
@@ -2820,13 +2834,8 @@ NULL
     ## there.  Appending them unshifted wrote them on top, which came out
     ## as "length of 'dimnames' [1] not equal to array extent" for any
     ## program that used both `| id` and an unconditioned line
-    .off <- length(.env2$names)
-    .dfDefault <- env$df
-    if (!is.null(.dfDefault) && .off > 0L) {
-      .dfDefault$i <- .dfDefault$i + .off
-      .dfDefault$j <- .dfDefault$j + .off
-    }
-    .env2$df <- rbind(.env2$df, .dfDefault)
+    .env2$df <- rbind(.env2$df,
+                      .lotriShiftDf(env$df, length(.env2$names)))
     .env2$lastN <- 0
     ## carry the `same()` offsets across with the rows they describe.
     ## Padding has to happen BEFORE `names` is extended, since the
