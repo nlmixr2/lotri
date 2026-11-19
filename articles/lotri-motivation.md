@@ -179,12 +179,9 @@ mb <- microbenchmark(matf(testList),lotriMat(testList))
 
 print(mb)
 #> Unit: microseconds
-#>                expr      min        lq       mean   median        uq      max
-#>      matf(testList) 1171.180 1212.2615 1434.06047 1269.026 1733.9570 6795.359
-#>  lotriMat(testList)    3.495    4.0865    7.33399    7.421    8.5225   27.050
-#>  neval
-#>    100
-#>    100
+#>                expr     min       lq      mean   median      uq      max neval
+#>      matf(testList) 855.990 881.9190 998.00640 912.6925 964.295 4806.673   100
+#>  lotriMat(testList)   2.119   2.8535   6.05186   5.2040   8.943   20.511   100
 autoplot(mb)
 #> Warning: `aes_string()` was deprecated in ggplot2 3.0.0.
 #> ℹ Please use tidy evaluation idioms with `aes()`.

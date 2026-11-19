@@ -2,6 +2,8 @@
 
 ## lotri 1.0.5
 
+CRAN release: 2026-09-11
+
 ### New features
 
 - A block can now be repeated with `same()`, which is NONMEM’s
