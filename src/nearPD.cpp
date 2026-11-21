@@ -1,16 +1,16 @@
 // https://github.com/cran/Matrix/blob/master/R/nearPD.R
 // Contributors Martin Maechler, Jens Oehlschlägel
 #define ARMA_WARN_LEVEL 1
-#include <armadillo4r.hpp>
+#include <RcppArmadillo/Lightest>
 // std::fill/std::max, std::abs and std::size_t are used directly below.  They
-// happen to arrive through <armadillo4r.hpp> today, but libc++ keeps dropping
-// transitive includes (clang 23's libc++ is where that bit CRAN), so name them.
+// happen to arrive through <RcppArmadillo/Lightest> today, but libc++ keeps
+// dropping transitive includes (clang 23's libc++ is where that bit CRAN), so name them.
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <exception> // std::exception, used by the END_RCPP catch chain
+#include <R_ext/Arith.h> // R_PosInf / R_NegInf
 #include "nearPD.h"
-
-#include "cpp4r/declarations.hpp"
 //#include <R_ext/Visibility.h>
 
 
@@ -76,6 +76,38 @@ bool lotriNearPDarma(mat &ret, mat x
     ret = x;
     return true;
   }
+
+  // Fast path: an already (symmetrized) positive-definite matrix is its own
+  // nearest positive-definite matrix, so the iterative Higham loop and its
+  // posdefify eigen step can be skipped.  This is behavior-identical only when
+  // neither of the algorithm's two spectral steps would actually change H:
+  //  - the loop projects out eigenvalues at or below eig_tol*d[0], and
+  //  - (with do2eigen / only.values) it clamps those below posd_tol*d[0].
+  // If either would trigger, fall through to the full algorithm.
+  {
+    mat H = 0.5 * (x + x.t());
+    mat Hchol;
+    if (chol(Hchol, H)) {
+      vec d;
+      mat Q;
+      if (!eig_symR(d, Q, H)) return false;
+      // d is reversed, so d[0] is the largest and d(n-1) the smallest
+      if (d(n - 1) <= eig_tol * d[0]) {
+        goto not_fast_path; // a small eigenvalue would be projected out
+      }
+      if ((only_values || do2eigen) && d(n - 1) < posd_tol * d[0]) {
+        goto not_fast_path; // nearly singular: keep original clamping
+      }
+      if (only_values) {
+        ret = d;
+        return true;
+      }
+      // keepDiag is satisfied trivially: sympart preserves the diagonal
+      ret = H;
+      return true;
+    }
+  }
+not_fast_path:
   vec diagX0;
   if (keepDiag) {
     diagX0 = x.diag();
@@ -94,7 +126,6 @@ bool lotriNearPDarma(mat &ret, mat x
       R = Y - D_S;
     }
     vec d;
-    mat Qin;
     mat Q;
     if(doDykstra) {
       B=R;
@@ -150,6 +181,8 @@ bool lotriNearPDarma(mat &ret, mat x
           }
           X = Q * Q2;
           vec D = sqrt(lotriPmaxC(Eps, o_diag)/X.diag());
+          // keep the original row-wise scaling (X[a,b] *= D[a]*D[b] is NOT
+          // what the ported Matrix::nearPD does; it scales each row by D^2).
           mat DX(n, n);
           mat D2(n, n);
           for (arma::uword i = 0; i < n; ++i)  {
@@ -236,29 +269,26 @@ extern "C" SEXP _lotriNearPD_(SEXP xS
   double posd_tol = REAL(posd_tolS)[0];
   int maxit = INTEGER(maxitS)[0];
   int trace = INTEGER(traceS)[0];
-  SEXP mat;
-  if (only_values) {
-    PROTECT(mat = Rf_allocVector(REALSXP, n));
-  } else {
-    PROTECT(mat = Rf_allocMatrix(REALSXP, n, n));
-  }
-  double *mat_ptr = REAL(mat);
-  double *x_ptr = REAL(xS);
-  try {
+  BEGIN_RCPP
+    Rcpp::Shield<SEXP> mat(only_values ? (SEXP)Rf_allocVector(REALSXP, n)
+                                       : (SEXP)Rf_allocMatrix(REALSXP, n, n));
+    double *mat_ptr = REAL(mat);
+    double *x_ptr = REAL(xS);
     if (lotriNearPDc(mat_ptr, x_ptr, n, keepDiag,
                      do2eigen, doDykstra, only_values,
                      eig_tol, conv_tol, posd_tol, maxit, trace)) {
-      Rf_setAttrib(mat, R_DimNamesSymbol,  Rf_getAttrib(xS, R_DimNamesSymbol));
-      UNPROTECT(1);
+      // Only the matrix result carries dimnames; with `only_values` the
+      // result is a plain length-n vector, and setting `dimnames` on it
+      // errors with "dimnames applied to non-array".
+      if (!only_values) {
+        Rf_setAttrib(mat, R_DimNamesSymbol,  Rf_getAttrib(xS, R_DimNamesSymbol));
+      }
       return mat;
     } else {
-      UNPROTECT(1);
-      Rf_error("nearest PD calculation failed");
+      // Rcpp::stop() signals an error and throws Rcpp::exception, so the
+      // Rcpp::Shield unwinds (unprotecting mat) before END_RCPP translates it
+      // to an R stop() call.
+      Rcpp::stop("nearest PD calculation failed");
     }
-  } catch (...) {
-    UNPROTECT(1);
-    Rf_error("unknown c++ error");
-  }
-  UNPROTECT(1);
-  return R_NilValue;
+  END_RCPP
 }

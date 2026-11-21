@@ -76,3 +76,34 @@ test_that("test nearPD with same functions as Matrix", {
     expect_false(identical(pr2, pr))
   }
 })
+
+test_that("lotriNearPD(only.values=TRUE) accepts input with dimnames", {
+  ## The C wrapper used to copy the input's dimnames onto the result even
+  ## when it was the length-n eigenvalue vector, which errors with
+  ## "'dimnames' applied to non-array".
+  m <- matrix(c(4, 1, 1, 3), 2, 2, dimnames = list(c("a", "b"), c("a", "b")))
+  v <- lotriNearPD(m, only.values = TRUE)
+  expect_null(dim(v))
+  expect_equal(sort(v, decreasing = TRUE),
+               eigen(m, only.values = TRUE)$values)
+  ## the matrix result still carries the dimnames
+  expect_equal(dimnames(lotriNearPD(m)), dimnames(m))
+})
+
+test_that("lotriNearPD returns positive-definite input unchanged", {
+  m <- matrix(c(10, 3, 2, 3, 8, 1, 2, 1, 6), 3, 3)
+  expect_equal(lotriNearPD(m), m)
+  expect_equal(lotriNearPD(m, keepDiag = TRUE), m)
+  expect_equal(lotriNearPD(m, do2eigen = FALSE), m)
+  ## PD, but with an eigenvalue below the eig.tol projection threshold: the
+  ## fast path must defer to the full algorithm
+  e <- eigen(m)
+  tiny <- e$vectors %*% diag(c(1, 0.5, 1e-9)) %*% t(e$vectors)
+  tiny <- 0.5 * (tiny + t(tiny))
+  r <- lotriNearPD(tiny)
+  expect_gt(min(eigen(r, only.values = TRUE)$values), 1e-9)
+  if (requireNamespace("Matrix", quietly = TRUE)) {
+    expect_equal(r, as.matrix(Matrix::nearPD(tiny, conv.tol = 1e-7)$mat),
+                 tolerance = 1e-6, ignore_attr = TRUE)
+  }
+})
