@@ -1,9 +1,9 @@
 // https://github.com/cran/Matrix/blob/master/R/nearPD.R
 // Contributors Martin Maechler, Jens Oehlschlägel
 #define ARMA_WARN_LEVEL 1
-#include <RcppArmadillo/Lightest>
+#include <RcppArmadillo/Lighter>
 // std::fill/std::max, std::abs and std::size_t are used directly below.  They
-// happen to arrive through <RcppArmadillo/Lightest> today, but libc++ keeps
+// happen to arrive through <RcppArmadillo/Lighter> today, but libc++ keeps
 // dropping transitive includes (clang 23's libc++ is where that bit CRAN), so name them.
 #include <algorithm>
 #include <cmath>

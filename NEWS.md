@@ -3,8 +3,9 @@
 ## Internal changes
 
 * The compiled code now uses `Rcpp` and `RcppArmadillo` instead of `cpp4r`
-  and `armadillo4r`.  `nearPD.cpp` uses the `RcppArmadillo/Lightest` header
-  and `rcm.cpp` uses `RcppArmadillo/Lighter`.  The hand-written
+  and `armadillo4r`.  Both `.cpp` files use the `RcppArmadillo/Lighter`
+  header; `Lightest` drops Rcpp sugar, which `RcppArmadilloSugar.h` itself
+  needs, and clang refuses to compile it.  The hand-written
   registration in `matlist.c` and the C API in `inst/include/lotri.h` are
   unchanged.
 
