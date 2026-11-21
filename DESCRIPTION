@@ -10,7 +10,8 @@ Authors@R:
         role = "ctb",
         email = "m.vargas.sepulveda@gmail.com",
         comment = c(ORCID = "0000-0003-1017-7574")),
-      person("Bill", "Denney", email="wdenney@humanpredictions.com", role="ctb", comment=c(ORCID="0000-0002-5759-428X")))
+      person("Bill", "Denney", email="wdenney@humanpredictions.com", role="ctb", comment=c(ORCID="0000-0002-5759-428X")),
+      person("Dirk", "Eddelbuettel", email="edd@debian.org", role="ctb", comment=c(ORCID="0000-0001-6419-907X")))
 Maintainer: Matthew L. Fidler <matthew.fidler@gmail.com>
 Description: Provides a simple mechanism to specify a symmetric block
     diagonal matrices (often used for covariance matrices).  This is based
