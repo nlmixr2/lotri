@@ -3,8 +3,10 @@
 on:
   push:
     branches: [main, master]
-  # PR checks run only when a reviewer approves with the phrase
-  # "ready to be merged" (pushes to a PR branch no longer start CI).
+  # Every push to a pull request runs the full CI.
+  pull_request:
+  # A reviewer approving with the phrase "ready to be merged" also
+  # (re)runs the checks.
   pull_request_review:
     types: [submitted]
   # Maintainers can also start PR checks by commenting "/ci" on the PR.
