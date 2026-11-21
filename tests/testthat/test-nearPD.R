@@ -84,8 +84,7 @@ test_that("lotriNearPD(only.values=TRUE) accepts input with dimnames", {
   m <- matrix(c(4, 1, 1, 3), 2, 2, dimnames = list(c("a", "b"), c("a", "b")))
   v <- lotriNearPD(m, only.values = TRUE)
   expect_null(dim(v))
-  expect_equal(sort(v, decreasing = TRUE),
-               eigen(m, only.values = TRUE)$values)
+  expect_equal(sort(v, decreasing = TRUE), eigen(m, only.values = TRUE)$values)
   ## the matrix result still carries the dimnames
   expect_equal(dimnames(lotriNearPD(m)), dimnames(m))
 })
@@ -103,7 +102,6 @@ test_that("lotriNearPD returns positive-definite input unchanged", {
   r <- lotriNearPD(tiny)
   expect_gt(min(eigen(r, only.values = TRUE)$values), 1e-9)
   if (requireNamespace("Matrix", quietly = TRUE)) {
-    expect_equal(r, as.matrix(Matrix::nearPD(tiny, conv.tol = 1e-7)$mat),
-                 tolerance = 1e-6, ignore_attr = TRUE)
+    expect_equal(r, as.matrix(Matrix::nearPD(tiny, conv.tol = 1e-7)$mat), tolerance = 1e-6, ignore_attr = TRUE)
   }
 })
