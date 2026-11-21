@@ -28,6 +28,7 @@ export(lotriSameBreak)
 export(lotriSameMap)
 export(lotriSep)
 export(rcm)
+importFrom(Rcpp,evalCpp)
 importFrom(methods,is)
 importFrom(stats,setNames)
 importFrom(utils,

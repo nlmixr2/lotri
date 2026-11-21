@@ -3,6 +3,7 @@
 
 #' @importFrom utils assignInMyNamespace
 #' @useDynLib lotri, .registration = TRUE
+#' @importFrom Rcpp evalCpp
 NULL
 #' Paste inputNum in lower triangular format to input char
 #'

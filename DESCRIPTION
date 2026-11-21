@@ -1,6 +1,6 @@
 Package: lotri
 Title: A Simple Way to Specify Symmetric, Block Diagonal Matrices
-Version: 1.0.5
+Version: 1.0.5.9000
 Authors@R:
     c(person("Matthew L.", "Fidler", , "matthew.fidler@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0001-8538-6691")),
@@ -10,7 +10,8 @@ Authors@R:
         role = "ctb",
         email = "m.vargas.sepulveda@gmail.com",
         comment = c(ORCID = "0000-0003-1017-7574")),
-      person("Bill", "Denney", email="wdenney@humanpredictions.com", role="ctb", comment=c(ORCID="0000-0002-5759-428X")))
+      person("Bill", "Denney", email="wdenney@humanpredictions.com", role="ctb", comment=c(ORCID="0000-0002-5759-428X")),
+      person("Dirk", "Eddelbuettel", email="edd@debian.org", role="ctb", comment=c(ORCID="0000-0001-6419-907X")))
 Maintainer: Matthew L. Fidler <matthew.fidler@gmail.com>
 Description: Provides a simple mechanism to specify a symmetric block
     diagonal matrices (often used for covariance matrices).  This is based
@@ -27,6 +28,7 @@ Imports:
     checkmate,
     crayon,
     methods,
+    Rcpp,
     stats,
     utils
 Suggests:
@@ -45,6 +47,6 @@ Encoding: UTF-8
 NeedsCompilation: yes
 Language: en-US
 LinkingTo:
-    cpp4r,
-    armadillo4r (>= 15.4.2)
+    Rcpp,
+    RcppArmadillo
 Config/roxygen2/version: 8.1.0
