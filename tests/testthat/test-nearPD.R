@@ -105,3 +105,20 @@ test_that("lotriNearPD returns positive-definite input unchanged", {
     expect_equal(r, as.matrix(Matrix::nearPD(tiny, conv.tol = 1e-7)$mat), tolerance = 1e-6, ignore_attr = TRUE)
   }
 })
+
+test_that("lotriNearPD fast path defers when posd.tol would clamp an eigenvalue", {
+  ## with posd.tol above eig.tol, an eigenvalue between the two survives the
+  ## projection but is still raised by the posdefify step, so the matrix is
+  ## not its own answer
+  m <- matrix(c(10, 3, 2, 3, 8, 1, 2, 1, 6), 3, 3)
+  e <- eigen(m)
+  small <- e$vectors %*% diag(c(1, 0.5, 1e-5)) %*% t(e$vectors)
+  small <- 0.5 * (small + t(small))
+  r <- lotriNearPD(small, eig.tol = 1e-6, posd.tol = 1e-3)
+  expect_false(isTRUE(all.equal(r, small)))
+})
+
+test_that("lotriNearPD errors when the algorithm does not converge", {
+  npd <- matrix(c(1, 0.9, 0.3, 0.9, 1, 0.9, 0.3, 0.9, 1), 3, 3)
+  expect_error(lotriNearPD(npd, maxit = 1L, conv.tol = 1e-15), "nearest PD calculation failed")
+})

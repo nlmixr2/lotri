@@ -181,8 +181,6 @@ not_fast_path:
           }
           X = Q * Q2;
           vec D = sqrt(lotriPmaxC(Eps, o_diag)/X.diag());
-          // keep the original row-wise scaling (X[a,b] *= D[a]*D[b] is NOT
-          // what the ported Matrix::nearPD does; it scales each row by D^2).
           mat DX(n, n);
           mat D2(n, n);
           for (arma::uword i = 0; i < n; ++i)  {
