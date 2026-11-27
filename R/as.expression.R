@@ -643,10 +643,10 @@ lotriDataFrameToLotriExpression <- function(data, useIni = FALSE) {
     .dn <- dimnames(.m)[[1]]
     for (.i in seq_along(.d)) {
       if (is.na(.d[.i])) next
-      .e <- try(str2lang(paste0("dist(", .dn[.i], ") ~ ", .d[.i])), silent=TRUE)
+      .e <- try(str2lang(paste0("dist(", .dn[.i], ") ~ ", .d[.i])), silent = TRUE)
       if (inherits(.e, "try-error")) {
         warning("cannot deparse the distribution declared on '", .dn[.i],
-                "': ", .d[.i], call.=FALSE)
+                "': ", .d[.i], call. = FALSE)
         next
       }
       .ret[[length(.ret) + 1L]] <- .e
