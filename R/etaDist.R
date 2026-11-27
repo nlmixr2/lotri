@@ -60,7 +60,8 @@
   ## bounded continuous
   "dbeta|ibetaInv({shape1}, {shape2}, {u})|shape1,shape2",
   "betaProportion|ibetaInv(({mu})*({kappa}), (1 - ({mu}))*({kappa}), {u})|mean,concentration",
-  "dunif|({min}) + (({max}) - ({min}))*({u})|lower,upper")
+  "dunif|({min}) + (({max}) - ({min}))*({u})|lower,upper"
+)
 
 ## built on first use rather than at load time: `.lotriDistTable` lives in
 ## `R/priors.R`, which the alphabetical collation loads after this file
@@ -78,12 +79,17 @@
   .l <- strsplit(paste0(.lotriEtaDistDefs, "|"), "|", fixed = TRUE)
   .nm <- vapply(.l, `[[`, character(1), 1L, USE.NAMES = FALSE)
   .q <- vapply(.l, `[[`, character(1), 2L, USE.NAMES = FALSE)
-  .r <- vapply(.l, function(.x) if (length(.x) >= 3L) .x[[3L]] else "",
-               character(1), USE.NAMES = FALSE)
+  .r <- vapply(.l, function(.x) if (length(.x) >= 3L) .x[[3L]] else "", character(1), USE.NAMES = FALSE)
   .w <- match(.nm, .lotriDistTable$name)
   if (anyNA(.w)) {
-    stop("eta distribution(s) not in the prior catalog: '", # nocov
-         paste(.nm[is.na(.w)], collapse = "', '"), "'", call. = FALSE) # nocov
+    # nocov start
+    stop(
+      "eta distribution(s) not in the prior catalog: '",
+      paste(.nm[is.na(.w)], collapse = "', '"),
+      "'",
+      call. = FALSE
+    )
+    # nocov end
   }
   .tab <- .lotriDistTable[.w, ]
   .tab$quantile <- .q
@@ -93,20 +99,28 @@
   ## the role IS the group key a covariate is attached to, so two arguments
   ## sharing one would silently merge into a single group
   .nNonEmpty <- function(.x) length(.x[nzchar(.x)])
-  .np <- vapply(strsplit(.tab$parNames, ",", fixed = TRUE), .nNonEmpty,
-                integer(1), USE.NAMES = FALSE)
-  .nr <- vapply(strsplit(.tab$roles, ",", fixed = TRUE), .nNonEmpty,
-                integer(1), USE.NAMES = FALSE)
+  .np <- vapply(strsplit(.tab$parNames, ",", fixed = TRUE), .nNonEmpty, integer(1), USE.NAMES = FALSE)
+  .nr <- vapply(strsplit(.tab$roles, ",", fixed = TRUE), .nNonEmpty, integer(1), USE.NAMES = FALSE)
   if (any(.np != .nr)) {
-    stop("eta distribution role/argument count mismatch: '", # nocov
-         paste(.tab$name[.np != .nr], collapse = "', '"), "'", call. = FALSE) # nocov
+    # nocov start
+    stop(
+      "eta distribution role/argument count mismatch: '",
+      paste(.tab$name[.np != .nr], collapse = "', '"),
+      "'",
+      call. = FALSE
+    )
+    # nocov end
   }
-  .dup <- vapply(strsplit(.tab$roles, ",", fixed = TRUE),
-                 function(.x) anyDuplicated(.x[nzchar(.x)]) > 0L,
-                 logical(1), USE.NAMES = FALSE)
+  .dup <- vapply(
+    strsplit(.tab$roles, ",", fixed = TRUE),
+    function(.x) anyDuplicated(.x[nzchar(.x)]) > 0L,
+    logical(1),
+    USE.NAMES = FALSE
+  )
   if (any(.dup)) {
-    stop("eta distribution has a repeated role: '", # nocov
-         paste(.tab$name[.dup], collapse = "', '"), "'", call. = FALSE) # nocov
+    # nocov start
+    stop("eta distribution has a repeated role: '", paste(.tab$name[.dup], collapse = "', '"), "'", call. = FALSE)
+    # nocov end
   }
   .lotriEtaDistCache$tab <- .tab
   .tab
@@ -188,9 +202,11 @@ lotriEtaDists <- function() {
 #' @noRd
 #' @author Matthew L. Fidler
 .lotriIsEtaDistLine <- function(x) {
-  is.call(x) && length(x) == 3L &&
+  is.call(x) &&
+    length(x) == 3L &&
     identical(x[[1]], quote(`~`)) &&
-    is.call(x[[2]]) && length(x[[2]][[1]]) == 1L &&
+    is.call(x[[2]]) &&
+    length(x[[2]][[1]]) == 1L &&
     as.character(x[[2]][[1]]) %in% c("dist", "etaDist")
 }
 
@@ -206,8 +222,7 @@ lotriEtaDists <- function() {
     x <- as.call(list(x))
   }
   if (!is.call(x)) {
-    stop("an eta distribution must be a distribution call like 'dgamma(1, 2)'",
-         call. = FALSE)
+    stop("an eta distribution must be a distribution call like 'dgamma(1, 2)'", call. = FALSE)
   }
   .nm <- as.character(x[[1]])
   if (length(.nm) != 1L) {
@@ -215,21 +230,32 @@ lotriEtaDists <- function() {
   }
   .w <- which(names(.lotriDistNotAliased) == .nm)
   if (length(.w) == 1L && nzchar(.lotriDistNotAliased[.w])) {
-    stop("'", .nm, "' is not supported because it is parameterized differently than ",
-         .lotriDistNotAliased[[.w]], "; use the Stan name and parameterization instead",
-         call. = FALSE)
+    stop(
+      "'",
+      .nm,
+      "' is not supported because it is parameterized differently than ",
+      .lotriDistNotAliased[[.w]],
+      "; use the Stan name and parameterization instead",
+      call. = FALSE
+    )
   }
   .dist <- .lotriEtaDistLookup(.nm)
   if (is.null(.dist)) {
     ## a real distribution, just not one that can be inverted
     .known <- .lotriPriorLookup(.nm)
     if (!is.null(.known)) {
-      stop("'", .known$name, "' cannot be declared on a random effect: ",
-           ifelse(.known$kind == "univariate",
-                  "its quantile function is not available",
-                  paste0("it is a ", .known$kind, " distribution, and a random ",
-                         "effect declaration is univariate")),
-           "; see 'lotriEtaDists()' for the ones that can", call. = FALSE)
+      stop(
+        "'",
+        .known$name,
+        "' cannot be declared on a random effect: ",
+        ifelse(
+          .known$kind == "univariate",
+          "its quantile function is not available",
+          paste0("it is a ", .known$kind, " distribution, and a random ", "effect declaration is univariate")
+        ),
+        "; see 'lotriEtaDists()' for the ones that can",
+        call. = FALSE
+      )
     }
     stop("unknown eta distribution '", .nm, "'", .lotriPriorSuggest(.nm), call. = FALSE)
   }
@@ -239,11 +265,20 @@ lotriEtaDists <- function() {
   }
   .args <- as.list(x)[-1]
   .args <- .lotriPriorMatchArgs(.args, .parNames, .dist$name, nReq = .dist$nReq)
-  .txt <- paste0(.dist$name, "(",
-                 paste(vapply(.args, .deparse1, character(1), USE.NAMES = FALSE),
-                       collapse = ", "), ")")
-  list(name = .dist$name, stanName = .dist$stanName, support = .dist$support,
-       quantile = .dist$quantile, args = .args, text = .txt)
+  .txt <- paste0(
+    .dist$name,
+    "(",
+    paste(vapply(.args, .deparse1, character(1), USE.NAMES = FALSE), collapse = ", "),
+    ")"
+  )
+  list(
+    name = .dist$name,
+    stanName = .dist$stanName,
+    support = .dist$support,
+    quantile = .dist$quantile,
+    args = .args,
+    text = .txt
+  )
 }
 
 #' Normalize a declared random-effect distribution call
@@ -298,22 +333,28 @@ lotriEtaDistNormalize <- function(x) {
   if (is.name(.nm)) {
     .nm <- as.character(.nm)
   } else if (!(is.character(.nm) && length(.nm) == 1L)) {
-    stop("'", .fn, "()' takes a random effect name, not '",
-         .deparse1(.lhs[[1]]), "'", call. = FALSE) # nolint
+    stop("'", .fn, "()' takes a random effect name, not '", .deparse1(.lhs[[1]]), "'", call. = FALSE)
   }
   .rhs <- x[[3]]
-  if (is.call(.rhs) && is.call(.rhs[[1]]) && length(.rhs[[1]]) == 3L &&
-        (identical(.rhs[[1]][[1]], quote(`::`)) ||
-           identical(.rhs[[1]][[1]], quote(`:::`)))) {
+  if (
+    is.call(.rhs) &&
+      is.call(.rhs[[1]]) &&
+      length(.rhs[[1]]) == 3L &&
+      (identical(.rhs[[1]][[1]], quote(`::`)) || identical(.rhs[[1]][[1]], quote(`:::`)))
+  ) {
     .f2 <- as.character(.rhs[[1]][[3]])
     if (length(.f2) == 1L && !is.null(.lotriPriorLookup(.f2))) {
-      stop("an eta distribution is not namespaced; write '", .f2,
-           "(...)' rather than '", .deparse1(.rhs[[1]]), "(...)'", # nolint
-           call. = FALSE)
+      stop(
+        "an eta distribution is not namespaced; write '",
+        .f2,
+        "(...)' rather than '",
+        .deparse1(.rhs[[1]]),
+        "(...)'",
+        call. = FALSE
+      )
     }
   }
-  env$etaDists <- c(env$etaDists,
-                    list(list(name = .nm, info = .lotriEtaDistNormalize(.rhs))))
+  env$etaDists <- c(env$etaDists, list(list(name = .nm, info = .lotriEtaDistNormalize(.rhs))))
   invisible()
 }
 
@@ -353,22 +394,34 @@ lotriEtaDistNormalize <- function(x) {
       .at <- match(.nm, .dn)
       .same <- attr(.m, "lotriSame")
       if (!is.null(.same) && .same[.at] != 0L) {
-        stop("'", .nm, "' repeats '", .dn[.at - .same[.at]],
-             "' with 'same()', so it cannot declare its own distribution; ",
-             "declare it on '", .dn[.at - .same[.at]], "'", call. = FALSE)
+        stop(
+          "'",
+          .nm,
+          "' repeats '",
+          .dn[.at - .same[.at]],
+          "' with 'same()', so it cannot declare its own distribution; ",
+          "declare it on '",
+          .dn[.at - .same[.at]],
+          "'",
+          call. = FALSE
+        )
       }
       if (isTRUE(.lotriMatFixedDiag(.m, .nm))) {
-        stop("'", .nm, "' is fixed, so it cannot declare a distribution; a ",
-             "declared random effect is estimated on a unit-variance latent ",
-             "scale", call. = FALSE)
+        stop(
+          "'",
+          .nm,
+          "' is fixed, so it cannot declare a distribution; a ",
+          "declared random effect is estimated on a unit-variance latent ",
+          "scale",
+          call. = FALSE
+        )
       }
       .dst[[.k]][.at] <- .d$info$text
       .found <- TRUE
       break
     }
     if (!.found) {
-      stop("distribution declared for unknown random effect: '", .nm, "'",
-           call. = FALSE)
+      stop("distribution declared for unknown random effect: '", .nm, "'", call. = FALSE)
     }
   }
   for (.k in seq_along(.mats)) {
@@ -416,30 +469,45 @@ lotriEtaDistNormalize <- function(x) {
     if (any(!is.na(dists[.idx]))) {
       .bad <- .idx[mat[cbind(.idx, .idx)] != 1]
       if (length(.bad) > 0L) {
-        stop("correlation/covariance between non-normal random effects needs ",
-             "the diagonals estimated at one; '", .dn[.bad[1]], "' is ",
-             format(mat[.bad[1], .bad[1]]),
-             ifelse(length(.idx) == 1L,
-                    ## a lone declared random effect implies `~ 1`, so the
-                    ## shortest fix is to drop the line entirely
-                    paste0(" -- drop the '", .dn[.idx[1]],
-                           " ~ ...' line (a declared distribution implies '",
-                           .dn[.idx[1]], " ~ 1')"),
-                    paste0(" -- write '", paste(.dn[.idx], collapse = " + "),
-                           " ~ c(", .lotriEtaDistCorEx(length(.idx)), ")'")),
-             call. = FALSE)
+        stop(
+          "correlation/covariance between non-normal random effects needs ",
+          "the diagonals estimated at one; '",
+          .dn[.bad[1]],
+          "' is ",
+          format(mat[.bad[1], .bad[1]]),
+          ifelse(
+            length(.idx) == 1L,
+            ## a lone declared random effect implies `~ 1`, so the
+            ## shortest fix is to drop the line entirely
+            paste0(
+              " -- drop the '",
+              .dn[.idx[1]],
+              " ~ ...' line (a declared distribution implies '",
+              .dn[.idx[1]],
+              " ~ 1')"
+            ),
+            paste0(" -- write '", paste(.dn[.idx], collapse = " + "), " ~ c(", .lotriEtaDistCorEx(length(.idx)), ")'")
+          ),
+          call. = FALSE
+        )
       }
       if (length(.idx) > 1L) {
         .off <- mat[.idx, .idx, drop = FALSE]
         if (any(abs(.off[upper.tri(.off)]) >= 1)) {
-          stop("the correlation between non-normal random effects '",
-               paste(.dn[.idx], collapse = "', '"),
-               "' has to be between -1 and 1", call. = FALSE)
+          stop(
+            "the correlation between non-normal random effects '",
+            paste(.dn[.idx], collapse = "', '"),
+            "' has to be between -1 and 1",
+            call. = FALSE
+          )
         }
-        if (any(!is.na(dists[.idx])) &&
-              min(eigen(.off, symmetric = TRUE, only.values = TRUE)$values) <= 0) {
-          stop("the correlation block of '", paste(.dn[.idx], collapse = "', '"),
-               "' is not positive definite", call. = FALSE)
+        if (any(!is.na(dists[.idx])) && min(eigen(.off, symmetric = TRUE, only.values = TRUE)$values) <= 0) {
+          stop(
+            "the correlation block of '",
+            paste(.dn[.idx], collapse = "', '"),
+            "' is not positive definite",
+            call. = FALSE
+          )
         }
       }
     }

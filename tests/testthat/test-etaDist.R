@@ -7,13 +7,12 @@ test_that("the eta distribution catalog is a subset of the prior catalog", {
   ## every declared parameter appears in its own quantile template
   for (.i in seq_len(nrow(.e))) {
     if (!nzchar(.e$parNames[.i])) next
-    for (.p2 in strsplit(.e$parNames[.i], ",", fixed=TRUE)[[1]]) {
-      expect_true(grepl(paste0("{", .p2, "}"), .e$quantile[.i], fixed=TRUE),
-                  info=paste0(.e$name[.i], ": ", .p2))
+    for (.p2 in strsplit(.e$parNames[.i], ",", fixed = TRUE)[[1]]) {
+      expect_true(grepl(paste0("{", .p2, "}"), .e$quantile[.i], fixed = TRUE), info = paste0(.e$name[.i], ": ", .p2))
     }
   }
   ## and every template uses the uniform
-  expect_true(all(grepl("{u}", .e$quantile, fixed=TRUE)))
+  expect_true(all(grepl("{u}", .e$quantile, fixed = TRUE)))
 })
 
 test_that("dist() declares a distribution on a single eta", {
@@ -37,32 +36,45 @@ test_that("dist() declares a distribution on a single eta", {
 })
 
 test_that("a declared eta lives in a correlation block", {
-  expect_error(lotri({
-    eta.cl ~ 0.09
-    dist(eta.cl) ~ dgamma(a, b)
-  }), "diagonals estimated at one")
-  expect_error(lotri({
-    eta.cl + eta.v ~ c(0.09,
-                       0.01, 1)
-    dist(eta.cl) ~ dgamma(a, b)
-  }), "diagonals estimated at one")
+  expect_error(
+    lotri({
+      eta.cl ~ 0.09
+      dist(eta.cl) ~ dgamma(a, b)
+    }),
+    "diagonals estimated at one"
+  )
+  expect_error(
+    lotri({
+      eta.cl + eta.v ~ c(0.09,
+                         0.01, 1)
+      dist(eta.cl) ~ dgamma(a, b)
+    }),
+    "diagonals estimated at one"
+  )
   ## the message shows the block form that would work
-  expect_error(lotri({
-    eta.cl + eta.v ~ c(0.09,
-                       0.01, 1)
-    dist(eta.cl) ~ dgamma(a, b)
-  }), "eta.cl + eta.v ~ c(1, 0.1, 1)", fixed=TRUE)
+  expect_error(
+    lotri({
+      eta.cl + eta.v ~ c(0.09,
+                         0.01, 1)
+      dist(eta.cl) ~ dgamma(a, b)
+    }),
+    "eta.cl + eta.v ~ c(1, 0.1, 1)",
+    fixed = TRUE
+  )
   ## an undeclared block is untouched by the rule
   expect_silent(lotri({
     eta.cl ~ 0.09
     eta.v ~ 1
     dist(eta.v) ~ dgamma(a, b)
   }))
-  expect_error(lotri({
-    eta.cl + eta.v ~ c(1,
-                       1, 1)
-    dist(eta.cl) ~ dgamma(a, b)
-  }), "between -1 and 1")
+  expect_error(
+    lotri({
+      eta.cl + eta.v ~ c(1,
+                         1, 1)
+      dist(eta.cl) ~ dgamma(a, b)
+    }),
+    "between -1 and 1"
+  )
 })
 
 test_that("a declared distribution implies a unit variance", {
@@ -79,14 +91,17 @@ test_that("a declared distribution implies a unit variance", {
   .y <- lotri(dist(eta.cl) ~ dgamma(shape=aCl, rate=bCl))
   expect_equal(as.matrix(.y), as.matrix(.x))
   ## it mixes with ordinary random effects, in either order
-  for (.m in list(lotri({
-                    eta.ka ~ 0.6
-                    dist(eta.cl) ~ dgamma(a, b)
-                  }),
-                  lotri({
-                    dist(eta.cl) ~ dgamma(a, b)
-                    eta.ka ~ 0.6
-                  }))) {
+  .ms <- list(
+    lotri({
+      eta.ka ~ 0.6
+      dist(eta.cl) ~ dgamma(a, b)
+    }),
+    lotri({
+      dist(eta.cl) ~ dgamma(a, b)
+      eta.ka ~ 0.6
+    })
+  )
+  for (.m in .ms) {
     expect_setequal(dimnames(.m)[[1]], c("eta.ka", "eta.cl"))
     expect_equal(unname(as.matrix(.m)["eta.cl", "eta.cl"]), 1)
     expect_equal(unname(as.matrix(.m)["eta.ka", "eta.ka"]), 0.6)
@@ -100,8 +115,7 @@ test_that("a declared distribution implies a unit variance", {
   })
   expect_equal(unname(as.matrix(.z)["eta.cl", "eta.v"]), 0)
   ## and it round trips
-  expect_equal(attr(eval(as.expression(.x)), "lotriEtaDists"),
-               attr(.x, "lotriEtaDists"))
+  expect_equal(attr(eval(as.expression(.x)), "lotriEtaDists"), attr(.x, "lotriEtaDists"))
 })
 
 test_that("a correlated block still has to be written out", {
@@ -116,10 +130,14 @@ test_that("a correlated block still has to be written out", {
   expect_equal(unname(as.matrix(.x)["eta.cl", "eta.v1"]), 0.5)
   ## an explicit non-unit variance is still refused, and for a lone
   ## declared random effect the message says to drop the line
-  expect_error(lotri({
-    eta.cl ~ 0.09
-    dist(eta.cl) ~ dgamma(a, b)
-  }), "drop the 'eta.cl ~ ...' line", fixed=TRUE)
+  expect_error(
+    lotri({
+      eta.cl ~ 0.09
+      dist(eta.cl) ~ dgamma(a, b)
+    }),
+    "drop the 'eta.cl ~ ...' line",
+    fixed = TRUE
+  )
 })
 
 test_that("bad declarations are refused", {
@@ -151,15 +169,21 @@ test_that("bad declarations are refused", {
     eta.cl ~ 1
     dist(eta.cl) ~ multiNormal(a, b)
   }))
-  expect_error(lotri({
-    eta.cl ~ 1
-    dist(eta.cl) ~ dgamma(a, b)
-    dist(eta.cl) ~ dexp(a)
-  }), "more than one distribution")
-  expect_error(lotri({
-    eta.cl ~ fix(1)
-    dist(eta.cl) ~ dgamma(a, b)
-  }), "is fixed")
+  expect_error(
+    lotri({
+      eta.cl ~ 1
+      dist(eta.cl) ~ dgamma(a, b)
+      dist(eta.cl) ~ dexp(a)
+    }),
+    "more than one distribution"
+  )
+  expect_error(
+    lotri({
+      eta.cl ~ fix(1)
+      dist(eta.cl) ~ dgamma(a, b)
+    }),
+    "is fixed"
+  )
   expect_error(lotri({
     eta.cl ~ 1
     eta.v ~ 1
@@ -176,12 +200,15 @@ test_that("bad declarations are refused", {
 })
 
 test_that("a same() copy cannot declare its own distribution", {
-  expect_error(lotri({
-    eta.cl + eta.v ~ c(1,
-                       0.5, 1)
-    eta.cl2 + eta.v2 ~ same()
-    dist(eta.cl2) ~ dgamma(a, b)
-  }), "repeats")
+  expect_error(
+    lotri({
+      eta.cl + eta.v ~ c(1,
+                         0.5, 1)
+      eta.cl2 + eta.v2 ~ same()
+      dist(eta.cl2) ~ dgamma(a, b)
+    }),
+    "repeats"
+  )
 })
 
 test_that("the declaration round trips through data.frame and expression", {
@@ -258,19 +285,16 @@ test_that("declarations work with conditions", {
 test_that("every eta distribution names one role per argument", {
   .t <- lotriEtaDists()
   expect_true("roles" %in% names(.t))
-  .np <- vapply(strsplit(.t$parNames, ",", fixed = TRUE),
-                function(x) length(x[nzchar(x)]), integer(1))
-  .nr <- vapply(strsplit(.t$roles, ",", fixed = TRUE),
-                function(x) length(x[nzchar(x)]), integer(1))
+  .np <- vapply(strsplit(.t$parNames, ",", fixed = TRUE), function(x) length(x[nzchar(x)]), integer(1))
+  .nr <- vapply(strsplit(.t$roles, ",", fixed = TRUE), function(x) length(x[nzchar(x)]), integer(1))
   expect_equal(.nr, .np)
   ## roles are the GROUP KEY, so a repeat inside one family would silently
   ## merge two distinct arguments into a single covariate group
-  expect_false(any(vapply(strsplit(.t$roles, ",", fixed = TRUE),
-                          function(x) anyDuplicated(x[nzchar(x)]) > 0L, logical(1))))
+  .dup <- vapply(strsplit(.t$roles, ",", fixed = TRUE), function(x) anyDuplicated(x[nzchar(x)]) > 0L, logical(1))
+  expect_false(any(.dup))
   ## and the vocabulary is closed -- a typo would otherwise become a new group
-  expect_true(all(unlist(strsplit(.t$roles, ",", fixed = TRUE)) %in%
-                    c("location", "scale", "rate", "shape", "shape1", "shape2",
-                      "df", "mean", "concentration", "lower", "upper")))
+  .vocab <- c("location", "scale", "rate", "shape", "shape1", "shape2", "df", "mean", "concentration", "lower", "upper")
+  expect_true(all(unlist(strsplit(.t$roles, ",", fixed = TRUE)) %in% .vocab))
 })
 
 test_that("the roles of the families the M-steps implement are pinned", {
@@ -297,7 +321,6 @@ test_that("adding the roles column did not move any family's row", {
   ## order, so a reordering silently rebinds every family in the C++ objective.
   ## A new COLUMN is safe; this asserts that is all that happened.
   .t <- lotriEtaDists()
-  expect_identical(.t$name[c(1L, 12L, 13L, 20L, 22L)],
-                   c("dnorm", "dexp", "dgamma", "dbeta", "dunif"))
+  expect_identical(.t$name[c(1L, 12L, 13L, 20L, 22L)], c("dnorm", "dexp", "dgamma", "dbeta", "dunif"))
   expect_equal(nrow(.t), 22L)
 })

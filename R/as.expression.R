@@ -645,8 +645,7 @@ lotriDataFrameToLotriExpression <- function(data, useIni = FALSE) {
       if (is.na(.d[.i])) next
       .e <- try(str2lang(paste0("dist(", .dn[.i], ") ~ ", .d[.i])), silent = TRUE)
       if (inherits(.e, "try-error")) {
-        warning("cannot deparse the distribution declared on '", .dn[.i],
-                "': ", .d[.i], call. = FALSE)
+        warning("cannot deparse the distribution declared on '", .dn[.i], "': ", .d[.i], call. = FALSE)
         next
       }
       .ret[[length(.ret) + 1L]] <- .e
@@ -672,8 +671,7 @@ as.expression.lotriFix <- function(x, ...) {
   .mat <- .l
   attr(.mat, "lotriEst") <- NULL
   class(.mat) <- NULL
-  .priorLines <- c(.lotriGetPriorLines(.est, .mat),
-                   .lotriGetEtaDistLines(.mat))
+  .priorLines <- c(.lotriGetPriorLines(.est, .mat), .lotriGetEtaDistLines(.mat))
   if (!.lst$plusNames) {
     as.call(list(
       ifelse(.lst$useIni, quote(`ini`), quote(`lotri`)),

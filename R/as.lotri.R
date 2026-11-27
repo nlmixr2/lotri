@@ -114,10 +114,14 @@ as.lotri.matrix <- function(x, ..., default = "") {
   ## like `lotriLabels` does
   if (any(names(x) == "etaDist")) {
     x$etaDist <- as.character(x$etaDist)
-    .etaDists <- vapply(seq_len(dim(.mat)[1]),
-                        function(.i) {
-                          x$etaDist[x$neta1 == .i & x$neta2 == .i]
-                        }, character(1), USE.NAMES = FALSE)
+    .etaDists <- vapply(
+      seq_len(dim(.mat)[1]),
+      function(.i) {
+        x$etaDist[x$neta1 == .i & x$neta2 == .i]
+      },
+      character(1),
+      USE.NAMES = FALSE
+    )
     if (!all(is.na(.etaDists))) {
       attr(.mat, "lotriEtaDists") <- .etaDists
       .hasLab <- TRUE
