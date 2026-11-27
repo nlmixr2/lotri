@@ -1,3 +1,24 @@
+# lotri (development version)
+
+## Internal changes
+
+* The compiled code now uses `Rcpp` and `RcppArmadillo` instead of `cpp4r`
+  and `armadillo4r`.  Both `.cpp` files use the `RcppArmadillo/Lighter`
+  header; `Lightest` drops Rcpp sugar, which `RcppArmadilloSugar.h` itself
+  needs, and clang refuses to compile it.  The hand-written
+  registration in `matlist.c` and the C API in `inst/include/lotri.h` are
+  unchanged.
+
+* `lotriNearPD()` skips the iterative Higham algorithm when the input is
+  already positive definite and neither the eigenvalue projection nor the
+  `posd.tol` clamp would change it (about 30% faster on such inputs).
+
+## Bug fixes
+
+* `lotriNearPD(..., only.values = TRUE)` no longer errors with "dimnames
+  applied to non-array"; the eigenvalues are returned as a plain vector as
+  intended.
+
 # lotri 1.0.5
 
 ## New features

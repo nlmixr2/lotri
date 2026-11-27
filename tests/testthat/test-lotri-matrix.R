@@ -513,7 +513,7 @@ test_that("lotri matrix parsing", {
 
   expect_snapshot_output(print(tmp))
 
-  expect_snapshot_output(str(tmp))
+  expect_snapshot_output(.strStable(tmp))
 
   expect_equal(.DollarNames(tmp, ""), c("id", "id2", ".allNames", ".bounds", ".names", ".list", ".maxNu", "df"))
 
