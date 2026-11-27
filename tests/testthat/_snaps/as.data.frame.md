@@ -19,12 +19,12 @@
 
 ---
 
-     'lotriFix' num [1:2, 1:2] 1 0.5 0.5 1
-     - attr(*, "dimnames")=List of 2
+    'lotriFix' num [1:2, 1:2] 1 0.5 0.5 1
+     - attr(*, "dimnames")= List of 2
       ..$ : chr [1:2] "m" "n"
       ..$ : chr [1:2] "m" "n"
      - attr(*, "lotriLabels")= chr [1:2] NA "n"
-     - attr(*, "lotriEst")='data.frame':	5 obs. of  8 variables:
+     - attr(*, "lotriEst")= 'data.frame':	5 obs. of  8 variables:
       ..$ name         : chr [1:5] "h" "i" "j" "k" ...
       ..$ lower        : num [1:5] 0 0 -Inf 0 0
       ..$ est          : num [1:5] 1 1 1 1 1

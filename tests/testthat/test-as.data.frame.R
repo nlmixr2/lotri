@@ -31,7 +31,7 @@ test_that("as.data.frame", {
 
   expect_snapshot_output(print(fix3))
 
-  expect_snapshot_output(str(fix3))
+  expect_snapshot_output(.strStable(fix3))
 
   c1 <- lotriMat(list(fix1, fix2))
 
