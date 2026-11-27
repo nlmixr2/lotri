@@ -124,8 +124,10 @@ test_that("large matrix allocation >2GB is skipped with explanation", {
   skip_if(!requireNamespace("memuse", quietly = TRUE), "memuse not available")
   mem <- memuse::Sys.meminfo()
   mem <- as.numeric(mem$freeram)
-  skip_if(mem < 2147483648*2,
-    message="Requires >2GB RAM: a 16384x16384 double matrix needs 2,147,483,648 bytes (2 GiB). Run on a machine with >4GB free RAM.")
+  skip_if(
+    mem < 2147483648 * 2,
+    message = "Requires >2GB RAM: a 16384x16384 double matrix needs 2,147,483,648 bytes (2 GiB). Run on a machine with >4GB free RAM."
+  )
 
   n_params <- 16384L
   # Build a list of n_params named 1x1 identity matrices
