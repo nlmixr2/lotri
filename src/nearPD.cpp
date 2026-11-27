@@ -154,8 +154,9 @@ bool lotriNearPDarma(mat &ret, mat x
           mat D2(n, n);
           for (arma::uword i = 0; i < n; ++i)  {
             DX.col(i) = D % X.col(i);
-            D2.col(i) = D;
+            D2.col(i).fill(D(i));
           }
+          // X[j, i] * D[j] * D[i], as in Matrix::nearPD()
           X = DX % D2;
         }
         // unneeded(?!): X <- (X + t(X))/2
