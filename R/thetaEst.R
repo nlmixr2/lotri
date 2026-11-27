@@ -369,7 +369,7 @@ lotriEst <- function(x, drop = FALSE) {
     ## repetition, i.e. a different number of estimated parameters.
     if (
       any(vapply(
-        c("lotriFix", "lotriUnfix", "lotriSame", "lotriLabels", "lotriPriors", "lotriOffDiagPriors"),
+        c("lotriFix", "lotriUnfix", "lotriSame", "lotriLabels", "lotriPriors", "lotriOffDiagPriors", "lotriEtaDists"),
         function(.a) !is.null(attr(y, .a, exact = TRUE)),
         logical(1),
         USE.NAMES = FALSE
