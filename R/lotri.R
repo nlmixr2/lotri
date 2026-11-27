@@ -623,13 +623,16 @@ NULL
 #' @noRd
 #' @author Matthew L. Fidler
 .lotriMergeCndExtra <- function(old, new, cnd) {
-  if (is.null(new)) return(old)
-  if (is.null(old)) return(new)
+  if (is.null(new)) {
+    return(old)
+  }
+  if (is.null(old)) {
+    return(new)
+  }
   for (.n in names(new)) {
     if (any(.n == names(old))) {
       if (!isTRUE(all.equal(old[[.n]], new[[.n]]))) {
-        stop(sprintf(gettext("conflicting '%s' properties for level '%s'"),
-                     .n, cnd), call. = FALSE)
+        stop(sprintf(gettext("conflicting '%s' properties for level '%s'"), .n, cnd), call. = FALSE)
       }
     } else {
       old[[.n]] <- new[[.n]]
@@ -681,7 +684,9 @@ NULL
     ## `names`, `labels` and `sameOff` are all grown together whenever a
     ## row is declared, so none is NULL once there is an open block to
     ## move -- the guard is defensive
-    if (is.null(v)) return(NULL) # nocov
+    if (is.null(v)) {
+      return(NULL) # nocov
+    }
     v[seq_along(v) > .cut]
   }
   env2$names <- c(env2$names, .tailOf(env$names))
@@ -771,7 +776,7 @@ NULL
             ## should not be elsewhere
             .env2 <- new.env(parent = emptyenv())
             .env2$isCov <- env$isCov
-            .env2$rcm  <- env$rcm
+            .env2$rcm <- env$rcm
             .env2$df <- NULL
             .env2$eta1 <- 0L
             .env2$lastN <- 0L
@@ -782,9 +787,8 @@ NULL
             ## a level named again carries the properties of every
             ## mention.  Writing only the first one's dropped `lower`
             ## from `lotri({a ~ 1 | id; b ~ 2 | occ; c ~ 3 | id(lower=1)})`
-            env[[paste0(.cnd, ".extra")]] <-
-              .lotriMergeCndExtra(env[[paste0(.cnd, ".extra")]],
-                                  .cndFull[[2]], .cnd)
+            .extra <- paste0(.cnd, ".extra")
+            env[[.extra]] <- .lotriMergeCndExtra(env[[.extra]], .cndFull[[2]], .cnd)
           }
           env$cnd <- unique(c(env$cnd, .cnd))
           env$lastCnd <- .cnd
@@ -828,8 +832,7 @@ NULL
             ## an id level parameter with no error and no warning.
             .lotriMoveOpenBlk(env, .env2)
             .lotri1(x[[2]], x[[3]][[2]], .env2)
-          } else if (.isNewCnd && (length(.val) == 1) &&
-                       (is.numeric(.val) || is.integer(.val))) {
+          } else if (.isNewCnd && (length(.val) == 1) && (is.numeric(.val) || is.integer(.val))) {
             .env2$netas <- 1L
             .env2$eta1 <- .env2$eta1 + 1L
             ## the line form accumulates through `lastN`; without this a
@@ -3115,8 +3118,7 @@ NULL
     ## there.  Appending them unshifted wrote them on top, which came out
     ## as "length of 'dimnames' [1] not equal to array extent" for any
     ## program that used both `| id` and an unconditioned line
-    .env2$df <- rbind(.env2$df,
-                      .lotriShiftDf(env$df, length(.env2$names)))
+    .env2$df <- rbind(.env2$df, .lotriShiftDf(env$df, length(.env2$names)))
     .env2$lastN <- 0
     ## carry the `same()` offsets across with the rows they describe.
     ## Padding has to happen BEFORE `names` is extended, since the
