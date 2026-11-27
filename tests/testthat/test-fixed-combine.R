@@ -1,6 +1,5 @@
 skip_on_cran()
 test_that("combine fix1 and fix2", {
-
   fix1 <- lotri({
     a <- c(0, 1); backTransform("exp"); label("a label")
     b <- c(0, 1, 2)
@@ -21,29 +20,39 @@ test_that("combine fix1 and fix2", {
             0.5, 1)
   })
 
-
   c1 <- lotriMat(list(fix1, fix2))
 
   expect_error(lotriMatInv(c1))
 
-  expect_equal(attr(c1, "lotriEst"),
-               structure(list(name = c("a", "b", "c", "d", "e", "h", "i", "j", "k", "l"),
-                              lower = c(0, 0, -Inf, 0, 0, 0, 0, -Inf, 0, 0),
-                              est = c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
-                              upper = c(Inf, 2, Inf, 2, 2, Inf, 2, Inf, 2, 2),
-                              fix = c(FALSE, FALSE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, TRUE, TRUE),
-                              label = c("a label", NA, NA, NA, NA, "b label", NA, NA, NA, NA),
-                              backTransform = c("exp", NA, NA, NA, NA, "expit", NA, NA, NA, NA),
-                              prior = rep(NA_character_, 10)),
-                         class = "data.frame", row.names = c(NA, 10L)))
+  expect_equal(
+    attr(c1, "lotriEst"),
+    structure(
+      list(
+        name = c("a", "b", "c", "d", "e", "h", "i", "j", "k", "l"),
+        lower = c(0, 0, -Inf, 0, 0, 0, 0, -Inf, 0, 0),
+        est = c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+        upper = c(Inf, 2, Inf, 2, 2, Inf, 2, Inf, 2, 2),
+        fix = c(FALSE, FALSE, TRUE, TRUE, TRUE, FALSE, FALSE, TRUE, TRUE, TRUE),
+        label = c("a label", NA, NA, NA, NA, "b label", NA, NA, NA, NA),
+        backTransform = c("exp", NA, NA, NA, NA, "expit", NA, NA, NA, NA),
+        prior = rep(NA_character_, 10)
+      ),
+      class = "data.frame",
+      row.names = c(NA, 10L)
+    )
+  )
 
   class(c1) <- NULL
   attr(c1, "lotriEst") <- NULL
 
-  expect_equal(c1, structure(c(1, 0.5, 0, 0, 0.5, 1, 0, 0, 0, 0, 1, 0.5, 0, 0, 0.5, 1),
-                             dim = c(4L, 4L),
-                             dimnames = list(c("f", "g", "m", "n"), c("f", "g", "m", "n"))))
-
+  expect_equal(
+    c1,
+    structure(
+      c(1, 0.5, 0, 0, 0.5, 1, 0, 0, 0, 0, 1, 0.5, 0, 0, 0.5, 1),
+      dim = c(4L, 4L),
+      dimnames = list(c("f", "g", "m", "n"), c("f", "g", "m", "n"))
+    )
+  )
 
   fix1 <- lotri({
     a <- c(0, 1); backTransform("exp"); label("a label")
@@ -62,21 +71,32 @@ test_that("combine fix1 and fix2", {
 
   c1 <- lotriMat(list(fix1, fix2))
 
-  expect_equal(lotriEst(c1),
-               structure(list(name = c("a", "b", "c", "d", "e"),
-                              lower = c(0, 0, -Inf, 0, 0),
-                              est = c(1, 1, 1, 1, 1),
-                              upper = c(Inf, 2, Inf, 2, 2),
-                              fix = c(FALSE, FALSE, TRUE, TRUE, TRUE),
-                              label = c("a label", NA, NA, NA, NA),
-                              backTransform = c("exp", NA, NA, NA, NA),
-                              prior = rep(NA_character_, 5)),
-                         class = "data.frame", row.names = c(NA, 5L)))
+  expect_equal(
+    lotriEst(c1),
+    structure(
+      list(
+        name = c("a", "b", "c", "d", "e"),
+        lower = c(0, 0, -Inf, 0, 0),
+        est = c(1, 1, 1, 1, 1),
+        upper = c(Inf, 2, Inf, 2, 2),
+        fix = c(FALSE, FALSE, TRUE, TRUE, TRUE),
+        label = c("a label", NA, NA, NA, NA),
+        backTransform = c("exp", NA, NA, NA, NA),
+        prior = rep(NA_character_, 5)
+      ),
+      class = "data.frame",
+      row.names = c(NA, 5L)
+    )
+  )
 
-  expect_equal(lotriEst(c1, drop=TRUE),
-               structure(c(1, 0.5, 0, 0, 0.5, 1, 0, 0, 0, 0, 1, 0.5, 0, 0, 0.5, 1),
-                         dim = c(4L, 4L),
-                         dimnames = list(c("f", "g", "m", "n"), c("f", "g", "m", "n"))))
+  expect_equal(
+    lotriEst(c1, drop = TRUE),
+    structure(
+      c(1, 0.5, 0, 0, 0.5, 1, 0, 0, 0, 0, 1, 0.5, 0, 0, 0.5, 1),
+      dim = c(4L, 4L),
+      dimnames = list(c("f", "g", "m", "n"), c("f", "g", "m", "n"))
+    )
+  )
 
   fix1 <- lotri({
     a <- c(0, 1); backTransform("exp"); label("a label")
@@ -103,6 +123,5 @@ test_that("combine fix1 and fix2", {
 
   c1 <- lotriMat(list(fix1, fix2))
 
-  expect_true(inherits(lotriEst(c1, drop=TRUE), "lotriFix"))
-
+  expect_true(inherits(lotriEst(c1, drop = TRUE), "lotriFix"))
 })

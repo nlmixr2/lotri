@@ -1,5 +1,4 @@
 test_that("a label follows the level its parameter was declared at", {
-
   ## Which level a trailing `label()` belongs to used to be decided by
   ## whether the DEFAULT level had any labels yet.  Once it did, a
   ## conditioned line's label landed on the default level and overwrote
@@ -25,10 +24,16 @@ test_that("a label follows the level its parameter was declared at", {
   expect_equal(as.data.frame(lotri::as.lotri(.df)), .df)
 
   ## the conditioned-only and unconditioned-only spellings are unchanged
-  expect_equal(attr(lotri::lotri({
+  expect_equal(
+    attr(
+      lotri::lotri({
     a ~ 0.5 | occ
     label("L")
-  })$occ, "lotriLabels"), "L")
+  })$occ,
+      "lotriLabels"
+    ),
+    "L"
+  )
 
   .plain <- lotri::lotri({
     tp <- 1
@@ -41,7 +46,6 @@ test_that("a label follows the level its parameter was declared at", {
 })
 
 test_that("labels survive on more than one conditioned level", {
-
   .m <- lotri::lotri({
     tp <- 1
     a ~ 0.5
@@ -62,7 +66,6 @@ test_that("labels survive on more than one conditioned level", {
 })
 
 test_that("a single non-default level keeps its name", {
-
   ## an occasion-only model came back from the data frame as a bare
   ## matrix, i.e. looking like an id level one
   .m <- lotri::lotri({
@@ -76,21 +79,26 @@ test_that("a single non-default level keeps its name", {
   expect_equal(as.data.frame(.back), .df)
 
   ## the default level is still returned bare, as it always has been
-  expect_true(inherits(lotri::as.lotri(as.data.frame(lotri::lotri({
+  expect_true(inherits(
+    lotri::as.lotri(as.data.frame(lotri::lotri({
     tp <- 1
     a ~ 0.5
-  }))), "matrix"))
+  }))),
+    "matrix"
+  ))
 
   ## and a multi level object is unchanged
-  expect_equal(names(lotri::as.lotri(as.data.frame(lotri::lotri({
+  expect_equal(
+    names(lotri::as.lotri(as.data.frame(lotri::lotri({
     tp <- 1
     a ~ 0.5
     b ~ 0.6 | occ
-  })))), c("id", "occ"))
+  })))),
+    c("id", "occ")
+  )
 })
 
 test_that("only the open block follows a condition to its level", {
-
   ## The rows of one block share a level because they covary, so a
   ## condition written on a continuation carries THAT block over.  It
   ## used to carry the whole default level with it, relocating
@@ -105,8 +113,7 @@ test_that("only the open block follows a condition to its level", {
     z4 ~ c(0.1, 2.4) | occ
   })
 
-  expect_equal(dimnames(unclass(.m$id))[[1]],
-               c("z1a", "z1b", "z1c", "z2a", "z2b"))
+  expect_equal(dimnames(unclass(.m$id))[[1]], c("z1a", "z1b", "z1c", "z2a", "z2b"))
   expect_equal(dimnames(unclass(.m$occ))[[1]], c("z3", "z4"))
 
   ## the two-statement shape too
@@ -131,18 +138,20 @@ test_that("only the open block follows a condition to its level", {
 })
 
 test_that("an unconditioned line is not folded into a stale level", {
-
   ## a line that cannot be parsed at the default level fell back to the
   ## most recently SEEN condition, even when the block right before it
   ## was at the default level -- so a parameter with no condition landed
   ## at a level of variability it was never given
-  expect_error(lotri::lotri({
+  expect_error(
+    lotri::lotri({
     z1 ~ 1.1 | occ
     z2 ~ 1.2
     z3a + z3b ~ c(1.3,
                   0.1, 2.3)
     z4 ~ c(0.1, 2.4)
-  }), "lotri syntax errors above")
+  }),
+    "lotri syntax errors above"
+  )
 
   ## the fold itself is still there when the block before it really is
   ## at that level: an unconditioned continuation joins it
