@@ -76,3 +76,15 @@ test_that("test nearPD with same functions as Matrix", {
     expect_false(identical(pr2, pr))
   }
 })
+
+test_that("lotriNearPD rescales a posdefified matrix symmetrically", {
+  # rank-1 input whose small diagonal is near posd.tol * max eigenvalue, so
+  # the posdefify step rescales rows and columns by quite different factors
+  x <- matrix(c(1, 1e-4, 1e-4, 1e-8), 2, 2)
+  r <- lotriNearPD(x)
+  expect_true(isSymmetric(r))
+  expect_equal(r[1, 2], 1e-4 / sqrt(2), tolerance = 1e-6)
+  if (requireNamespace("Matrix", quietly = TRUE)) {
+    expect_equal(r, as.matrix(Matrix::nearPD(x)$mat), ignore_attr = TRUE)
+  }
+})
