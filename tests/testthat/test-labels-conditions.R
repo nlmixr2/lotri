@@ -205,7 +205,7 @@ test_that("a conditioned continuation stays at the level it names", {
     tp <- 1
     z1 ~ 1 | occ
     z2 ~ c(0.1, 2) | occ
-    z3 ~ c(1.3)
+    z3 ~ c(1.3) # nolint: unnecessary_concatenation_linter.
     z4 ~ c(0.1, 2.4) | occ
     label("L4")
   })

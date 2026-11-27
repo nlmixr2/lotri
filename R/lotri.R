@@ -629,7 +629,7 @@ NULL
     if (any(.n == names(old))) {
       if (!isTRUE(all.equal(old[[.n]], new[[.n]]))) {
         stop(sprintf(gettext("conflicting '%s' properties for level '%s'"),
-                     .n, cnd), call.=FALSE)
+                     .n, cnd), call. = FALSE)
       }
     } else {
       old[[.n]] <- new[[.n]]
@@ -666,7 +666,7 @@ NULL
   .off <- length(env2$names) - .cut
   .mv <- which(env$df$i > .cut & env$df$j > .cut)
   .keep <- setdiff(seq_along(env$df$i), .mv)
-  .cp <- env$df[.mv, , drop=FALSE]
+  .cp <- env$df[.mv, , drop = FALSE]
   .cp$i <- .cp$i + .off
   .cp$j <- .cp$j + .off
   ## pad BEFORE the names are appended, so the padding covers only the
@@ -697,7 +697,7 @@ NULL
     env$sameMasterBase + .off
   }
   ## what stays behind keeps its own rows
-  env$df <- if (length(.keep) == 0L) NULL else env$df[.keep, , drop=FALSE]
+  env$df <- if (length(.keep) == 0L) NULL else env$df[.keep, , drop = FALSE]
   env$lastN <- 0
   env$eta1 <- .cut
   env$names <- env$names[seq_len(.cut)]
